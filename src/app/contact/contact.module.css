@@ -1,0 +1,37 @@
+.pageHero { background: linear-gradient(135deg, var(--bg-blue), var(--primary-50), var(--bg-light)); padding: var(--space-20) 0 var(--space-16); text-align: center; }
+.heroContent { max-width: 720px; margin: 0 auto; }
+.heroTitle { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: var(--gray-900); line-height: 1.15; margin-bottom: var(--space-4); }
+.accent { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.heroSubtext { font-size: var(--font-size-lg); color: var(--gray-500); }
+
+/* Info Cards */
+.cardsSection { padding: var(--space-12) 0; }
+.cardsGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); }
+.infoCard { background: var(--white); border-radius: var(--radius-2xl); padding: var(--space-6); text-align: center; box-shadow: var(--shadow-lg); transition: all var(--transition-base); cursor: pointer; }
+.infoIcon { width: 56px; height: 56px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); }
+.infoTitle { font-size: var(--font-size-base); font-weight: 700; color: var(--gray-900); margin-bottom: var(--space-1); }
+.infoDetail { font-size: var(--font-size-sm); color: var(--gray-500); line-height: 1.5; }
+
+/* Form */
+.formSection { padding: var(--space-12) 0 var(--space-20); }
+.formGrid { display: grid; grid-template-columns: 1.3fr 1fr; gap: var(--space-12); align-items: start; }
+.formSubtext { font-size: var(--font-size-base); color: var(--gray-500); margin-bottom: var(--space-8); }
+.form { display: flex; flex-direction: column; gap: var(--space-5); }
+.formRow { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+.inputGroup { display: flex; flex-direction: column; gap: var(--space-1); transition: all var(--transition-base); }
+.focused { transform: translateY(-2px); }
+.focused .label { color: var(--primary); }
+.focused .input { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-100); }
+.label { font-size: var(--font-size-sm); font-weight: 600; color: var(--gray-700); transition: color var(--transition-base); }
+.input { padding: var(--space-3) var(--space-4); border: 2px solid var(--gray-200); border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--gray-800); background: var(--white); transition: all var(--transition-base); }
+.textarea { resize: vertical; min-height: 120px; }
+.submitBtn { width: fit-content; margin-top: var(--space-2); }
+
+/* Map */
+.mapWrapper { position: sticky; top: 120px; }
+.mapPlaceholder { background: linear-gradient(135deg, var(--primary-50), var(--bg-blue)); border-radius: var(--radius-2xl); padding: var(--space-16); text-align: center; color: var(--primary); min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); }
+.mapPlaceholder h3 { font-size: var(--font-size-xl); font-weight: 700; color: var(--gray-900); }
+.mapPlaceholder p { font-size: var(--font-size-sm); color: var(--gray-500); line-height: 1.6; }
+
+@media (max-width: 1024px) { .cardsGrid { grid-template-columns: repeat(2, 1fr); } .formGrid { grid-template-columns: 1fr; } .mapWrapper { position: relative; top: 0; } }
+@media (max-width: 640px) { .cardsGrid { grid-template-columns: 1fr; } .formRow { grid-template-columns: 1fr; } }

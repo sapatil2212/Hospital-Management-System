@@ -1,0 +1,53 @@
+import { NextRequest } from "next/server";
+import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { successResponse, errorResponse } from "../../../../../backend/utils/response";
+import { getSettings, upsertSettings, getSetupProgress } from "../../../../../backend/services/config.service";
+import { z } from "zod";
+
+const settingsSchema = z.object({
+  hospitalName: z.string().min(2),
+  logo: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  website: z.string().optional(),
+  timezone: z.string().optional(),
+  currency: z.string().optional(),
+  gstNumber: z.string().optional(),
+  registrationNo: z.string().optional(),
+});
+
+export async function GET(req: NextRequest) {
+  const auth = await requireHospitalAdmin(req);
+  if (auth.error) return auth.error;
+
+  try {
+    const [settings, progress] = await Promise.all([
+      getSettings(auth.hospitalId),
+      getSetupProgress(auth.hospitalId),
+    ]);
+    return successResponse({ settings, progress }, "Settings fetched");
+  } catch (e: any) {
+    return errorResponse(e.message, 500);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const auth = await requireHospitalAdmin(req);
+  if (auth.error) return auth.error;
+
+  try {
+    const body = await req.json();
+    const result = settingsSchema.safeParse(body);
+    if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
+
+    const settings = await upsertSettings(auth.hospitalId, result.data);
+    return successResponse(settings, "Settings saved", 201);
+  } catch (e: any) {
+    return errorResponse(e.message, 500);
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  return POST(req); // Upsert handles both create & update
+}

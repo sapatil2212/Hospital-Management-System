@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// CORE MODELS
+// ─────────────────────────────────────────────
+
+model Hospital {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  mobile        String
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  users              User[]
+  settings           HospitalSettings?
+  departments        Department[]
+  subDepartments     SubDepartment[]
+  doctors            Doctor[]
+  staffMembers       Staff[]
+  wards              Ward[]
+  beds               Bed[]
+  pricing            Pricing[]
+  inventoryItems     InventoryItem[]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name          String
+  email         String   @unique
+  password      String
+  role          Role
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  sessions      Session[]
+
+  @@index([hospitalId])
+  @@index([email, hospitalId])
+}
+
+enum Role {
+  SUPER_ADMIN
+  HOSPITAL_ADMIN
+  DOCTOR
+  RECEPTIONIST
+  STAFF
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  expiresAt  DateTime
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// HOSPITAL CONFIGURATION MODELS
+// ─────────────────────────────────────────────
+
+model HospitalSettings {
+  id            String   @id @default(uuid())
+  hospitalId    String   @unique
+  hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  hospitalName  String
+  logo          String?
+  address       String?  @db.Text
+  phone         String?
+  email         String?
+  website       String?
+  timezone      String   @default("Asia/Kolkata")
+  currency      String   @default("INR")
+  gstNumber     String?
+  registrationNo String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum DepartmentType {
+  OPD
+  IPD
+  DIAGNOSTIC
+  SUPPORT
+}
+
+model Department {
+  id               String          @id @default(uuid())
+  hospitalId       String
+  hospital         Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  // Basic Info
+  name             String
+  code             String
+  description      String?
+  type             DepartmentType  @default(OPD)
+  isActive         Boolean         @default(true)
+
+  // Operational Fields
+  consultationFee  Float?
+  allowAppointments Boolean        @default(true)
+  isIPD            Boolean         @default(false)
+
+  // Management Fields
+  hodDoctorId      String?
+  hodDoctor        Doctor?         @relation("DepartmentHOD", fields: [hodDoctorId], references: [id], onDelete: SetNull)
+
+  // Location & Billing
+  location         String?
+  billingCode      String?
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Existing relations
+  subDepartments   SubDepartment[]
+  doctors          Doctor[]        @relation("DepartmentDoctors")
+  staff            Staff[]
+  pricing          Pricing[]
+
+  @@unique([hospitalId, code])
+  @@index([hospitalId])
+}
+
+model SubDepartment {
+  id            String            @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name          String
+  type          SubDepartmentType
+  departmentId  String?
+  department    Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  isActive      Boolean           @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([hospitalId, name, type])
+  @@index([hospitalId])
+}
+
+enum SubDepartmentType {
+  PHARMACY
+  PATHOLOGY
+  RADIOLOGY
+  PROCEDURE
+  LABORATORY
+  OTHER
+}
+
+model Doctor {
+  id              String   @id @default(uuid())
+  hospitalId      String
+  hospital        Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name            String
+  email           String
+  phone           String?
+  specialization  String?
+  qualification   String?
+  departmentId    String?
+  department      Department? @relation("DepartmentDoctors", fields: [departmentId], references: [id], onDelete: SetNull)
+  consultationFee Float    @default(0)
+  isAvailable     Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  availability    DoctorAvailability[]
+  hodOfDepartments Department[] @relation("DepartmentHOD")
+
+  @@unique([hospitalId, email])
+  @@index([hospitalId])
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model DoctorAvailability {
+  id          String   @id @default(uuid())
+  doctorId    String
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  day         DayOfWeek
+  startTime   String                // "09:00"
+  endTime     String                // "17:00"
+
+  leaveFrom   DateTime?
+  leaveTo     DateTime?
+  leaveReason String?
+
+  @@unique([doctorId, day])
+  @@index([doctorId])
+}
+
+model Staff {
+  id            String   @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name          String
+  email         String?
+  phone         String?
+  role          StaffRole
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  salary        Float    @default(0)
+  joinDate      DateTime @default(now())
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([hospitalId])
+}
+
+enum StaffRole {
+  NURSE
+  TECHNICIAN
+  PHARMACIST
+  RECEPTIONIST
+  LAB_TECHNICIAN
+  ACCOUNTANT
+  ADMIN
+  SUPPORT
+  OTHER
+}
+
+model Ward {
+  id            String   @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name          String
+  type          WardType
+  floor         String?
+  capacity      Int      @default(0)
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  beds          Bed[]
+
+  @@unique([hospitalId, name])
+  @@index([hospitalId])
+}
+
+enum WardType {
+  GENERAL
+  PRIVATE
+  SEMI_PRIVATE
+  ICU
+  NICU
+  PICU
+  EMERGENCY
+  MATERNITY
+  ISOLATION
+}
+
+model Bed {
+  id            String    @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  wardId        String
+  ward          Ward      @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  bedNumber     String
+  status        BedStatus @default(AVAILABLE)
+  pricePerDay   Float     @default(0)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([wardId, bedNumber])
+  @@index([hospitalId])
+  @@index([wardId])
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  RESERVED
+}
+
+model Pricing {
+  id            String      @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital    @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name          String
+  type          PricingType
+  amount        Float
+  description   String?
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  isActive      Boolean     @default(true)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([hospitalId])
+  @@index([hospitalId, type])
+}
+
+enum PricingType {
+  CONSULTATION
+  PROCEDURE
+  LAB_TEST
+  RADIOLOGY
+  PHARMACY
+  ROOM_CHARGE
+  SURGERY
+  OTHER
+}
+
+model InventoryItem {
+  id            String   @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  name          String
+  category      String
+  description   String?
+  stock         Int      @default(0)
+  minStock      Int      @default(5)
+  unit          String   @default("pcs")
+  pricePerUnit  Float    @default(0)
+  supplier      String?
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([hospitalId, name, category])
+  @@index([hospitalId])
+  @@index([hospitalId, category])
+}

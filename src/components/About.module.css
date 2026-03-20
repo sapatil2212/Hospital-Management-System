@@ -1,0 +1,192 @@
+.about {
+  padding: var(--space-24) 0;
+  background: var(--white);
+}
+
+.aboutInner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  align-items: center;
+}
+
+/* Content */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.titleAccent {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.description {
+  font-size: var(--font-size-base);
+  color: var(--gray-500);
+  line-height: 1.8;
+  margin-bottom: var(--space-4);
+}
+
+/* Features */
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.featureItem {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.featureIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.featureText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.featureTitle {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.featureDesc {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  line-height: 1.6;
+}
+
+.aboutCta {
+  width: fit-content;
+}
+
+/* Visual */
+.visual {
+  position: relative;
+}
+
+.imageGrid {
+  position: relative;
+}
+
+.mainImage {
+  position: relative;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+}
+
+.aboutImage {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radius-2xl);
+}
+
+.videoBadge {
+  position: absolute;
+  bottom: var(--space-6);
+  left: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--primary);
+  color: white;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  box-shadow: var(--shadow-blue);
+}
+
+/* Hours Card */
+.hoursCard {
+  position: absolute;
+  bottom: var(--space-8);
+  right: -20px;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-xl);
+  min-width: 240px;
+  border: 1px solid var(--gray-100);
+}
+
+.hoursHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: var(--gray-900);
+}
+
+.hoursHeader h4 {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+}
+
+.hoursList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hoursRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hoursDay {
+  font-size: var(--font-size-sm);
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.hoursTime {
+  font-size: var(--font-size-sm);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.closed {
+  color: var(--error);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .aboutInner {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
+  }
+
+  .visual {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .hoursCard {
+    position: relative;
+    right: 0;
+    bottom: 0;
+    margin-top: var(--space-4);
+  }
+}
