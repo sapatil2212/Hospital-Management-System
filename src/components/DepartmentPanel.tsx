@@ -470,10 +470,10 @@ export default function DepartmentPanel() {
         .dept-modal-lg{max-width:720px}
         .dept-modal-md{max-width:560px}
         .dept-modal-sm{max-width:400px;padding:24px;text-align:center}
-        .dept-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f1f5f9;background:#f8fafc}
+        .dept-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0}
         .dept-modal-title{font-size:17px;font-weight:800;color:#1e293b}
         .dept-modal-body{padding:24px;overflow-y:auto;flex:1}
-        .dept-modal-footer{padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc}
+        .dept-modal-footer{padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;flex-shrink:0}
         .dept-section{margin-bottom:24px}
         .dept-section:last-child{margin-bottom:0}
         .dept-section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
