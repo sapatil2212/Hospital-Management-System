@@ -53,3 +53,15 @@ export const requireRole = async (
 
   return { user: user!, hospitalId: user!.hospitalId || "", error: null };
 };
+
+/**
+ * Synchronous role guard for parsed JWT payloads.
+ */
+export const roleMiddleware = (user: JwtPayload, allowedRoles: string[]) => {
+  if (!allowedRoles.includes(user.role)) {
+    return {
+      error: errorResponse(`Forbidden: Requires one of [${allowedRoles.join(", ")}]`, 403),
+    };
+  }
+  return { error: null };
+};

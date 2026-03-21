@@ -89,6 +89,7 @@ export default function StaffDashboard() {
       if (role === "HOSPITAL_ADMIN") { router.push("/hospitaladmin/dashboard"); return; }
       if (role === "DOCTOR") { router.push("/doctor/dashboard"); return; }
       if (role === "SUPER_ADMIN") { router.push("/superadmin/dashboard"); return; }
+      if (role === "SUB_DEPT_HEAD") { router.push("/subdept/dashboard"); return; }
       if (role !== "STAFF" && role !== "RECEPTIONIST") { router.push("/staff/login"); return; }
       // Now fetch staff profile
       api("/api/staff/me").then((staffRes) => {

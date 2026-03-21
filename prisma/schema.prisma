@@ -23,6 +23,7 @@ model Hospital {
   settings           HospitalSettings?
   departments        Department[]
   subDepartments     SubDepartment[]
+  procedures         Procedure[]
   doctors            Doctor[]
   staffMembers       Staff[]
   wards              Ward[]
@@ -51,6 +52,7 @@ model User {
   sessions      Session[]
   doctor        Doctor?
   staff         Staff?
+  subDepartment SubDepartment?
 
   @@index([hospitalId])
   @@index([email, hospitalId])
@@ -62,6 +64,7 @@ enum Role {
   DOCTOR
   RECEPTIONIST
   STAFF
+  SUB_DEPT_HEAD
 }
 
 model OTP {
@@ -158,13 +161,33 @@ model SubDepartment {
   hospital      Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
   name          String
+  code          String?
   type          SubDepartmentType
+  description   String?           @db.Text
+  color         String?           @default("#3b82f6")
+  flow          String?           @db.Text
+
   departmentId  String?
   department    Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  // HOD (Head of Department)
+  hodStaffId    String?
+  hodName       String?
+  hodEmail      String?
+  hodPhone      String?
+
+  // Login / Credentials
+  loginEmail    String?           @unique
+  userId        String?           @unique
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  credentialsSent Boolean         @default(false)
+
   isActive      Boolean           @default(true)
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  procedures    Procedure[]
 
   @@unique([hospitalId, name, type])
   @@index([hospitalId])
@@ -176,7 +199,47 @@ enum SubDepartmentType {
   RADIOLOGY
   PROCEDURE
   LABORATORY
+  DENTAL
+  DERMATOLOGY
+  HAIR
+  ONCOLOGY
+  CARDIOLOGY
+  BILLING
   OTHER
+}
+
+enum ProcedureType {
+  DIAGNOSTIC
+  TREATMENT
+  CONSULTATION
+  SURGERY
+  THERAPY
+  MEDICATION
+  OTHER
+}
+
+model Procedure {
+  id               String          @id @default(uuid())
+  hospitalId       String
+  hospital         Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  subDepartmentId  String
+  subDepartment    SubDepartment   @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)
+
+  name             String
+  description      String?         @db.Text
+  type             ProcedureType   @default(OTHER)
+  fee              Float?
+  duration         Int?            // minutes
+  sequence         Int             @default(0)
+  isActive         Boolean         @default(true)
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([hospitalId])
+  @@index([subDepartmentId])
+  @@index([hospitalId, subDepartmentId])
 }
 
 enum Gender {

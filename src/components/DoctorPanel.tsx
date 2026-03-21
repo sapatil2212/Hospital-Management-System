@@ -800,7 +800,13 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
                   </td>
                   <td>
                     {row.credentialsSent ? (
-                      <span className="dp-creds-sent"><Check size={12} /> Sent</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
+                        <span className="dp-creds-sent"><Check size={12} /> Sent</span>
+                        <button className="dp-btn-sm gray" disabled={sendingCreds === row.id} onClick={() => handleSendCredentials(row)} title="Resend Credentials">
+                          {sendingCreds === row.id ? <Loader2 size={11} className="dp-spin" /> : <Send size={10} />}
+                          {sendingCreds === row.id ? "Resending..." : "Resend"}
+                        </button>
+                      </div>
                     ) : (
                       <button className="dp-btn-sm amber" disabled={sendingCreds === row.id} onClick={() => handleSendCredentials(row)}>
                         {sendingCreds === row.id ? <Loader2 size={11} className="dp-spin" /> : <Send size={11} />}

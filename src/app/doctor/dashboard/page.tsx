@@ -242,6 +242,7 @@ export default function DoctorDashboard() {
         if (role === "HOSPITAL_ADMIN") { router.push("/hospitaladmin/dashboard"); return; }
         if (role === "STAFF" || role === "RECEPTIONIST") { router.push("/staff/dashboard"); return; }
         if (role === "SUPER_ADMIN") { router.push("/superadmin/dashboard"); return; }
+        if (role === "SUB_DEPT_HEAD") { router.push("/subdept/dashboard"); return; }
         if (role !== "DOCTOR") { router.push("/login"); return; }
         fetch("/api/doctor/attendance", { method: "POST", credentials: "include" }).catch(() => {});
         return fetch("/api/doctor/me", { credentials: "include" });

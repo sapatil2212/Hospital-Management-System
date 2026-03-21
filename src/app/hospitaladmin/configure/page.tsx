@@ -4,19 +4,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Settings, Building2, Stethoscope, Users, BedDouble, CreditCard, Package,
   Plus, Pencil, Trash2, Search, X, ChevronRight, Check, AlertTriangle,
-  LogOut, Bell, HelpCircle, FlaskConical, LayoutDashboard, Loader2
+  LogOut, Bell, HelpCircle, FlaskConical, LayoutDashboard, Loader2, Layers
 } from "lucide-react";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import DoctorPanel from "@/components/DoctorPanel";
 import LeaveModal from "@/components/LeaveModal";
 import StaffPanel from "@/components/StaffPanel";
 import WardBedPanel from "@/components/WardBedPanel";
+import SubDepartmentPanel from "@/components/SubDepartmentPanel";
 
-type Tab = "settings"|"departments"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory";
+type Tab = "settings"|"departments"|"subdepts"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory";
 
 const TABS:{id:Tab;label:string;icon:any}[] = [
   {id:"settings",label:"General Settings",icon:Settings},
   {id:"departments",label:"Departments",icon:Building2},
+  {id:"subdepts",label:"Sub-Depts / Procedures",icon:Layers},
   {id:"clinical",label:"Clinical Units",icon:FlaskConical},
   {id:"doctors",label:"Doctors Setup",icon:Stethoscope},
   {id:"staff",label:"Staff Setup",icon:Users},
@@ -183,6 +185,7 @@ export default function ConfigurePage(){
       if(!d.success){router.push("/login");return;}
       if(d.data.role==="DOCTOR"){router.push("/doctor/dashboard");return;}
       if(d.data.role==="STAFF"||d.data.role==="RECEPTIONIST"){router.push("/staff/dashboard");return;}
+      if(d.data.role==="SUB_DEPT_HEAD"){router.push("/subdept/dashboard");return;}
       if(d.data.role!=="HOSPITAL_ADMIN"){router.push("/login");return;}
       setUser(d.data);setLoading(false);
     }).catch(()=>router.push("/login"));
@@ -325,6 +328,7 @@ export default function ConfigurePage(){
 
           {tab==="settings"&&<SettingsPanel hospitalId={user?.hospitalId||""}/>}
           {tab==="departments"&&<DepartmentPanel/>}
+          {tab==="subdepts"&&<SubDepartmentPanel/>}
           {tab==="clinical"&&<CrudPanel endpoint="/api/config/departments?sub=true" columns={clinicalColumns} formFields={clinicalFields} entityName="Clinical Unit"/>}
           {tab==="doctors"&&<DoctorPanel onOpenLeave={openLeaveModal}/>}
           

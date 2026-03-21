@@ -241,10 +241,12 @@ export default function HospitalSignupPage() {
         .sp-str-label { font-size:11px; font-weight:600; }
 
         /* otp */
-        .sp-otp-grid { display:flex; gap:10px; margin-bottom:6px; }
-        .sp-otp-in { flex:1; text-align:center; font-size:22px; font-weight:800; padding:14px 0; border-radius:12px; background:var(--otp-bg); border:1.5px solid var(--otp-border); color:var(--input-color); font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s, box-shadow 0.2s; caret-color:#6366f1; }
+        .sp-otp-wrap { display:flex; justify-content:center; }
+        .sp-otp-grid { display:flex; gap:8px; margin-bottom:6px; width:100%; max-width:360px; }
+        .sp-otp-in { flex:1; min-width:0; text-align:center; font-size:20px; font-weight:800; padding:12px 0; border-radius:12px; background:var(--otp-bg); border:1.5px solid var(--otp-border); color:var(--input-color); font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s, box-shadow 0.2s; caret-color:#6366f1; }
         .sp-otp-in:focus { border-color:var(--input-border-focus); box-shadow:0 0 0 3px var(--input-shadow-focus); }
         .sp-otp-in.filled { border-color:var(--otp-filled-border); }
+        @media(max-width:400px){ .sp-otp-in { font-size:16px; padding:10px 0; border-radius:9px; } .sp-otp-grid { gap:5px; } }
         .sp-otp-hint { font-size:12px; color:var(--hint-color); text-align:center; margin-bottom:20px; }
 
         .sp-resend { font-size:13px; color:var(--resend-color); text-align:center; margin-top:16px; }
@@ -445,10 +447,12 @@ export default function HospitalSignupPage() {
                 <form onSubmit={handleVerifyAndCreate}>
                   <div className="sp-field">
                     <label className="sp-label">Enter 6-digit OTP</label>
-                    <div className="sp-otp-grid" onPaste={handleOtpPaste}>
-                      {otp.map((digit,i)=>(
-                        <input key={i} id={`otp-${i}`} type="text" inputMode="numeric" maxLength={1} className={`sp-otp-in${digit?" filled":""}`} value={digit} onChange={e=>handleOtpChange(i,e.target.value)} onKeyDown={e=>handleOtpKeyDown(i,e)} autoFocus={i===0} autoComplete="one-time-code"/>
-                      ))}
+                    <div className="sp-otp-wrap">
+                      <div className="sp-otp-grid" onPaste={handleOtpPaste}>
+                        {otp.map((digit,i)=>(
+                          <input key={i} id={`otp-${i}`} type="text" inputMode="numeric" maxLength={1} className={`sp-otp-in${digit?" filled":""}`} value={digit} onChange={e=>handleOtpChange(i,e.target.value)} onKeyDown={e=>handleOtpKeyDown(i,e)} autoFocus={i===0} autoComplete="one-time-code"/>
+                        ))}
+                      </div>
                     </div>
                     <p className="sp-otp-hint">OTP is valid for 10 minutes</p>
                   </div>
