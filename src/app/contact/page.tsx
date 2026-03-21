@@ -8,9 +8,9 @@ import Footer from "@/components/Footer";
 import styles from "./contact.module.css";
 
 const contactInfo = [
-  { icon: <MapPin size={22} />, title: "Visit Us", detail: "123 Medical Center Drive, New York, NY 10001", color: "#3B82F6", bgColor: "#EFF6FF" },
-  { icon: <Phone size={22} />, title: "Call Us", detail: "+1 (555) 123-4567", color: "#10B981", bgColor: "#D1FAE5" },
-  { icon: <Mail size={22} />, title: "Email Us", detail: "info@medicare-plus.com", color: "#8B5CF6", bgColor: "#EDE9FE" },
+  { icon: <MapPin size={22} />, title: "Visit Us", detail: "Rajashree Hospital, Near Canada Corner, Gangapur Road, Nashik, Maharastra 411052", color: "#3B82F6", bgColor: "#EFF6FF" },
+  { icon: <Phone size={22} />, title: "Call Us", detail: "+91 90590 53938", color: "#10B981", bgColor: "#D1FAE5" },
+  { icon: <Mail size={22} />, title: "Email Us", detail: "rajashreehospital2026@gmail.com", color: "#8B5CF6", bgColor: "#EDE9FE" },
   { icon: <Clock size={22} />, title: "Working Hours", detail: "Mon – Fri: 8:00 AM – 7:00 PM", color: "#F59E0B", bgColor: "#FEF3C7" },
 ];
 
@@ -98,7 +98,7 @@ export default function ContactPage() {
               <div className={styles.mapPlaceholder}>
                 <MapPin size={48} />
                 <h3>Our Location</h3>
-                <p>123 Medical Center Drive<br />New York, NY 10001</p>
+                <p>Rajashree Hospital, Near Canada Corner,<br />Gangapur Road, Nashik, Maharastra 411052</p>
               </div>
             </motion.div>
           </div>

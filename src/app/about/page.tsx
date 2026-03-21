@@ -58,12 +58,7 @@ const milestones = [
   { year: "2026", event: "Serving 30M+ patients with 500+ specialists" },
 ];
 
-const team = [
-  { name: "Dr. Sarah Chen", role: "Chief Medical Officer", initials: "SC", color: "#3B82F6" },
-  { name: "Dr. James Wilson", role: "Head of Cardiology", initials: "JW", color: "#10B981" },
-  { name: "Dr. Emily Park", role: "Head of Neurology", initials: "EP", color: "#8B5CF6" },
-  { name: "Dr. Michael Rivera", role: "Head of Surgery", initials: "MR", color: "#F59E0B" },
-];
+
 
 export default function AboutPage() {
   const ref = useRef(null);
@@ -220,38 +215,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Team */}
-        <section className={styles.teamSection}>
-          <div className="container">
-            <div className={styles.sectionHeader}>
-              <h2 className="section-title">
-                Meet Our <span className={styles.accent}>Leaders</span>
-              </h2>
-            </div>
-            <div className={styles.teamGrid}>
-              {team.map((member, i) => (
-                <motion.div
-                  key={member.name}
-                  className={styles.teamCard}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ y: -6 }}
-                >
-                  <div
-                    className={styles.teamAvatar}
-                    style={{ background: `linear-gradient(135deg, ${member.color}, ${member.color}cc)` }}
-                  >
-                    {member.initials}
-                  </div>
-                  <h4 className={styles.teamName}>{member.name}</h4>
-                  <span className={styles.teamRole}>{member.role}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+
       </main>
       <Footer />
     </>

@@ -97,6 +97,10 @@
   padding: 0 0 var(--space-12);
 }
 
+.footerNoNewsletter {
+  padding-top: var(--space-16);
+}
+
 /* Footer Logo */
 .footerLogo {
   display: flex;

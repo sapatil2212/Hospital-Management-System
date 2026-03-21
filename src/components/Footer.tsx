@@ -13,6 +13,7 @@ import {
   Linkedin,
   Send,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import styles from "./Footer.module.css";
 
 const quickLinks = [
@@ -40,40 +41,45 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
+
   return (
     <footer id="contact" className={styles.footer}>
       {/* Newsletter Banner */}
-      <div className={`container ${styles.newsletterWrapper}`}>
-        <div className={styles.newsletter}>
-          <div className={styles.nlContent}>
-            <h3 className={styles.nlTitle}>
-              Subscribe to Our Health Newsletter
-            </h3>
-            <p className={styles.nlText}>
-              Get the latest health tips, wellness advice, and medical news
-              delivered to your inbox weekly.
-            </p>
-          </div>
-          <div className={styles.nlForm}>
-            <div className={styles.inputWrapper}>
-              <Mail size={18} className={styles.inputIcon} />
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className={styles.nlInput}
-                id="newsletter-email"
-              />
+      {isHomePage && (
+        <div className={`container ${styles.newsletterWrapper}`}>
+          <div className={styles.newsletter}>
+            <div className={styles.nlContent}>
+              <h3 className={styles.nlTitle}>
+                Subscribe to Our Health Newsletter
+              </h3>
+              <p className={styles.nlText}>
+                Get the latest health tips, wellness advice, and medical news
+                delivered to your inbox weekly.
+              </p>
             </div>
-            <button className={`btn btn-primary ${styles.nlButton}`}>
-              Subscribe
-              <Send size={16} />
-            </button>
+            <div className={styles.nlForm}>
+              <div className={styles.inputWrapper}>
+                <Mail size={18} className={styles.inputIcon} />
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  className={styles.nlInput}
+                  id="newsletter-email"
+                />
+              </div>
+              <button className={`btn btn-primary ${styles.nlButton}`}>
+                Subscribe
+                <Send size={16} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Footer Content */}
-      <div className={`container ${styles.footerContent}`}>
+      <div className={`container ${styles.footerContent} ${!isHomePage ? styles.footerNoNewsletter : ""}`}>
         {/* About Column */}
         <div className={styles.footerCol}>
           <a href="#home" className={styles.footerLogo}>
@@ -139,18 +145,18 @@ export default function Footer() {
             <div className={styles.contactItem}>
               <MapPin size={18} className={styles.contactIcon} />
               <span>
-                123 Medical Center Drive,
+                Rajashree Hospital, Near Canada Corner,
                 <br />
-                New York, NY 10001
+                Gangapur Road, Nashik, Maharastra 411052
               </span>
             </div>
             <div className={styles.contactItem}>
               <Phone size={18} className={styles.contactIcon} />
-              <span>+1 (555) 123-4567</span>
+              <span>+91 90590 53938</span>
             </div>
             <div className={styles.contactItem}>
               <Mail size={18} className={styles.contactIcon} />
-              <span>info@medicare-plus.com</span>
+              <span>rajashreehospital2026@gmail.com</span>
             </div>
           </div>
         </div>

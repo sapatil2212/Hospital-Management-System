@@ -4,6 +4,26 @@ import {
 
 export const treatments = [
   {
+    slug: "prp-hair",
+    label: "PRP/GFC for Hair",
+    fullTitle: "PRP/GFC for Hair",
+    icon: Sparkles,
+    color: "#3B82F6",
+    bgColor: "#EFF6FF",
+    image: "/images/treatment-dermatology.png",
+    heroDesc: "Natural hair regrowth therapy using your own platelet-rich plasma for stronger, healthier hair growth.",
+    features: [
+      "Natural regrowth",
+      "No side effects",
+      "Strengthens follicles",
+      "Minimally invasive",
+      "Clinically proven",
+      "Quick recovery",
+    ],
+    description: "PRP (Platelet-Rich Plasma) and GFC (Growth Factor Concentrate) are advanced, non-surgical treatments for hair loss. By using your own blood's growth factors, we stimulate hair follicles to promote natural regrowth and improve hair density.",
+    stats: { doctors: 10, patients: "2K+", experience: "8 years" },
+  },
+  {
     slug: "general-opd",
     label: "General OPD",
     fullTitle: "Your First Step to Better Health Starts Here",

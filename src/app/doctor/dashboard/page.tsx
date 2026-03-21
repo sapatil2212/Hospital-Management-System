@@ -40,10 +40,28 @@ function ConsultModal({ appt, onClose, onDone }: { appt: any; onClose: () => voi
   const [notes, setNotes] = useState(appt.notes || "");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [subDepts, setSubDepts] = useState<any[]>([]);
+  const [subDeptId, setSubDeptId] = useState<string>(appt.subDepartmentId || "");
+  const [subDeptNote, setSubDeptNote] = useState<string>(appt.subDeptNote || "");
+  const [showReferral, setShowReferral] = useState(!!(appt.subDepartmentId));
+
+  useEffect(() => {
+    api("/api/config/subdepartments?limit=50").then(r => {
+      if (r.success) setSubDepts(r.data?.subDepartments || r.data || []);
+    }).catch(() => {});
+  }, []);
 
   const update = async (status: string) => {
     setSaving(true);
-    const d = await api(`/api/appointments/${appt.id}`, "PUT", { status, notes: notes || undefined });
+    const body: any = { status, notes: notes || undefined };
+    if (showReferral && subDeptId) {
+      body.subDepartmentId = subDeptId;
+      body.subDeptNote = subDeptNote || undefined;
+    } else if (!showReferral) {
+      body.subDepartmentId = null;
+      body.subDeptNote = null;
+    }
+    const d = await api(`/api/appointments/${appt.id}`, "PUT", body);
     if (d.success) { onDone(); onClose(); }
     else setMsg(d.message || "Failed to update");
     setSaving(false);
@@ -54,8 +72,8 @@ function ConsultModal({ appt, onClose, onDone }: { appt: any; onClose: () => voi
   const apptDate = new Date(appt.appointmentDate);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 24px 60px rgba(0,0,0,.18)", fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflowY: "auto" }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, boxShadow: "0 24px 60px rgba(0,0,0,.18)", fontFamily: "'Inter',sans-serif", margin: "auto" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", marginBottom: 3 }}>Patient Consultation</div>
@@ -96,11 +114,42 @@ function ConsultModal({ appt, onClose, onDone }: { appt: any; onClose: () => voi
         </div>
 
         {/* Notes */}
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Consultation Notes</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
             placeholder="Diagnosis, prescription, follow-up instructions..."
             style={{ width: "100%", padding: "10px 13px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#334155", outline: "none", resize: "vertical", fontFamily: "'Inter',sans-serif" }} />
+        </div>
+
+        {/* Sub-Department Referral */}
+        <div style={{ marginBottom: 18, background: showReferral ? "#f0fdf4" : "#f8fafc", borderRadius: 12, border: `1.5px solid ${showReferral ? "#bbf7d0" : "#e2e8f0"}`, overflow: "hidden" }}>
+          <button onClick={() => setShowReferral(v => !v)}
+            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: showReferral ? "#22c55e" : "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ChevronRight size={12} color={showReferral ? "#fff" : "#94a3b8"} style={{ transform: showReferral ? "rotate(90deg)" : "none", transition: "transform .2s" }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: showReferral ? "#166534" : "#64748b" }}>
+                {showReferral ? "Referring to Sub-Department" : "Refer to Sub-Department (optional)"}
+              </span>
+            </div>
+            {appt.subDepartmentId && <span style={{ fontSize: 10, background: "#dcfce7", color: "#16a34a", padding: "2px 8px", borderRadius: 100, fontWeight: 700 }}>Previously Referred</span>}
+          </button>
+          {showReferral && (
+            <div style={{ padding: "0 14px 14px" }}>
+              <select value={subDeptId} onChange={e => setSubDeptId(e.target.value)}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #bbf7d0", background: "#fff", fontSize: 13, color: "#334155", outline: "none", marginBottom: 10, fontFamily: "'Inter',sans-serif" }}>
+                <option value="">— Select Sub-Department —</option>
+                {subDepts.map((sd: any) => (
+                  <option key={sd.id} value={sd.id}>{sd.name} ({sd.type})</option>
+                ))}
+              </select>
+              <textarea value={subDeptNote} onChange={e => setSubDeptNote(e.target.value)} rows={2}
+                placeholder="Referral instructions for sub-dept (e.g. 'Scaling and cleaning required')"
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #bbf7d0", background: "#fff", fontSize: 12, color: "#334155", outline: "none", resize: "none", fontFamily: "'Inter',sans-serif" }} />
+              {!subDeptId && <p style={{ fontSize: 11, color: "#f59e0b", marginTop: 5, fontWeight: 600 }}>Select a sub-department to save the referral.</p>}
+            </div>
+          )}
         </div>
 
         {msg && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 10, fontWeight: 600 }}>{msg}</div>}
@@ -115,16 +164,16 @@ function ConsultModal({ appt, onClose, onDone }: { appt: any; onClose: () => voi
             </button>
           ) : null}
           {appt.status === "IN_PROGRESS" ? (
-            <button onClick={() => update("COMPLETED")} disabled={saving}
-              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(16,185,129,.3)" }}>
+            <button onClick={() => update("COMPLETED")} disabled={saving || (showReferral && !subDeptId)}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: (showReferral && !subDeptId) ? "#e2e8f0" : "linear-gradient(135deg,#10b981,#059669)", color: (showReferral && !subDeptId) ? "#94a3b8" : "#fff", fontSize: 13, fontWeight: 700, cursor: (showReferral && !subDeptId) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: (showReferral && !subDeptId) ? "none" : "0 4px 14px rgba(16,185,129,.3)" }}>
               {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <CheckCircle2 size={15} />}
-              Mark Complete
+              {showReferral && subDeptId ? "Complete & Refer" : "Mark Complete"}
             </button>
           ) : null}
           {appt.status === "COMPLETED" && (
-            <button onClick={() => update("COMPLETED")} disabled={saving}
+            <button onClick={() => update("COMPLETED")} disabled={saving || (showReferral && !subDeptId)}
               style={{ flex: 1, padding: "11px 0", borderRadius: 11, background: "#f0fdf4", color: "#059669", fontSize: 13, fontWeight: 700, cursor: "pointer", border: "1.5px solid #bbf7d0" }}>
-              {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : "Update Notes"}
+              {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : "Update Notes & Referral"}
             </button>
           )}
           {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && (

@@ -8,47 +8,62 @@ import {
   Search,
   HeartPulse,
   Users,
+  LogIn,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useAppointment } from "./AppointmentProvider";
 import styles from "./Hero.module.css";
 
 const slides = [
   {
-    headline: "Trusted Specialist for",
-    headlineAccent: "Every Medical",
-    headlineSuffix: "Need",
+    headline: "Comprehensive Care for",
+    headlineAccent: "General Health",
+    headlineSuffix: "Needs",
     subtext:
-      "Experience healthcare you can trust. Our dedicated team provides compassionate, high-quality care with cutting-edge technology and personalized treatment plans.",
-    image: "/images/hero-dental.png",
-    imageAlt: "Doctor providing medical consultation",
+      "Expert general OPD services prioritizing your everyday wellness and routine medical needs with compassionate care.",
+    image: "/images/treatment-opd-2.png",
+    imageAlt: "General OPD Consultation",
   },
   {
-    headline: "Advanced Care with",
-    headlineAccent: "Modern Technology",
-    headlineSuffix: "& Innovation",
+    headline: "Advanced Care for",
+    headlineAccent: "Dental",
+    headlineSuffix: "Health",
     subtext:
-      "Leveraging AI diagnostics, telemedicine, and digital health records to deliver faster, smarter, and more precise medical care for every patient.",
-    image: "/images/hero-doctor2.png",
-    imageAlt: "Doctor with modern medical technology",
+      "Modern and painless dentistry for all ages. From routine check-ups to advanced treatments by experienced specialists.",
+    image: "/images/treatment-dental-2.png",
+    imageAlt: "Dental Care Consultation",
   },
   {
-    headline: "Your Wellness is Our",
-    headlineAccent: "Top Priority",
-    headlineSuffix: "Always",
+    headline: "Specialized Treatments for",
+    headlineAccent: "Skin & Hair",
+    headlineSuffix: "Health",
     subtext:
-      "From preventive checkups to complex surgeries, our 500+ specialists are here 24/7 to keep you and your family in the best of health.",
-    image: "/images/hero-doctor3.png",
-    imageAlt: "Healthcare professional caring for patient",
+      "Trusted dermatology services, from cosmetic solutions to clinical treatments, leaving you with healthy, glowing skin.",
+    image: "/images/treatment-dermatology-2.png",
+    imageAlt: "Dermatology Specialist",
+  },
+  {
+    headline: "Transformative & Compassionate",
+    headlineAccent: "Cancer Care",
+    headlineSuffix: "Therapy",
+    subtext:
+      "Advanced oncology care offering early detection, personalized therapy plans, and unwavering support for cancer patients.",
+    image: "/images/treatment-cancer-2.png",
+    imageAlt: "Cancer Care Treatment",
+  },
+  {
+    headline: "Prioritizing Your",
+    headlineAccent: "Heart Health",
+    headlineSuffix: "Every Day",
+    subtext:
+      "State-of-the-art cardiology treatments and dedicated heart specialists to protect your cardiovascular wellness.",
+    image: "/images/treatment-cardiology-2.png",
+    imageAlt: "Cardiology and Heart Health",
   },
 ];
 
-const doctors = [
-  { name: "Dr. Sarah", color: "#3B82F6" },
-  { name: "Dr. James", color: "#10B981" },
-  { name: "Dr. Emily", color: "#8B5CF6" },
-  { name: "Dr. Michael", color: "#F59E0B" },
-];
+
 
 export default function Hero() {
   const [current, setCurrent] = useState(0);
@@ -77,8 +92,8 @@ export default function Hero() {
         <div className={styles.heroContent}>
           <motion.div
             className={styles.badge}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
             <HeartPulse size={16} />
@@ -88,9 +103,9 @@ export default function Hero() {
           <AnimatePresence mode="wait">
             <motion.div
               key={`text-${current}`}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
               <h1 className={styles.headline}>
@@ -107,8 +122,8 @@ export default function Hero() {
 
           <motion.div
             className={styles.ctaGroup}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
             <button
@@ -118,13 +133,6 @@ export default function Hero() {
               <Calendar size={16} />
               Schedule Appointment
             </button>
-            <a
-              href="/treatments"
-              className={`btn btn-secondary btn-sm ${styles.ctaSecondary}`}
-            >
-              <Search size={16} />
-              Find Doctor
-            </a>
           </motion.div>
 
           {/* Progress Dots */}
@@ -153,7 +161,7 @@ export default function Hero() {
               ))}
             </div>
             <span className={styles.ratingText}>
-              <strong>Google Rating 5.0</strong> ★★★★★ Based On 500 Reviews
+              <strong>Google Rating 5.0</strong>
             </span>
           </motion.div>
         </div>
@@ -189,26 +197,12 @@ export default function Hero() {
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <div className={styles.doctorAvatars}>
-              {doctors.map((doc, i) => (
-                <div
-                  key={doc.name}
-                  className={styles.avatar}
-                  style={{
-                    background: `linear-gradient(135deg, ${doc.color}, ${doc.color}dd)`,
-                    zIndex: 4 - i,
-                    marginLeft: i > 0 ? "-8px" : "0",
-                  }}
-                >
-                  {doc.name.charAt(4)}
-                </div>
-              ))}
-            </div>
+
             <div className={styles.doctorInfo}>
               <span className={styles.doctorCount}>
-                Talk to our 48+ Doctors
+                Expert Care Team
               </span>
-              <span className={styles.doctorSub}>Online now</span>
+              <span className={styles.doctorSub}>Available 24/7</span>
             </div>
           </motion.div>
 
@@ -227,8 +221,8 @@ export default function Hero() {
               <Users size={20} />
             </div>
             <div>
-              <div className={styles.satisfiedCount}>3500+</div>
-              <div className={styles.satisfiedLabel}>Satisfied Clients</div>
+              <div className={styles.satisfiedCount}>10k+</div>
+              <div className={styles.satisfiedLabel}>Happy Patients</div>
             </div>
           </motion.div>
         </div>

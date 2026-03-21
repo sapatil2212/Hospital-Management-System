@@ -30,8 +30,10 @@ export const updateAppointmentSchema = z.object({
     .enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"])
     .optional(),
   consultationFee: z.number().min(0).optional().nullable(),
-  notes: z.string().max(1000).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
   tokenNumber: z.number().int().min(1).optional().nullable(),
+  subDepartmentId: z.string().uuid().optional().nullable(),
+  subDeptNote: z.string().max(1000).optional().nullable(),
 });
 
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;

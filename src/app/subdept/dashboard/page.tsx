@@ -7,7 +7,9 @@ import {
   Users, ClipboardList, Building2, Search, RefreshCw, X, ChevronRight,
   Smile, Sparkles, Scissors, Heart, Microscope, Pill, Receipt, Scan,
   TestTube2, HelpCircle, PlayCircle, CheckCircle2, AlertCircle,
-  CalendarDays, FileText, TrendingUp, FlaskConical
+  CalendarDays, FileText, TrendingUp, FlaskConical,
+  Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
+  Save, Ban, ChevronDown, MessageSquare, UserCheck
 } from "lucide-react";
 
 // ─── Department metadata ──────────────────────────────────────────────────────
@@ -44,19 +46,44 @@ const STATUS_CFG: Record<string, { label: string; bg: string; color: string; bor
 const initials = (n: string) => (n || "SD").split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase();
 const calcAge  = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : null;
 
+const BLANK_PROC = { name:"", description:"", type:"OTHER", fee:"", duration:"", sequence:"0", isActive:true };
+const BLANK_REC  = { patientId:"", patientSearch:"", procedureId:"", appointmentId:"", amount:"", notes:"", performedBy:"", status:"COMPLETED" };
+
 export default function SubDeptDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"dept">("overview");
+  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"dept">("overview");
+
+  // Queue
   const [queue, setQueue] = useState<any[]>([]);
   const [queueMeta, setQueueMeta] = useState<any>({});
   const [queueLoading, setQueueLoading] = useState(false);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [queueFilter, setQueueFilter] = useState("ALL");
   const [queueSearch, setQueueSearch] = useState("");
+  const [recordingFor, setRecordingFor] = useState<any>(null);
+
+  // Procedures CRUD
+  const [procs, setProcs]             = useState<any[]>([]);
+  const [procsLoading, setProcsLoading] = useState(false);
+  const [showProcForm, setShowProcForm] = useState(false);
+  const [editingProc, setEditingProc]   = useState<any>(null);
+  const [procForm, setProcForm]         = useState<any>(BLANK_PROC);
+  const [procSaving, setProcSaving]     = useState(false);
+  const [procMsg, setProcMsg]           = useState("");
+
+  // Records
+  const [records, setRecords]           = useState<any[]>([]);
+  const [recordsMeta, setRecordsMeta]   = useState<any>({});
+  const [recordsLoading, setRecordsLoading] = useState(false);
+  const [recordsSearch, setRecordsSearch]   = useState("");
+  const [showRecordForm, setShowRecordForm] = useState(false);
+  const [recordForm, setRecordForm]         = useState<any>(BLANK_REC);
+  const [recordSaving, setRecordSaving]     = useState(false);
+  const [recordMsg, setRecordMsg]           = useState("");
+  const [patientResults, setPatientResults] = useState<any[]>([]);
 
   // ── Load profile ──
   useEffect(() => {
@@ -82,16 +109,68 @@ export default function SubDeptDashboard() {
 
   useEffect(() => { if (tab === "queue") loadQueue(); }, [tab, loadQueue]);
 
-  // ── Status update ──
-  const updateStatus = async (id: string, status: string) => {
-    setUpdatingId(id);
-    await fetch("/api/subdept/queue", {
-      method: "PATCH", credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appointmentId: id, status }),
-    });
-    await loadQueue();
-    setUpdatingId(null);
+  // ── Load procedures (HOD's own) ──
+  const loadProcs = useCallback(async () => {
+    setProcsLoading(true);
+    const res = await fetch("/api/subdept/procedures", { credentials: "include" }).then(r => r.json());
+    if (res.success) setProcs(res.data || []);
+    setProcsLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "procedures") loadProcs(); }, [tab, loadProcs]);
+
+  // ── Load records ──
+  const loadRecords = useCallback(async (search = "") => {
+    setRecordsLoading(true);
+    const url = `/api/subdept/records?limit=30${search ? `&search=${encodeURIComponent(search)}` : ""}`;
+    const res = await fetch(url, { credentials: "include" }).then(r => r.json());
+    if (res.success) { setRecords(res.data?.records || []); setRecordsMeta(res.data?.stats || {}); }
+    setRecordsLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "records") loadRecords(); }, [tab, loadRecords]);
+
+  // ── Procedure CRUD ──
+  const openAddProc  = () => { setEditingProc(null); setProcForm(BLANK_PROC); setProcMsg(""); setShowProcForm(true); };
+  const openEditProc = (p: any) => { setEditingProc(p); setProcForm({ name:p.name, description:p.description||"" , type:p.type, fee:p.fee??"" , duration:p.duration??"" , sequence:p.sequence??0, isActive:p.isActive }); setProcMsg(""); setShowProcForm(true); };
+
+  const saveProc = async () => {
+    if (!procForm.name.trim()) { setProcMsg("Name is required"); return; }
+    setProcSaving(true); setProcMsg("");
+    const url = editingProc ? `/api/subdept/procedures/${editingProc.id}` : "/api/subdept/procedures";
+    const method = editingProc ? "PUT" : "POST";
+    const res = await fetch(url, { method, credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(procForm) }).then(r => r.json());
+    if (res.success) { setShowProcForm(false); await loadProcs(); }
+    else setProcMsg(res.message || "Failed to save");
+    setProcSaving(false);
+  };
+
+  const deleteProc = async (id: string) => {
+    if (!confirm("Delete this procedure?")) return;
+    await fetch(`/api/subdept/procedures/${id}`, { method: "DELETE", credentials: "include" });
+    await loadProcs();
+  };
+
+  const toggleProcActive = async (p: any) => {
+    await fetch(`/api/subdept/procedures/${p.id}`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: !p.isActive }) });
+    await loadProcs();
+  };
+
+  // ── Patient search for record form ──
+  const searchPatients = useCallback(async (q: string) => {
+    if (!q || q.length < 2) { setPatientResults([]); return; }
+    const res = await fetch(`/api/patients?search=${encodeURIComponent(q)}&limit=8`, { credentials: "include" }).then(r => r.json());
+    if (res.success) setPatientResults(res.data?.patients || res.data || []);
+  }, []);
+
+  // ── Save record ──
+  const saveRecord = async () => {
+    if (!recordForm.patientId || !recordForm.procedureId || !recordForm.amount) { setRecordMsg("Patient, procedure and amount are required"); return; }
+    setRecordSaving(true); setRecordMsg("");
+    const res = await fetch("/api/subdept/records", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(recordForm) }).then(r => r.json());
+    if (res.success) { setShowRecordForm(false); setRecordForm(BLANK_REC); setRecordingFor(null); await loadRecords(); }
+    else setRecordMsg(res.message || "Failed to save");
+    setRecordSaving(false);
   };
 
   const logout = async () => {
@@ -102,26 +181,26 @@ export default function SubDeptDashboard() {
   // ── Derived ──────────────────────────────────────────────────────────────────
   const meta       = SUB_DEPT_META[profile?.type || "OTHER"] || SUB_DEPT_META.OTHER;
   const { Icon: DeptIcon } = meta;
-  const procs: any[]  = profile?.procedures || [];
-  const activeProcs   = procs.filter((p: any) => p.isActive);
+  const profileProcs: any[] = profile?.procedures || [];
+  const activeProcs   = procs.length > 0 ? procs.filter((p: any) => p.isActive) : profileProcs.filter((p: any) => p.isActive);
+  const displayProcs  = procs.length > 0 ? procs : profileProcs;
   const hodName       = profile?.hodName || user?.name || "HOD";
   const deptName      = profile?.name    || "Sub-Department";
   const today         = new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
   const navItems = [
     { id: "overview",    label: "Overview",       icon: <LayoutDashboard size={16}/> },
-    { id: "queue",       label: "Patient Queue",  icon: <Users size={16}/>, badge: queueMeta.waiting || null },
+    { id: "queue",       label: "Referrals Today", icon: <UserCheck size={16}/>, badge: queue.length || null },
     { id: "procedures",  label: "Procedures",     icon: <ClipboardList size={16}/> },
+    { id: "records",     label: "Patient Records", icon: <IndianRupee size={16}/>, badge: recordsMeta.todayRecords || null },
     { id: "dept",        label: "Department",     icon: <Building2 size={16}/> },
   ];
 
   const filteredQueue = queue.filter(q => {
-    const matchSearch = !queueSearch ||
+    return !queueSearch ||
       q.patient?.name?.toLowerCase().includes(queueSearch.toLowerCase()) ||
       q.patient?.patientId?.toLowerCase().includes(queueSearch.toLowerCase()) ||
       String(q.tokenNumber || "").includes(queueSearch);
-    const matchFilter = queueFilter === "ALL" || q.status === queueFilter;
-    return matchSearch && matchFilter;
   });
 
   if (loading) return (
@@ -235,7 +314,7 @@ export default function SubDeptDashboard() {
           <header className="sd2-topbar">
             <div>
               <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{
-                tab==="overview"?"Overview":tab==="queue"?"Patient Queue":tab==="procedures"?"Procedures":"Department Info"
+                tab==="overview"?"Overview":tab==="queue"?"Patient Queue":tab==="procedures"?"Procedures":tab==="records"?"Patient Records":"Department Info"
               }</div>
               <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{today}</div>
             </div>
@@ -300,13 +379,13 @@ export default function SubDeptDashboard() {
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:14,marginBottom:20}}>
                 {[
                   { label:"Active Procedures", value:activeProcs.length, Icon:ClipboardList, color:meta.accent, bg:meta.lightBg },
-                  { label:"Total Procedures",  value:procs.length,       Icon:Layers,        color:"#6366f1", bg:"#eef2ff" },
-                  { label:"Today's Queue",     value:queueMeta.total||"—", Icon:Users,         color:"#10b981", bg:"#f0fdf4",
+                  { label:"Total Procedures",  value:displayProcs.length, Icon:Layers,       color:"#6366f1",  bg:"#eef2ff" },
+                  { label:"Referrals Today",   value:queue.length||"—",  Icon:UserCheck,     color:"#10b981",  bg:"#f0fdf4",
                     onClick:()=>{setTab("queue");loadQueue();} },
-                  { label:"Waiting",           value:queueMeta.waiting||"—", Icon:Clock,         color:"#f59e0b", bg:"#fffbeb",
-                    onClick:()=>{setTab("queue");loadQueue();} },
-                  { label:"Completed Today",   value:queueMeta.completed||"—", Icon:CheckCircle2, color:"#10b981", bg:"#f0fdf4",
-                    onClick:()=>{setTab("queue");loadQueue();} },
+                  { label:"Today Revenue",     value:recordsMeta.todayRevenue ? `₹${recordsMeta.todayRevenue}` : "₹0", Icon:IndianRupee, color:"#f59e0b", bg:"#fffbeb",
+                    onClick:()=>{setTab("records");loadRecords();} },
+                  { label:"Total Revenue",     value:recordsMeta.totalRevenue ? `₹${recordsMeta.totalRevenue}` : "₹0", Icon:TrendingUp, color:"#10b981", bg:"#f0fdf4",
+                    onClick:()=>{setTab("records");loadRecords();} },
                 ].map((s,i)=>{
                   const SI = s.Icon;
                   return (
@@ -331,7 +410,7 @@ export default function SubDeptDashboard() {
                     <span style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active / {procs.length} total</span>
                   </div>
                   <div style={{padding:"10px 0"}}>
-                    {procs.slice(0,6).map((p:any)=>(
+                    {displayProcs.slice(0,6).map((p:any)=>(
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 18px",borderBottom:"1px solid #f8fafc"}}>
                         <div style={{width:8,height:8,borderRadius:"50%",background:PROC_TYPE_COLOR[p.type]||"#94a3b8",flexShrink:0}}/>
                         <div style={{flex:1,fontSize:13,fontWeight:500,color:p.isActive?"#334155":"#94a3b8"}}>{p.name}</div>
@@ -339,8 +418,8 @@ export default function SubDeptDashboard() {
                         {p.fee!=null && <span style={{fontSize:11,fontWeight:700,color:"#10b981",minWidth:40,textAlign:"right"}}>₹{p.fee}</span>}
                       </div>
                     ))}
-                    {procs.length>6 && <div style={{padding:"10px 18px",fontSize:12,color:meta.accent,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("procedures")}>View all {procs.length} procedures →</div>}
-                    {procs.length===0 && <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No procedures configured yet</div>}
+                    {displayProcs.length>6 && <div style={{padding:"10px 18px",fontSize:12,color:meta.accent,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("procedures")}>View all {displayProcs.length} procedures →</div>}
+                    {displayProcs.length===0 && <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No procedures configured yet</div>}
                   </div>
                 </div>
 
@@ -384,66 +463,41 @@ export default function SubDeptDashboard() {
               </div>
             </>)}
 
-            {/* ═══════════════════ PATIENT QUEUE ═══════════════════ */}
+            {/* ═══════════════════ DOCTOR REFERRALS QUEUE ═══════════════════ */}
             {tab==="queue" && (<>
-              {/* Filter bar */}
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18,flexWrap:"wrap"}}>
-                {["ALL","SCHEDULED","CONFIRMED","IN_PROGRESS","COMPLETED","CANCELLED"].map(f=>(
-                  <button key={f} onClick={()=>setQueueFilter(f)} style={{
-                    padding:"6px 14px",borderRadius:100,border:"1.5px solid",fontSize:12,fontWeight:600,cursor:"pointer",
-                    borderColor: queueFilter===f ? meta.accent : "#e2e8f0",
-                    background:  queueFilter===f ? meta.accent : "#fff",
-                    color:       queueFilter===f ? "#fff"      : "#64748b",
-                    transition:"all .15s",
-                  }}>
-                    {f==="ALL"?"All":STATUS_CFG[f]?.label||f}
-                    {f!=="ALL" && <span style={{marginLeft:6,opacity:.7}}>
-                      {queue.filter(q=>q.status===f).length}
-                    </span>}
-                  </button>
-                ))}
-                <span style={{marginLeft:"auto",fontSize:12,color:"#94a3b8"}}>
-                  {filteredQueue.length} patients · {today.split(",").slice(-1)[0].trim()}
-                </span>
-              </div>
-
-              {/* Stats row */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
-                {[
-                  {label:"Total Today",  value:queueMeta.total||0,     color:meta.accent,  bg:meta.lightBg},
-                  {label:"Waiting",      value:queueMeta.waiting||0,   color:"#f59e0b",   bg:"#fffbeb"},
-                  {label:"In Progress",  value:queueMeta.inProgress||0,color:"#3b82f6",   bg:"#eff6ff"},
-                  {label:"Completed",    value:queueMeta.completed||0, color:"#10b981",   bg:"#f0fdf4"},
-                ].map((s,i)=>(
-                  <div key={i} style={{background:s.bg,borderRadius:12,padding:"14px 16px",border:`1px solid ${s.bg}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:26,fontWeight:800,color:s.color}}>{s.value}</div>
-                    <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{s.label}</div>
-                  </div>
-                ))}
+              {/* Info banner */}
+              <div style={{background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1.5px solid #bbf7d0",borderRadius:14,padding:"14px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
+                <UserCheck size={20} color="#16a34a"/>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#166534"}}>Doctor-Referred Patients Only</div>
+                  <div style={{fontSize:12,color:"#16a34a",marginTop:2}}>Only patients whose consultation is <strong>completed</strong> and doctor has explicitly referred to <strong>{deptName}</strong> appear here.</div>
+                </div>
+                <div style={{marginLeft:"auto",textAlign:"right"}}>
+                  <div style={{fontSize:24,fontWeight:800,color:"#16a34a"}}>{queue.length}</div>
+                  <div style={{fontSize:11,color:"#16a34a"}}>Today&apos;s referrals</div>
+                </div>
               </div>
 
               {/* Queue table */}
               <div className="sd2-card" style={{marginBottom:0}}>
                 <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><Users size={15} color={meta.accent}/>Today's Patient Queue</span>
-                  {queueLoading && <Loader2 size={14} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                  <span className="sd2-card-title"><UserCheck size={15} color={meta.accent}/>Doctor Referrals — Today</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    {queueLoading && <Loader2 size={14} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                    <button onClick={loadQueue} style={{padding:"5px 12px",borderRadius:8,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><RefreshCw size={11}/>Refresh</button>
+                  </div>
                 </div>
 
                 {queueLoading && queue.length===0 ? (
                   <div style={{padding:"48px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
                     <Loader2 size={22} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>
-                    Loading patient queue…
+                    Loading referrals…
                   </div>
                 ) : filteredQueue.length===0 ? (
                   <div style={{padding:"56px 24px",textAlign:"center"}}>
-                    <Users size={36} color="#e2e8f0" style={{marginBottom:10}}/>
-                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8"}}>No patients in queue</div>
-                    <div style={{fontSize:12,color:"#cbd5e1",marginTop:4}}>
-                      {queue.length===0 ? "Queue will populate as appointments are booked for today" : "No patients match the selected filter"}
-                    </div>
-                    <button onClick={loadQueue} style={{marginTop:14,padding:"8px 18px",borderRadius:9,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:12,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}>
-                      <RefreshCw size={12}/>Refresh
-                    </button>
+                    <UserCheck size={36} color="#e2e8f0" style={{marginBottom:10}}/>
+                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8"}}>No referrals for today</div>
+                    <div style={{fontSize:12,color:"#cbd5e1",marginTop:4}}>Patients will appear here after a doctor completes their consultation and selects <strong>{deptName}</strong> as the referral</div>
                   </div>
                 ) : (
                   <table className="sd2-tbl">
@@ -453,14 +507,13 @@ export default function SubDeptDashboard() {
                         <th>Patient</th>
                         <th>Time</th>
                         <th>Referred By</th>
-                        <th>Suggested Procedure</th>
-                        <th>Status</th>
+                        <th>Doctor&apos;s Referral Note</th>
+                        <th>Suggested Procedures</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredQueue.map((q:any)=>{
-                        const sc  = STATUS_CFG[q.status] || STATUS_CFG.SCHEDULED;
                         const exp = expandedRow===q.id;
                         return (
                           <>
@@ -478,10 +531,7 @@ export default function SubDeptDashboard() {
                                   <div>
                                     <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{q.patient?.name||"Unknown"}</div>
                                     <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>
-                                      {q.patient?.patientId||""}
-                                      {q.patient?.age ? ` · ${q.patient.age}y` : ""}
-                                      {q.patient?.gender ? ` · ${q.patient.gender.charAt(0)}` : ""}
-                                      {q.patient?.bloodGroup ? ` · ${q.patient.bloodGroup}` : ""}
+                                      {q.patient?.patientId||""}{q.patient?.age ? ` · ${q.patient.age}y` : ""}{q.patient?.gender ? ` · ${q.patient.gender.charAt(0)}` : ""}
                                     </div>
                                   </div>
                                 </div>
@@ -491,6 +541,14 @@ export default function SubDeptDashboard() {
                                 <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{q.doctor?.name||"—"}</div>
                                 <div style={{fontSize:11,color:"#94a3b8"}}>{q.doctor?.specialization||q.doctor?.department||""}</div>
                               </td>
+                              <td style={{maxWidth:200}}>
+                                {q.subDeptNote
+                                  ? <div style={{fontSize:12,color:"#166534",background:"#f0fdf4",borderRadius:7,padding:"5px 8px",border:"1px solid #bbf7d0",lineHeight:1.4}}><MessageSquare size={10} style={{marginRight:5,verticalAlign:"middle",color:"#16a34a"}}/>{q.subDeptNote}</div>
+                                  : q.doctorNotes
+                                    ? <div style={{fontSize:12,color:"#64748b",fontStyle:"italic"}}>{q.doctorNotes.slice(0,60)}{q.doctorNotes.length>60?"…":""}</div>
+                                    : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
+                                }
+                              </td>
                               <td>
                                 {q.suggestedProcedures?.length>0
                                   ? q.suggestedProcedures.map((p:any,i:number)=>(
@@ -499,25 +557,12 @@ export default function SubDeptDashboard() {
                                   : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
                                 }
                               </td>
-                              <td>
-                                <span className="sd2-badge" style={{background:sc.bg,color:sc.color,border:`1px solid ${sc.border}`}}>{sc.label}</span>
-                              </td>
                               <td onClick={e=>e.stopPropagation()}>
                                 <div style={{display:"flex",gap:6,flexWrap:"nowrap"}}>
-                                  {q.status==="CONFIRMED"||q.status==="SCHEDULED" ? (
-                                    <button className="sd2-btn" style={{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}} disabled={updatingId===q.id}
-                                      onClick={()=>updateStatus(q.id,"IN_PROGRESS")}>
-                                      {updatingId===q.id ? <Loader2 size={10} style={{animation:"spin .7s linear infinite"}}/> : <PlayCircle size={11}/>}
-                                      Start
-                                    </button>
-                                  ) : null}
-                                  {q.status==="IN_PROGRESS" ? (
-                                    <button className="sd2-btn" style={{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}} disabled={updatingId===q.id}
-                                      onClick={()=>updateStatus(q.id,"COMPLETED")}>
-                                      {updatingId===q.id ? <Loader2 size={10} style={{animation:"spin .7s linear infinite"}}/> : <CheckCircle2 size={11}/>}
-                                      Done
-                                    </button>
-                                  ) : null}
+                                  <button className="sd2-btn" style={{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}
+                                    onClick={()=>{ setRecordForm({...BLANK_REC, patientId:q.patient?.id||"" , patientSearch:q.patient?.name||"" , appointmentId:q.id, amount:q.suggestedProcedures?.[0]?.fee||"" , procedureId:q.suggestedProcedures?.[0]?.id||""}); setShowRecordForm(true); setTab("records"); }}>
+                                    <Plus size={11}/>Record Procedure
+                                  </button>
                                   <button className="sd2-btn" style={{background:"#f8fafc",color:"#64748b",border:"1px solid #e2e8f0"}} onClick={()=>setExpandedRow(exp?null:q.id)}>
                                     <FileText size={11}/>{exp?"Hide":"Details"}
                                   </button>
@@ -525,24 +570,22 @@ export default function SubDeptDashboard() {
                               </td>
                             </tr>
 
-                            {/* Expanded: doctor remarks + next steps */}
                             {exp && (
                               <tr key={`${q.id}-exp`}>
                                 <td colSpan={7} style={{padding:0}}>
                                   <div className="sd2-expand">
                                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
-
-                                      {/* Doctor Remarks */}
                                       <div>
-                                        <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-                                          <Stethoscope size={12} color={meta.accent}/>Doctor&apos;s Remarks
-                                        </div>
+                                        <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><Stethoscope size={12} color={meta.accent}/>Doctor&apos;s Consultation Notes</div>
                                         <div style={{background:"#fff",borderRadius:10,border:`1px solid ${meta.borderColor}`,padding:"12px 14px",fontSize:13,color:"#334155",lineHeight:1.6,minHeight:56}}>
-                                          {q.doctorNotes
-                                            ? <><AlertCircle size={12} style={{color:meta.accent,marginRight:6,verticalAlign:"middle"}}/>{q.doctorNotes}</>
-                                            : <span style={{color:"#94a3b8",fontStyle:"italic"}}>No notes from referring doctor</span>
-                                          }
+                                          {q.doctorNotes ? q.doctorNotes : <span style={{color:"#94a3b8",fontStyle:"italic"}}>No consultation notes</span>}
                                         </div>
+                                        {q.subDeptNote && (
+                                          <div style={{marginTop:10,background:"#f0fdf4",borderRadius:10,border:"1.5px solid #bbf7d0",padding:"12px 14px"}}>
+                                            <div style={{fontSize:11,fontWeight:700,color:"#16a34a",marginBottom:5,display:"flex",alignItems:"center",gap:5}}><MessageSquare size={11}/>Referral Instructions</div>
+                                            <div style={{fontSize:13,color:"#166534",lineHeight:1.6}}>{q.subDeptNote}</div>
+                                          </div>
+                                        )}
                                         <div style={{marginTop:10,display:"flex",gap:10}}>
                                           {[["Type",q.type],["Fee",q.consultationFee?`₹${q.consultationFee}`:"—"],["Phone",q.patient?.phone||"—"]].map(([k,v])=>(
                                             <div key={k} style={{flex:1,background:"#fff",borderRadius:9,padding:"8px 10px",border:"1px solid #e2e8f0",textAlign:"center"}}>
@@ -552,37 +595,28 @@ export default function SubDeptDashboard() {
                                           ))}
                                         </div>
                                       </div>
-
-                                      {/* Patient Journey / Next Steps */}
                                       <div>
-                                        <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-                                          <TrendingUp size={12} color={meta.accent}/>Patient Journey
-                                        </div>
+                                        <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><TrendingUp size={12} color={meta.accent}/>Patient Journey</div>
                                         {profile?.flow ? (
                                           <div style={{background:"#fff",borderRadius:10,border:`1px solid ${meta.borderColor}`,padding:"12px 14px"}}>
                                             {profile.flow.split("→").map((step:string,i:number,arr:string[])=>{
-                                              const isActive = step.trim().toLowerCase().includes(deptName.split(" ")[0].toLowerCase()) ||
-                                                               step.trim().toLowerCase().includes("procedure") || i===1;
+                                              const isHere = step.trim().toLowerCase().includes(deptName.split(" ")[0].toLowerCase());
                                               return (
                                                 <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:i<arr.length-1?8:0}}>
-                                                  <div style={{width:22,height:22,borderRadius:"50%",background:isActive?meta.gradient:"#f1f5f9",border:`2px solid ${isActive?meta.accent:"#e2e8f0"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                                    <span style={{fontSize:9,fontWeight:800,color:isActive?"#fff":"#94a3b8"}}>{i+1}</span>
+                                                  <div style={{width:22,height:22,borderRadius:"50%",background:isHere?meta.gradient:"#f1f5f9",border:`2px solid ${isHere?meta.accent:"#e2e8f0"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                                    <span style={{fontSize:9,fontWeight:800,color:isHere?"#fff":"#94a3b8"}}>{i+1}</span>
                                                   </div>
-                                                  <span style={{fontSize:12,fontWeight:isActive?700:500,color:isActive?meta.accent:"#64748b"}}>{step.trim()}</span>
-                                                  {isActive && <span style={{marginLeft:"auto",fontSize:9,padding:"1px 6px",borderRadius:100,background:meta.lightBg,color:meta.accent,fontWeight:700,border:`1px solid ${meta.borderColor}`}}>HERE</span>}
+                                                  <span style={{fontSize:12,fontWeight:isHere?700:500,color:isHere?meta.accent:"#64748b"}}>{step.trim()}</span>
+                                                  {isHere && <span style={{marginLeft:"auto",fontSize:9,padding:"1px 6px",borderRadius:100,background:meta.lightBg,color:meta.accent,fontWeight:700,border:`1px solid ${meta.borderColor}`}}>HERE</span>}
                                                 </div>
                                               );
                                             })}
                                           </div>
                                         ) : (
                                           <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:"12px 14px",color:"#94a3b8",fontSize:12}}>
-                                            OPD Consultation → <strong style={{color:meta.accent}}>{deptName}</strong> → Billing → Follow-up
+                                            OPD → <strong style={{color:meta.accent}}>{deptName}</strong> → Billing
                                           </div>
                                         )}
-                                        <div style={{marginTop:10,background:meta.lightBg,borderRadius:9,padding:"10px 12px",border:`1px solid ${meta.borderColor}`}}>
-                                          <div style={{fontSize:11,fontWeight:700,color:meta.accent,marginBottom:4}}>After this department:</div>
-                                          <div style={{fontSize:12,color:"#334155"}}>Patient proceeds to <strong>Billing</strong> and then to <strong>Pharmacy</strong> if medication was prescribed</div>
-                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -598,24 +632,75 @@ export default function SubDeptDashboard() {
               </div>
             </>)}
 
-            {/* ═══════════════════ PROCEDURES ═══════════════════ */}
-            {tab==="procedures" && (
+            {/* ═══════════════════ PROCEDURES CRUD ═══════════════════ */}
+            {tab==="procedures" && (<>
+              {/* Add/Edit Procedure Modal */}
+              {showProcForm && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowProcForm(false)}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:540,boxShadow:"0 24px 60px rgba(0,0,0,.18)",fontFamily:"'Inter',sans-serif",animation:"fadeUp .25s ease",maxHeight:"90vh",overflowY:"auto"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                      <div>
+                        <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>{editingProc?"Edit Procedure":"Add New Procedure"}</div>
+                        <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Fill in the procedure details below</div>
+                      </div>
+                      <button onClick={()=>setShowProcForm(false)} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                      <div style={{gridColumn:"1/-1"}}>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Name *</label>
+                        <input value={procForm.name} onChange={e=>setProcForm((f:any)=>({...f,name:e.target.value}))} placeholder="e.g. Dental Scaling" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Type</label>
+                        <select value={procForm.type} onChange={e=>setProcForm((f:any)=>({...f,type:e.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}>
+                          {["DIAGNOSTIC","TREATMENT","CONSULTATION","SURGERY","THERAPY","MEDICATION","OTHER"].map(t=><option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Fee (₹)</label>
+                        <input type="number" value={procForm.fee} onChange={e=>setProcForm((f:any)=>({...f,fee:e.target.value}))} placeholder="0" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Duration (min)</label>
+                        <input type="number" value={procForm.duration} onChange={e=>setProcForm((f:any)=>({...f,duration:e.target.value}))} placeholder="30" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                      <div style={{gridColumn:"1/-1"}}>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Description</label>
+                        <input value={procForm.description} onChange={e=>setProcForm((f:any)=>({...f,description:e.target.value}))} placeholder="Optional description" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                    </div>
+                    {procMsg && <div style={{fontSize:12,color:"#ef4444",marginTop:12,fontWeight:600}}>{procMsg}</div>}
+                    <div style={{display:"flex",gap:10,marginTop:18,borderTop:"1px solid #f1f5f9",paddingTop:18}}>
+                      <button onClick={saveProc} disabled={procSaving} style={{padding:"10px 24px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:`0 4px 14px ${meta.accent}33`}}>
+                        {procSaving ? <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/> : <Save size={13}/>}
+                        {editingProc?"Save Changes":"Add Procedure"}
+                      </button>
+                      <button onClick={()=>setShowProcForm(false)} style={{padding:"10px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><Ban size={13}/>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="sd2-card" style={{marginBottom:0}}>
                 <div className="sd2-card-hd">
                   <span className="sd2-card-title"><ClipboardList size={15} color={meta.accent}/>Procedure Catalog</span>
-                  <span style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active · {procs.length} total</span>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    {procsLoading && <Loader2 size={13} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                    <span style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active</span>
+                    <button onClick={openAddProc} style={{padding:"6px 14px",borderRadius:9,background:meta.gradient,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",display:"flex",alignItems:"center",gap:5}}><Plus size={13}/>Add Procedure</button>
+                  </div>
                 </div>
-                {procs.length===0 ? (
-                  <div style={{padding:"56px",textAlign:"center",color:"#94a3b8",fontSize:13}}>
+                {displayProcs.length===0 ? (
+                  <div style={{padding:"56px",textAlign:"center"}}>
                     <FlaskConical size={36} color="#e2e8f0" style={{marginBottom:10}}/>
-                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8",marginBottom:4}}>No procedures configured</div>
-                    <div style={{fontSize:12,color:"#cbd5e1"}}>Contact hospital admin to configure procedures for this department</div>
+                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8",marginBottom:6}}>No procedures yet</div>
+                    <button onClick={openAddProc} style={{padding:"8px 18px",borderRadius:9,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:12,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Plus size={12}/>Add First Procedure</button>
                   </div>
                 ) : (
                   <table className="sd2-tbl">
-                    <thead><tr><th>#</th><th>Procedure Name</th><th>Type</th><th>Fee</th><th>Duration</th><th>Status</th></tr></thead>
+                    <thead><tr><th>#</th><th>Procedure Name</th><th>Type</th><th>Fee</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
-                      {procs.map((p:any,i:number)=>(
+                      {displayProcs.map((p:any,i:number)=>(
                         <tr key={p.id}>
                           <td style={{color:"#94a3b8",fontWeight:600}}>{i+1}</td>
                           <td>
@@ -630,14 +715,171 @@ export default function SubDeptDashboard() {
                           <td><span className="sd2-badge" style={{background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8"}}>{p.type}</span></td>
                           <td style={{fontWeight:700,color:p.fee!=null?"#10b981":"#94a3b8"}}>{p.fee!=null?`₹${p.fee}`:"—"}</td>
                           <td style={{color:"#64748b"}}>{p.duration?`${p.duration} min`:"—"}</td>
-                          <td><span className="sd2-badge" style={{background:p.isActive?"#f0fdf4":"#fff5f5",color:p.isActive?"#16a34a":"#ef4444",border:`1px solid ${p.isActive?"#bbf7d0":"#fecaca"}`}}>{p.isActive?"Active":"Inactive"}</span></td>
+                          <td>
+                            <button onClick={()=>toggleProcActive(p)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                              {p.isActive
+                                ? <><ToggleRight size={18} color="#22c55e"/><span style={{fontSize:11,fontWeight:700,color:"#16a34a"}}>Active</span></>
+                                : <><ToggleLeft size={18} color="#94a3b8"/><span style={{fontSize:11,fontWeight:600,color:"#94a3b8"}}>Inactive</span></>}
+                            </button>
+                          </td>
+                          <td>
+                            <div style={{display:"flex",gap:6}}>
+                              <button className="sd2-btn" style={{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}} onClick={()=>openEditProc(p)}><Edit2 size={11}/>Edit</button>
+                              <button className="sd2-btn" style={{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}} onClick={()=>deleteProc(p.id)}><Trash2 size={11}/>Delete</button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 )}
               </div>
-            )}
+            </>)}
+
+            {/* ═══════════════════ PATIENT RECORDS ═══════════════════ */}
+            {tab==="records" && (<>
+              {/* Revenue Stats */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+                {[
+                  {label:"Today&apos;s Revenue",  value:`₹${recordsMeta.todayRevenue||0}`,  color:meta.accent, bg:meta.lightBg},
+                  {label:"Today&apos;s Procedures",value:recordsMeta.todayRecords||0,         color:"#6366f1",  bg:"#eef2ff"},
+                  {label:"Total Revenue",           value:`₹${recordsMeta.totalRevenue||0}`,  color:"#10b981",  bg:"#f0fdf4"},
+                  {label:"Total Procedures Done",   value:recordsMeta.totalRecords||0,        color:"#f59e0b",  bg:"#fffbeb"},
+                ].map((s,i)=>(
+                  <div key={i} style={{background:s.bg,borderRadius:12,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:22,fontWeight:800,color:s.color}}>{s.value}</div>
+                    <div style={{fontSize:11,color:"#64748b",marginTop:3}} dangerouslySetInnerHTML={{__html:s.label}}/>
+                  </div>
+                ))}
+              </div>
+
+              {/* Record Procedure Modal */}
+              {showRecordForm && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:580,boxShadow:"0 24px 60px rgba(0,0,0,.18)",fontFamily:"'Inter',sans-serif",animation:"fadeUp .25s ease",maxHeight:"90vh",overflowY:"auto"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                      <div>
+                        <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>Record Procedure Performed</div>
+                        <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Log a procedure done on a patient</div>
+                      </div>
+                      <button onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                      {/* Patient search */}
+                      <div style={{gridColumn:"1/-1",position:"relative"}}>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Patient *</label>
+                        <input value={recordForm.patientSearch} onChange={e=>{ setRecordForm((f:any)=>({...f,patientSearch:e.target.value,patientId:""})); searchPatients(e.target.value); }}
+                          placeholder="Search patient by name, ID or phone…" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                        {patientResults.length>0 && !recordForm.patientId && (
+                          <div style={{position:"absolute",zIndex:50,top:"100%",left:0,right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,boxShadow:"0 8px 24px rgba(0,0,0,.12)",overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
+                            {patientResults.map((pt:any)=>(
+                              <div key={pt.id} onClick={()=>{ setRecordForm((f:any)=>({...f,patientId:pt.id,patientSearch:`${pt.name} (${pt.patientId})`})); setPatientResults([]); }}
+                                style={{padding:"10px 14px",cursor:"pointer",fontSize:13,borderBottom:"1px solid #f8fafc",display:"flex",alignItems:"center",gap:8}} onMouseEnter={e=>(e.currentTarget.style.background="#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.background="#fff")}>
+                                <div style={{width:28,height:28,borderRadius:8,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0}}>{pt.name?.charAt(0)}</div>
+                                <div><div style={{fontWeight:600,color:"#1e293b"}}>{pt.name}</div><div style={{fontSize:11,color:"#94a3b8"}}>{pt.patientId} · {pt.phone}</div></div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {recordForm.patientId && <div style={{marginTop:4,fontSize:11,color:"#16a34a",fontWeight:600}}>✓ Patient selected</div>}
+                      </div>
+                      {/* Procedure */}
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Procedure *</label>
+                        <select value={recordForm.procedureId} onChange={e=>{ const p = displayProcs.find((x:any)=>x.id===e.target.value); setRecordForm((f:any)=>({...f,procedureId:e.target.value,amount:p?.fee?.toString()||f.amount})); }}
+                          style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}>
+                          <option value="">— Select Procedure —</option>
+                          {displayProcs.filter((p:any)=>p.isActive).map((p:any)=>(
+                            <option key={p.id} value={p.id}>{p.name}{p.fee!=null?` — ₹${p.fee}`:""}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {/* Amount */}
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Amount Charged (₹) *</label>
+                        <input type="number" value={recordForm.amount} onChange={e=>setRecordForm((f:any)=>({...f,amount:e.target.value}))} placeholder="0" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                      {/* Performed by */}
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Performed By</label>
+                        <input value={recordForm.performedBy} onChange={e=>setRecordForm((f:any)=>({...f,performedBy:e.target.value}))} placeholder={hodName} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                      {/* Status */}
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Status</label>
+                        <select value={recordForm.status} onChange={e=>setRecordForm((f:any)=>({...f,status:e.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}>
+                          {["PENDING","IN_PROGRESS","COMPLETED","CANCELLED"].map(s=><option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
+                        </select>
+                      </div>
+                      {/* Notes */}
+                      <div style={{gridColumn:"1/-1"}}>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Notes</label>
+                        <input value={recordForm.notes} onChange={e=>setRecordForm((f:any)=>({...f,notes:e.target.value}))} placeholder="Optional procedure notes" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                      </div>
+                    </div>
+                    {recordMsg && <div style={{fontSize:12,color:"#ef4444",marginTop:12,fontWeight:600}}>{recordMsg}</div>}
+                    <div style={{display:"flex",gap:10,marginTop:18,borderTop:"1px solid #f1f5f9",paddingTop:18}}>
+                      <button onClick={saveRecord} disabled={recordSaving} style={{padding:"10px 24px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:`0 4px 14px ${meta.accent}33`}}>
+                        {recordSaving ? <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/> : <Save size={13}/>}
+                        Save Record
+                      </button>
+                      <button onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}} style={{padding:"10px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><Ban size={13}/>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Records Table */}
+              <div className="sd2-card" style={{marginBottom:0}}>
+                <div className="sd2-card-hd">
+                  <span className="sd2-card-title"><IndianRupee size={15} color={meta.accent}/>Patient Procedure Records</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div className="sd2-search" style={{width:220}}>
+                      <Search size={12} color="#94a3b8"/>
+                      <input placeholder="Search patient…" value={recordsSearch} onChange={e=>{setRecordsSearch(e.target.value);loadRecords(e.target.value);}}/>
+                    </div>
+                    {recordsLoading && <Loader2 size={13} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                    <button onClick={()=>setShowRecordForm(true)} style={{padding:"6px 14px",borderRadius:9,background:meta.gradient,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",display:"flex",alignItems:"center",gap:5}}><Plus size={13}/>New Record</button>
+                  </div>
+                </div>
+                {records.length===0 ? (
+                  <div style={{padding:"56px",textAlign:"center"}}>
+                    <IndianRupee size={36} color="#e2e8f0" style={{marginBottom:10}}/>
+                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8",marginBottom:6}}>No procedure records yet</div>
+                    <button onClick={()=>setShowRecordForm(true)} style={{padding:"8px 18px",borderRadius:9,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:12,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Plus size={12}/>Record First Procedure</button>
+                  </div>
+                ) : (
+                  <table className="sd2-tbl">
+                    <thead><tr><th>Date</th><th>Patient</th><th>Procedure</th><th>Type</th><th>Amount</th><th>Performed By</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {records.map((r:any)=>(
+                        <tr key={r.id}>
+                          <td style={{fontSize:11,color:"#64748b",whiteSpace:"nowrap"}}>
+                            {new Date(r.performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}<br/>
+                            <span style={{fontSize:10}}>{new Date(r.performedAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>
+                          </td>
+                          <td>
+                            <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{r.patient?.name||"—"}</div>
+                            <div style={{fontSize:11,color:"#94a3b8"}}>{r.patient?.patientId} · {r.patient?.phone}</div>
+                          </td>
+                          <td style={{fontSize:13,fontWeight:600,color:"#334155"}}>{r.procedure?.name||"—"}</td>
+                          <td><span className="sd2-badge" style={{background:(PROC_TYPE_COLOR[r.procedure?.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[r.procedure?.type]||"#94a3b8"}}>{r.procedure?.type||"—"}</span></td>
+                          <td style={{fontWeight:800,color:"#10b981",fontSize:14}}>₹{r.amount}</td>
+                          <td style={{fontSize:12,color:"#64748b"}}>{r.performedBy||"—"}</td>
+                          <td>
+                            <span className="sd2-badge" style={{
+                              background:r.status==="COMPLETED"?"#f0fdf4":r.status==="CANCELLED"?"#fff5f5":"#fffbeb",
+                              color:r.status==="COMPLETED"?"#16a34a":r.status==="CANCELLED"?"#ef4444":"#b45309",
+                              border:`1px solid ${r.status==="COMPLETED"?"#bbf7d0":r.status==="CANCELLED"?"#fecaca":"#fde68a"}`
+                            }}>{r.status.replace(/_/g," ")}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>)}
 
             {/* ═══════════════════ DEPARTMENT INFO ═══════════════════ */}
             {tab==="dept" && (

@@ -19,16 +19,17 @@ export async function GET(req: NextRequest) {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const where: any = {
-      hospitalId,
-      appointmentDate: { gte: today, lt: tomorrow },
-    };
+    const subDeptId = (profile as any).id;
 
-    // Filter by parent department if sub-dept has one
-    if (departmentId) where.departmentId = departmentId;
-
-    const appointments = await prisma.appointment.findMany({
-      where,
+    // Only show appointments that the doctor has explicitly referred to THIS sub-department
+    // after completing the consultation (subDepartmentId set + status COMPLETED)
+    const appointments = await (prisma as any).appointment.findMany({
+      where: {
+        hospitalId,
+        subDepartmentId: subDeptId,
+        status: "COMPLETED",
+        appointmentDate: { gte: today, lt: tomorrow },
+      },
       include: {
         patient: {
           select: { id: true, name: true, patientId: true, phone: true, gender: true, dateOfBirth: true, bloodGroup: true },
@@ -39,10 +40,9 @@ export async function GET(req: NextRequest) {
         department: { select: { id: true, name: true } },
       },
       orderBy: [{ tokenNumber: "asc" }, { timeSlot: "asc" }],
-      take: 50,
+      take: 100,
     });
 
-    // Attach sub-dept procedure suggestions from sub-dept's procedure list
     const procedures = (profile as any).procedures || [];
 
     const queue = appointments.map((a: any) => {
@@ -50,9 +50,9 @@ export async function GET(req: NextRequest) {
         ? Math.floor((Date.now() - new Date(a.patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
         : null;
 
-      // Match any procedure keywords in the doctor's notes
       const matchedProcs = procedures.filter((p: any) =>
-        a.notes && a.notes.toLowerCase().includes(p.name.toLowerCase().split(" ")[0].toLowerCase())
+        (a.subDeptNote && a.subDeptNote.toLowerCase().includes(p.name.toLowerCase().split(" ")[0])) ||
+        (a.notes && a.notes.toLowerCase().includes(p.name.toLowerCase().split(" ")[0]))
       );
 
       return {
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
         status: a.status,
         consultationFee: a.consultationFee,
         doctorNotes: a.notes,
+        subDeptNote: a.subDeptNote,
         patient: {
           id: a.patient?.id,
           name: a.patient?.name || "Unknown",
@@ -78,8 +79,17 @@ export async function GET(req: NextRequest) {
           department: a.doctor?.department?.name,
         },
         department: a.department?.name,
-        suggestedProcedures: matchedProcs.slice(0, 3),
+        suggestedProcedures: matchedProcs.slice(0, 5),
       };
+    });
+
+    // Also fetch historical referrals (last 30 days, not today) for context
+    const recentTotal = await (prisma as any).appointment.count({
+      where: {
+        hospitalId,
+        subDepartmentId: subDeptId,
+        appointmentDate: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
     });
 
     return successResponse(
@@ -87,11 +97,13 @@ export async function GET(req: NextRequest) {
         queue,
         date: today.toISOString(),
         subDeptName: (profile as any).name,
+        subDeptId,
         flow: (profile as any).flow,
         total: queue.length,
-        waiting: queue.filter((q: any) => q.status === "SCHEDULED" || q.status === "CONFIRMED").length,
-        inProgress: queue.filter((q: any) => q.status === "IN_PROGRESS" || (q.status as string) === "IN_PROGRESS").length,
-        completed: queue.filter((q: any) => q.status === "COMPLETED").length,
+        waiting: queue.filter((q: any) => !q.subDeptProcessed).length,
+        inProgress: 0,
+        completed: queue.length,
+        recentTotal,
       },
       "Queue fetched"
     );
@@ -113,10 +125,10 @@ export async function PATCH(req: NextRequest) {
     const profile = await getSubDeptProfile(user!.userId);
     const hospitalId = (profile as any).hospitalId;
 
-    const appt = await prisma.appointment.findFirst({ where: { id: appointmentId, hospitalId } });
+    const appt = await (prisma as any).appointment.findFirst({ where: { id: appointmentId, hospitalId } });
     if (!appt) return errorResponse("Appointment not found", 404);
 
-    const updated = await prisma.appointment.update({
+    const updated = await (prisma as any).appointment.update({
       where: { id: appointmentId },
       data: {
         status,

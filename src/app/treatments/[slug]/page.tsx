@@ -1,6 +1,5 @@
 "use client";
 
-import { use } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -22,9 +21,9 @@ import styles from "./treatment.module.css";
 export default function TreatmentPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = use(params);
+  const { slug } = params;
   const treatment = treatments.find((t) => t.slug === slug);
 
   if (!treatment) {
@@ -95,7 +94,7 @@ export default function TreatmentPage({
                   <Calendar size={16} />
                   Book Appointment
                 </button>
-                <a href="tel:+15551234567" className={`btn btn-secondary ${styles.heroBtn}`}>
+                <a href="tel:+919059053938" className={`btn btn-secondary ${styles.heroBtn}`}>
                   Call Now
                 </a>
               </div>

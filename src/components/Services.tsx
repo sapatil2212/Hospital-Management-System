@@ -4,75 +4,19 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   HeartPulse,
-  Brain,
-  Sparkles,
-  Bone,
-  Baby,
-  Eye,
   ArrowRight,
+  ChevronRight,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import styles from "./Services.module.css";
-
-const services = [
-  {
-    icon: <HeartPulse size={28} />,
-    title: "Cardiology",
-    description:
-      "Comprehensive heart care including diagnostics, treatment, and preventive cardiology with state-of-the-art technology.",
-    color: "#EF4444",
-    bgColor: "#FEE2E2",
-    gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
-  },
-  {
-    icon: <Brain size={28} />,
-    title: "Neurology",
-    description:
-      "Expert neurological care for brain and nervous system conditions with advanced diagnostic and treatment options.",
-    color: "#8B5CF6",
-    bgColor: "#EDE9FE",
-    gradient: "linear-gradient(135deg, #8B5CF6, #7C3AED)",
-  },
-  {
-    icon: <Sparkles size={28} />,
-    title: "Dermatology",
-    description:
-      "Advanced skin care treatments, cosmetic dermatology, and medical solutions for all skin conditions.",
-    color: "#EC4899",
-    bgColor: "#FCE7F3",
-    gradient: "linear-gradient(135deg, #EC4899, #DB2777)",
-  },
-  {
-    icon: <Bone size={28} />,
-    title: "Orthopedics",
-    description:
-      "Specialized care for bones, joints, and muscles. From sports injuries to joint replacements.",
-    color: "#F97316",
-    bgColor: "#FFF7ED",
-    gradient: "linear-gradient(135deg, #F97316, #EA580C)",
-  },
-  {
-    icon: <Baby size={28} />,
-    title: "Pediatrics",
-    description:
-      "Compassionate healthcare for children from newborn to adolescence. Vaccinations, checkups, and specialized care.",
-    color: "#10B981",
-    bgColor: "#D1FAE5",
-    gradient: "linear-gradient(135deg, #10B981, #059669)",
-  },
-  {
-    icon: <Eye size={28} />,
-    title: "Ophthalmology",
-    description:
-      "Complete eye care including vision testing, treatment of eye diseases, and advanced surgical procedures.",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
-    gradient: "linear-gradient(135deg, #3B82F6, #2563EB)",
-  },
-];
+import { treatments } from "@/app/treatments/treatmentData";
+import { useAppointment } from "./AppointmentProvider";
 
 export default function Services() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { openAppointment } = useAppointment();
 
   return (
     <section id="services" className={styles.services} ref={ref}>
@@ -98,34 +42,55 @@ export default function Services() {
           </p>
         </motion.div>
 
-        {/* Cards Grid */}
-        <div className={styles.grid}>
-          {services.map((service, i) => (
+        {/* Horizontal Cards List */}
+        <div className={styles.list}>
+          {treatments.map((treatment, i) => (
             <motion.div
-              key={service.title}
+              key={treatment.slug}
               className={styles.card}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: i * 0.1, duration: 0.5 }}
-              whileHover={{ y: -8 }}
             >
-              <div
-                className={styles.cardIcon}
-                style={{ background: service.bgColor, color: service.color }}
-              >
-                {service.icon}
+              <div className={styles.cardImage}>
+                <Image
+                  src={treatment.image}
+                  alt={treatment.label}
+                  fill
+                  className={styles.image}
+                />
               </div>
-              <h3 className={styles.cardTitle}>{service.title}</h3>
-              <p className={styles.cardDesc}>{service.description}</p>
-              <a href="#" className={styles.cardLink} style={{ color: service.color }}>
-                Learn More <ArrowRight size={16} />
-              </a>
+              
+              <div className={styles.cardContent}>
+                <h3 className={styles.cardTitle}>{treatment.label}</h3>
+                <p className={styles.cardDesc}>{treatment.heroDesc}</p>
+                
+                <div className={styles.benefitsSection}>
+                  <h4 className={styles.benefitsLabel}>Key Benefits:</h4>
+                  <div className={styles.benefitsGrid}>
+                    {treatment.features.slice(0, 3).map((feature, idx) => (
+                      <span key={idx} className={styles.benefitBadge}>
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Hover gradient overlay */}
-              <div
-                className={styles.cardOverlay}
-                style={{ background: service.gradient }}
-              />
+                <div className={styles.cardActions}>
+                  <Link 
+                    href={`/treatments/${treatment.slug}`}
+                    className={styles.viewMoreBtn}
+                  >
+                    View More <ArrowRight size={14} />
+                  </Link>
+                  <button 
+                    className={styles.bookNowBtn}
+                    onClick={openAppointment}
+                  >
+                    Book Appointment
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>

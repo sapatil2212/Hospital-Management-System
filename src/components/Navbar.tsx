@@ -72,7 +72,7 @@ export default function Navbar() {
           <div className={styles.topBarLeft}>
             <span className={styles.topBarItem}>
               <Phone size={14} />
-              <span>+1 (555) 123-4567</span>
+              <span>+91 90590 53938</span>
             </span>
             <span className={styles.topBarDivider}>|</span>
             <span className={styles.topBarItem}>
@@ -80,12 +80,12 @@ export default function Navbar() {
             </span>
           </div>
           <div className={styles.topBarRight}>
+            <span className={styles.topBarItem}>Emergency: 24/7 Available</span>
+            <span className={styles.topBarDivider}>|</span>
             <Link href="/login" className={styles.topBarLink}>
               <LogIn size={14} />
               Login
             </Link>
-            <span className={styles.topBarDivider}>|</span>
-            <span className={styles.topBarItem}>Emergency: 24/7 Available</span>
           </div>
         </div>
       </div>
@@ -93,9 +93,6 @@ export default function Navbar() {
       {/* Main Navbar */}
       <motion.nav
         className={`${styles.navbar} ${isScrolled ? styles.scrolled : ""}`}
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className={`container ${styles.navInner}`}>
           {/* Logo */}
@@ -188,8 +185,8 @@ export default function Navbar() {
                             <Image
                               src="/images/treatment-dropdown.png"
                               alt="Medical consultation"
-                              width={280}
-                              height={240}
+                              width={320}
+                              height={280}
                               className={styles.dropdownImg}
                             />
                             <div className={styles.dropdownImageOverlay}>
@@ -217,13 +214,6 @@ export default function Navbar() {
 
           {/* CTA */}
           <div className={styles.navActions}>
-            <Link
-              href="/login"
-              className={`${styles.navBtn} ${styles.navLogin}`}
-            >
-              <LogIn size={15} />
-              Login
-            </Link>
             <a
               href="tel:+919059053938"
               className={`${styles.navBtn} ${styles.navEmergency}`}

@@ -194,6 +194,8 @@ export const updateAppointment = async (
   if (input.consultationFee !== undefined) updateData.consultationFee = input.consultationFee;
   if (input.notes !== undefined) updateData.notes = input.notes;
   if (input.tokenNumber !== undefined) updateData.tokenNumber = input.tokenNumber;
+  if (input.subDepartmentId !== undefined) updateData.subDepartmentId = input.subDepartmentId;
+  if (input.subDeptNote !== undefined) updateData.subDeptNote = input.subDeptNote;
 
   return updateAppointmentRepo(id, hospitalId, updateData);
 };
