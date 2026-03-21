@@ -139,7 +139,7 @@ export const createSubDepartment = async (hospitalId: string, data: CreateSubDep
     const user = await prisma.user.upsert({
       where: { email: data.loginEmail },
       create: { hospitalId, name: data.hodName || data.name, email: data.loginEmail, password: hashed, role: "SUB_DEPT_HEAD" as any },
-      update: { name: data.hodName || data.name, role: "SUB_DEPT_HEAD" as any, isActive: true },
+      update: { name: data.hodName || data.name, password: hashed, role: "SUB_DEPT_HEAD" as any, isActive: true },
     });
     await repo.setSubDepartmentCredentials(subDept.id, user.id, true);
   }
@@ -191,18 +191,17 @@ export const updateSubDepartment = async (id: string, hospitalId: string, data: 
     const hashed = await hashPassword(rawPw);
     const existingUserId = (existing as any)?.userId;
     if (existingUserId) {
-      // Update existing user email + name (password unchanged unless email changed)
-      const emailChanged = newEmail !== (existing as any)?.loginEmail;
+      // Always reset password to DeptName@Year so admin can re-save to fix broken creds
       await prisma.user.update({
         where: { id: existingUserId },
-        data: { email: newEmail, name: hodName, isActive: true, ...(emailChanged ? { password: hashed } : {}) },
+        data: { email: newEmail, name: hodName, password: hashed, isActive: true },
       });
     } else {
-      // Create new user and link
+      // Create new user and link — always set password on both create and update
       const user = await prisma.user.upsert({
         where: { email: newEmail },
         create: { hospitalId, name: hodName, email: newEmail, password: hashed, role: "SUB_DEPT_HEAD" as any },
-        update: { name: hodName, role: "SUB_DEPT_HEAD" as any, isActive: true },
+        update: { name: hodName, password: hashed, role: "SUB_DEPT_HEAD" as any, isActive: true },
       });
       await repo.setSubDepartmentCredentials(id, user.id, true);
     }

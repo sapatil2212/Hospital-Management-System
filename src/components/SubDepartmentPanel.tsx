@@ -805,7 +805,7 @@ export default function SubDepartmentPanel() {
                         onChange={e => setForm((f: any) => ({ ...f, loginEmail: e.target.value }))}
                       />
                       <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                        <Lock size={10} />Login portal: <strong>http://localhost:3000/login</strong>
+                        <Lock size={10} />Login at <strong>http://localhost:3000/login</strong> · Credentials created automatically on save
                       </div>
                     </div>
                     <div className="sd-field full">

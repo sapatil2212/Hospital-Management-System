@@ -5,6 +5,8 @@ import { getAvailableSlots, AppointmentServiceError } from "../../../../../backe
 
 const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
 
+export const dynamic = "force-dynamic";
+
 // GET /api/appointments/slots?doctorId=...&date=YYYY-MM-DD
 export async function GET(req: NextRequest) {
   const auth = await requireRole(req, ALLOWED_ROLES);
