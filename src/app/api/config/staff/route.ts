@@ -1,61 +1,77 @@
 import { NextRequest } from "next/server";
 import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
-import { createStaff, findAllStaff, updateStaff, deleteStaff } from "../../../../../backend/repositories/staff.repo";
-import { z } from "zod";
-
-const staffSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  role: z.enum(["NURSE","TECHNICIAN","PHARMACIST","RECEPTIONIST","LAB_TECHNICIAN","ACCOUNTANT","ADMIN","SUPPORT","OTHER"]),
-  departmentId: z.string().optional(),
-  salary: z.number().min(0).optional(),
-  isActive: z.boolean().optional(),
-});
+import {
+  createStaff,
+  getStaff,
+  getStaffStats,
+  StaffServiceError,
+} from "../../../../../backend/services/staff.service";
+import {
+  createStaffSchema,
+  queryStaffSchema,
+} from "../../../../../backend/validations/staff.validation";
 
 export async function GET(req: NextRequest) {
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
+
   try {
     const { searchParams } = new URL(req.url);
-    const data = await findAllStaff(auth.hospitalId, searchParams.get("search") || undefined);
-    return successResponse(data, "Staff fetched");
-  } catch (e: any) { return errorResponse(e.message, 500); }
+
+    if (searchParams.get("stats") === "true") {
+      const stats = await getStaffStats(auth.hospitalId);
+      return successResponse(stats, "Staff statistics");
+    }
+
+    const queryParams = {
+      search: searchParams.get("search") || undefined,
+      role: searchParams.get("role") || undefined,
+      departmentId: searchParams.get("departmentId") || undefined,
+      isActive: searchParams.get("isActive") || undefined,
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "20",
+      sortBy: searchParams.get("sortBy") || "name",
+      sortOrder: searchParams.get("sortOrder") || "asc",
+    };
+
+    const validated = queryStaffSchema.safeParse(queryParams);
+    if (!validated.success) {
+      return errorResponse("Invalid query parameters", 400, validated.error.issues);
+    }
+
+    const result = await getStaff({
+      hospitalId: auth.hospitalId,
+      ...validated.data,
+    });
+
+    return successResponse(result, "Staff fetched");
+  } catch (error: any) {
+    if (error instanceof StaffServiceError) {
+      return errorResponse(error.message, error.status);
+    }
+    return errorResponse(error.message || "Failed to fetch staff", 500);
+  }
 }
 
 export async function POST(req: NextRequest) {
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
+
   try {
     const body = await req.json();
-    const result = staffSchema.safeParse(body);
-    if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
-    const data = await createStaff({ hospitalId: auth.hospitalId, ...result.data });
-    return successResponse(data, "Staff created", 201);
-  } catch (e: any) { return errorResponse(e.message, 500); }
-}
+    const validated = createStaffSchema.safeParse(body);
 
-export async function PUT(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
-  if (auth.error) return auth.error;
-  try {
-    const body = await req.json();
-    const { id, ...updateData } = body;
-    if (!id) return errorResponse("ID is required", 400);
-    await updateStaff(id, auth.hospitalId, updateData);
-    return successResponse(null, "Staff updated");
-  } catch (e: any) { return errorResponse(e.message, 500); }
-}
+    if (!validated.success) {
+      return errorResponse("Validation failed", 400, validated.error.issues);
+    }
 
-export async function DELETE(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
-  if (auth.error) return auth.error;
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) return errorResponse("ID is required", 400);
-    await deleteStaff(id, auth.hospitalId);
-    return successResponse(null, "Staff deleted");
-  } catch (e: any) { return errorResponse(e.message, 500); }
+    const staff = await createStaff(auth.hospitalId, validated.data);
+    return successResponse(staff, "Staff member created successfully", 201);
+  } catch (error: any) {
+    if (error instanceof StaffServiceError) {
+      return errorResponse(error.message, error.status);
+    }
+    return errorResponse(error.message || "Failed to create staff member", 500);
+  }
 }

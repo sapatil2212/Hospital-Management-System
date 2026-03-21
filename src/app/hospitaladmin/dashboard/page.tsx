@@ -5,7 +5,7 @@ import {
   LayoutDashboard, CalendarDays, Users, UserRound, Settings, HelpCircle,
   LogOut, Search, Bell, MessageSquare, Building2, Activity, ChevronRight,
   Plus, Pencil, Trash2, Filter, Bed, CheckCircle2, AlertTriangle,
-  TrendingUp, Stethoscope, ClipboardList, BarChart2, X
+  TrendingUp, Stethoscope, ClipboardList, BarChart2, X, CalendarCheck, RefreshCw
 } from "lucide-react";
 
 /* ── Mock Data ── */
@@ -97,13 +97,28 @@ export default function HospitalAdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
   const [search, setSearch] = useState("");
+  const [apptStats, setApptStats] = useState<any>(null);
+  const [patientStats, setPatientStats] = useState<any>(null);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials:"include" })
       .then(r=>r.json())
-      .then(d=>{ if(!d.success){router.push("/login");return;} setUser(d.data); setLoading(false); })
+      .then(d=>{
+        if(!d.success){router.push("/login");return;}
+        if(d.data.role==="DOCTOR"){router.push("/doctor/dashboard");return;}
+        if(d.data.role==="STAFF"||d.data.role==="RECEPTIONIST"){router.push("/staff/dashboard");return;}
+        if(d.data.role!=="HOSPITAL_ADMIN"){router.push("/login");return;}
+        setUser(d.data); setLoading(false);
+      })
       .catch(()=>router.push("/login"));
   }, [router]);
+
+  useEffect(() => {
+    if (!loading) {
+      fetch("/api/appointments?stats=true", { credentials:"include" }).then(r=>r.json()).then(d=>{ if(d.success) setApptStats(d.data); });
+      fetch("/api/patients?stats=true", { credentials:"include" }).then(r=>r.json()).then(d=>{ if(d.success) setPatientStats(d.data); });
+    }
+  }, [loading]);
 
   const logout = async () => { await fetch("/api/auth/logout",{method:"POST",credentials:"include"}); router.push("/login"); };
   const handleAddStaff = async (e:React.FormEvent) => {
@@ -128,19 +143,24 @@ export default function HospitalAdminDashboard() {
     </div>
   );
 
-  const navItems: { id:NavTab; label:string; icon:React.ReactNode }[] = [
+  const navItems: { id:NavTab; label:string; icon:React.ReactNode; route?:string }[] = [
     { id:"overview",      label:"Dashboard",     icon:<LayoutDashboard size={16}/> },
-    { id:"appointments",  label:"Appointments",  icon:<CalendarDays size={16}/> },
+    { id:"appointments",  label:"Appointments",  icon:<CalendarDays size={16}/>,  route:"/hospitaladmin/appointments" },
     { id:"staff",         label:"Staff",         icon:<Users size={16}/> },
-    { id:"patients",      label:"Patients",      icon:<UserRound size={16}/> },
+    { id:"patients",      label:"Patients",      icon:<UserRound size={16}/>, route:"/hospitaladmin/appointments" },
     { id:"settings",      label:"Settings",      icon:<Settings size={16}/> },
   ];
 
+  const todayAppts = apptStats?.today ?? mockAppointments.length;
+  const totalPatients = patientStats?.total ?? 412;
+  const newPatientsToday = patientStats?.newToday ?? 0;
+  const completedAppts = apptStats?.completed ?? 0;
+
   const stats = [
-    { label:"Total Staff",    val:mockStaff.length, sub:`${mockStaff.filter(s=>s.role==="DOCTOR").length} doctors`, icon:<Users size={20} color="#fff"/>,       bg:"#eff6ff", iconBg:"#3b82f6" },
-    { label:"Total Patients", val:412,              sub:"148 active today",                                         icon:<UserRound size={20} color="#fff"/>,    bg:"#f0fdf4", iconBg:"#10b981" },
-    { label:"Appointments",   val:mockAppointments.length, sub:"Today's schedule",                                  icon:<CalendarDays size={20} color="#fff"/>, bg:"#fdf4ff", iconBg:"#a855f7" },
-    { label:"Available Beds", val:14,               sub:"2 ICU, 12 general",                                        icon:<Bed size={20} color="#fff"/>,          bg:"#fff7ed", iconBg:"#f59e0b" },
+    { label:"Total Staff",    val:mockStaff.length,   sub:`${mockStaff.filter(s=>s.role==="DOCTOR").length} doctors`,        icon:<Users size={20} color="#fff"/>,       bg:"#eff6ff", iconBg:"#3b82f6" },
+    { label:"Total Patients", val:totalPatients,      sub:newPatientsToday>0?`+${newPatientsToday} new today`:"lifetime records", icon:<UserRound size={20} color="#fff"/>,    bg:"#f0fdf4", iconBg:"#10b981" },
+    { label:"Today Appointments", val:todayAppts,     sub:`${completedAppts} completed`,                                      icon:<CalendarDays size={20} color="#fff"/>, bg:"#fdf4ff", iconBg:"#a855f7" },
+    { label:"Available Beds", val:14,                 sub:"2 ICU, 12 general",                                                icon:<Bed size={20} color="#fff"/>,          bg:"#fff7ed", iconBg:"#f59e0b" },
   ];
 
   return (
@@ -296,7 +316,7 @@ export default function HospitalAdminDashboard() {
           <nav className="hd-nav">
             <div className="hd-nav-sec">General</div>
             {navItems.slice(0,4).map(n=>(
-              <button key={n.id} className={`hd-nb${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)} style={{position:"relative"}}>
+              <button key={n.id} className={`hd-nb${tab===n.id?" on":""}`} onClick={()=>n.route?router.push(n.route):setTab(n.id)} style={{position:"relative"}}>
                 {tab===n.id && <div className="hd-nb-dot"/>}
                 <span style={{color:tab===n.id?"#2563eb":"#94a3b8",display:"flex"}}>{n.icon}</span>
                 {n.label}
@@ -439,24 +459,29 @@ export default function HospitalAdminDashboard() {
               </>)}
 
               {tab==="appointments" && (
-                <div className="hd-card mb16">
-                  <div className="hd-card-head"><div><div className="hd-card-title">Today's Appointments</div><div className="hd-card-sub">{mockAppointments.length} scheduled</div></div></div>
-                  <div className="hd-tbl-wrap">
-                    <table className="hd-tbl">
-                      <thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Dept</th><th>Time</th><th>Status</th></tr></thead>
-                      <tbody>
-                        {mockAppointments.map(a=>(
-                          <tr key={a.id}>
-                            <td style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{a.id}</td>
-                            <td className="hd-td-name">{a.patient}</td>
-                            <td>{a.doctor}</td>
-                            <td>{a.dept}</td>
-                            <td style={{fontWeight:600}}>{a.time}</td>
-                            <td><span className="hd-badge" style={a.status==="confirmed"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.status==="waiting"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:a.status==="in-progress"?{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}:{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}}>{a.status.replace("-"," ")}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div style={{display:"flex",flexDirection:"column",gap:16}}>
+                  <div style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",borderRadius:16,padding:"28px 28px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div>
+                      <div style={{fontSize:22,fontWeight:800,marginBottom:6,display:"flex",alignItems:"center",gap:10}}><CalendarCheck size={24}/>Appointment Management</div>
+                      <div style={{fontSize:13,color:"rgba(255,255,255,.75)",maxWidth:440}}>Book appointments, manage follow-ups, and view your full patient registry in the dedicated module.</div>
+                    </div>
+                    <button onClick={()=>router.push("/hospitaladmin/appointments")} style={{padding:"12px 24px",borderRadius:12,border:"none",background:"rgba(255,255,255,.15)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",backdropFilter:"blur(4px)",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:8}}>
+                      Open Module <ChevronRight size={16}/>
+                    </button>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+                    {[
+                      {label:"Book Appointment",desc:"Search patient + pick doctor + select slot",color:"#3b82f6",bg:"#eff6ff",path:"/hospitaladmin/appointments",icon:<CalendarCheck size={18}/>},
+                      {label:"Follow-up Dashboard",desc:"Track pending, overdue and completed follow-ups",color:"#10b981",bg:"#f0fdf4",path:"/hospitaladmin/appointments",icon:<RefreshCw size={18}/>},
+                      {label:"Patient Registry",desc:"View full patient history and profiles",color:"#7c3aed",bg:"#f5f3ff",path:"/hospitaladmin/appointments",icon:<Users size={18}/>},
+                    ].map((card)=>(
+                      <button key={card.label} onClick={()=>router.push(card.path)}
+                        style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"18px 20px",cursor:"pointer",textAlign:"left",transition:"all .15s",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                        <div style={{width:40,height:40,borderRadius:11,background:card.bg,display:"flex",alignItems:"center",justifyContent:"center",color:card.color,marginBottom:12}}>{card.icon}</div>
+                        <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>{card.label}</div>
+                        <div style={{fontSize:12,color:"#94a3b8"}}>{card.desc}</div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -492,30 +517,14 @@ export default function HospitalAdminDashboard() {
               )}
 
               {tab==="patients" && (
-                <div className="hd-card mb16">
-                  <div className="hd-card-head"><div><div className="hd-card-title">Patient Registry</div><div className="hd-card-sub">{mockPatients.length} records</div></div></div>
-                  <div className="hd-tbl-wrap">
-                    <table className="hd-tbl">
-                      <thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Blood</th><th>Dept</th><th>Date</th><th>Type</th><th>Actions</th></tr></thead>
-                      <tbody>
-                        {mockPatients.map(p=>(
-                          <tr key={p.id}>
-                            <td style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{p.id}</td>
-                            <td className="hd-td-name">{p.name}</td>
-                            <td>{p.age}</td>
-                            <td><span style={{color:"#ef4444",fontWeight:700}}>{p.blood}</span></td>
-                            <td>{p.dept}</td>
-                            <td style={{fontSize:12}}>{p.date}</td>
-                            <td><span className="hd-badge" style={p.status==="IPD"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:p.status==="Discharged"?{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}:{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}}>{p.status}</span></td>
-                            <td><div style={{display:"flex",gap:6}}>
-                              <button className="hd-card-icon-btn" style={{background:"#eff6ff",color:"#3b82f6",border:"none"}}><Pencil size={12}/></button>
-                              <button className="hd-card-icon-btn" style={{background:"#fff5f5",color:"#ef4444",border:"none"}}><Trash2 size={12}/></button>
-                            </div></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div style={{background:"linear-gradient(135deg,#7c3aed,#4c1d95)",borderRadius:16,padding:"28px 28px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:22,fontWeight:800,marginBottom:6,display:"flex",alignItems:"center",gap:10}}><Users size={24}/>Patient Registry</div>
+                    <div style={{fontSize:13,color:"rgba(255,255,255,.75)"}}>Manage lifetime patient records, view appointment history, and schedule follow-ups.</div>
                   </div>
+                  <button onClick={()=>router.push("/hospitaladmin/appointments")} style={{padding:"12px 24px",borderRadius:12,border:"none",background:"rgba(255,255,255,.15)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",gap:8}}>
+                    Open Module <ChevronRight size={16}/>
+                  </button>
                 </div>
               )}
 

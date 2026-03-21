@@ -472,6 +472,7 @@ export default function DepartmentPanel() {
         .dept-modal-sm{max-width:400px;padding:24px;text-align:center}
         .dept-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0}
         .dept-modal-title{font-size:17px;font-weight:800;color:#1e293b}
+        .dept-modal-form{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
         .dept-modal-body{padding:24px;overflow-y:auto;flex:1}
         .dept-modal-footer{padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;flex-shrink:0}
         .dept-section{margin-bottom:24px}
@@ -715,7 +716,7 @@ export default function DepartmentPanel() {
 
       {/* Add/Edit Modal */}
       <Modal open={modal} onClose={() => setModal(false)} title={editItem ? "Edit Department" : "Add Department"}>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="dept-modal-form">
           <div className="dept-modal-body">
             {/* Section 1: Basic Info */}
             <div className="dept-section">

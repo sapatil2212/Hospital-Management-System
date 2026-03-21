@@ -1,37 +1,150 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarDays, Users, ClipboardList, Stethoscope, LogOut, Search,
-  Bell, MessageSquare, HelpCircle, ChevronRight, AlertTriangle,
-  Pill, Clock, HeartPulse, BarChart2, Filter, UserRound, Activity
+  CalendarDays, Users, Stethoscope, LogOut, Search,
+  Bell, HelpCircle, ChevronRight, AlertTriangle,
+  Pill, BarChart2, UserRound, Activity, Loader2,
+  PlayCircle, CheckCircle2, X, FileText, Clock, RefreshCw,
 } from "lucide-react";
 
-const myPatients = [
-  { id:"P001", name:"Rajesh Verma", age:54, blood:"O+", condition:"Hypertension", nextVisit:"Today 09:00 AM", status:"stable", gender:"Male" },
-  { id:"P002", name:"Kavita Singh", age:45, blood:"AB+", condition:"Arrhythmia", nextVisit:"Today 11:00 AM", status:"monitor", gender:"Female" },
-  { id:"P003", name:"Mohan Lal", age:67, blood:"B+", condition:"Heart Failure", nextVisit:"Tomorrow", status:"critical", gender:"Male" },
-  { id:"P004", name:"Sunita Bose", age:33, blood:"A-", condition:"Angina", nextVisit:"25 Mar", status:"stable", gender:"Female" },
-  { id:"P005", name:"Harish Gupta", age:59, blood:"O+", condition:"CAD Post-op", nextVisit:"26 Mar", status:"recovering", gender:"Male" },
-];
-const myAppointments = [
-  { time:"09:00 AM", patient:"Rajesh Verma", type:"Follow-up", status:"in-progress" },
-  { time:"09:30 AM", patient:"—", type:"Break", status:"break" },
-  { time:"11:00 AM", patient:"Kavita Singh", type:"Consultation", status:"confirmed" },
-  { time:"12:00 PM", patient:"New Patient", type:"OPD Walk-in", status:"waiting" },
-  { time:"02:00 PM", patient:"Mohan Lal", type:"IPD Review", status:"confirmed" },
-  { time:"04:00 PM", patient:"Sunita Bose", type:"Test Results", status:"confirmed" },
-];
-const prescriptions = [
-  { patient:"Rajesh Verma", drug:"Amlodipine 5mg", freq:"Once daily", duration:"30 days", date:"20 Mar 2026" },
-  { patient:"Kavita Singh", drug:"Metoprolol 25mg", freq:"Twice daily", duration:"14 days", date:"20 Mar 2026" },
-  { patient:"Mohan Lal", drug:"Furosemide 40mg + Spironolactone 25mg", freq:"Morning", duration:"Ongoing", date:"19 Mar 2026" },
-];
+const api = async (url: string, method = "GET", body?: any) => {
+  const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+};
+
 const barData = [
   {month:"Jan",val:14},{month:"Feb",val:18},{month:"Mar",val:24},{month:"Apr",val:19},{month:"May",val:22},{month:"Jun",val:16},{month:"Jul",val:20},{month:"Aug",val:28},{month:"Sep",val:24},
 ];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS_H = ["M","T","W","T","F","S","S"];
+
+// ─── Appointment type / status helpers ───
+const TYPE_LABEL: Record<string, string> = {
+  OPD: "OPD", ONLINE: "Online", FOLLOW_UP: "Follow-up", EMERGENCY: "Emergency",
+};
+const STATUS_CFG: Record<string, { label: string; dot: string; badge: [string, string, string] }> = {
+  SCHEDULED:   { label: "Scheduled",   dot: "#94a3b8", badge: ["#f8fafc",   "#475569",  "#e2e8f0"] },
+  CONFIRMED:   { label: "Confirmed",   dot: "#10b981", badge: ["#f0fdf4",   "#16a34a",  "#bbf7d0"] },
+  IN_PROGRESS: { label: "In Progress", dot: "#3b82f6", badge: ["#eff6ff",   "#2563eb",  "#bfdbfe"] },
+  COMPLETED:   { label: "Completed",   dot: "#059669", badge: ["#f0fdf4",   "#059669",  "#a7f3d0"] },
+  CANCELLED:   { label: "Cancelled",   dot: "#ef4444", badge: ["#fff5f5",   "#ef4444",  "#fecaca"] },
+  NO_SHOW:     { label: "No Show",     dot: "#f97316", badge: ["#fff7ed",   "#c2410c",  "#fed7aa"] },
+  RESCHEDULED: { label: "Rescheduled", dot: "#a855f7", badge: ["#faf5ff",   "#7c3aed",  "#e9d5ff"] },
+};
+
+// ─── Consult Modal ───
+function ConsultModal({ appt, onClose, onDone }: { appt: any; onClose: () => void; onDone: () => void }) {
+  const [notes, setNotes] = useState(appt.notes || "");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const update = async (status: string) => {
+    setSaving(true);
+    const d = await api(`/api/appointments/${appt.id}`, "PUT", { status, notes: notes || undefined });
+    if (d.success) { onDone(); onClose(); }
+    else setMsg(d.message || "Failed to update");
+    setSaving(false);
+  };
+
+  const sc = STATUS_CFG[appt.status] || STATUS_CFG.SCHEDULED;
+  const patientName = appt.patient?.name || "Patient";
+  const apptDate = new Date(appt.appointmentDate);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 24px 60px rgba(0,0,0,.18)", fontFamily: "'Inter',sans-serif" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", marginBottom: 3 }}>Patient Consultation</div>
+            <div style={{ fontSize: 13, color: "#64748b" }}>{apptDate.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} · {appt.timeSlot}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8" }}><X size={14} /></button>
+        </div>
+
+        {/* Patient Card */}
+        <div style={{ background: "#f8fafc", borderRadius: 14, padding: "14px 16px", marginBottom: 18, border: "1px solid #e2e8f0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 16 }}>
+              {patientName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>{patientName}</div>
+              <div style={{ fontSize: 12, color: "#64748b", display: "flex", gap: 8, marginTop: 2 }}>
+                <span>{appt.patient?.patientId}</span>
+                {appt.patient?.phone && <><span>·</span><span>{appt.patient.phone}</span></>}
+              </div>
+            </div>
+            <div style={{ marginLeft: "auto" }}>
+              <span style={{ fontSize: 10, padding: "4px 10px", borderRadius: 100, background: sc.badge[0], color: sc.badge[1], border: `1px solid ${sc.badge[2]}`, fontWeight: 700 }}>{sc.label}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+            {[
+              ["Type", TYPE_LABEL[appt.type] || appt.type],
+              ["Token", appt.tokenNumber ? `#${appt.tokenNumber}` : "—"],
+              ["Fee", appt.consultationFee ? `₹${appt.consultationFee}` : "—"],
+            ].map(([k, v]) => (
+              <div key={k} style={{ flex: 1, background: "#fff", borderRadius: 9, padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>{k}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Consultation Notes</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
+            placeholder="Diagnosis, prescription, follow-up instructions..."
+            style={{ width: "100%", padding: "10px 13px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#334155", outline: "none", resize: "vertical", fontFamily: "'Inter',sans-serif" }} />
+        </div>
+
+        {msg && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 10, fontWeight: 600 }}>{msg}</div>}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8 }}>
+          {appt.status === "SCHEDULED" || appt.status === "CONFIRMED" ? (
+            <button onClick={() => update("IN_PROGRESS")} disabled={saving}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
+              {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <PlayCircle size={15} />}
+              Start Consultation
+            </button>
+          ) : null}
+          {appt.status === "IN_PROGRESS" ? (
+            <button onClick={() => update("COMPLETED")} disabled={saving}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(16,185,129,.3)" }}>
+              {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <CheckCircle2 size={15} />}
+              Mark Complete
+            </button>
+          ) : null}
+          {appt.status === "COMPLETED" && (
+            <button onClick={() => update("COMPLETED")} disabled={saving}
+              style={{ flex: 1, padding: "11px 0", borderRadius: 11, background: "#f0fdf4", color: "#059669", fontSize: 13, fontWeight: 700, cursor: "pointer", border: "1.5px solid #bbf7d0" }}>
+              {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : "Update Notes"}
+            </button>
+          )}
+          {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && (
+            <button onClick={() => update("NO_SHOW")} disabled={saving}
+              style={{ padding: "11px 16px", borderRadius: 11, border: "1.5px solid #fed7aa", background: "#fff7ed", color: "#c2410c", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              No Show
+            </button>
+          )}
+        </div>
+
+        {appt.patient?.id && (
+          <a href={`/hospitaladmin/patients/${appt.patient.id}`} target="_blank" rel="noreferrer"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12, fontSize: 12, color: "#3b82f6", fontWeight: 600, textDecoration: "none" }}>
+            <FileText size={12} />View Full Patient Profile
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function MiniCalendar({ accent = "#10b981" }: { accent?: string }) {
   const today = new Date();
@@ -65,39 +178,126 @@ function MiniCalendar({ accent = "#10b981" }: { accent?: string }) {
   );
 }
 
-type Tab = "schedule"|"patients"|"prescriptions";
+type Tab = "schedule"|"patients";
+
+function getDeptAccent(deptName?: string): string {
+  if (!deptName) return "#10b981";
+  const n = deptName.toLowerCase();
+  if (n.includes("cardio")) return "#ef4444";
+  if (n.includes("neuro")) return "#8b5cf6";
+  if (n.includes("ortho")) return "#f59e0b";
+  if (n.includes("pedia") || n.includes("child")) return "#3b82f6";
+  if (n.includes("gyne") || n.includes("obs")) return "#ec4899";
+  if (n.includes("onco") || n.includes("cancer")) return "#6366f1";
+  if (n.includes("derma") || n.includes("skin")) return "#14b8a6";
+  if (n.includes("ophthal") || n.includes("eye")) return "#0ea5e9";
+  if (n.includes("ent") || n.includes("ear")) return "#f97316";
+  if (n.includes("surgery") || n.includes("surgical")) return "#dc2626";
+  if (n.includes("radio") || n.includes("imaging")) return "#7c3aed";
+  if (n.includes("emergency") || n.includes("icu")) return "#ef4444";
+  return "#10b981";
+}
+
+const TODAY = new Date().toISOString().split("T")[0];
 
 export default function DoctorDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [doctor, setDoctor] = useState<any>(null);
   const [tab, setTab] = useState<Tab>("schedule");
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loadingAppts, setLoadingAppts] = useState(false);
+  const [consultAppt, setConsultAppt] = useState<any>(null);
+  const [allPatients, setAllPatients] = useState<any[]>([]);
 
-  useEffect(()=>{
-    fetch("/api/auth/me",{credentials:"include"}).then(r=>r.json()).then(d=>{if(!d.success){router.push("/login");return;}setUser(d.data);setLoading(false);}).catch(()=>router.push("/login"));
-  },[router]);
+  const fetchAppointments = useCallback(async (doctorId: string) => {
+    setLoadingAppts(true);
+    const d = await api(`/api/appointments?doctorId=${doctorId}&date=${TODAY}&limit=50&sortBy=timeSlot&sortOrder=asc`);
+    if (d.success) setAppointments(d.data?.data || []);
+    setLoadingAppts(false);
+  }, []);
 
-  const logout = async()=>{await fetch("/api/auth/logout",{method:"POST",credentials:"include"});router.push("/login");};
-  const initials = (n:string) => n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();
-  const maxBar = Math.max(...barData.map(b=>b.val));
+  const fetchAllPatients = useCallback(async (doctorId: string) => {
+    const d = await api(`/api/appointments?doctorId=${doctorId}&limit=200&sortBy=appointmentDate&sortOrder=desc`);
+    if (d.success) {
+      const seen = new Set<string>();
+      const unique: any[] = [];
+      for (const a of (d.data?.data || [])) {
+        if (a.patient && !seen.has(a.patient.id)) {
+          seen.add(a.patient.id);
+          unique.push({ ...a.patient, lastVisit: a.appointmentDate, lastType: a.type });
+        }
+      }
+      setAllPatients(unique);
+    }
+  }, []);
 
-  if(loading) return <div style={{minHeight:"100vh",background:"#f0fdf4",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",color:"#64748b",fontSize:14,gap:14}}>
-    <div style={{width:32,height:32,border:"3px solid #bbf7d0",borderTop:"3px solid #10b981",borderRadius:"50%",animation:"sp .8s linear infinite"}}/>
-    <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>Loading Doctor Portal...
-  </div>;
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.success) { router.push("/login"); return; }
+        // Role-based redirect: only DOCTOR may access this dashboard
+        const role = d.data.role;
+        if (role === "HOSPITAL_ADMIN") { router.push("/hospitaladmin/dashboard"); return; }
+        if (role === "STAFF" || role === "RECEPTIONIST") { router.push("/staff/dashboard"); return; }
+        if (role === "SUPER_ADMIN") { router.push("/superadmin/dashboard"); return; }
+        if (role !== "DOCTOR") { router.push("/login"); return; }
+        fetch("/api/doctor/attendance", { method: "POST", credentials: "include" }).catch(() => {});
+        return fetch("/api/doctor/me", { credentials: "include" });
+      })
+      .then(r => r?.json())
+      .then(d => {
+        if (d?.success) {
+          setDoctor(d.data);
+          fetchAppointments(d.data.id);
+          fetchAllPatients(d.data.id);
+        }
+        setLoading(false);
+      })
+      .catch(() => router.push("/login"));
+  }, [router, fetchAppointments, fetchAllPatients]);
+
+  const logout = async () => { await fetch("/api/auth/logout", { method: "POST", credentials: "include" }); router.push("/login"); }; // login is the general hospital login
+  const initials = (n: string) => n.split(" ").map((x: string) => x[0]).join("").slice(0, 2).toUpperCase();
+  const maxBar = Math.max(...barData.map(b => b.val));
+  const accent = getDeptAccent(doctor?.department?.name);
+  const deptName = doctor?.department?.name || "General";
+  const doctorName = doctor?.name || "Doctor";
+
+  // Derived stats
+  const todayTotal = appointments.length;
+  const todayDone = appointments.filter(a => a.status === "COMPLETED").length;
+  const todayRemaining = appointments.filter(a => ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status)).length;
+  const inProgress = appointments.find(a => a.status === "IN_PROGRESS");
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#64748b", fontSize: 14, gap: 14 }}>
+      <div style={{ width: 32, height: 32, border: "3px solid #bbf7d0", borderTop: "3px solid #10b981", borderRadius: "50%", animation: "sp .8s linear infinite" }} />
+      <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>Loading Doctor Portal...
+    </div>
+  );
 
   const navItems = [
-    {id:"schedule" as Tab, label:"Schedule",      icon:<CalendarDays size={16}/>},
-    {id:"patients" as Tab, label:"My Patients",   icon:<UserRound size={16}/>},
-    {id:"prescriptions" as Tab, label:"Prescriptions", icon:<Pill size={16}/>},
+    { id: "schedule" as Tab, label: "Today's Schedule", icon: <CalendarDays size={16} /> },
+    { id: "patients" as Tab, label: "My Patients",      icon: <UserRound size={16} /> },
   ];
 
   return (<>
+    {consultAppt && (
+      <ConsultModal
+        appt={consultAppt}
+        onClose={() => setConsultAppt(null)}
+        onDone={() => doctor && fetchAppointments(doctor.id)}
+      />
+    )}
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       *{box-sizing:border-box;margin:0;padding:0}
       ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f0fdf4}::-webkit-scrollbar-thumb{background:#a7f3d0;border-radius:4px}
-      input,select,button{font-family:'Inter',sans-serif}
+      input,select,button,textarea{font-family:'Inter',sans-serif}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
       .doc{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0fdf9}
       .doc-sb{width:220px;background:#fff;border-right:1px solid #d1fae5;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(16,185,129,0.06)}
       .doc-logo{padding:20px 20px 16px;border-bottom:1px solid #ecfdf5;display:flex;align-items:center;gap:10px}
@@ -107,12 +307,12 @@ export default function DoctorDashboard() {
       .doc-nav{flex:1;padding:12px 12px;overflow-y:auto}
       .doc-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:12px 0 6px}
       .doc-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
-      .doc-nb:hover{background:#ecfdf5;color:#047857}
-      .doc-nb.on{background:#d1fae5;color:#059669;font-weight:600}
+      .doc-nb:hover{background:#f0fdf4;color:#047857}
+      .doc-nb.on{background:var(--dept-bg,#d1fae5);color:var(--dept-accent,#059669);font-weight:600}
       .doc-nb-dot{display:none;width:3px;height:20px;background:#10b981;border-radius:4px;position:absolute;left:0}
       .doc-nb.on .doc-nb-dot{display:block}
       .doc-nb svg{color:#94a3b8;flex-shrink:0}
-      .doc-nb.on svg{color:#059669}
+      .doc-nb.on svg{color:var(--dept-accent,#059669)}
       .doc-sb-foot{padding:14px 16px 18px;border-top:1px solid #ecfdf5}
       .doc-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;margin-bottom:10px}
       .doc-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
@@ -171,7 +371,7 @@ export default function DoctorDashboard() {
       .doc-critical-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
     `}</style>
 
-    <div className="doc">
+    <div className="doc" style={{'--dept-accent':accent,'--dept-bg':accent+'22'} as any}>
       <aside className="doc-sb">
         <div className="doc-logo">
           <div className="doc-logo-ic"><Stethoscope size={17} color="white"/></div>
@@ -191,8 +391,11 @@ export default function DoctorDashboard() {
         </nav>
         <div className="doc-sb-foot">
           <div className="doc-user">
-            <div className="doc-av">{user?.name?initials(user.name):"DR"}</div>
-            <div><div className="doc-uname">{user?.name||"Doctor"}</div><div className="doc-urole">Doctor · Cardiology</div></div>
+            {doctor?.profileImage
+              ? <img src={doctor.profileImage} alt={doctorName} style={{width:32,height:32,borderRadius:9,objectFit:"cover"}}/>
+              : <div className="doc-av" style={{background:`linear-gradient(135deg,${accent},#3b82f6)`}}>{initials(doctorName)}</div>
+            }
+            <div><div className="doc-uname">{doctorName}</div><div className="doc-urole" style={{color:accent}}>Doctor · {deptName}</div></div>
           </div>
           <button className="doc-logout" onClick={logout}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -207,8 +410,11 @@ export default function DoctorDashboard() {
           <div className="doc-tb-right">
             <div className="doc-notif"><Bell size={16} color="#64748b"/><span className="doc-notif-dot"/></div>
             <div className="doc-profile">
-              <div className="doc-profile-av">{user?.name?initials(user.name):"DR"}</div>
-              <div><div className="doc-profile-name">{user?.name?.split(" ")[0]||"Doctor"}</div><div className="doc-profile-role">Doctor 🩺</div></div>
+              {doctor?.profileImage
+                ? <img src={doctor.profileImage} alt={doctorName} style={{width:30,height:30,borderRadius:8,objectFit:"cover"}}/>
+                : <div className="doc-profile-av" style={{background:`linear-gradient(135deg,${accent},#3b82f6)`}}>{initials(doctorName)}</div>
+              }
+              <div><div className="doc-profile-name">{doctorName.split(" ")[0]}</div><div className="doc-profile-role" style={{color:accent}}>{deptName}</div></div>
             </div>
           </div>
         </header>
@@ -216,16 +422,17 @@ export default function DoctorDashboard() {
         <div className="doc-body">
           <div className="doc-center">
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-              <div className="doc-pg-title" style={{marginBottom:0}}>Good morning, Dr. {user?.name?.split(" ").slice(-1)[0]||"Doctor"} 👋</div>
+              <div className="doc-pg-title" style={{marginBottom:0}}>Good morning, Dr. {doctorName.split(" ").slice(-1)[0]} 👋</div>
               <span style={{fontSize:12,color:"#64748b",background:"#f0fdf4",border:"1px solid #d1fae5",padding:"5px 12px",borderRadius:8,fontWeight:500}}>{new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long"})}</span>
             </div>
 
+            {/* Stats */}
             <div className="doc-stats">
               {[
-                {icon:<CalendarDays size={20} color="#fff"/>, label:"Today's Slots", val:myAppointments.filter(a=>a.status!=="break").length, sub:"2 remaining",   bg:"#eff6ff", iconBg:"#3b82f6"},
-                {icon:<UserRound size={20} color="#fff"/>,    label:"My Patients",  val:myPatients.length,                                   sub:"3 active today", bg:"#f0fdf4", iconBg:"#10b981"},
-                {icon:<AlertTriangle size={20} color="#fff"/>,label:"Critical",     val:myPatients.filter(p=>p.status==="critical").length,    sub:"needs attention",bg:"#fff5f5", iconBg:"#ef4444"},
-                {icon:<Pill size={20} color="#fff"/>,         label:"Prescriptions",val:prescriptions.length,                                 sub:"issued today",   bg:"#fdf4ff", iconBg:"#a855f7"},
+                {icon:<CalendarDays size={20} color="#fff"/>, label:"Today's Appointments", val:todayTotal,     sub:`${todayRemaining} remaining`,  bg:"#eff6ff", iconBg:"#3b82f6"},
+                {icon:<CheckCircle2 size={20} color="#fff"/>, label:"Completed",            val:todayDone,      sub:"today so far",                  bg:"#f0fdf4", iconBg:"#10b981"},
+                {icon:<Clock size={20} color="#fff"/>,        label:"Remaining",            val:todayRemaining, sub:"scheduled / confirmed",         bg:"#fff7ed", iconBg:"#f59e0b"},
+                {icon:<UserRound size={20} color="#fff"/>,    label:"Total Patients",       val:allPatients.length, sub:"all time",                  bg:"#fdf4ff", iconBg:"#a855f7"},
               ].map((s,i)=>(
                 <div key={i} className="doc-sc" style={{background:s.bg}}>
                   <div className="doc-sc-icon" style={{background:s.iconBg}}>{s.icon}</div>
@@ -234,83 +441,123 @@ export default function DoctorDashboard() {
               ))}
             </div>
 
-            {tab==="schedule"&&(<>
-              <div className="doc-mid">
-                <div className="doc-card">
-                  <div className="doc-card-head"><div><div className="doc-card-title">Patient Visits — This Month</div></div></div>
-                  <div className="doc-card-body">
-                    <div style={{display:"flex",alignItems:"flex-end",gap:0}}>
-                      <div style={{display:"flex",flexDirection:"column",justifyContent:"space-between",height:120,paddingRight:8,alignItems:"flex-end"}}>
-                        {[30,20,10,0].map(v=><span key={v} style={{fontSize:9,color:"#cbd5e1"}}>{v}</span>)}
-                      </div>
-                      <div className="doc-chart" style={{flex:1}}>
-                        {barData.map((b,i)=>(
-                          <div key={i} className="doc-bar-wrap">
-                            <div className="doc-bar" style={{height:`${(b.val/maxBar)*110}px`,background:i===2||i===7?"linear-gradient(180deg,#10b981,#34d399)":"linear-gradient(180deg,#a7f3d0,#d1fae5)"}}/>
-                            <span className="doc-bar-lbl">{b.month}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+            {/* In-Progress Banner */}
+            {inProgress && (
+              <div style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",borderRadius:14,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:"#fff",animation:"pulse 1.5s ease-in-out infinite"}}/>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700}}>Consultation in progress — {inProgress.patient?.name}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,.75)"}}>Token #{inProgress.tokenNumber} · {inProgress.timeSlot} · {TYPE_LABEL[inProgress.type]}</div>
                   </div>
                 </div>
-                <div className="doc-card">
-                  <div className="doc-card-head"><div className="doc-card-title">Today's Timeline</div></div>
-                  <div className="doc-card-body" style={{padding:"8px 12px"}}>
-                    {myAppointments.map((a,i)=>(
-                      <div key={i} className="doc-tl-item">
-                        <div className="doc-tl-time">{a.time}</div>
-                        <div className="doc-tl-dot" style={{background:a.status==="in-progress"?"#3b82f6":a.status==="break"?"#e2e8f0":a.status==="waiting"?"#f59e0b":"#10b981"}}/>
-                        <div style={{flex:1}}>
-                          <div className="doc-tl-patient">{a.patient}</div>
-                          <div className="doc-tl-type">{a.type}</div>
-                        </div>
-                        <span className="doc-badge" style={a.status==="in-progress"?{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}:a.status==="break"?{background:"#f8fafc",color:"#94a3b8",border:"1px solid #e2e8f0"}:a.status==="waiting"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>{a.status.replace("-"," ")}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>)}
-
-            {tab==="patients"&&(
-              <div className="doc-card">
-                <div className="doc-card-head"><div><div className="doc-card-title">My Patients</div><div className="doc-card-sub">{myPatients.length} under your care</div></div></div>
-                <table className="doc-tbl">
-                  <thead><tr><th>Name</th><th>Age</th><th>Blood</th><th>Condition</th><th>Next Visit</th><th>Status</th></tr></thead>
-                  <tbody>
-                    {myPatients.map(p=>(
-                      <tr key={p.id}>
-                        <td style={{fontWeight:600,color:"#1e293b"}}>{p.name}</td>
-                        <td>{p.age}</td>
-                        <td><span style={{color:"#ef4444",fontWeight:700}}>{p.blood}</span></td>
-                        <td>{p.condition}</td>
-                        <td style={{fontSize:12}}>{p.nextVisit}</td>
-                        <td><span className="doc-badge" style={p.status==="critical"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:p.status==="monitor"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:p.status==="recovering"?{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}:{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>{p.status}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <button onClick={()=>setConsultAppt(inProgress)}
+                  style={{padding:"8px 16px",borderRadius:9,border:"none",background:"rgba(255,255,255,.2)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                  Continue →
+                </button>
               </div>
             )}
 
-            {tab==="prescriptions"&&(
+            {/* Schedule Tab */}
+            {tab==="schedule" && (
               <div className="doc-card">
-                <div className="doc-card-head"><div><div className="doc-card-title">Prescriptions Issued</div><div className="doc-card-sub">{prescriptions.length} today</div></div></div>
-                <table className="doc-tbl">
-                  <thead><tr><th>Patient</th><th>Drug / Dosage</th><th>Frequency</th><th>Duration</th><th>Date</th></tr></thead>
-                  <tbody>
-                    {prescriptions.map((p,i)=>(
-                      <tr key={i}>
-                        <td style={{fontWeight:600,color:"#1e293b"}}>{p.patient}</td>
-                        <td style={{color:"#a855f7",fontWeight:500}}>{p.drug}</td>
-                        <td>{p.freq}</td>
-                        <td>{p.duration}</td>
-                        <td style={{fontSize:12}}>{p.date}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="doc-card-head">
+                  <div>
+                    <div className="doc-card-title">Today's Appointments</div>
+                    <div className="doc-card-sub">{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+                  </div>
+                  <button onClick={()=>doctor && fetchAppointments(doctor.id)}
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                    <RefreshCw size={12}/>Refresh
+                  </button>
+                </div>
+                {loadingAppts ? (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
+                    <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading appointments...
+                  </div>
+                ) : appointments.length === 0 ? (
+                  <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
+                    <CalendarDays size={32} style={{marginBottom:10,opacity:.4}}/>
+                    <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No appointments today</div>
+                    <div style={{fontSize:12,marginTop:4}}>Your schedule is clear for today</div>
+                  </div>
+                ) : (
+                  <table className="doc-tbl">
+                    <thead><tr><th>Token</th><th>Time</th><th>Patient</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                      {appointments.map((a:any)=>{
+                        const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
+                        const canConsult = ["SCHEDULED","CONFIRMED","IN_PROGRESS"].includes(a.status);
+                        return (
+                          <tr key={a.id}>
+                            <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:12}}>#{a.tokenNumber||"—"}</span></td>
+                            <td style={{fontWeight:600,color:"#334155"}}>{a.timeSlot}</td>
+                            <td>
+                              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                <div style={{width:28,height:28,borderRadius:8,background:`linear-gradient(135deg,${accent},#0ea5e9)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0}}>
+                                  {(a.patient?.name||"?").charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{fontWeight:600,color:"#1e293b",fontSize:13}}>{a.patient?.name||"—"}</div>
+                                  <div style={{fontSize:10,color:"#94a3b8"}}>{a.patient?.patientId}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td><span style={{fontSize:11,background:"#f1f5f9",color:"#475569",padding:"3px 8px",borderRadius:6,fontWeight:600}}>{TYPE_LABEL[a.type]||a.type}</span></td>
+                            <td><span className="doc-badge" style={{background:sc.badge[0],color:sc.badge[1],border:`1px solid ${sc.badge[2]}`}}>{sc.label}</span></td>
+                            <td>
+                              {canConsult ? (
+                                <button onClick={()=>setConsultAppt(a)}
+                                  style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"none",background:a.status==="IN_PROGRESS"?"linear-gradient(135deg,#3b82f6,#2563eb)":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:a.status==="IN_PROGRESS"?"0 3px 10px rgba(59,130,246,.3)":"0 3px 10px rgba(16,185,129,.3)"}}>
+                                  <PlayCircle size={12}/>{a.status==="IN_PROGRESS"?"Continue":"Consult"}
+                                </button>
+                              ) : (
+                                <span style={{fontSize:11,color:"#94a3b8"}}>{a.status==="COMPLETED"?"Done":"—"}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {/* Patients Tab */}
+            {tab==="patients" && (
+              <div className="doc-card">
+                <div className="doc-card-head">
+                  <div><div className="doc-card-title">My Patients</div><div className="doc-card-sub">{allPatients.length} unique patients</div></div>
+                </div>
+                {allPatients.length === 0 ? (
+                  <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
+                    <UserRound size={32} style={{marginBottom:10,opacity:.4}}/>
+                    <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No patients yet</div>
+                  </div>
+                ) : (
+                  <table className="doc-tbl">
+                    <thead><tr><th>Patient ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Last Visit</th><th>Last Type</th><th></th></tr></thead>
+                    <tbody>
+                      {allPatients.map((p:any)=>(
+                        <tr key={p.id}>
+                          <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:11}}>{p.patientId}</span></td>
+                          <td style={{fontWeight:600,color:"#1e293b"}}>{p.name}</td>
+                          <td style={{color:"#64748b"}}>{p.phone||"—"}</td>
+                          <td>{p.gender ? <span style={{fontSize:10,background:"#f1f5f9",color:"#475569",padding:"3px 7px",borderRadius:100,fontWeight:600}}>{p.gender}</span> : "—"}</td>
+                          <td style={{fontSize:12,color:"#64748b"}}>{p.lastVisit ? new Date(p.lastVisit).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}</td>
+                          <td>{p.lastType ? <span style={{fontSize:10,background:"#f1f5f9",color:"#475569",padding:"3px 7px",borderRadius:6,fontWeight:600}}>{TYPE_LABEL[p.lastType]||p.lastType}</span> : "—"}</td>
+                          <td>
+                            <a href={`/hospitaladmin/patients/${p.id}`} target="_blank" rel="noreferrer"
+                              style={{fontSize:11,color:"#3b82f6",fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:3}}>
+                              Profile <ChevronRight size={11}/>
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
           </div>
@@ -318,20 +565,30 @@ export default function DoctorDashboard() {
           <div className="doc-right">
             <div style={{marginBottom:22}}>
               <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>
-              <MiniCalendar accent="#10b981"/>
+              <MiniCalendar accent={accent}/>
             </div>
             <div>
-              <div className="doc-right-title">⚠️ Critical &amp; Monitor Cases</div>
-              {myPatients.filter(p=>p.status==="critical"||p.status==="monitor").map(p=>(
-                <div key={p.id} className="doc-critical-card" style={{background:p.status==="critical"?"#fff5f5":"#fefce8",border:`1px solid ${p.status==="critical"?"#fecaca":"#fde68a"}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{p.name}</div>
-                    <span className="doc-badge" style={p.status==="critical"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}}>{p.status}</span>
+              <div className="doc-right-title" style={{marginBottom:10}}>Today's Queue</div>
+              {appointments.length === 0 ? (
+                <div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"16px 0"}}>No appointments today</div>
+              ) : appointments.slice(0,6).map((a:any)=>{
+                const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
+                return (
+                  <div key={a.id} className="doc-critical-card" style={{background:a.status==="IN_PROGRESS"?"#eff6ff":a.status==="COMPLETED"?"#f0fdf4":"#f8fafc",border:`1px solid ${a.status==="IN_PROGRESS"?"#bfdbfe":a.status==="COMPLETED"?"#bbf7d0":"#e2e8f0"}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{a.patient?.name||"—"}</div>
+                      <span className="doc-badge" style={{background:sc.badge[0],color:sc.badge[1],border:`1px solid ${sc.badge[2]}`}}>{sc.label}</span>
+                    </div>
+                    <div style={{fontSize:11,color:"#64748b"}}>{a.timeSlot} · Token #{a.tokenNumber||"—"}</div>
+                    {["SCHEDULED","CONFIRMED","IN_PROGRESS"].includes(a.status) && (
+                      <button onClick={()=>setConsultAppt(a)}
+                        style={{marginTop:7,width:"100%",padding:"5px 0",borderRadius:7,border:"none",background:a.status==="IN_PROGRESS"?"#3b82f6":accent,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                        {a.status==="IN_PROGRESS"?"Continue":"Consult"}
+                      </button>
+                    )}
                   </div>
-                  <div style={{fontSize:12,color:"#64748b"}}>{p.condition} · Age {p.age}</div>
-                  <div style={{fontSize:11,color:"#94a3b8",marginTop:4}}>Next: {p.nextVisit}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

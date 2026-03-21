@@ -1,12 +1,16 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Settings, Building2, Stethoscope, Users, BedDouble, CreditCard, Package,
   Plus, Pencil, Trash2, Search, X, ChevronRight, Check, AlertTriangle,
   LogOut, Bell, HelpCircle, FlaskConical, LayoutDashboard, Loader2
 } from "lucide-react";
 import DepartmentPanel from "@/components/DepartmentPanel";
+import DoctorPanel from "@/components/DoctorPanel";
+import LeaveModal from "@/components/LeaveModal";
+import StaffPanel from "@/components/StaffPanel";
+import WardBedPanel from "@/components/WardBedPanel";
 
 type Tab = "settings"|"departments"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory";
 
@@ -163,24 +167,39 @@ function CrudPanel({endpoint,columns,formFields,entityName,searchable=true}:{
 /* ─── MAIN PAGE ─── */
 export default function ConfigurePage(){
   const router=useRouter();
+  const searchParams=useSearchParams();
   const [user,setUser]=useState<any>(null);
   const [loading,setLoading]=useState(true);
-  const [tab,setTab]=useState<Tab>("settings");
+  const initialTab=(searchParams.get("tab") as Tab)||"settings";
+  const [tab,setTabState]=useState<Tab>(TABS.some(t=>t.id===initialTab)?initialTab:"settings");
+  const setTab=(t:Tab)=>{setTabState(t);router.replace(`?tab=${t}`,{scroll:false});};
+
+  // Doctor modals state (must be before any conditional returns)
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
 
   useEffect(()=>{
-    api("/api/auth/me").then(d=>{if(!d.success||d.data?.role!=="HOSPITAL_ADMIN"){router.push("/login");return;}setUser(d.data);setLoading(false);}).catch(()=>router.push("/login"));
+    api("/api/auth/me").then(d=>{
+      if(!d.success){router.push("/login");return;}
+      if(d.data.role==="DOCTOR"){router.push("/doctor/dashboard");return;}
+      if(d.data.role==="STAFF"||d.data.role==="RECEPTIONIST"){router.push("/staff/dashboard");return;}
+      if(d.data.role!=="HOSPITAL_ADMIN"){router.push("/login");return;}
+      setUser(d.data);setLoading(false);
+    }).catch(()=>router.push("/login"));
   },[router]);
 
   const logout=async()=>{await api("/api/auth/logout","POST");router.push("/login");};
   const initials=(n:string)=>n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();
 
+  const openLeaveModal = (doctor: any) => {
+    setSelectedDoctor(doctor);
+    setLeaveModalOpen(true);
+  };
+
   if(loading) return <div style={{minHeight:"100vh",background:"#f0f4f8",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",gap:12,color:"#64748b"}}><Loader2 size={24} className="cfg-spin"/>Loading...</div>;
 
   const clinicalColumns=[{key:"name",label:"Name"},{key:"type",label:"Type",render:(v:string)=><span className="cfg-badge blue">{v}</span>},{key:"department",label:"Department",render:(v:any)=>v?.name||"—"},{key:"isActive",label:"Status",render:(v:boolean)=><span className={`cfg-badge ${v?"green":"red"}`}>{v?"Active":"Inactive"}</span>}];
   const clinicalFields=[{key:"name",label:"Unit Name",required:true},{key:"type",label:"Type",options:[{v:"PHARMACY",l:"Pharmacy"},{v:"PATHOLOGY",l:"Pathology"},{v:"RADIOLOGY",l:"Radiology"},{v:"PROCEDURE",l:"Procedure"},{v:"LABORATORY",l:"Laboratory"},{v:"OTHER",l:"Other"}],required:true}];
-
-  const doctorColumns=[{key:"name",label:"Name"},{key:"email",label:"Email"},{key:"specialization",label:"Specialization",render:(v:string)=>v||"—"},{key:"department",label:"Dept",render:(v:any)=>v?.name||"—"},{key:"consultationFee",label:"Fee",render:(v:number)=>`₹${v||0}`},{key:"isAvailable",label:"Status",render:(v:boolean)=><span className={`cfg-badge ${v?"green":"red"}`}>{v?"Available":"Unavailable"}</span>}];
-  const doctorFields=[{key:"name",label:"Doctor Name",required:true},{key:"email",label:"Email",required:true},{key:"phone",label:"Phone"},{key:"specialization",label:"Specialization"},{key:"qualification",label:"Qualification"},{key:"consultationFee",label:"Consultation Fee (₹)",type:"number"}];
 
   const staffColumns=[{key:"name",label:"Name"},{key:"role",label:"Role",render:(v:string)=><span className="cfg-badge blue">{v?.replace("_"," ")}</span>},{key:"department",label:"Dept",render:(v:any)=>v?.name||"—"},{key:"salary",label:"Salary",render:(v:number)=>`₹${v||0}`},{key:"isActive",label:"Status",render:(v:boolean)=><span className={`cfg-badge ${v?"green":"red"}`}>{v?"Active":"Inactive"}</span>}];
   const staffFields=[{key:"name",label:"Staff Name",required:true},{key:"email",label:"Email"},{key:"phone",label:"Phone"},{key:"role",label:"Role",options:[{v:"NURSE",l:"Nurse"},{v:"TECHNICIAN",l:"Technician"},{v:"PHARMACIST",l:"Pharmacist"},{v:"RECEPTIONIST",l:"Receptionist"},{v:"LAB_TECHNICIAN",l:"Lab Technician"},{v:"ACCOUNTANT",l:"Accountant"},{v:"SUPPORT",l:"Support"},{v:"OTHER",l:"Other"}],required:true},{key:"salary",label:"Salary",type:"number"}];
@@ -307,9 +326,16 @@ export default function ConfigurePage(){
           {tab==="settings"&&<SettingsPanel hospitalId={user?.hospitalId||""}/>}
           {tab==="departments"&&<DepartmentPanel/>}
           {tab==="clinical"&&<CrudPanel endpoint="/api/config/departments?sub=true" columns={clinicalColumns} formFields={clinicalFields} entityName="Clinical Unit"/>}
-          {tab==="doctors"&&<CrudPanel endpoint="/api/config/doctors" columns={doctorColumns} formFields={doctorFields} entityName="Doctor"/>}
-          {tab==="staff"&&<CrudPanel endpoint="/api/config/staff" columns={staffColumns} formFields={staffFields} entityName="Staff"/>}
-          {tab==="wards"&&<CrudPanel endpoint="/api/config/wards" columns={wardColumns} formFields={wardFields} entityName="Ward"/>}
+          {tab==="doctors"&&<DoctorPanel onOpenLeave={openLeaveModal}/>}
+          
+          {/* Doctor Modals */}
+          <LeaveModal
+            open={leaveModalOpen}
+            onClose={() => setLeaveModalOpen(false)}
+            doctor={selectedDoctor}
+          />
+          {tab==="staff"&&<StaffPanel/>}
+          {tab==="wards"&&<WardBedPanel/>}
           {tab==="billing"&&<CrudPanel endpoint="/api/config/pricing" columns={billingColumns} formFields={billingFields} entityName="Charge"/>}
           {tab==="inventory"&&<CrudPanel endpoint="/api/config/inventory" columns={invColumns} formFields={invFields} entityName="Inventory Item"/>}
         </div>

@@ -40,6 +40,8 @@ export default function LoginPage() {
         const role = data.data?.user?.role;
         setTimeout(() => {
           if (role === "SUPER_ADMIN") router.push("/superadmin/dashboard");
+          else if (role === "DOCTOR") router.push("/doctor/dashboard");
+          else if (role === "RECEPTIONIST" || role === "STAFF") router.push("/staff/dashboard");
           else router.push("/hospitaladmin/dashboard");
         }, 800);
       } else {

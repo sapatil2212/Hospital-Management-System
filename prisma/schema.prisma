@@ -26,9 +26,14 @@ model Hospital {
   doctors            Doctor[]
   staffMembers       Staff[]
   wards              Ward[]
+  rooms              Room[]
   beds               Bed[]
+  bedAllocations     BedAllocation[]
   pricing            Pricing[]
   inventoryItems     InventoryItem[]
+  patients           Patient[]
+  appointments       Appointment[]
+  followUps          FollowUp[]
 }
 
 model User {
@@ -44,6 +49,8 @@ model User {
 
   createdAt     DateTime @default(now())
   sessions      Session[]
+  doctor        Doctor?
+  staff         Staff?
 
   @@index([hospitalId])
   @@index([email, hospitalId])
@@ -139,6 +146,7 @@ model Department {
   doctors          Doctor[]        @relation("DepartmentDoctors")
   staff            Staff[]
   pricing          Pricing[]
+  appointments     Appointment[]
 
   @@unique([hospitalId, code])
   @@index([hospitalId])
@@ -171,29 +179,71 @@ enum SubDepartmentType {
   OTHER
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model Doctor {
   id              String   @id @default(uuid())
   hospitalId      String
   hospital        Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
+  // Basic Info
   name            String
   email           String
   phone           String?
+  gender          Gender?
+  profileImage    String?
+  dateOfBirth     DateTime?
+  bloodGroup      String?
+  address         String?  @db.Text
+
+  // Professional Info
   specialization  String?
   qualification   String?
+  experience      Int      @default(0)
+  registrationNo  String?
+  licenseNo       String?
+
+  // Documents (Cloudinary URLs)
+  agreementDoc    String?
+  govtIdCard      String?
+  signature       String?
+  hospitalStamp   String?
+
+  // Department Relation
   departmentId    String?
   department      Department? @relation("DepartmentDoctors", fields: [departmentId], references: [id], onDelete: SetNull)
+
+  // Financial
   consultationFee Float    @default(0)
+  followUpFee     Float?
+
+  // Status
+  isActive        Boolean  @default(true)
   isAvailable     Boolean  @default(true)
+
+  // Credentials / Login
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  credentialsSent Boolean  @default(false)
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  availability    DoctorAvailability[]
+  // Relations
+  availability     DoctorAvailability[]
+  leaves           DoctorLeave[]
+  scheduleTemplates DoctorScheduleTemplate[]
+  attendance       DoctorAttendance[]
   hodOfDepartments Department[] @relation("DepartmentHOD")
+  appointments     Appointment[]
 
   @@unique([hospitalId, email])
   @@index([hospitalId])
+  @@index([hospitalId, departmentId])
 }
 
 enum DayOfWeek {
@@ -207,20 +257,100 @@ enum DayOfWeek {
 }
 
 model DoctorAvailability {
-  id          String   @id @default(uuid())
-  doctorId    String
-  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  id              String    @id @default(uuid())
+  doctorId        String
+  doctor          Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  hospitalId      String
 
-  day         DayOfWeek
-  startTime   String                // "09:00"
-  endTime     String                // "17:00"
+  day             DayOfWeek
+  startTime       String    // "09:00"
+  endTime         String    // "17:00"
+  slotDuration    Int       @default(30)  // minutes
+  bufferTime      Int       @default(0)   // minutes between slots
+  maxPatientsPerSlot Int    @default(1)
+  
+  // Break times (JSON array: [{"start":"12:00","end":"13:00"}])
+  breaks          String?   @db.Text
+  
+  // Auto-generated slots (JSON array for quick lookup)
+  generatedSlots  String?   @db.Text
+  
+  isActive        Boolean   @default(true)
 
-  leaveFrom   DateTime?
-  leaveTo     DateTime?
-  leaveReason String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@unique([doctorId, day])
   @@index([doctorId])
+  @@index([hospitalId])
+}
+
+model DoctorScheduleTemplate {
+  id          String   @id @default(uuid())
+  hospitalId  String
+  doctorId    String?  // null = hospital-wide template
+  doctor      Doctor?  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  
+  name        String   // "Morning Shift", "Full Week", etc.
+  description String?
+  
+  // Template data (JSON): [{day, startTime, endTime, slotDuration, bufferTime, breaks, maxPatientsPerSlot}]
+  scheduleData String  @db.Text
+  
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([hospitalId])
+  @@index([doctorId])
+}
+
+model DoctorLeave {
+  id         String    @id @default(uuid())
+  doctorId   String
+  doctor     Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  hospitalId String
+
+  leaveFrom  DateTime
+  leaveTo    DateTime
+  reason     String?
+  isApproved Boolean   @default(true)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([doctorId])
+  @@index([hospitalId])
+  @@index([doctorId, leaveFrom, leaveTo])
+}
+
+model DoctorAttendance {
+  id          String   @id @default(uuid())
+  doctorId    String
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  hospitalId  String
+  
+  date        DateTime @db.Date
+  status      AttendanceStatus @default(ABSENT)
+  loginTime   DateTime?
+  logoutTime  DateTime?
+  notes       String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([doctorId, date])
+  @@index([doctorId])
+  @@index([hospitalId])
+  @@index([date])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
 }
 
 model Staff {
@@ -229,11 +359,21 @@ model Staff {
   hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
   name          String
-  email         String?
+  email         String
   phone         String?
   role          StaffRole
   departmentId  String?
   department    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  
+  // Authentication
+  password      String?
+  mustChangePassword Boolean @default(true)
+  permissions   String?  @db.Text
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  credentialsSent Boolean @default(false)
+  
+  // Employment
   salary        Float    @default(0)
   joinDate      DateTime @default(now())
   isActive      Boolean  @default(true)
@@ -241,7 +381,9 @@ model Staff {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@unique([hospitalId, email])
   @@index([hospitalId])
+  @@index([email])
 }
 
 enum StaffRole {
@@ -264,12 +406,13 @@ model Ward {
   name          String
   type          WardType
   floor         String?
-  capacity      Int      @default(0)
+  description   String?  @db.Text
   isActive      Boolean  @default(true)
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  rooms         Room[]
   beds          Bed[]
 
   @@unique([hospitalId, name])
@@ -288,6 +431,38 @@ enum WardType {
   ISOLATION
 }
 
+model Room {
+  id            String     @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  wardId        String
+  ward          Ward       @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  roomNumber    String
+  roomType      RoomType   @default(SHARED)
+  capacity      Int        @default(1)
+  description   String?    @db.Text
+  isActive      Boolean    @default(true)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  beds          Bed[]
+
+  @@unique([wardId, roomNumber])
+  @@index([hospitalId])
+  @@index([wardId])
+}
+
+enum RoomType {
+  SHARED
+  PRIVATE
+  SEMI_PRIVATE
+  ICU
+  ISOLATION
+}
+
 model Bed {
   id            String    @id @default(uuid())
   hospitalId    String
@@ -295,16 +470,32 @@ model Bed {
 
   wardId        String
   ward          Ward      @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  roomId        String?
+  room          Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
   bedNumber     String
+  bedType       BedType   @default(NORMAL)
   status        BedStatus @default(AVAILABLE)
   pricePerDay   Float     @default(0)
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  @@unique([wardId, bedNumber])
+  allocations   BedAllocation[]
+
+  @@unique([roomId, bedNumber])
   @@index([hospitalId])
   @@index([wardId])
+  @@index([roomId])
+  @@index([status])
+}
+
+enum BedType {
+  NORMAL
+  ICU
+  VENTILATOR
+  ELECTRIC
+  PEDIATRIC
 }
 
 enum BedStatus {
@@ -312,6 +503,45 @@ enum BedStatus {
   OCCUPIED
   MAINTENANCE
   RESERVED
+}
+
+model BedAllocation {
+  id                    String           @id @default(uuid())
+  hospitalId            String
+  hospital              Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  bedId                 String
+  bed                   Bed              @relation(fields: [bedId], references: [id], onDelete: Cascade)
+
+  patientName           String
+  patientAge            Int?
+  patientGender         String?
+  patientPhone          String?
+  attendantName         String?
+  attendantPhone        String?
+  diagnosis             String?          @db.Text
+  admittingDoctorName   String?
+
+  admissionDate         DateTime         @default(now())
+  expectedDischargeDate DateTime?
+  actualDischargeDate   DateTime?
+
+  notes                 String?          @db.Text
+  status                AllocationStatus @default(ACTIVE)
+
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([hospitalId])
+  @@index([bedId])
+  @@index([status])
+  @@index([hospitalId, status])
+}
+
+enum AllocationStatus {
+  ACTIVE
+  DISCHARGED
+  TRANSFERRED
 }
 
 model Pricing {
@@ -366,4 +596,122 @@ model InventoryItem {
   @@unique([hospitalId, name, category])
   @@index([hospitalId])
   @@index([hospitalId, category])
+}
+
+// ─────────────────────────────────────────────
+// PATIENT & APPOINTMENT MODELS
+// ─────────────────────────────────────────────
+
+model Patient {
+  id            String    @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  patientId     String    // e.g., HOSP-0001 (sequential per hospital)
+
+  name          String
+  email         String?
+  phone         String
+  gender        String?
+  dateOfBirth   DateTime?
+  bloodGroup    String?
+  address       String?   @db.Text
+
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  appointments  Appointment[]
+  followUps     FollowUp[]
+
+  @@unique([hospitalId, patientId])
+  @@unique([hospitalId, phone])
+  @@index([hospitalId])
+  @@index([hospitalId, phone])
+  @@index([hospitalId, name])
+}
+
+enum AppointmentType {
+  OPD
+  ONLINE
+  FOLLOW_UP
+  EMERGENCY
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  hospitalId      String
+  hospital        Hospital          @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  patientId       String
+  patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  doctorId        String
+  doctor          Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  departmentId    String?
+  department      Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  appointmentDate DateTime          @db.Date
+  timeSlot        String
+
+  type            AppointmentType   @default(OPD)
+  status          AppointmentStatus @default(SCHEDULED)
+
+  consultationFee Float?
+  tokenNumber     Int?
+  notes           String?           @db.Text
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  followUps       FollowUp[]
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([hospitalId, appointmentDate])
+  @@index([hospitalId, status])
+  @@index([doctorId, appointmentDate, timeSlot])
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model FollowUp {
+  id              String         @id @default(uuid())
+  hospitalId      String
+  hospital        Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  patientId       String
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  appointmentId   String?
+  appointment     Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  followUpDate    DateTime
+  reason          String?        @db.Text
+  notes           String?        @db.Text
+  status          FollowUpStatus @default(PENDING)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([hospitalId])
+  @@index([patientId])
+  @@index([hospitalId, followUpDate])
+  @@index([hospitalId, status])
 }
