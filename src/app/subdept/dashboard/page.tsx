@@ -1,24 +1,30 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LogOut, Loader2, Bell, User, Phone, Mail, Activity,
-  Layers, ArrowRight, CheckCircle, Clock, Stethoscope, Settings
+  LogOut, Loader2, Bell, User, Phone, Mail, Activity, LayoutDashboard,
+  Layers, ArrowRight, CheckCircle, Clock, Stethoscope, Settings,
+  Users, ClipboardList, Building2, Search, RefreshCw, X, ChevronRight,
+  Smile, Sparkles, Scissors, Heart, Microscope, Pill, Receipt, Scan,
+  TestTube2, HelpCircle, PlayCircle, CheckCircle2, AlertCircle,
+  CalendarDays, FileText, TrendingUp, FlaskConical
 } from "lucide-react";
 
-const SUB_DEPT_META: Record<string, { icon: string; gradient: string; lightBg: string }> = {
-  DENTAL:       { icon: "🦷", gradient: "linear-gradient(135deg,#06b6d4,#0891b2)", lightBg: "#ecfeff" },
-  DERMATOLOGY:  { icon: "🧴", gradient: "linear-gradient(135deg,#ec4899,#be185d)", lightBg: "#fdf2f8" },
-  HAIR:         { icon: "💆", gradient: "linear-gradient(135deg,#8b5cf6,#6d28d9)", lightBg: "#f5f3ff" },
-  ONCOLOGY:     { icon: "🎗️", gradient: "linear-gradient(135deg,#f97316,#c2410c)", lightBg: "#fff7ed" },
-  CARDIOLOGY:   { icon: "❤️", gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", lightBg: "#fff5f5" },
-  PATHOLOGY:    { icon: "🔬", gradient: "linear-gradient(135deg,#10b981,#047857)", lightBg: "#f0fdf4" },
-  PHARMACY:     { icon: "💊", gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", lightBg: "#eff6ff" },
-  BILLING:      { icon: "🧾", gradient: "linear-gradient(135deg,#f59e0b,#b45309)", lightBg: "#fffbeb" },
-  RADIOLOGY:    { icon: "🩻", gradient: "linear-gradient(135deg,#6366f1,#4338ca)", lightBg: "#eef2ff" },
-  LABORATORY:   { icon: "🧪", gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", lightBg: "#f0fdfa" },
-  PROCEDURE:    { icon: "🏥", gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", lightBg: "#f7fee7" },
-  OTHER:        { icon: "📋", gradient: "linear-gradient(135deg,#64748b,#334155)", lightBg: "#f8fafc" },
+// ─── Department metadata ──────────────────────────────────────────────────────
+type DeptMeta = { Icon: any; gradient: string; accent: string; lightBg: string; borderColor: string };
+const SUB_DEPT_META: Record<string, DeptMeta> = {
+  DENTAL:      { Icon: Smile,       gradient: "linear-gradient(135deg,#06b6d4,#0891b2)", accent: "#0891b2", lightBg: "#ecfeff", borderColor: "#a5f3fc" },
+  DERMATOLOGY: { Icon: Sparkles,    gradient: "linear-gradient(135deg,#ec4899,#be185d)", accent: "#be185d", lightBg: "#fdf2f8", borderColor: "#fbcfe8" },
+  HAIR:        { Icon: Scissors,    gradient: "linear-gradient(135deg,#8b5cf6,#6d28d9)", accent: "#6d28d9", lightBg: "#f5f3ff", borderColor: "#ddd6fe" },
+  ONCOLOGY:    { Icon: Activity,    gradient: "linear-gradient(135deg,#f97316,#c2410c)", accent: "#c2410c", lightBg: "#fff7ed", borderColor: "#fed7aa" },
+  CARDIOLOGY:  { Icon: Heart,       gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
+  PATHOLOGY:   { Icon: Microscope,  gradient: "linear-gradient(135deg,#10b981,#047857)", accent: "#047857", lightBg: "#f0fdf4", borderColor: "#a7f3d0" },
+  PHARMACY:    { Icon: Pill,        gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
+  BILLING:     { Icon: Receipt,     gradient: "linear-gradient(135deg,#f59e0b,#b45309)", accent: "#b45309", lightBg: "#fffbeb", borderColor: "#fde68a" },
+  RADIOLOGY:   { Icon: Scan,        gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
+  LABORATORY:  { Icon: TestTube2,   gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
+  PROCEDURE:   { Icon: Stethoscope, gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
+  OTHER:       { Icon: Layers,      gradient: "linear-gradient(135deg,#64748b,#334155)", accent: "#334155", lightBg: "#f8fafc", borderColor: "#e2e8f0" },
 };
 
 const PROC_TYPE_COLOR: Record<string, string> = {
@@ -26,39 +32,71 @@ const PROC_TYPE_COLOR: Record<string, string> = {
   SURGERY: "#ef4444", THERAPY: "#f97316", MEDICATION: "#06b6d4", OTHER: "#94a3b8",
 };
 
+const STATUS_CFG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  SCHEDULED:   { label: "Scheduled",   bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
+  CONFIRMED:   { label: "Confirmed",   bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
+  IN_PROGRESS: { label: "In Progress", bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
+  COMPLETED:   { label: "Completed",   bg: "#f0fdf4", color: "#059669", border: "#a7f3d0" },
+  CANCELLED:   { label: "Cancelled",   bg: "#fff5f5", color: "#ef4444", border: "#fecaca" },
+  NO_SHOW:     { label: "No Show",     bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
+};
+
+const initials = (n: string) => (n || "SD").split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase();
+const calcAge  = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : null;
+
 export default function SubDeptDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"dept">("overview");
+  const [queue, setQueue] = useState<any[]>([]);
+  const [queueMeta, setQueueMeta] = useState<any>({});
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [queueFilter, setQueueFilter] = useState("ALL");
+  const [queueSearch, setQueueSearch] = useState("");
 
+  // ── Load profile ──
   useEffect(() => {
-    const init = async () => {
+    (async () => {
       try {
-        const meRes = await fetch("/api/auth/me", { credentials: "include" });
-        const meData = await meRes.json();
-        if (!meData.success || meData.data?.role !== "SUB_DEPT_HEAD") {
-          router.push("/subdept/login");
-          return;
-        }
-        setUser(meData.data);
-
-        const profileRes = await fetch("/api/subdept/me", { credentials: "include" });
-        const profileData = await profileRes.json();
-        if (profileData.success) {
-          setProfile(profileData.data);
-        }
-      } catch {
-        router.push("/subdept/login");
-      }
+        const me = await fetch("/api/auth/me", { credentials: "include" }).then(r => r.json());
+        if (!me.success || me.data?.role !== "SUB_DEPT_HEAD") { router.push("/login"); return; }
+        setUser(me.data);
+        const prof = await fetch("/api/subdept/me", { credentials: "include" }).then(r => r.json());
+        if (prof.success) setProfile(prof.data);
+      } catch { router.push("/login"); }
       setLoading(false);
-    };
-    init();
+    })();
   }, [router]);
+
+  // ── Load queue ──
+  const loadQueue = useCallback(async () => {
+    setQueueLoading(true);
+    const res = await fetch("/api/subdept/queue", { credentials: "include" }).then(r => r.json());
+    if (res.success) { setQueue(res.data.queue || []); setQueueMeta(res.data); }
+    setQueueLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "queue") loadQueue(); }, [tab, loadQueue]);
+
+  // ── Status update ──
+  const updateStatus = async (id: string, status: string) => {
+    setUpdatingId(id);
+    await fetch("/api/subdept/queue", {
+      method: "PATCH", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appointmentId: id, status }),
+    });
+    await loadQueue();
+    setUpdatingId(null);
+  };
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    router.push("/subdept/login");
+    router.push("/login");
   };
 
   if (loading) {

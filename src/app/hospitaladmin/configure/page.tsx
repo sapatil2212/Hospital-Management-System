@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Settings, Building2, Stethoscope, Users, BedDouble, CreditCard, Package,
@@ -166,8 +166,8 @@ function CrudPanel({endpoint,columns,formFields,entityName,searchable=true}:{
   </div>);
 }
 
-/* ─── MAIN PAGE ─── */
-export default function ConfigurePage(){
+/* ─── MAIN PAGE CONTENT ─── */
+function ConfigureContent(){
   const router=useRouter();
   const searchParams=useSearchParams();
   const [user,setUser]=useState<any>(null);
@@ -346,4 +346,12 @@ export default function ConfigurePage(){
       </main>
     </div>
   </>);
+}
+
+export default function ConfigurePage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:"100vh",background:"#f0f4f8",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",gap:12,color:"#64748b"}}><Loader2 size={24} className="cfg-spin"/>Loading...</div>}>
+      <ConfigureContent />
+    </Suspense>
+  );
 }
