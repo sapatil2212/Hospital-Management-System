@@ -202,7 +202,7 @@ export const createStaffCredentials = async (
   });
 
   await updateStaffRepo(staffId, hospitalId, {
-    userId: user.id,
+    user: { connect: { id: user.id } },
     credentialsSent: true,
     password: hashedPassword,
   });

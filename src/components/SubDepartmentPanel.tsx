@@ -93,7 +93,7 @@ const api = async (url: string, method = "GET", body?: any) => {
   return r.json();
 };
 
-const getTypeInfo = (type: string) => SUB_DEPT_TYPES.find(t => t.value === type) || { label: type, icon: "📋", color: "#94a3b8" };
+const getTypeInfo = (type: string) => SUB_DEPT_TYPES.find(t => t.value === type) || { label: type, Icon: Layers, color: "#94a3b8" };
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -175,6 +175,72 @@ export default function SubDepartmentPanel() {
   // Credentials
   const [sendingCreds, setSendingCreds] = useState<string | null>(null);
 
+  // HOD search
+  const [hodSearch, setHodSearch] = useState("");
+  const [hodResults, setHodResults] = useState<HODResult[]>([]);
+  const [hodDropdownOpen, setHodDropdownOpen] = useState(false);
+  const [hodLoading, setHodLoading] = useState(false);
+  const hodRef = useRef<HTMLDivElement>(null);
+
+  // Password
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedPw, setCopiedPw] = useState(false);
+
+  // Auto-generate DeptName@Year password
+  const generatePassword = (name: string) => {
+    const year = new Date().getFullYear();
+    const prefix = (name || "Dept").split(" ")[0].replace(/[^a-zA-Z0-9]/g, "") || "Dept";
+    return `${prefix}@${year}`;
+  };
+
+  // Debounced HOD search
+  useEffect(() => {
+    if (!hodDropdownOpen) return;
+    const t = setTimeout(async () => {
+      setHodLoading(true);
+      try {
+        const q = hodSearch ? `&search=${encodeURIComponent(hodSearch)}` : "";
+        const [docRes, staffRes] = await Promise.all([
+          api(`/api/config/doctors?limit=8${q}`),
+          api(`/api/config/staff?limit=8${q}`),
+        ]);
+        const doctors: HODResult[] = (docRes.data?.data || []).map((d: any) => ({
+          id: d.id, kind: "DOCTOR" as const, name: d.name, email: d.email, phone: d.phone,
+          role: d.specialization || d.department?.name || "Doctor",
+        }));
+        const staffs: HODResult[] = (staffRes.data?.data || []).map((s: any) => ({
+          id: s.id, kind: "STAFF" as const, name: s.name, email: s.email, phone: s.phone,
+          role: s.role,
+        }));
+        setHodResults([...doctors, ...staffs]);
+      } catch { setHodResults([]); }
+      setHodLoading(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [hodSearch, hodDropdownOpen]);
+
+  // Close HOD dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (hodRef.current && !hodRef.current.contains(e.target as Node)) setHodDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectHOD = (hod: HODResult) => {
+    setForm((f: any) => ({ ...f, hodName: hod.name, hodEmail: hod.email || "", hodPhone: hod.phone || "", hodStaffId: hod.id }));
+    setHodSearch(hod.name);
+    setHodDropdownOpen(false);
+  };
+
+  const copyPassword = async () => {
+    if (!form.loginPassword) return;
+    await navigator.clipboard.writeText(form.loginPassword);
+    setCopiedPw(true);
+    setTimeout(() => setCopiedPw(false), 2000);
+  };
+
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
   const addToast = (type: Toast["type"], message: string) => {
@@ -219,12 +285,15 @@ export default function SubDepartmentPanel() {
     setEditItem(null);
     const defaultType = "DENTAL";
     const typeInfo = getTypeInfo(defaultType);
-    setForm({ name: "", code: "", type: defaultType, description: "", color: typeInfo.color, flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", loginEmail: "", isActive: true });
+    const pw = generatePassword("Dental");
+    setForm({ name: "", code: "", type: defaultType, description: "", color: typeInfo.color, flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true });
+    setHodSearch(""); setHodResults([]); setHodDropdownOpen(false);
     setModal(true);
   };
 
   const openEdit = (item: SubDept) => {
     setEditItem(item);
+    const pw = generatePassword(item.hodName || item.name);
     setForm({
       name: item.name,
       code: item.code || "",
@@ -236,18 +305,23 @@ export default function SubDepartmentPanel() {
       hodName: item.hodName || "",
       hodEmail: item.hodEmail || "",
       hodPhone: item.hodPhone || "",
+      hodStaffId: "",
       loginEmail: item.loginEmail || "",
+      loginPassword: pw,
       isActive: item.isActive,
     });
+    setHodSearch(item.hodName || "");
+    setHodResults([]); setHodDropdownOpen(false);
     setModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { loginPassword, hodStaffId, consultationFee, ...rest } = form;
     const payload = {
-      ...form,
-      consultationFee: undefined,
+      ...rest,
       color: form.color || undefined,
       flow: form.flow || undefined,
       departmentId: form.departmentId || null,
@@ -483,7 +557,7 @@ export default function SubDepartmentPanel() {
         <div className="sd-filters">
           <select className="sd-filter-select" value={filterType} onChange={e => { setFilterType(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}>
             <option value="">All Types</option>
-            {SUB_DEPT_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+            {SUB_DEPT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
           <select className="sd-filter-select" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}>
             <option value="">All Status</option>
@@ -512,7 +586,7 @@ export default function SubDepartmentPanel() {
                 <div key={item.id} className="sd-card">
                   <div className="sd-card-head">
                     <div className="sd-card-icon" style={{ background: alpha }}>
-                      <span>{typeInfo.icon}</span>
+                      {(() => { const CardIcon = typeInfo.Icon; return <CardIcon size={20} style={{ color: hexColor }} />; })()}
                     </div>
                     <div className="sd-card-info">
                       <div className="sd-card-name" title={item.name}>{item.name}</div>
@@ -600,7 +674,7 @@ export default function SubDepartmentPanel() {
                         <div key={t.value} className={`sd-type-card ${sel ? "selected" : ""}`}
                           style={sel ? { "--type-color": t.color, "--type-bg": bg } as any : {}}
                           onClick={() => setForm((f: any) => ({ ...f, type: t.value, color: t.color }))}>
-                          <div className="sd-type-icon">{t.icon}</div>
+                          <div className="sd-type-icon"><t.Icon size={18} /></div>
                           <div>{t.label}</div>
                         </div>
                       );
@@ -614,7 +688,7 @@ export default function SubDepartmentPanel() {
                   <div className="sd-form-grid">
                     <div className="sd-field">
                       <label className="sd-lbl">Name *</label>
-                      <input className="sd-input" placeholder="e.g., Dental Clinic" value={form.name} onChange={e => setForm((f: any) => ({ ...f, name: e.target.value }))} required />
+                      <input className="sd-input" placeholder="e.g., Dental Clinic" value={form.name} onChange={e => setForm((f: any) => ({ ...f, name: e.target.value, loginPassword: generatePassword(e.target.value) }))} required />
                     </div>
                     <div className="sd-field">
                       <label className="sd-lbl">Short Code</label>
@@ -653,11 +727,58 @@ export default function SubDepartmentPanel() {
 
                 {/* HOD */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><User size={14} />Head of Department (HOD)</div>
+                  <div className="sd-section-title" style={{ justifyContent: "space-between" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}><User size={14} />Head of Department (HOD)</span>
+                    <a href="/hospitaladmin/configure?tab=staff" target="_blank" rel="noreferrer"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#3b82f6", textDecoration: "none", padding: "3px 8px", borderRadius: 6, background: "#eff6ff", border: "1px solid #bfdbfe" }}>
+                      <UserPlus size={11} />Create New<ExternalLink size={9} />
+                    </a>
+                  </div>
+
+                  {/* HOD Searchable Dropdown */}
+                  <div ref={hodRef} style={{ position: "relative", marginBottom: 12 }}>
+                    <label className="sd-lbl" style={{ display: "block", marginBottom: 4 }}>Search Doctor / Staff</label>
+                    <div style={{ position: "relative" }}>
+                      <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                      <input
+                        className="sd-input"
+                        style={{ paddingLeft: 32 }}
+                        placeholder="Search by name..."
+                        value={hodSearch}
+                        onChange={e => { setHodSearch(e.target.value); setHodDropdownOpen(true); }}
+                        onFocus={() => setHodDropdownOpen(true)}
+                      />
+                      {form.hodName && <button type="button" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }} onClick={() => { setForm((f: any) => ({ ...f, hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "" })); setHodSearch(""); }}><X size={12} /></button>}
+                    </div>
+                    {hodDropdownOpen && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.1)", zIndex: 50, maxHeight: 220, overflowY: "auto", marginTop: 4 }}>
+                        {hodLoading ? (
+                          <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#94a3b8" }}><Loader2 size={13} className="sd-spin" />Searching...</div>
+                        ) : hodResults.length === 0 ? (
+                          <div style={{ padding: "12px 14px", fontSize: 12, color: "#94a3b8" }}>No results. Use "Create New" above to add staff.</div>
+                        ) : hodResults.map(h => (
+                          <div key={h.id} onClick={() => selectHOD(h)}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid #f1f5f9" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
+                            <div style={{ width: 32, height: 32, borderRadius: 9, background: h.kind === "DOCTOR" ? "#eff6ff" : "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {h.kind === "DOCTOR" ? <Stethoscope size={14} color="#3b82f6" /> : <User size={14} color="#8b5cf6" />}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{h.name}</div>
+                              <div style={{ fontSize: 11, color: "#94a3b8" }}>{h.role}{h.email ? ` · ${h.email}` : ""}</div>
+                            </div>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: h.kind === "DOCTOR" ? "#eff6ff" : "#f5f3ff", color: h.kind === "DOCTOR" ? "#3b82f6" : "#8b5cf6", border: "1px solid", borderColor: h.kind === "DOCTOR" ? "#bfdbfe" : "#ddd6fe" }}>{h.kind}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="sd-form-grid">
                     <div className="sd-field">
                       <label className="sd-lbl">HOD Name</label>
-                      <input className="sd-input" placeholder="Full name" value={form.hodName} onChange={e => setForm((f: any) => ({ ...f, hodName: e.target.value }))} />
+                      <input className="sd-input" placeholder="Full name" value={form.hodName} onChange={e => { setForm((f: any) => ({ ...f, hodName: e.target.value })); setHodSearch(e.target.value); }} />
                     </div>
                     <div className="sd-field">
                       <label className="sd-lbl">HOD Phone</label>
@@ -670,13 +791,50 @@ export default function SubDepartmentPanel() {
                   </div>
                 </div>
 
-                {/* Login Credentials */}
+                {/* Login Credentials (Admin only) */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><Key size={14} />Dashboard Login</div>
-                  <div className="sd-field">
-                    <label className="sd-lbl">Portal Login Email</label>
-                    <input className="sd-input" type="email" placeholder="dental.clinic@hospital.com" value={form.loginEmail} onChange={e => setForm((f: any) => ({ ...f, loginEmail: e.target.value }))} />
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Used to create a dedicated login account for this sub-department</div>
+                  <div className="sd-section-title"><ShieldCheck size={14} />Dashboard Login Credentials
+                    <span style={{ marginLeft: "auto", fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 100, fontWeight: 700, border: "1px solid #fde68a" }}>Admin Only</span>
+                  </div>
+                  <div className="sd-form-grid">
+                    <div className="sd-field full">
+                      <label className="sd-lbl">Login Email / Department ID</label>
+                      <input className="sd-input" type="email"
+                        placeholder="e.g. dental@yourhospital.com"
+                        value={form.loginEmail}
+                        onChange={e => setForm((f: any) => ({ ...f, loginEmail: e.target.value }))}
+                      />
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                        <Lock size={10} />Login portal: <strong>http://localhost:3000/login</strong>
+                      </div>
+                    </div>
+                    <div className="sd-field full">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                        <label className="sd-lbl" style={{ margin: 0 }}>Password</label>
+                        <button type="button" onClick={() => setForm((f: any) => ({ ...f, loginPassword: generatePassword(f.hodName || f.name || "Dept") }))}
+                          style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}>
+                          <RefreshCw size={11} />Regenerate
+                        </button>
+                      </div>
+                      <div style={{ position: "relative" }}>
+                        <input className="sd-input"
+                          type={showPassword ? "text" : "password"}
+                          value={form.loginPassword || ""}
+                          onChange={e => setForm((f: any) => ({ ...f, loginPassword: e.target.value }))}
+                          placeholder="Auto-generated"
+                          style={{ paddingRight: 72, fontFamily: showPassword ? "inherit" : "monospace", letterSpacing: showPassword ? "normal" : "0.1em" }}
+                        />
+                        <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 4 }}>
+                          <button type="button" onClick={() => setShowPassword(p => !p)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 2 }}>
+                            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                          <button type="button" onClick={copyPassword} style={{ background: "none", border: "none", cursor: "pointer", color: copiedPw ? "#10b981" : "#94a3b8", padding: 2 }} title="Copy password">
+                            {copiedPw ? <Check size={14} /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Pattern: <code style={{ background: "#f1f5f9", padding: "1px 5px", borderRadius: 4, color: "#334155" }}>DeptName@Year</code> · e.g. <em>Dental@2026</em></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -697,7 +855,7 @@ export default function SubDepartmentPanel() {
           <div className="sd-modal sd-modal-lg">
             <div className="sd-modal-head">
               <div>
-                <div className="sd-modal-title">{getTypeInfo(selectedSubDept.type).icon} {selectedSubDept.name} — Procedures</div>
+                <div className="sd-modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>{(() => { const TI = getTypeInfo(selectedSubDept.type); return <TI.Icon size={16} style={{ color: TI.color }} />; })()} {selectedSubDept.name} — Procedures</div>
                 <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{selectedSubDept.flow || "Manage post-OPD procedures"}</div>
               </div>
               <button className="sd-icon-btn" onClick={() => setProcModal(false)}><X size={16} /></button>
