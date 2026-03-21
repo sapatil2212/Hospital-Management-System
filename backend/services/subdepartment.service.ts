@@ -130,6 +130,20 @@ export const createSubDepartment = async (hospitalId: string, data: CreateSubDep
     );
   }
 
+  // Auto-create User record if loginEmail provided
+  if (data.loginEmail) {
+    const yr = new Date().getFullYear();
+    const pfx = (data.hodName || data.name).split(" ")[0].replace(/[^a-zA-Z0-9]/g, "") || "Dept";
+    const rawPw = `${pfx}@${yr}`;
+    const hashed = await hashPassword(rawPw);
+    const user = await prisma.user.upsert({
+      where: { email: data.loginEmail },
+      create: { hospitalId, name: data.hodName || data.name, email: data.loginEmail, password: hashed, role: "SUB_DEPT_HEAD" as any },
+      update: { name: data.hodName || data.name, role: "SUB_DEPT_HEAD" as any, isActive: true },
+    });
+    await repo.setSubDepartmentCredentials(subDept.id, user.id, true);
+  }
+
   return repo.findSubDepartmentById(subDept.id, hospitalId);
 };
 
@@ -165,7 +179,36 @@ export const updateSubDepartment = async (id: string, hospitalId: string, data: 
     if (dup) throw new SubDeptServiceError("A sub-department with this name and type already exists", 409);
   }
 
-  return repo.updateSubDepartment(id, hospitalId, data);
+  const updated = await repo.updateSubDepartment(id, hospitalId, data);
+
+  // Auto-create/update User record if loginEmail provided
+  const newEmail = data.loginEmail;
+  if (newEmail) {
+    const yr = new Date().getFullYear();
+    const hodName = data.hodName || (updated as any)?.hodName || (existing as any)?.hodName || data.name || existing.name;
+    const pfx = hodName.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "") || "Dept";
+    const rawPw = `${pfx}@${yr}`;
+    const hashed = await hashPassword(rawPw);
+    const existingUserId = (existing as any)?.userId;
+    if (existingUserId) {
+      // Update existing user email + name (password unchanged unless email changed)
+      const emailChanged = newEmail !== (existing as any)?.loginEmail;
+      await prisma.user.update({
+        where: { id: existingUserId },
+        data: { email: newEmail, name: hodName, isActive: true, ...(emailChanged ? { password: hashed } : {}) },
+      });
+    } else {
+      // Create new user and link
+      const user = await prisma.user.upsert({
+        where: { email: newEmail },
+        create: { hospitalId, name: hodName, email: newEmail, password: hashed, role: "SUB_DEPT_HEAD" as any },
+        update: { name: hodName, role: "SUB_DEPT_HEAD" as any, isActive: true },
+      });
+      await repo.setSubDepartmentCredentials(id, user.id, true);
+    }
+  }
+
+  return repo.findSubDepartmentById(id, hospitalId);
 };
 
 export const deleteSubDepartment = async (id: string, hospitalId: string) => {

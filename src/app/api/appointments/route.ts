@@ -15,6 +15,8 @@ import prisma from "../../../../backend/config/db";
 
 const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
 
+export const dynamic = "force-dynamic";
+
 // GET /api/appointments
 export async function GET(req: NextRequest) {
   const auth = await requireRole(req, ALLOWED_ROLES);

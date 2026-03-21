@@ -11,6 +11,8 @@ import { updateAppointmentSchema } from "../../../../../backend/validations/appo
 
 const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
 
+export const dynamic = "force-dynamic";
+
 // GET /api/appointments/[id]
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireRole(req, ALLOWED_ROLES);
