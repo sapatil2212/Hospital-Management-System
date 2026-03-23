@@ -3,6 +3,7 @@ import { authMiddleware } from "../../../../../backend/middlewares/auth.middlewa
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { getSubDeptProfile, SubDeptServiceError } from "../../../../../backend/services/subdepartment.service";
 import prisma from "../../../../../backend/config/db";
+import { addProcedureChargeToBill } from "../../../../../backend/services/billing.service";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +135,11 @@ export async function POST(req: NextRequest) {
         procedure: { select: { id: true, name: true, type: true } },
       },
     });
+
+    // Event: procedure completed → auto-add charge to bill (fire and forget)
+    if ((status || "COMPLETED") === "COMPLETED") {
+      addProcedureChargeToBill(record.id, hospitalId).catch(() => {});
+    }
 
     return successResponse(record, "Procedure record saved", 201);
   } catch (err: any) {

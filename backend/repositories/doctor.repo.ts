@@ -111,6 +111,7 @@ export const findAllDoctorsSimple = async (hospitalId: string, activeOnly = true
       name: true,
       email: true,
       specialization: true,
+      consultationFee: true,
       departmentId: true,
       department: { select: { name: true } },
     },

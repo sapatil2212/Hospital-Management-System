@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireHospitalAdmin, requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import {
   createDoctor,
@@ -13,22 +13,28 @@ import {
   queryDoctorSchema,
 } from "../../../../../backend/validations/doctor.validation";
 
+const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/config/doctors - List doctors with pagination and filters
 // ─────────────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
-  if (auth.error) return auth.error;
-
   try {
     const { searchParams } = new URL(req.url);
 
-    // Simple list for dropdowns (HOD selection, etc.)
+    // Simple list for dropdowns — allow broader roles (booking, etc.)
     if (searchParams.get("simple") === "true") {
+      const dropAuth = await requireRole(req, DROPDOWN_ROLES);
+      if (dropAuth.error) return dropAuth.error;
       const activeOnly = searchParams.get("activeOnly") !== "false";
-      const data = await getDoctorsForDropdown(auth.hospitalId, activeOnly);
+      const deptFilter = searchParams.get("departmentId") || undefined;
+      let data = await getDoctorsForDropdown(dropAuth.hospitalId, activeOnly);
+      if (deptFilter) data = data.filter((d: any) => d.departmentId === deptFilter);
       return successResponse(data, "Doctors fetched");
     }
+
+    const auth = await requireHospitalAdmin(req);
+    if (auth.error) return auth.error;
 
     // Stats endpoint
     if (searchParams.get("stats") === "true") {
@@ -60,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse(result, "Doctors fetched");
   } catch (e: any) {
-    return errorResponse(e.message, 500);
+    return errorResponse(e.message || "Internal server error", 500);
   }
 }
 

@@ -110,6 +110,7 @@ export const findPatientById = async (id: string, hospitalId: string) => {
         include: {
           doctor: { select: { id: true, name: true, specialization: true } },
           department: { select: { id: true, name: true } },
+          prescription: { select: { id: true, status: true } },
         },
         orderBy: { appointmentDate: "desc" },
         take: 20,

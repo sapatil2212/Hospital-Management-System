@@ -21,14 +21,13 @@ export async function GET(req: NextRequest) {
 
     const subDeptId = (profile as any).id;
 
-    // Only show appointments that the doctor has explicitly referred to THIS sub-department
-    // after completing the consultation (subDepartmentId set + status COMPLETED)
+    // Show all appointments referred to THIS sub-department
+    // Referrals can be from any date - we show pending work regardless of original appointment date
     const appointments = await (prisma as any).appointment.findMany({
       where: {
         hospitalId,
         subDepartmentId: subDeptId,
         status: "COMPLETED",
-        appointmentDate: { gte: today, lt: tomorrow },
       },
       include: {
         patient: {
@@ -39,8 +38,8 @@ export async function GET(req: NextRequest) {
         },
         department: { select: { id: true, name: true } },
       },
-      orderBy: [{ tokenNumber: "asc" }, { timeSlot: "asc" }],
-      take: 100,
+      orderBy: [{ appointmentDate: "desc" }, { timeSlot: "desc" }],
+      take: 200,
     });
 
     const procedures = (profile as any).procedures || [];
@@ -57,6 +56,7 @@ export async function GET(req: NextRequest) {
 
       return {
         id: a.id,
+        appointmentDate: a.appointmentDate,
         tokenNumber: a.tokenNumber,
         timeSlot: a.timeSlot,
         type: a.type,
@@ -83,6 +83,13 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // Count today's referrals for stats
+    const todayReferrals = queue.filter((q: any) => {
+      const apptDate = new Date(q.appointmentDate);
+      apptDate.setHours(0, 0, 0, 0);
+      return apptDate.getTime() === today.getTime();
+    }).length;
+
     // Also fetch historical referrals (last 30 days, not today) for context
     const recentTotal = await (prisma as any).appointment.count({
       where: {
@@ -100,6 +107,7 @@ export async function GET(req: NextRequest) {
         subDeptId,
         flow: (profile as any).flow,
         total: queue.length,
+        todayReferrals,
         waiting: queue.filter((q: any) => !q.subDeptProcessed).length,
         inProgress: 0,
         completed: queue.length,

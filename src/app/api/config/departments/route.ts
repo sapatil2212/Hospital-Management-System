@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireHospitalAdmin, requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import {
   createDepartment,
@@ -22,6 +22,8 @@ import {
 import { z } from "zod";
 import { DepartmentType } from "@prisma/client";
 
+const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+
 // Sub-department validation schema
 const subDeptSchema = z.object({
   name: z.string().min(2),
@@ -37,25 +39,28 @@ const subDeptSchema = z.object({
  * Special: ?sub=true for sub-departments, ?simple=true for dropdown list
  */
 export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const simple = searchParams.get("simple");
+
+  // Simple list for dropdowns — allow broader roles (booking, etc.)
+  if (simple === "true") {
+    const dropAuth = await requireRole(req, DROPDOWN_ROLES);
+    if (dropAuth.error) return dropAuth.error;
+    const activeOnly = searchParams.get("activeOnly") !== "false";
+    const data = await getDepartmentsForDropdown(dropAuth.hospitalId, activeOnly);
+    return successResponse(data, "Departments fetched");
+  }
+
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
 
   try {
-    const { searchParams } = new URL(req.url);
     const sub = searchParams.get("sub");
-    const simple = searchParams.get("simple");
 
     // Handle sub-departments
     if (sub === "true") {
       const data = await findAllSubDepartments(auth.hospitalId);
       return successResponse(data, "Sub-departments fetched");
-    }
-
-    // Simple list for dropdowns
-    if (simple === "true") {
-      const activeOnly = searchParams.get("activeOnly") !== "false";
-      const data = await getDepartmentsForDropdown(auth.hospitalId, activeOnly);
-      return successResponse(data, "Departments fetched");
     }
 
     // Parse and validate query parameters

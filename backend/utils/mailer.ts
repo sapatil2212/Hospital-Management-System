@@ -208,6 +208,111 @@ export const sendSubDeptCredentials = async (opts: {
   });
 };
 
+export const sendPrescriptionEmail = async (opts: {
+  to: string;
+  patientName: string;
+  prescriptionNo: string;
+  doctorName: string;
+  doctorSpecialization: string;
+  departmentName: string;
+  diagnosis: string;
+  medications: string;
+  labTests: string;
+  advice: string;
+  followUpDate: string | null;
+  hospitalName: string;
+  date: string;
+}) => {
+  let medsHtml = "";
+  try {
+    const meds = JSON.parse(opts.medications);
+    if (meds.length > 0) {
+      medsHtml = `<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+        <tr style="background:#f8fafc;"><th style="text-align:left;padding:8px 10px;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;">Medication</th><th style="text-align:left;padding:8px 10px;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;">Dosage</th><th style="text-align:left;padding:8px 10px;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;">Frequency</th><th style="text-align:left;padding:8px 10px;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;">Duration</th><th style="text-align:left;padding:8px 10px;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;">Instructions</th></tr>
+        ${meds.map((m: any) => `<tr><td style="padding:8px 10px;font-size:13px;color:#1e293b;border-bottom:1px solid #f1f5f9;font-weight:600;">${m.name}</td><td style="padding:8px 10px;font-size:13px;color:#475569;border-bottom:1px solid #f1f5f9;">${m.dosage}</td><td style="padding:8px 10px;font-size:13px;color:#475569;border-bottom:1px solid #f1f5f9;">${m.frequency}</td><td style="padding:8px 10px;font-size:13px;color:#475569;border-bottom:1px solid #f1f5f9;">${m.duration}</td><td style="padding:8px 10px;font-size:13px;color:#475569;border-bottom:1px solid #f1f5f9;">${m.instructions || "—"}</td></tr>`).join("")}
+      </table>`;
+    }
+  } catch {}
+
+  let testsHtml = "";
+  try {
+    const tests = JSON.parse(opts.labTests);
+    if (tests.length > 0) {
+      testsHtml = `<div style="margin:16px 0;"><p style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 8px;">Lab Tests Recommended:</p><ul style="margin:0;padding-left:20px;">${tests.map((t: any) => `<li style="font-size:13px;color:#475569;margin-bottom:4px;">${t.name} <span style="color:#94a3b8;">(${t.urgency})</span></li>`).join("")}</ul></div>`;
+    }
+  } catch {}
+
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: `Your Prescription ${opts.prescriptionNo} – ${opts.hospitalName}`,
+    html: `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:650px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#0ea5e9,#0369a1);padding:32px 24px;text-align:center;">
+          <h1 style="color:#fff;font-size:22px;margin:0;">🏥 ${opts.hospitalName}</h1>
+          <p style="color:#bae6fd;margin:8px 0 0;font-size:14px;">Digital Prescription</p>
+        </div>
+        <div style="padding:32px 24px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:24px;">
+            <div>
+              <p style="margin:0;font-size:12px;color:#94a3b8;font-weight:600;">PRESCRIPTION NO</p>
+              <p style="margin:4px 0 0;font-size:18px;font-weight:800;color:#0c4a6e;font-family:monospace;">${opts.prescriptionNo}</p>
+            </div>
+            <div style="text-align:right;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;">Date: ${opts.date}</p>
+            </div>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:20px;">
+            <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;font-weight:600;">PATIENT</p>
+            <p style="margin:0;font-size:16px;font-weight:700;color:#1e293b;">${opts.patientName}</p>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;margin-bottom:20px;">
+            <p style="margin:0 0 4px;font-size:12px;color:#059669;font-weight:600;">CONSULTING DOCTOR</p>
+            <p style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">Dr. ${opts.doctorName}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b;">${opts.doctorSpecialization} · ${opts.departmentName}</p>
+          </div>
+          ${opts.diagnosis ? `<div style="margin-bottom:16px;"><p style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 4px;">Diagnosis:</p><p style="font-size:13px;color:#475569;margin:0;">${opts.diagnosis}</p></div>` : ""}
+          ${medsHtml ? `<div style="margin-bottom:16px;"><p style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 4px;">Medications:</p>${medsHtml}</div>` : ""}
+          ${testsHtml}
+          ${opts.advice ? `<div style="margin-bottom:16px;"><p style="font-size:13px;font-weight:700;color:#1e293b;margin:0 0 4px;">Advice:</p><p style="font-size:13px;color:#475569;margin:0;white-space:pre-line;">${opts.advice}</p></div>` : ""}
+          ${opts.followUpDate ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-top:16px;"><p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">📅 Follow-up Date: ${opts.followUpDate}</p></div>` : ""}
+          <p style="color:#94a3b8;font-size:11px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px;">This is a digitally generated prescription from ${opts.hospitalName}. Please consult your doctor before making any changes to the prescribed medications.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
+export const sendFinanceCredentials = async (
+  to: string,
+  name: string,
+  password: string,
+  hospitalName: string
+) => {
+  await transporter.sendMail({
+    from: `"${hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    to,
+    subject: `Your Finance Department Credentials – ${hospitalName}`,
+    html: `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#f59e0b,#b45309);padding:32px 24px;text-align:center;">
+          <h1 style="color:#fff;font-size:22px;margin:0;">🏥 ${hospitalName}</h1>
+          <p style="color:#fef3c7;margin:8px 0 0;font-size:14px;">Finance Department Portal Access</p>
+        </div>
+        <div style="padding:32px 24px;">
+          <h2 style="color:#1e293b;font-size:18px;margin:0 0 8px;">Welcome, ${name}!</h2>
+          <p style="color:#64748b;font-size:14px;line-height:1.6;">Your Finance Department head account has been created. Use the credentials below to access the Finance Portal.</p>
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:20px;margin:24px 0;">
+            <p style="margin:0 0 10px;font-size:13px;color:#78350f;"><strong>Login Email:</strong> <span style="color:#1e293b;">${to}</span></p>
+            <p style="margin:0;font-size:13px;color:#78350f;"><strong>Password:</strong> <code style="padding:4px 10px;background:#fff;border:1px solid #fde68a;border-radius:6px;color:#1e293b;font-family:monospace;">${password}</code></p>
+          </div>
+          <p style="color:#94a3b8;font-size:12px;margin-top:24px;">Please change your password after your first login. If you didn't expect this email, contact your hospital administrator.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
 export const sendStaffCredentials = async (opts: {
   to: string;
   name: string;

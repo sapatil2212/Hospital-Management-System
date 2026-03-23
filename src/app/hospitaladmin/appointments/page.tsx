@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import {
   CalendarCheck, Users, ClipboardList, RefreshCw,
   LogOut, Bell, Stethoscope, LayoutDashboard, Settings,
-  Loader2, ChevronRight, ArrowLeft,
+  Loader2, ChevronRight, ArrowLeft, Trash2, AlertTriangle,
 } from "lucide-react";
 import AppointmentPanel from "@/components/AppointmentPanel";
 import FollowUpDashboard from "@/components/FollowUpDashboard";
+import PatientProfilePanel from "@/components/PatientProfilePanel";
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -23,6 +24,7 @@ export default function AppointmentsPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("appointments");
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   useEffect(() => {
     api("/api/auth/me").then(d => {
@@ -138,15 +140,24 @@ export default function AppointmentsPage() {
           </header>
 
           <div style={{ padding: 24 }}>
-            <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
-              {tab === "appointments" && "Book, view, and manage all patient appointments"}
-              {tab === "followups" && "Track and manage patient follow-up schedules"}
-              {tab === "patients" && "Search and view all registered patients"}
-            </div>
+            {selectedPatientId ? (
+              <PatientProfilePanel 
+                patientId={selectedPatientId} 
+                onBack={() => setSelectedPatientId(null)} 
+              />
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+                  {tab === "appointments" && "Book, view, and manage all patient appointments"}
+                  {tab === "followups" && "Track and manage patient follow-up schedules"}
+                  {tab === "patients" && "Search and view all registered patients"}
+                </div>
 
-            {tab === "appointments" && <AppointmentPanel />}
-            {tab === "followups" && <FollowUpDashboard />}
-            {tab === "patients" && <PatientsListPanel />}
+                {tab === "appointments" && <AppointmentPanel onViewPatient={setSelectedPatientId} />}
+                {tab === "followups" && <FollowUpDashboard onViewPatient={setSelectedPatientId} />}
+                {tab === "patients" && <PatientsListPanel onSelectPatient={setSelectedPatientId} />}
+              </>
+            )}
           </div>
         </main>
       </div>
@@ -155,12 +166,14 @@ export default function AppointmentsPage() {
 }
 
 // ─── Inline Patients List Panel ───
-function PatientsListPanel() {
+function PatientsListPanel({ onSelectPatient }: { onSelectPatient: (id: string) => void }) {
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
 
   const load = async () => {
@@ -173,6 +186,19 @@ function PatientsListPanel() {
   };
 
   useEffect(() => { load(); }, [page, search]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const d = await api(`/api/patients/${deleteTarget.id}`, "DELETE");
+    if (d.success) {
+      setDeleteTarget(null);
+      load();
+    } else {
+      alert(d.message || "Failed to delete patient");
+    }
+    setDeleting(false);
+  };
 
   return (
     <div>
@@ -200,17 +226,16 @@ function PatientsListPanel() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8fafc" }}>
-                {["Patient ID", "Name", "Phone", "Email", "Gender", "Visits", "Follow-ups", ""].map(h => (
+                {["Patient ID", "Name", "Phone", "Email", "Gender", "Visits", "Follow-ups", "Actions"].map(h => (
                   <th key={h} style={{ textAlign: "left", fontSize: 11, fontWeight: 600, color: "#94a3b8", padding: "12px 14px", borderBottom: "2px solid #f1f5f9" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {patients.map((p: any) => (
-                <tr key={p.id} style={{ borderBottom: "1px solid #f8fafc", cursor: "pointer" }}
+                <tr key={p.id} style={{ borderBottom: "1px solid #f8fafc" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#fafbfc")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "none")}
-                  onClick={() => router.push(`/hospitaladmin/patients/${p.id}`)}>
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                   <td style={{ padding: "12px 14px" }}>
                     <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6 }}>{p.patientId}</span>
                   </td>
@@ -232,7 +257,18 @@ function PatientsListPanel() {
                   <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#2563eb" }}>{p._count?.appointments || 0}</td>
                   <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#10b981" }}>{p._count?.followUps || 0}</td>
                   <td style={{ padding: "12px 14px" }}>
-                    <ChevronRight size={14} color="#cbd5e1" />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={(e) => { e.stopPropagation(); onSelectPatient(p.id); }}
+                        style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eff6ff", color: "#3b82f6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="View Patient">
+                        <ChevronRight size={13} />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); }}
+                        style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#fff5f5", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title="Delete Patient">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -254,6 +290,43 @@ function PatientsListPanel() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setDeleteTarget(null); }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertTriangle size={20} color="#ef4444" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete Patient?</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                  Are you sure you want to delete <strong>{deleteTarget.name}</strong> ({deleteTarget.patientId})? This action cannot be undone and will permanently remove all patient records, appointments, and history.
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: 12, marginBottom: 18 }}>
+              <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, marginBottom: 4 }}>⚠️ Warning</div>
+              <div style={{ fontSize: 11, color: "#a16207" }}>
+                This will delete {deleteTarget._count?.appointments || 0} appointment(s) and {deleteTarget._count?.followUps || 0} follow-up(s) associated with this patient.
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .5 : 1 }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                {deleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+                {deleting ? "Deleting..." : "Delete Patient"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

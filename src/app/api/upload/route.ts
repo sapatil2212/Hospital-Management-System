@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import { requireHospitalAdmin } from "../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../backend/utils/response";
 
 cloudinary.config({
@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 export async function POST(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "DOCTOR"]);
   if (auth.error) return auth.error;
 
   try {
@@ -26,7 +26,12 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const folder = uploadType === "document" ? "hms/doctors/documents" : "hms/doctors/images";
+    let folder = "hms/others";
+    if (uploadType === "document") folder = "hms/doctors/documents";
+    else if (uploadType === "signature") folder = `hms/doctors/${auth.user.userId}/signatures`;
+    else if (uploadType === "stamp") folder = `hms/doctors/${auth.user.userId}/stamps`;
+    else if (uploadType === "profile") folder = "hms/doctors/profiles";
+    else folder = "hms/doctors/images";
 
     const result: any = await new Promise((resolve, reject) => {
       cloudinary.uploader
@@ -37,8 +42,12 @@ export async function POST(req: NextRequest) {
             allowed_formats: ["jpg", "jpeg", "png", "pdf", "webp", "gif"],
           },
           (error, res) => {
-            if (error) reject(error);
-            else resolve(res);
+            if (error) {
+              reject(error);
+            }
+            else {
+              resolve(res);
+            }
           }
         )
         .end(buffer);

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { ViewRecordModal, EditRecordModal, TransferPatientModal, ViewPrescriptionModal } from "./modals";
 import {
   LogOut, Loader2, Bell, User, Phone, Mail, Activity, LayoutDashboard,
   Layers, ArrowRight, CheckCircle, Clock, Stethoscope, Settings,
@@ -9,7 +10,7 @@ import {
   TestTube2, HelpCircle, PlayCircle, CheckCircle2, AlertCircle,
   CalendarDays, FileText, TrendingUp, FlaskConical,
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
-  Save, Ban, ChevronDown, MessageSquare, UserCheck
+  Save, Ban, ChevronDown, MessageSquare, UserCheck, Eye
 } from "lucide-react";
 
 // ─── Department metadata ──────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export default function SubDeptDashboard() {
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"dept">("overview");
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Queue
   const [queue, setQueue] = useState<any[]>([]);
@@ -84,6 +86,13 @@ export default function SubDeptDashboard() {
   const [recordSaving, setRecordSaving]     = useState(false);
   const [recordMsg, setRecordMsg]           = useState("");
   const [patientResults, setPatientResults] = useState<any[]>([]);
+  const [viewingRecord, setViewingRecord]   = useState<any>(null);
+  const [editingRecord, setEditingRecord]   = useState<any>(null);
+  const [transferTarget, setTransferTarget] = useState<any>(null);
+  const [viewPrescription, setViewPrescription] = useState<any>(null);
+  const [subDepts, setSubDepts]             = useState<any[]>([]);
+  const [transferForm, setTransferForm]     = useState({ subDeptId: "", notes: "" });
+  const [transferring, setTransferring]     = useState(false);
 
   // ── Load profile ──
   useEffect(() => {
@@ -130,6 +139,14 @@ export default function SubDeptDashboard() {
 
   useEffect(() => { if (tab === "records") loadRecords(); }, [tab, loadRecords]);
 
+  // Load subdepartments for transfer
+  useEffect(() => {
+    fetch("/api/config/subdepartments?limit=50", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setSubDepts(d.data?.data || d.data || []); })
+      .catch(() => {});
+  }, []);
+
   // ── Procedure CRUD ──
   const openAddProc  = () => { setEditingProc(null); setProcForm(BLANK_PROC); setProcMsg(""); setShowProcForm(true); };
   const openEditProc = (p: any) => { setEditingProc(p); setProcForm({ name:p.name, description:p.description||"" , type:p.type, fee:p.fee??"" , duration:p.duration??"" , sequence:p.sequence??0, isActive:p.isActive }); setProcMsg(""); setShowProcForm(true); };
@@ -171,6 +188,49 @@ export default function SubDeptDashboard() {
     if (res.success) { setShowRecordForm(false); setRecordForm(BLANK_REC); setRecordingFor(null); await loadRecords(); }
     else setRecordMsg(res.message || "Failed to save");
     setRecordSaving(false);
+  };
+
+  // ── Edit record ──
+  const handleEditRecord = async (recordId: string, updates: any) => {
+    const res = await fetch(`/api/subdept/records/${recordId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    }).then(r => r.json());
+    
+    if (res.success) {
+      setEditingRecord(null);
+      await loadRecords();
+    } else {
+      alert(res.message || "Failed to update record");
+    }
+  };
+
+  // ── Transfer patient ──
+  const handleTransferPatient = async (record: any, transferData: any) => {
+    if (!record.appointment?.id) {
+      alert("Cannot transfer: No appointment linked to this record");
+      return;
+    }
+
+    const res = await fetch(`/api/appointments/${record.appointment.id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subDepartmentId: transferData.subDeptId,
+        subDeptNote: transferData.notes || `Transferred from ${profile?.name || "previous department"}`
+      })
+    }).then(r => r.json());
+
+    if (res.success) {
+      setTransferTarget(null);
+      setTransferForm({ subDeptId: "", notes: "" });
+      alert(`Patient ${record.patient?.name} transferred successfully!`);
+    } else {
+      alert(res.message || "Failed to transfer patient");
+    }
   };
 
   const logout = async () => {
@@ -334,9 +394,89 @@ export default function SubDeptDashboard() {
                 <Bell size={15} color="#64748b"/>
                 <span style={{position:"absolute",top:8,right:8,width:6,height:6,borderRadius:"50%",background:meta.accent,border:"1.5px solid #fff"}}/>
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,cursor:"pointer"}}>
+              <div 
+                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,cursor:"pointer",position:"relative"}}
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              >
                 <div style={{width:28,height:28,borderRadius:8,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{initials(hodName)}</div>
                 <div><div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{hodName.split(" ")[0]}</div><div style={{fontSize:10,color:meta.accent}}>HOD</div></div>
+                <ChevronDown size={14} color="#64748b" />
+                
+                {/* Profile Dropdown */}
+                {profileDropdownOpen && (
+                  <>
+                    <div 
+                      style={{ position: "fixed", inset: 0, zIndex: 60 }} 
+                      onClick={() => setProfileDropdownOpen(false)}
+                    />
+                    <div style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      right: 0,
+                      width: 200,
+                      background: "#fff",
+                      borderRadius: 12,
+                      border: `1px solid ${meta.borderColor}`,
+                      boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+                      zIndex: 70,
+                      overflow: "hidden",
+                    }}>
+                      <div style={{ padding: 16, borderBottom: `1px solid ${meta.borderColor}` }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{hodName}</div>
+                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{user?.email}</div>
+                      </div>
+                      <div style={{ padding: 8 }}>
+                        <button 
+                          onClick={() => { setProfileDropdownOpen(false); router.push("/subdept/profile"); }}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            borderRadius: 8,
+                            border: "none",
+                            background: "transparent",
+                            color: "#475569",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            transition: "all 0.15s",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = meta.lightBg; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <Settings size={16} color="#64748b" />
+                          Account Settings
+                        </button>
+                        <button 
+                          onClick={() => { setProfileDropdownOpen(false); logout(); }}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            borderRadius: 8,
+                            border: "none",
+                            background: "transparent",
+                            color: "#ef4444",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            transition: "all 0.15s",
+                            marginTop: 4,
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <LogOut size={16} color="#ef4444" />
+                          Log Out
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </header>
@@ -382,9 +522,9 @@ export default function SubDeptDashboard() {
                   { label:"Total Procedures",  value:displayProcs.length, Icon:Layers,       color:"#6366f1",  bg:"#eef2ff" },
                   { label:"Referrals Today",   value:queue.length||"—",  Icon:UserCheck,     color:"#10b981",  bg:"#f0fdf4",
                     onClick:()=>{setTab("queue");loadQueue();} },
-                  { label:"Today Revenue",     value:recordsMeta.todayRevenue ? `₹${recordsMeta.todayRevenue}` : "₹0", Icon:IndianRupee, color:"#f59e0b", bg:"#fffbeb",
+                  { label:"Records Today",     value:recordsMeta.todayRecords||0, Icon:ClipboardList, color:"#f59e0b", bg:"#fffbeb",
                     onClick:()=>{setTab("records");loadRecords();} },
-                  { label:"Total Revenue",     value:recordsMeta.totalRevenue ? `₹${recordsMeta.totalRevenue}` : "₹0", Icon:TrendingUp, color:"#10b981", bg:"#f0fdf4",
+                  { label:"Total Records",     value:recordsMeta.totalRecords||0, Icon:Layers, color:"#6366f1", bg:"#eef2ff",
                     onClick:()=>{setTab("records");loadRecords();} },
                 ].map((s,i)=>{
                   const SI = s.Icon;
@@ -505,7 +645,7 @@ export default function SubDeptDashboard() {
                       <tr>
                         <th>Token</th>
                         <th>Patient</th>
-                        <th>Time</th>
+                        <th>Referred On</th>
                         <th>Referred By</th>
                         <th>Doctor&apos;s Referral Note</th>
                         <th>Suggested Procedures</th>
@@ -536,7 +676,12 @@ export default function SubDeptDashboard() {
                                   </div>
                                 </div>
                               </td>
-                              <td style={{fontSize:12,color:"#64748b",fontWeight:500}}>{q.timeSlot||"—"}</td>
+                              <td>
+                                <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>
+                                  {q.appointmentDate ? new Date(q.appointmentDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "—"}
+                                </div>
+                                <div style={{fontSize:11,color:"#94a3b8"}}>{q.timeSlot||"—"}</div>
+                              </td>
                               <td>
                                 <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{q.doctor?.name||"—"}</div>
                                 <div style={{fontSize:11,color:"#94a3b8"}}>{q.doctor?.specialization||q.doctor?.department||""}</div>
@@ -738,17 +883,16 @@ export default function SubDeptDashboard() {
 
             {/* ═══════════════════ PATIENT RECORDS ═══════════════════ */}
             {tab==="records" && (<>
-              {/* Revenue Stats */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:20}}>
+              {/* Procedure Stats */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,marginBottom:20}}>
                 {[
-                  {label:"Today&apos;s Revenue",  value:`₹${recordsMeta.todayRevenue||0}`,  color:meta.accent, bg:meta.lightBg},
-                  {label:"Today&apos;s Procedures",value:recordsMeta.todayRecords||0,         color:"#6366f1",  bg:"#eef2ff"},
-                  {label:"Total Revenue",           value:`₹${recordsMeta.totalRevenue||0}`,  color:"#10b981",  bg:"#f0fdf4"},
-                  {label:"Total Procedures Done",   value:recordsMeta.totalRecords||0,        color:"#f59e0b",  bg:"#fffbeb"},
+                  {label:"Today's Procedures", value:recordsMeta.todayRecords||0,  color:"#6366f1", bg:"#eef2ff"},
+                  {label:"Total Procedures Done",value:recordsMeta.totalRecords||0, color:meta.accent, bg:meta.lightBg},
                 ].map((s,i)=>(
                   <div key={i} style={{background:s.bg,borderRadius:12,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:22,fontWeight:800,color:s.color}}>{s.value}</div>
-                    <div style={{fontSize:11,color:"#64748b",marginTop:3}} dangerouslySetInnerHTML={{__html:s.label}}/>
+                    <div style={{fontSize:28,fontWeight:800,color:s.color}}>{s.value}</div>
+                    <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{s.label}</div>
+                    {i===0&&<div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>Billing managed by Finance Dept</div>}
                   </div>
                 ))}
               </div>
@@ -850,7 +994,7 @@ export default function SubDeptDashboard() {
                   </div>
                 ) : (
                   <table className="sd2-tbl">
-                    <thead><tr><th>Date</th><th>Patient</th><th>Procedure</th><th>Type</th><th>Amount</th><th>Performed By</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Patient</th><th>Procedure</th><th>Type</th><th>Amount</th><th>Performed By</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
                       {records.map((r:any)=>(
                         <tr key={r.id}>
@@ -872,6 +1016,24 @@ export default function SubDeptDashboard() {
                               color:r.status==="COMPLETED"?"#16a34a":r.status==="CANCELLED"?"#ef4444":"#b45309",
                               border:`1px solid ${r.status==="COMPLETED"?"#bbf7d0":r.status==="CANCELLED"?"#fecaca":"#fde68a"}`
                             }}>{r.status.replace(/_/g," ")}</span>
+                          </td>
+                          <td>
+                            <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
+                              <button onClick={()=>setViewingRecord(r)} className="sd2-btn" style={{background:"#eff6ff",color:"#3b82f6",border:"1px solid #bfdbfe",padding:"4px 8px"}} title="View Details">
+                                <Eye size={11}/>
+                              </button>
+                              <button onClick={()=>setEditingRecord(r)} className="sd2-btn" style={{background:"#fef3c7",color:"#d97706",border:"1px solid #fde68a",padding:"4px 8px"}} title="Edit Record">
+                                <Edit2 size={11}/>
+                              </button>
+                              <button onClick={()=>{setTransferTarget(r);setTransferForm({subDeptId:"",notes:""});}} className="sd2-btn" style={{background:"#f0fdf4",color:"#10b981",border:"1px solid #bbf7d0",padding:"4px 8px"}} title="Transfer Patient">
+                                <ArrowRight size={11}/>
+                              </button>
+                              {r.appointment?.id && (
+                                <button onClick={()=>setViewPrescription(r.appointment)} className="sd2-btn" style={{background:"#fdf4ff",color:"#a855f7",border:"1px solid #e9d5ff",padding:"4px 8px"}} title="View Prescription">
+                                  <FileText size={11}/>
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -952,6 +1114,12 @@ export default function SubDeptDashboard() {
           </div>
         </main>
       </div>
+
+      {/* Modals */}
+      {viewingRecord && <ViewRecordModal record={viewingRecord} onClose={() => setViewingRecord(null)} meta={meta} />}
+      {editingRecord && <EditRecordModal record={editingRecord} onClose={() => setEditingRecord(null)} onSave={handleEditRecord} meta={meta} />}
+      {transferTarget && <TransferPatientModal record={transferTarget} subDepts={subDepts} onClose={() => setTransferTarget(null)} onTransfer={handleTransferPatient} meta={meta} />}
+      {viewPrescription && <ViewPrescriptionModal appointment={viewPrescription} onClose={() => setViewPrescription(null)} meta={meta} />}
     </>
   );
 }

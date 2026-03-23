@@ -6,7 +6,12 @@ export const createHospital = async (data: Prisma.HospitalCreateInput) => {
 };
 
 export const findHospitalById = async (id: string) => {
-  return await prisma.hospital.findUnique({ where: { id } });
+  return await prisma.hospital.findUnique({ 
+    where: { id },
+    include: {
+      settings: true
+    }
+  });
 };
 
 export const findAllHospitals = async () => {

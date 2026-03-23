@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Building2, Activity, Settings, HelpCircle,
   LogOut, Search, Bell, MessageSquare, CheckCircle2, AlertTriangle,
   Plus, ChevronRight, Shield, TrendingUp, ServerCrash, Cpu, Database,
-  BarChart2, Filter, X
+  BarChart2, Filter, X, User, ChevronDown
 } from "lucide-react";
 
 const hospitals_mock = [
@@ -80,6 +80,7 @@ export default function SuperAdminDashboard() {
   const [newHospital, setNewHospital] = useState({name:"",email:"",mobile:"",adminName:"",password:""});
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   useEffect(()=>{
     fetch("/api/auth/me",{credentials:"include"}).then(r=>r.json()).then(d=>{
@@ -272,7 +273,63 @@ export default function SuperAdminDashboard() {
           <div className="sad-tb-right">
             <div className="sad-notif"><Bell size={16} color="#64748b"/><span className="sad-notif-dot"/></div>
             <div className="sad-notif"><MessageSquare size={16} color="#64748b"/></div>
-            <div className="sad-profile"><div className="sad-profile-av">SA</div><div><div className="sad-profile-name">Super Admin</div><div className="sad-profile-role">Root Access</div></div></div>
+            <div className="sad-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative", cursor: "pointer" }}>
+              <div className="sad-profile-av">SA</div>
+              <div><div className="sad-profile-name">Super Admin</div><div className="sad-profile-role">Root Access</div></div>
+              <ChevronDown size={14} color="#64748b" style={{ marginLeft: 6 }} />
+              
+              {/* Profile Dropdown */}
+              {profileDropdownOpen && (
+                <>
+                  <div 
+                    style={{ position: "fixed", inset: 0, zIndex: 60 }} 
+                    onClick={() => setProfileDropdownOpen(false)}
+                  />
+                  <div style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    width: 200,
+                    background: "#fff",
+                    borderRadius: 12,
+                    border: "1px solid #fee2e2",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+                    zIndex: 70,
+                    overflow: "hidden",
+                  }}>
+                    <div style={{ padding: 16, borderBottom: "1px solid #fef2f2" }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>Super Admin</div>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Root Access</div>
+                    </div>
+                    <div style={{ padding: 8 }}>
+                      <button 
+                        onClick={() => { setProfileDropdownOpen(false); logout(); }}
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: 8,
+                          border: "none",
+                          background: "transparent",
+                          color: "#ef4444",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <LogOut size={16} color="#ef4444" />
+                        Log Out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

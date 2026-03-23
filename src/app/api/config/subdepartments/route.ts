@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireHospitalAdmin, requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
+import { Role } from "@prisma/client";
 import {
   createSubDepartment,
   getSubDepartments,
@@ -9,7 +10,7 @@ import {
 import { createSubDepartmentSchema, querySubDepartmentSchema } from "../../../../../backend/validations/subdepartment.validation";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, [Role.HOSPITAL_ADMIN, Role.DOCTOR, Role.RECEPTIONIST, Role.STAFF, Role.SUB_DEPT_HEAD]);
   if (auth.error) return auth.error;
 
   try {

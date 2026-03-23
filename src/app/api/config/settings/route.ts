@@ -15,6 +15,9 @@ const settingsSchema = z.object({
   currency: z.string().optional(),
   gstNumber: z.string().optional(),
   registrationNo: z.string().optional(),
+  letterhead: z.string().optional().nullable(),
+  letterheadType: z.enum(["IMAGE", "PDF"]).optional(),
+  letterheadSize: z.enum(["A4", "A5", "Letter"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -41,7 +44,13 @@ export async function POST(req: NextRequest) {
     const result = settingsSchema.safeParse(body);
     if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
 
-    const settings = await upsertSettings(auth.hospitalId, result.data);
+    // Transform null to undefined for letterhead since upsertSettings expects string | undefined
+    const data = {
+      ...result.data,
+      letterhead: result.data.letterhead ?? undefined,
+    };
+
+    const settings = await upsertSettings(auth.hospitalId, data);
     return successResponse(settings, "Settings saved", 201);
   } catch (e: any) {
     return errorResponse(e.message, 500);

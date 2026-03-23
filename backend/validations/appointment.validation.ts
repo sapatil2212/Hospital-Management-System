@@ -27,7 +27,7 @@ export const updateAppointmentSchema = z.object({
     .optional(),
   type: z.enum(["OPD", "ONLINE", "FOLLOW_UP", "EMERGENCY"]).optional(),
   status: z
-    .enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"])
+    .enum(["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"])
     .optional(),
   consultationFee: z.number().min(0).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
@@ -44,14 +44,14 @@ export const queryAppointmentSchema = z.object({
   patientId: z.string().uuid().optional(),
   departmentId: z.string().uuid().optional(),
   status: z
-    .enum(["SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"])
+    .enum(["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"])
     .optional(),
   type: z.enum(["OPD", "ONLINE", "FOLLOW_UP", "EMERGENCY"]).optional(),
   date: z.string().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  limit: z.coerce.number().min(1).max(500).default(20),
   sortBy: z.enum(["appointmentDate", "createdAt", "timeSlot"]).default("appointmentDate"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });

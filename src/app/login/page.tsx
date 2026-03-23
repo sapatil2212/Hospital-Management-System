@@ -61,6 +61,7 @@ export default function LoginPage() {
           else if (role === "DOCTOR") router.push("/doctor/dashboard");
           else if (role === "RECEPTIONIST" || role === "STAFF") router.push("/staff/dashboard");
           else if (role === "SUB_DEPT_HEAD") router.push("/subdept/dashboard");
+          else if (role === "FINANCE_HEAD") router.push("/finance/dashboard");
           else router.push("/hospitaladmin/dashboard");
         }, 800);
       } else {

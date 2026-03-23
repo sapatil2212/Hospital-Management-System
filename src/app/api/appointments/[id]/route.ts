@@ -9,7 +9,7 @@ import {
 } from "../../../../../backend/services/appointment.service";
 import { updateAppointmentSchema } from "../../../../../backend/validations/appointment.validation";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
 
 export const dynamic = "force-dynamic";
 

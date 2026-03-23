@@ -13,6 +13,10 @@ import { findPatientById } from "../repositories/patient.repo";
 import { findDoctorById } from "../repositories/doctor.repo";
 import { CreateAppointmentInput, UpdateAppointmentInput } from "../validations/appointment.validation";
 import { sendAppointmentConfirmation } from "../utils/mailer";
+import { generateBillFromAppointment, addWorkflowChargesToBill } from "./billing.service";
+import prisma from "../config/db";
+
+const px = prisma as any;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // APPOINTMENT SERVICE
@@ -83,11 +87,11 @@ export const bookAppointment = async (
   // Generate token number for this doctor on this date
   const tokenNumber = await getNextToken(hospitalId, input.doctorId, appointmentDate);
 
-  // Use doctor's consultation fee if not provided
+  // Use consultation fee from input, then doctor, then department
   const consultationFee =
-    input.consultationFee !== undefined && input.consultationFee !== null
-      ? input.consultationFee
-      : doctor.consultationFee;
+    input.consultationFee ??
+    doctor.consultationFee ??
+    (doctor as any).department?.consultationFee;
 
   const appointment = await createAppointmentRepo({
     hospitalId,
@@ -197,7 +201,83 @@ export const updateAppointment = async (
   if (input.subDepartmentId !== undefined) updateData.subDepartmentId = input.subDepartmentId;
   if (input.subDeptNote !== undefined) updateData.subDeptNote = input.subDeptNote;
 
-  return updateAppointmentRepo(id, hospitalId, updateData);
+  const updated = await updateAppointmentRepo(id, hospitalId, updateData);
+
+  if (input.status !== undefined && input.status !== existing.status) {
+    try {
+      const rx = await px.prescription.findFirst({
+        where: { hospitalId, appointmentId: id },
+        select: { id: true, status: true, referrals: true },
+      });
+
+      if (rx) {
+        if (input.status === "CANCELLED" || input.status === "NO_SHOW") {
+          await px.prescription.update({
+            where: { id: rx.id },
+            data: { status: "CLOSED", currentDeptId: null },
+          });
+          await px.prescriptionWorkflow.updateMany({
+            where: { prescriptionId: rx.id, status: { in: ["PENDING", "IN_PROGRESS"] } },
+            data: { status: "SKIPPED" },
+          });
+        }
+
+        if (input.status === "SCHEDULED" || input.status === "CONFIRMED" || input.status === "IN_PROGRESS") {
+          if (rx.status === "CLOSED") {
+            await px.prescription.update({
+              where: { id: rx.id },
+              data: { status: "DRAFT" },
+            });
+          }
+        }
+
+        if (input.status === "COMPLETED") {
+          let referrals: any[] = [];
+          if (rx.referrals) {
+            try { referrals = JSON.parse(rx.referrals); } catch { referrals = []; }
+          }
+
+          if (referrals.length > 0) {
+            await px.prescription.update({
+              where: { id: rx.id },
+              data: { status: "IN_WORKFLOW", currentDeptId: referrals[0].subDeptId || null },
+            });
+
+            const stepCount = await px.prescriptionWorkflow.count({ where: { prescriptionId: rx.id } });
+            if (stepCount === 0) {
+              await px.prescriptionWorkflow.createMany({
+                data: referrals.map((ref: any, idx: number) => ({
+                  hospitalId,
+                  prescriptionId: rx.id,
+                  subDepartmentId: ref.subDeptId,
+                  sequence: idx,
+                  status: idx === 0 ? "IN_PROGRESS" : "PENDING",
+                })),
+              });
+            }
+          } else {
+            await px.prescription.update({
+              where: { id: rx.id },
+              data: { status: "COMPLETED", currentDeptId: null },
+            });
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Event: appointment COMPLETED → auto-generate consultation bill
+  if (input.status === "COMPLETED" && existing.status !== "COMPLETED") {
+    generateBillFromAppointment(id, hospitalId).catch(() => {});
+  } else if (input.consultationFee !== undefined) {
+    // If fee updated after completion, sync with existing bill if any
+    const bill = await (prisma as any).bill.findFirst({ where: { visitId: id, hospitalId } });
+    if (bill) {
+      addWorkflowChargesToBill(bill.id, hospitalId).catch(() => {});
+    }
+  }
+
+  return updated;
 };
 
 /**

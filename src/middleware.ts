@@ -12,6 +12,7 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
   "/superadmin":    ["SUPER_ADMIN"],
   "/receptionist":  ["RECEPTIONIST"],
   "/subdept":       ["SUB_DEPT_HEAD"],
+  "/finance":        ["FINANCE_HEAD", "HOSPITAL_ADMIN"],
 };
 
 // Which login page to redirect each role to
@@ -22,6 +23,7 @@ const ROLE_DASHBOARD: Record<string, string> = {
   RECEPTIONIST:   "/staff/dashboard",
   SUPER_ADMIN:    "/superadmin/dashboard",
   SUB_DEPT_HEAD:  "/subdept/dashboard",
+  FINANCE_HEAD:   "/finance/dashboard",
 };
 
 // Which login page to redirect to when unauthenticated
@@ -32,6 +34,7 @@ const LOGIN_FOR_ROUTE: Record<string, string> = {
   "/superadmin":    "/superadmin/login",
   "/receptionist":  "/staff/login",
   "/subdept":       "/subdept/login",
+  "/finance":        "/finance/login",
 };
 
 // Public paths that never need protection (login pages, API, etc.)
@@ -41,8 +44,11 @@ const PUBLIC_PREFIXES = [
   "/signup",
   "/staff/login",
   "/staff/change-password",
+  "/doctor/change-password",
+  "/hospitaladmin/change-password",
   "/superadmin/login",
   "/subdept/login",
+  "/finance/login",
   "/_next",
   "/favicon",
   "/public",
@@ -114,5 +120,6 @@ export const config = {
     "/superadmin/:path*",
     "/receptionist/:path*",
     "/subdept/:path*",
+    "/finance/:path*",
   ],
 };

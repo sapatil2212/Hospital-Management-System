@@ -75,17 +75,30 @@ export async function POST(req: NextRequest) {
     if (loginHour > 9 || (loginHour === 9 && loginMinute > 30)) status = "LATE";
     if (loginHour >= 12) status = "HALF_DAY";
 
-    const attendance = await (prisma as any).doctorAttendance.upsert({
-      where: { doctorId_date: { doctorId: doctor.id, date: today } },
-      update: { loginTime: now, status },
-      create: {
-        doctorId: doctor.id,
-        hospitalId: doctor.hospitalId,
-        date: today,
-        loginTime: now,
-        status,
-      },
-    });
+    let attendance;
+    try {
+      attendance = await (prisma as any).doctorAttendance.upsert({
+        where: { doctorId_date: { doctorId: doctor.id, date: today } },
+        update: { loginTime: now, status },
+        create: {
+          doctorId: doctor.id,
+          hospitalId: doctor.hospitalId,
+          date: today,
+          loginTime: now,
+          status,
+        },
+      });
+    } catch (upsertErr: any) {
+      // Race condition: record was inserted between our check and create — just update
+      if (upsertErr?.code === "P2002") {
+        attendance = await (prisma as any).doctorAttendance.update({
+          where: { doctorId_date: { doctorId: doctor.id, date: today } },
+          data: { loginTime: now, status },
+        });
+      } else {
+        throw upsertErr;
+      }
+    }
 
     return successResponse(attendance, "Attendance marked successfully");
   } catch (e: any) {

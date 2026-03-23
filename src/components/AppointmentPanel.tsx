@@ -4,6 +4,7 @@ import {
   Search, Plus, X, Loader2, Calendar, Clock, User, Stethoscope,
   Building2, CheckCircle, XCircle, AlertCircle, RefreshCw, Hash,
   Phone, Mail, ChevronRight, Eye, ClipboardList, CalendarCheck,
+  Edit, Trash2, FileText, AlertTriangle,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,28 +56,67 @@ function PatientSearchBox({ onSelect }: { onSelect: (p: Patient) => void }) {
   const [results, setResults] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", gender: "", bloodGroup: "" });
+  const [showResults, setShowResults] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", gender: "", bloodGroup: "", dateOfBirth: "", address: "" });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [dupPatient, setDupPatient] = useState<Patient | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const search = useCallback((val: string) => {
     if (debounce.current) clearTimeout(debounce.current);
-    if (!val.trim()) { setResults([]); return; }
+    if (!val.trim()) { setResults([]); setShowResults(false); return; }
     debounce.current = setTimeout(async () => {
       setLoading(true);
       const d = await api(`/api/patients?q=${encodeURIComponent(val)}`);
-      setResults(d.data || []);
+      const r = d.data || [];
+      setResults(r);
+      setShowResults(r.length > 0);
       setLoading(false);
     }, 300);
   }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true); setMsg("");
-    const d = await api("/api/patients", "POST", form);
-    if (d.success) { onSelect(d.data.patient); setShowAdd(false); setQ(""); setResults([]); }
-    else setMsg(d.message || "Error registering patient");
+    e.preventDefault(); setSaving(true); setMsg(""); setDupPatient(null);
+    // Basic client-side validation
+    if (form.name.trim().length < 2) { setMsg("Full name is required (at least 2 characters)"); setSaving(false); return; }
+    if (form.phone.trim().length < 7) { setMsg("Valid phone number is required (at least 7 digits)"); setSaving(false); return; }
+
+    const payload: any = {
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+    };
+    if (form.email.trim()) payload.email = form.email.trim();
+    if (form.gender) payload.gender = form.gender;
+    if (form.dateOfBirth) payload.dateOfBirth = form.dateOfBirth;
+    if (form.bloodGroup) payload.bloodGroup = form.bloodGroup;
+    if (form.address.trim()) payload.address = form.address.trim();
+
+    const d = await api("/api/patients", "POST", payload);
+    if (d.success) {
+      if (d.data.isNew) {
+        // Newly registered — proceed directly
+        onSelect(d.data.patient);
+        setShowAdd(false);
+        setForm({ name: "", phone: "", email: "", gender: "", bloodGroup: "", dateOfBirth: "", address: "" });
+      } else {
+        // Phone already exists — show duplicate warning
+        setDupPatient(d.data.patient);
+      }
+    } else {
+      setMsg(d.message || "Error registering patient");
+    }
     setSaving(false);
+  };
+
+  const confirmDupPatient = () => {
+    if (dupPatient) {
+      onSelect(dupPatient);
+      setShowAdd(false);
+      setDupPatient(null);
+      setForm({ name: "", phone: "", email: "", gender: "", bloodGroup: "", dateOfBirth: "", address: "" });
+    }
   };
 
   return (
@@ -85,22 +125,30 @@ function PatientSearchBox({ onSelect }: { onSelect: (p: Patient) => void }) {
         Step 1 — Select or Register Patient
       </div>
       <div style={{ display: "flex", gap: 10 }}>
-        <div style={{ position: "relative", flex: 1 }}>
+        <div style={{ position: "relative", flex: 1 }} ref={dropdownRef}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "10px 14px" }}>
             <Search size={15} color="#94a3b8" />
             <input
               style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", flex: 1 }}
               placeholder="Search by name, phone, or Patient ID..."
               value={q}
+              onFocus={() => results.length > 0 && setShowResults(true)}
               onChange={e => { setQ(e.target.value); search(e.target.value); }}
             />
             {loading && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} color="#94a3b8" />}
+            {q && (
+              <button onClick={() => { setQ(""); setResults([]); setShowResults(false); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 0 }}><X size={13} /></button>
+            )}
           </div>
-          {results.length > 0 && (
+          {showResults && results.length > 0 && (
             <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,.12)", zIndex: 100, maxHeight: 280, overflowY: "auto", marginTop: 4 }}>
+              <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em" }}>
+                {results.length} patient{results.length > 1 ? "s" : ""} found — click to select
+              </div>
               {results.map(p => (
-                <button key={p.id} onClick={() => { onSelect(p); setResults([]); setQ(""); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", borderBottom: "1px solid #f1f5f9" }}
+                <button key={p.id} onClick={() => { onSelect(p); setShowResults(false); setResults([]); setQ(""); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", borderBottom: "1px solid #f1f5f9", transition: "background .1s" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
                   onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
@@ -108,7 +156,7 @@ function PatientSearchBox({ onSelect }: { onSelect: (p: Patient) => void }) {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: "#94a3b8" }}>{p.patientId} · {p.phone}</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8" }}>{p.patientId} · {p.phone}{p.email ? ` · ${p.email}` : ""}</div>
                   </div>
                   {p.gender && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", fontWeight: 600 }}>{p.gender}</span>}
                   <ChevronRight size={13} color="#cbd5e1" />
@@ -117,7 +165,7 @@ function PatientSearchBox({ onSelect }: { onSelect: (p: Patient) => void }) {
             </div>
           )}
         </div>
-        <button onClick={() => setShowAdd(v => !v)}
+        <button onClick={() => { setShowAdd(v => !v); setDupPatient(null); setMsg(""); }}
           style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px dashed #cbd5e1", background: showAdd ? "#eff6ff" : "#fff", color: showAdd ? "#2563eb" : "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
           <Plus size={14} />New Patient
         </button>
@@ -125,38 +173,103 @@ function PatientSearchBox({ onSelect }: { onSelect: (p: Patient) => void }) {
 
       {showAdd && (
         <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 20, marginTop: 12 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b", marginBottom: 14 }}>Register New Patient</div>
-          <form onSubmit={handleRegister} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {[
-              { k: "name", l: "Full Name *", ph: "John Doe", req: true },
-              { k: "phone", l: "Phone *", ph: "+91 98765 43210", req: true },
-              { k: "email", l: "Email", ph: "patient@email.com", req: false },
-            ].map(f => (
-              <div key={f.k} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>{f.l}</label>
-                <input style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
-                  placeholder={f.ph} value={(form as any)[f.k]} required={f.req}
-                  onChange={e => setForm(p => ({ ...p, [f.k]: e.target.value }))} />
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 4 }}>Register New Patient</div>
+          <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>Fill in patient details. Phone number must be unique per patient.</div>
+
+          {/* Duplicate patient warning */}
+          {dupPatient && (
+            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <AlertCircle size={18} color="#d97706" style={{ marginTop: 1, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>Phone number already registered</div>
+                  <div style={{ fontSize: 12, color: "#a16207", marginBottom: 10 }}>
+                    The phone number <strong>{form.phone}</strong> is already registered to:
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 9, padding: "10px 14px", border: "1px solid #fde68a", marginBottom: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13 }}>
+                      {dupPatient.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{dupPatient.name}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{dupPatient.patientId} · {dupPatient.phone}{dupPatient.gender ? ` · ${dupPatient.gender}` : ""}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button type="button" onClick={confirmDupPatient}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      Yes, book for {dupPatient.name}
+                    </button>
+                    <button type="button" onClick={() => { setDupPatient(null); setForm(p => ({ ...p, phone: "" })); }}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      Change phone number
+                    </button>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+          )}
+
+          <form onSubmit={handleRegister} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Full Name *</label>
+              <input style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                placeholder="e.g. Rahul Sharma" value={form.name} required
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Phone Number *</label>
+              <input style={{ background: "#fff", border: `1.5px solid ${dupPatient ? "#fde68a" : "#e2e8f0"}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                placeholder="e.g. 9876543210" value={form.phone} required
+                onChange={e => { setForm(p => ({ ...p, phone: e.target.value })); setDupPatient(null); }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Email</label>
+              <input style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                type="email" placeholder="e.g. patient@email.com" value={form.email}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Gender</label>
               <select style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
                 value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
-                <option value="">Select...</option>
+                <option value="">Select gender...</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
                 <option value="OTHER">Other</option>
               </select>
             </div>
-            {msg && <div style={{ gridColumn: "1/-1", fontSize: 12, color: "#ef4444", fontWeight: 600 }}>{msg}</div>}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Date of Birth</label>
+              <input type="date" style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                value={form.dateOfBirth} onChange={e => setForm(p => ({ ...p, dateOfBirth: e.target.value }))} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Blood Group</label>
+              <select style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                value={form.bloodGroup} onChange={e => setForm(p => ({ ...p, bloodGroup: e.target.value }))}>
+                <option value="">Select...</option>
+                {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map(bg => <option key={bg} value={bg}>{bg}</option>)}
+              </select>
+            </div>
+            <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Address</label>
+              <input style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                placeholder="e.g. 123, MG Road, Mumbai" value={form.address}
+                onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+            </div>
+            {msg && (
+              <div style={{ gridColumn: "1/-1", display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#ef4444", fontWeight: 600, background: "#fff5f5", padding: "10px 14px", borderRadius: 9, border: "1px solid #fecaca" }}>
+                <AlertCircle size={13} />{msg}
+              </div>
+            )}
             <div style={{ gridColumn: "1/-1", display: "flex", gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={() => setShowAdd(false)}
+              <button type="button" onClick={() => { setShowAdd(false); setDupPatient(null); setMsg(""); }}
                 style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 Cancel
               </button>
-              <button type="submit" disabled={saving}
-                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#0ea5e9", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+              <button type="submit" disabled={saving || !!dupPatient}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: (saving || dupPatient) ? "#e2e8f0" : "#0ea5e9", color: (saving || dupPatient) ? "#94a3b8" : "#fff", fontSize: 13, fontWeight: 700, cursor: (saving || dupPatient) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 {saving && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}Register & Select
               </button>
             </div>
@@ -188,8 +301,10 @@ function BookingForm({ patient, onSuccess, onCancel }: { patient: Patient; onSuc
   }, []);
 
   useEffect(() => {
-    if (!form.departmentId) { setDoctors([]); return; }
-    api(`/api/config/doctors?simple=true&departmentId=${form.departmentId}`).then(d => setDoctors(d.data || []));
+    const url = form.departmentId
+      ? `/api/config/doctors?simple=true&departmentId=${form.departmentId}`
+      : `/api/config/doctors?simple=true`;
+    api(url).then(d => setDoctors(d.data || []));
   }, [form.departmentId]);
 
   useEffect(() => {
@@ -276,7 +391,7 @@ function BookingForm({ patient, onSuccess, onCancel }: { patient: Patient; onSuc
           <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Department</label>
           <select style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
             value={form.departmentId} onChange={e => setForm(p => ({ ...p, departmentId: e.target.value, doctorId: "", timeSlot: "" }))}>
-            <option value="">All Departments</option>
+            <option value="">Select Department...</option>
             {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
         </div>
@@ -285,7 +400,16 @@ function BookingForm({ patient, onSuccess, onCancel }: { patient: Patient; onSuc
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Doctor *</label>
           <select required style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
-            value={form.doctorId} onChange={e => setForm(p => ({ ...p, doctorId: e.target.value, timeSlot: "" }))}>
+            value={form.doctorId} onChange={e => {
+              const doc = doctors.find(d => d.id === e.target.value);
+              setForm(p => ({
+                ...p,
+                doctorId: e.target.value,
+                timeSlot: "",
+                consultationFee: doc?.consultationFee ? String(doc.consultationFee) : "",
+                departmentId: p.departmentId || doc?.departmentId || "",
+              }));
+            }}>
             <option value="">Select Doctor...</option>
             {doctors.map(d => <option key={d.id} value={d.id}>{d.name}{d.specialization ? ` — ${d.specialization}` : ""}</option>)}
           </select>
@@ -476,9 +600,114 @@ function FollowUpModal({ appointment, onClose, onSuccess }: { appointment: Appoi
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EDIT APPOINTMENT MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function EditAppointmentModal({ appointment, onClose, onSave }: { appointment: Appointment; onClose: () => void; onSave: (data: any) => void }) {
+  const [form, setForm] = useState({
+    appointmentDate: appointment.appointmentDate,
+    timeSlot: appointment.timeSlot,
+    type: appointment.type,
+    status: appointment.status,
+    consultationFee: appointment.consultationFee?.toString() || "",
+    notes: appointment.notes || "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const payload: any = {
+      appointmentDate: form.appointmentDate,
+      timeSlot: form.timeSlot,
+      type: form.type,
+      status: form.status,
+      notes: form.notes || null,
+    };
+    if (form.consultationFee) payload.consultationFee = parseFloat(form.consultationFee);
+    await onSave(payload);
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 520, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>Edit Appointment</div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: "none", background: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={16} /></button>
+        </div>
+        <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: 12, marginBottom: 18, fontSize: 12, color: "#0369a1" }}>
+          <strong>{appointment.patient?.name}</strong> ({appointment.patient?.patientId}) with Dr. {appointment.doctor?.name}
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Date</label>
+              <input type="date" required
+                style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                value={form.appointmentDate} onChange={e => setForm(p => ({ ...p, appointmentDate: e.target.value }))} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Time Slot</label>
+              <input type="time" required
+                style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                value={form.timeSlot} onChange={e => setForm(p => ({ ...p, timeSlot: e.target.value }))} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Type</label>
+              <select
+                style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                <option value="OPD">OPD</option>
+                <option value="ONLINE">Online</option>
+                <option value="FOLLOW_UP">Follow-up</option>
+                <option value="EMERGENCY">Emergency</option>
+              </select>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Status</label>
+              <select
+                style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Consultation Fee</label>
+            <input type="number" min="0" step="0.01"
+              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none" }}
+              placeholder="0" value={form.consultationFee} onChange={e => setForm(p => ({ ...p, consultationFee: e.target.value }))} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Notes</label>
+            <textarea rows={3}
+              style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#1e293b", outline: "none", resize: "none", fontFamily: "Inter, sans-serif" }}
+              placeholder="Additional notes..." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <button type="button" onClick={onClose} disabled={saving}
+              style={{ flex: 1, padding: "10px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? .5 : 1 }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={saving}
+              style={{ flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "#d97706", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? .7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              {saving && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // APPOINTMENT TABLE
 // ─────────────────────────────────────────────────────────────────────────────
-function AppointmentTable({ onRefresh }: { onRefresh: number }) {
+function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onViewPatient: (id: string) => void }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
@@ -486,6 +715,10 @@ function AppointmentTable({ onRefresh }: { onRefresh: number }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split("T")[0]);
   const [followUpTarget, setFollowUpTarget] = useState<Appointment | null>(null);
+  const [viewTarget, setViewTarget] = useState<Appointment | null>(null);
+  const [editTarget, setEditTarget] = useState<Appointment | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
@@ -504,6 +737,30 @@ function AppointmentTable({ onRefresh }: { onRefresh: number }) {
   const updateStatus = async (id: string, status: string) => {
     await api(`/api/appointments/${id}`, "PUT", { status });
     load();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const d = await api(`/api/appointments/${deleteTarget.id}`, "DELETE");
+    if (d.success) {
+      setDeleteTarget(null);
+      load();
+    } else {
+      alert(d.message || "Failed to delete appointment");
+    }
+    setDeleting(false);
+  };
+
+  const handleEdit = async (updatedData: any) => {
+    if (!editTarget) return;
+    const d = await api(`/api/appointments/${editTarget.id}`, "PUT", updatedData);
+    if (d.success) {
+      setEditTarget(null);
+      load();
+    } else {
+      alert(d.message || "Failed to update appointment");
+    }
   };
 
   return (
@@ -594,16 +851,24 @@ function AppointmentTable({ onRefresh }: { onRefresh: number }) {
                     </td>
                     <td style={{ padding: "12px 14px" }}>
                       <div style={{ display: "flex", gap: 5 }}>
+                        <button onClick={() => setViewTarget(appt)} title="View Details"
+                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eff6ff", color: "#3b82f6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Eye size={13} />
+                        </button>
+                        <button onClick={() => setEditTarget(appt)} title="Edit Appointment"
+                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#fef3c7", color: "#d97706", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Edit size={13} />
+                        </button>
+                        <button onClick={() => setDeleteTarget(appt)} title="Delete Appointment"
+                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#fff5f5", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Trash2 size={13} />
+                        </button>
                         {appt.status === "COMPLETED" && (
                           <button onClick={() => setFollowUpTarget(appt)} title="Schedule Follow-up"
                             style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#f0fdf4", color: "#10b981", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <CalendarCheck size={13} />
                           </button>
                         )}
-                        <a href={`/hospitaladmin/patients/${appt.patientId}`}
-                          style={{ width: 28, height: 28, borderRadius: 8, background: "#eff6ff", color: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                          <Eye size={13} />
-                        </a>
                       </div>
                     </td>
                   </tr>
@@ -637,6 +902,109 @@ function AppointmentTable({ onRefresh }: { onRefresh: number }) {
           onClose={() => setFollowUpTarget(null)}
           onSuccess={load}
         />
+      )}
+
+      {/* View Appointment Details Modal */}
+      {viewTarget && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setViewTarget(null); }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 560, boxShadow: "0 20px 60px rgba(0,0,0,.2)", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>Appointment Details</div>
+              <button onClick={() => setViewTarget(null)} style={{ width: 32, height: 32, borderRadius: 8, border: "none", background: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={16} /></button>
+            </div>
+            <div style={{ display: "grid", gap: 16 }}>
+              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Patient Information</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>{viewTarget.patient?.name}</div>
+                <div style={{ fontSize: 13, color: "#64748b" }}>{viewTarget.patient?.patientId} • {viewTarget.patient?.phone}</div>
+                {viewTarget.patient?.email && <div style={{ fontSize: 13, color: "#64748b" }}>{viewTarget.patient.email}</div>}
+              </div>
+              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Doctor & Department</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>{viewTarget.doctor?.name}</div>
+                <div style={{ fontSize: 13, color: "#64748b" }}>{viewTarget.doctor?.specialization || viewTarget.department?.name || "—"}</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Date & Time</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{new Date(viewTarget.appointmentDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                  <div style={{ fontSize: 13, color: "#64748b" }}>{fmt12(viewTarget.timeSlot)}</div>
+                </div>
+                <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Token Number</div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: "#7c3aed" }}>{viewTarget.tokenNumber || "—"}</div>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Type</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TYPE_COLORS[viewTarget.type] }}>{viewTarget.type.replace("_", " ")}</div>
+                </div>
+                <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Status</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: STATUS_CONFIG[viewTarget.status]?.color }}>{STATUS_CONFIG[viewTarget.status]?.label}</div>
+                </div>
+                <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Fee</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{viewTarget.consultationFee ? `₹${viewTarget.consultationFee}` : "—"}</div>
+                </div>
+              </div>
+              {viewTarget.notes && (
+                <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Notes</div>
+                  <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{viewTarget.notes}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Appointment Modal */}
+      {editTarget && (
+        <EditAppointmentModal
+          appointment={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSave={handleEdit}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setDeleteTarget(null); }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertTriangle size={20} color="#ef4444" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete Appointment?</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                  Are you sure you want to delete this appointment for <strong>{deleteTarget.patient?.name}</strong>? This action cannot be undone.
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: 12, marginBottom: 18 }}>
+              <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, marginBottom: 4 }}>⚠️ Appointment Details</div>
+              <div style={{ fontSize: 11, color: "#a16207" }}>
+                {new Date(deleteTarget.appointmentDate).toLocaleDateString("en-IN")} at {fmt12(deleteTarget.timeSlot)} with Dr. {deleteTarget.doctor?.name}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .5 : 1 }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                {deleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+                {deleting ? "Deleting..." : "Delete Appointment"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -678,27 +1046,41 @@ function StatsBar() {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PANEL
 // ─────────────────────────────────────────────────────────────────────────────
-export default function AppointmentPanel() {
+export default function AppointmentPanel({ onViewPatient }: { onViewPatient?: (id: string) => void }) {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showBooking, setShowBooking] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [successMsg, setSuccessMsg] = useState("");
 
   const handlePatientSelect = (p: Patient) => {
     setSelectedPatient(p);
     setShowBooking(true);
+    setSuccessMsg("");
   };
 
   const handleBookingSuccess = () => {
+    const name = selectedPatient?.name || "Patient";
     setShowBooking(false);
     setSelectedPatient(null);
     setRefreshKey(k => k + 1);
+    setSuccessMsg(`Appointment booked successfully for ${name}`);
+    setTimeout(() => setSuccessMsg(""), 6000);
   };
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       <StatsBar />
+
+      {/* Success Notification */}
+      {successMsg && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "12px 18px", marginBottom: 16, animation: "fadeIn .3s ease" }}>
+          <CheckCircle size={18} color="#059669" />
+          <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#166534" }}>{successMsg}</div>
+          <button onClick={() => setSuccessMsg("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#86efac", display: "flex" }}><X size={14} /></button>
+        </div>
+      )}
 
       {/* Booking Area */}
       <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
@@ -735,7 +1117,7 @@ export default function AppointmentPanel() {
         <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
           <ClipboardList size={18} color="#3b82f6" />Appointments
         </div>
-        <AppointmentTable onRefresh={refreshKey} />
+        <AppointmentTable onRefresh={refreshKey} onViewPatient={(id) => onViewPatient?.(id)} />
       </div>
     </div>
   );

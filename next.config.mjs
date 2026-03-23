@@ -1,5 +1,7 @@
+const isDev = process.env.NODE_ENV !== "production";
+
 const nextConfig = {
-  // any Next.js 14 config options
+  distDir: isDev ? ".next-dev" : ".next",
 };
 
 export default nextConfig;

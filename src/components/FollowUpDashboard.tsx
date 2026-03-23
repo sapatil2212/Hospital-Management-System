@@ -54,8 +54,8 @@ function StatsBar({ stats }: { stats: any }) {
 
 // ─── Follow-Up Card ───
 function FollowUpCard({
-  fu, onStatusChange,
-}: { fu: FollowUp; onStatusChange: (id: string, status: string) => void }) {
+  fu, onStatusChange, onViewPatient,
+}: { fu: FollowUp; onStatusChange: (id: string, status: string) => void; onViewPatient: (id: string) => void }) {
   const sc = STATUS_CFG[fu.status] || STATUS_CFG.PENDING;
   const fuDate = new Date(fu.followUpDate);
   const now = new Date();
@@ -141,10 +141,12 @@ function FollowUpCard({
             </div>
           )}
 
-          <a href={`/hospitaladmin/patients/${fu.patientId}`}
-            style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, textDecoration: "none" }}>
+          <button 
+            onClick={() => onViewPatient(fu.patientId)}
+            style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "right" }}
+          >
             View Profile →
-          </a>
+          </button>
         </div>
       </div>
 
@@ -158,7 +160,7 @@ function FollowUpCard({
 }
 
 // ─── Main Dashboard ───
-export default function FollowUpDashboard() {
+export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (id: string) => void }) {
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -262,7 +264,12 @@ export default function FollowUpDashboard() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))", gap: 14 }}>
           {followUps.map(fu => (
-            <FollowUpCard key={fu.id} fu={fu} onStatusChange={handleStatusChange} />
+            <FollowUpCard 
+              key={fu.id} 
+              fu={fu} 
+              onStatusChange={handleStatusChange} 
+              onViewPatient={(id) => onViewPatient?.(id)}
+            />
           ))}
         </div>
       )}

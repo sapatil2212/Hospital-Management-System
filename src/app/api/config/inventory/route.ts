@@ -1,40 +1,112 @@
 import { NextRequest } from "next/server";
 import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
-import { createInventoryItem, findAllInventory, updateInventoryItem, deleteInventoryItem } from "../../../../../backend/repositories/inventory.repo";
+import * as service from "../../../../../backend/services/inventory.service";
 import { z } from "zod";
 
-const inventorySchema = z.object({
+const itemSchema = z.object({
+  // 1. Basic Info
   name: z.string().min(2),
-  category: z.string().min(1),
+  genericName: z.string().optional(),
+  brandName: z.string().optional(),
+  category: z.enum(["Medicine", "Consumables", "Surgical Items", "Equipment", "Lab Items"]),
+  subCategory: z.string().optional(),
+  itemType: z.enum(["Consumable", "Non-Consumable"]).optional(),
   description: z.string().optional(),
-  stock: z.number().int().min(0).optional(),
-  minStock: z.number().int().min(0).optional(),
-  unit: z.string().optional(),
-  pricePerUnit: z.number().min(0).optional(),
-  supplier: z.string().optional(),
-  isActive: z.boolean().optional(),
+
+  // 2. Unit & Packaging
+  unit: z.string().default("pcs"),
+  packSize: z.string().optional(),
+  conversion: z.string().optional(),
+
+  // 3. Identification
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  hsnCode: z.string().optional(),
+
+  // 4. Stock & Alerts
+  minStock: z.number().int().min(0).default(5),
+  maxStock: z.number().int().min(0).optional(),
+  reorderLevel: z.number().int().min(0).optional(),
+  reorderQty: z.number().int().min(0).optional(),
+  openingStock: z.number().int().min(0).optional(),
+
+  // 5. Purchase Details
+  purchasePrice: z.number().min(0).default(0),
+  purchaseUnit: z.string().optional(),
+  preferredVendorId: z.string().uuid().optional(),
+
+  // 6. Pricing & Billing
+  mrp: z.number().min(0).default(0),
+  sellingPrice: z.number().min(0).default(0),
+  discount: z.number().min(0).max(100).default(0),
+  gst: z.number().min(0).max(100).default(0),
+  billingType: z.enum(["Tax Inclusive", "Tax Exclusive"]).optional(),
+
+  // 8. Storage & Location
+  location: z.enum(["Pharmacy Store", "OT Store", "Ward Stock"]).optional(),
+  rackNumber: z.string().optional(),
+  tempRequirement: z.enum(["Room Temp", "Refrigerated"]).optional(),
+
+  // 9. Compliance & Safety
+  drugSchedule: z.enum(["Schedule H", "Schedule X", "OTC"]).optional(),
+  requiresRx: z.boolean().default(false),
+
+  // 10. Status & Control
+  isActive: z.boolean().default(true),
+  isReturnable: z.boolean().default(true),
+  isCritical: z.boolean().default(false),
+
+  // 11. Media
+  image: z.string().optional(),
+  attachments: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
+
   try {
     const { searchParams } = new URL(req.url);
-    const data = await findAllInventory(auth.hospitalId, searchParams.get("category") || undefined, searchParams.get("search") || undefined);
-    return successResponse(data, "Inventory fetched");
-  } catch (e: any) { return errorResponse(e.message, 500); }
+    const id = searchParams.get("id");
+    if (id) {
+      const data = await service.getItemDetails(id, auth.hospitalId);
+      if (!data) return errorResponse("Item not found", 404);
+      return successResponse(data, "Item fetched");
+    }
+    const params = {
+      hospitalId: auth.hospitalId,
+      category: searchParams.get("category") || undefined,
+      search: searchParams.get("search") || undefined,
+      page: parseInt(searchParams.get("page") || "1"),
+      limit: parseInt(searchParams.get("limit") || "10"),
+    };
+    const data = await service.getItems(params);
+    return successResponse(data, "Items fetched");
+  } catch (e: any) {
+    return errorResponse(e.message, 500);
+  }
 }
 
 export async function POST(req: NextRequest) {
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
+
   try {
     const body = await req.json();
-    const result = inventorySchema.safeParse(body);
+    const result = itemSchema.safeParse(body);
     if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
-    const data = await createInventoryItem({ hospitalId: auth.hospitalId, ...result.data });
-    return successResponse(data, "Inventory item created", 201);
+    
+    // Check for opening stock to create initial movement/batch if needed
+    const { openingStock, ...itemData } = result.data;
+    const data = await service.addItem(auth.hospitalId, itemData);
+
+    // Handle opening stock logic in service if needed
+    if (openingStock && openingStock > 0) {
+      // Create a manual stock entry movement
+    }
+
+    return successResponse(data, "Item created", 201);
   } catch (e: any) {
     if (e.code === "P2002") return errorResponse("Item with same name & category already exists", 409);
     return errorResponse(e.message, 500);
@@ -44,23 +116,34 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
+
   try {
     const body = await req.json();
     const { id, ...updateData } = body;
     if (!id) return errorResponse("ID is required", 400);
-    await updateInventoryItem(id, auth.hospitalId, updateData);
-    return successResponse(null, "Inventory item updated");
-  } catch (e: any) { return errorResponse(e.message, 500); }
+    
+    const result = itemSchema.partial().safeParse(updateData);
+    if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
+    
+    const data = await service.updateItem(id, auth.hospitalId, result.data);
+    return successResponse(data, "Item updated");
+  } catch (e: any) {
+    return errorResponse(e.message, 500);
+  }
 }
 
 export async function DELETE(req: NextRequest) {
   const auth = await requireHospitalAdmin(req);
   if (auth.error) return auth.error;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return errorResponse("ID is required", 400);
-    await deleteInventoryItem(id, auth.hospitalId);
-    return successResponse(null, "Inventory item deleted");
-  } catch (e: any) { return errorResponse(e.message, 500); }
+    
+    await service.deleteItem(id, auth.hospitalId);
+    return successResponse(null, "Item deleted");
+  } catch (e: any) {
+    return errorResponse(e.message, 500);
+  }
 }
