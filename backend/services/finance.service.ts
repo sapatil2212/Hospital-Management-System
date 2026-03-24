@@ -77,17 +77,17 @@ export async function getFinanceDashboardStats(hospitalId: string): Promise<any>
       _sum: { total: true },
     }),
     
-    // Manual revenue entries aggregations
+    // Manual revenue entries aggregations (exclude auto-logged billing entries)
     (prisma as any).revenue.aggregate({
-      where: { hospitalId, createdAt: { gte: todayStart } },
+      where: { hospitalId, referenceId: null, createdAt: { gte: todayStart } },
       _sum: { amount: true },
     }),
     (prisma as any).revenue.aggregate({
-      where: { hospitalId, createdAt: { gte: monthStart } },
+      where: { hospitalId, referenceId: null, createdAt: { gte: monthStart } },
       _sum: { amount: true },
     }),
     (prisma as any).revenue.aggregate({
-      where: { hospitalId, createdAt: { gte: yearStart } },
+      where: { hospitalId, referenceId: null, createdAt: { gte: yearStart } },
       _sum: { amount: true },
     }),
     

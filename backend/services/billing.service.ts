@@ -474,12 +474,13 @@ export async function recordPayment(
 // ── Get bills list ─────────────────────────────────────────────────────────
 export async function getBills(
   hospitalId: string,
-  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string }
+  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string }
 ) {
   const page  = Math.max(1, opts.page  || 1);
   const limit = Math.min(50, opts.limit || 20);
   const where: any = { hospitalId };
 
+  if (opts.patientId) where.patientId = opts.patientId;
   if (opts.status) where.status = opts.status;
   if (opts.dateFrom || opts.dateTo) {
     where.createdAt = {};

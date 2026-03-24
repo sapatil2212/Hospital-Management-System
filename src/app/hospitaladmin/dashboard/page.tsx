@@ -1498,85 +1498,66 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
   );
 }
 
-// ─── Patients List Panel ───
-function PatientsListPanel({ onSelectPatient, onEditPatient }: { onSelectPatient: (id: string) => void; onEditPatient: (id: string) => void }) {
+// ─── Comprehensive Patients Management Panel ───
+function PatientsManagementPanel() {
+  const router = useRouter();
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const itemsPerPage = 10;
 
-  const load = async () => {
+  const loadPatients = async () => {
     setLoading(true);
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: "15",
-      sortBy,
-      sortOrder
-    });
-    if (search) params.set("search", search);
-    const d = await api(`/api/patients?${params}`);
-    if (d.success) {
-      setPatients(d.data?.data || []);
-      setPagination(d.data?.pagination || { total: 0, totalPages: 1 });
+    const response = await api(`/api/patients?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`);
+    if (response.success) {
+      setPatients(response.data.data || []);
+      setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
+      setTotalCount(response.data.total || 0);
     }
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [page, search, sortBy, sortOrder]);
+  useEffect(() => { loadPatients(); }, [currentPage, searchTerm]);
 
-  const handleDelete = async () => {
+  const handleDeletePatient = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     const d = await api(`/api/patients/${deleteTarget.id}`, "DELETE");
     if (d.success) {
       setDeleteTarget(null);
-      load();
+      loadPatients();
     } else {
       alert(d.message || "Failed to delete patient");
     }
     setDeleting(false);
   };
 
-  const toggleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("asc");
-    }
-    setPage(1);
+  const calculateAge = (dob?: string) => {
+    if (!dob) return "—";
+    return Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000);
   };
 
   return (
     <div className="hd-card mb16">
       <div className="hd-card-head" style={{ flexWrap: "wrap", gap: 15 }}>
         <div>
-          <div className="hd-card-title">Patient Registry</div>
-          <div className="hd-card-sub">{pagination.total} registered patients</div>
+          <div className="hd-card-title">Patient Management</div>
+          <div className="hd-card-sub">{totalCount} registered patients</div>
         </div>
 
         <div style={{ display: "flex", gap: 10, flex: 1, justifyContent: "flex-end", minWidth: 300 }}>
           <div className="hd-search-wrap" style={{ width: "100%", maxWidth: 300 }}>
             <Search size={14} color="#94a3b8" />
-            <input className="hd-search" placeholder="Search name, phone, ID..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+            <input className="hd-search" placeholder="Search name, phone, ID..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 12, color: "#64748b", outline: "none", cursor: "pointer" }}>
-              <option value="createdAt">Date Joined</option>
-              <option value="name">Name</option>
-              <option value="patientId">Patient ID</option>
-            </select>
-            <button onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
-              <RefreshCw size={14} style={{ transform: sortOrder === "desc" ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
-            </button>
-          </div>
+          <button className="hd-btn-primary" onClick={() => router.push("/hospitaladmin/appointments")} style={{ whiteSpace: "nowrap" }}>
+            <Plus size={14} /> Register Patient
+          </button>
         </div>
       </div>
 
@@ -1596,10 +1577,11 @@ function PatientsListPanel({ onSelectPatient, onEditPatient }: { onSelectPatient
             <table className="hd-tbl">
               <thead>
                 <tr>
-                  <th style={{ cursor: "pointer" }} onClick={() => toggleSort("patientId")}>ID {sortBy === "patientId" && (sortOrder === "asc" ? "↑" : "↓")}</th>
-                  <th style={{ cursor: "pointer" }} onClick={() => toggleSort("name")}>Patient {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}</th>
+                  <th>ID</th>
+                  <th>Patient</th>
                   <th>Contact</th>
                   <th>Gender/Age</th>
+                  <th>Blood Group</th>
                   <th>Activity</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
@@ -1621,9 +1603,10 @@ function PatientsListPanel({ onSelectPatient, onEditPatient }: { onSelectPatient
                     <td>
                       <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                         <span className="hd-badge" style={{ background: "#f1f5f9", color: "#64748b" }}>{p.gender || "—"}</span>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{p.dateOfBirth ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / 31557600000) : "—"} yrs</span>
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{calculateAge(p.dateOfBirth)} yrs</span>
                       </div>
                     </td>
+                    <td><span className="hd-badge" style={{ background: "#fef3c7", color: "#f59e0b" }}>{p.bloodGroup || "—"}</span></td>
                     <td>
                       <div style={{ display: "flex", gap: 12 }}>
                         <div title="Appointments"><div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>Visits</div><div style={{ fontSize: 12, fontWeight: 700, color: "#2563eb" }}>{p._count?.appointments || 0}</div></div>
@@ -1632,8 +1615,7 @@ function PatientsListPanel({ onSelectPatient, onEditPatient }: { onSelectPatient
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                        <button className="hd-card-icon-btn" onClick={() => onSelectPatient(p.id)} title="View Records"><ChevronRight size={14} /></button>
-                        <button className="hd-card-icon-btn" onClick={() => onEditPatient(p.id)} title="Edit Profile"><Pencil size={13} /></button>
+                        <button className="hd-card-icon-btn" onClick={() => router.push(`/hospitaladmin/appointments?patientId=${p.id}`)} title="View Records"><ChevronRight size={14} /></button>
                         <button className="hd-card-icon-btn" style={{ color: "#ef4444" }} onClick={() => setDeleteTarget(p)} title="Delete Patient"><Trash2 size={13} /></button>
                       </div>
                     </td>
@@ -1642,18 +1624,22 @@ function PatientsListPanel({ onSelectPatient, onEditPatient }: { onSelectPatient
               </tbody>
             </table>
 
-            {pagination.totalPages > 1 && (
+            {totalPages > 1 && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderTop: "1px solid #f1f5f9" }}>
-                <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {patients.length} of {pagination.total} patients</div>
+                <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {patients.length} of {totalCount} patients</div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button className="hd-filter-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ opacity: page === 1 ? .5 : 1 }}>Prev</button>
-                  {[...Array(pagination.totalPages)].map((_, i) => (
-                    <button key={i} className={`hd-filter-btn${page === i + 1 ? " on" : ""}`} onClick={() => setPage(i + 1)}
-                      style={{ minWidth: 32, justifyContent: "center", background: page === i + 1 ? "#3b82f6" : "#f1f5f9", color: page === i + 1 ? "#fff" : "#64748b" }}>
-                      {i + 1}
-                    </button>
-                  )).slice(Math.max(0, page - 3), Math.min(pagination.totalPages, page + 2))}
-                  <button className="hd-filter-btn" onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))} disabled={page === pagination.totalPages} style={{ opacity: page === pagination.totalPages ? .5 : 1 }}>Next</button>
+                  <button className="hd-filter-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ opacity: currentPage === 1 ? .5 : 1 }}>Prev</button>
+                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                    const pageNum = currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
+                    if (pageNum < 1 || pageNum > totalPages) return null;
+                    return (
+                      <button key={i} className={`hd-filter-btn${currentPage === pageNum ? " on" : ""}`} onClick={() => setCurrentPage(pageNum)}
+                        style={{ minWidth: 32, justifyContent: "center", background: currentPage === pageNum ? "#3b82f6" : "#f1f5f9", color: currentPage === pageNum ? "#fff" : "#64748b" }}>
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <button className="hd-filter-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ opacity: currentPage === totalPages ? .5 : 1 }}>Next</button>
                 </div>
               </div>
             )}
@@ -1673,7 +1659,7 @@ function PatientsListPanel({ onSelectPatient, onEditPatient }: { onSelectPatient
             </div>
             <div className="hd-ma">
               <button className="hd-mcancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="hd-msubmit" style={{ background: "#ef4444" }} onClick={handleDelete} disabled={deleting}>{deleting ? <span className="hd-spin" /> : "Delete Permanently"}</button>
+              <button className="hd-msubmit" style={{ background: "#ef4444" }} onClick={handleDeletePatient} disabled={deleting}>{deleting ? <span className="hd-spin" /> : "Delete Permanently"}</button>
             </div>
           </div>
         </div>
@@ -1899,7 +1885,7 @@ function DashboardContent() {
     { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={16} /> },
     { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} />, route: "/hospitaladmin/appointments" },
     { id: "staff", label: "Staff", icon: <Users size={16} /> },
-    { id: "patients", label: "Patients", icon: <UserRound size={16} /> },
+    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/patients" },
     { id: "inventory", label: "Inventory", icon: <ClipboardList size={16} /> },
     { id: "billing", label: "Billing", icon: <CreditCard size={16} />, route: "/hospitaladmin/billing" },
     { id: "finance", label: "Finance", icon: <IndianRupee size={16} />, route: "/hospitaladmin/finance" },
@@ -2358,12 +2344,7 @@ function DashboardContent() {
       )}
 
       {tab === "patients" && (
-        <PatientsListPanel
-          onSelectPatient={(id) => {
-            router.push(`/hospitaladmin/appointments?patientId=${id}`);
-          }}
-          onEditPatient={(id) => setPatientEditId(id)}
-        />
+        <PatientsManagementPanel />
       )}
 
       {tab === "inventory" && (

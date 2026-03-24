@@ -35,7 +35,7 @@ export default function BillingPage() {
     { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={16} />, route: "/hospitaladmin/dashboard" },
     { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} />, route: "/hospitaladmin/appointments" },
     { id: "staff", label: "Staff", icon: <Users size={16} />, route: "/hospitaladmin/dashboard?tab=staff" },
-    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/dashboard?tab=patients" },
+    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/patients" },
     { id: "inventory", label: "Inventory", icon: <ClipboardList size={16} />, route: "/hospitaladmin/dashboard?tab=inventory" },
     { id: "billing", label: "Billing", icon: <CreditCard size={16} />, route: "/hospitaladmin/billing" },
     { id: "finance", label: "Finance", icon: <IndianRupee size={16} />, route: "/hospitaladmin/finance" },

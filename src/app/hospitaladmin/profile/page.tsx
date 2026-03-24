@@ -33,7 +33,7 @@ export default function ProfilePage() {
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={16} />, route: "/hospitaladmin/dashboard" },
     { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} />, route: "/hospitaladmin/appointments" },
     { id: "staff", label: "Staff", icon: <Users size={16} />, route: "/hospitaladmin/dashboard?tab=staff" },
-    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/dashboard?tab=patients" },
+    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/patients" },
     { id: "inventory", label: "Inventory", icon: <ClipboardList size={16} />, route: "/hospitaladmin/dashboard?tab=inventory" },
     { id: "departments", label: "Departments", icon: <Building2 size={16} />, route: "/hospitaladmin/dashboard?tab=departments" },
     { id: "beds", label: "Beds & Wards", icon: <Bed size={16} />, route: "/hospitaladmin/dashboard?tab=beds" },

@@ -13,12 +13,13 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const result = await getBills(auth.hospitalId, {
-      page:     parseInt(url.searchParams.get("page")    || "1"),
-      limit:    parseInt(url.searchParams.get("limit")   || "20"),
-      search:   url.searchParams.get("search")   || undefined,
-      status:   url.searchParams.get("status")   || undefined,
-      dateFrom: url.searchParams.get("dateFrom") || undefined,
-      dateTo:   url.searchParams.get("dateTo")   || undefined,
+      page:      parseInt(url.searchParams.get("page")    || "1"),
+      limit:     parseInt(url.searchParams.get("limit")   || "20"),
+      search:    url.searchParams.get("search")     || undefined,
+      status:    url.searchParams.get("status")     || undefined,
+      dateFrom:  url.searchParams.get("dateFrom")   || undefined,
+      dateTo:    url.searchParams.get("dateTo")     || undefined,
+      patientId: url.searchParams.get("patientId")  || undefined,
     });
     return successResponse(result, "Bills fetched");
   } catch (e: any) {

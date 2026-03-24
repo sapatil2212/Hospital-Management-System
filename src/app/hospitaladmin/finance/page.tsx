@@ -43,10 +43,12 @@ export default function HospitalAdminFinancePage() {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [expLoading, setExpLoading] = useState(false);
 
-  const [paidBills, setPaidBills] = useState<any[]>([]);
-  const [revenues, setRevenues] = useState<any[]>([]);
+  const [allRevenue, setAllRevenue] = useState<any[]>([]);
   const [revLoading, setRevLoading] = useState(false);
   const [viewBill, setViewBill] = useState<any>(null);
+  const [viewExpense, setViewExpense] = useState<any>(null);
+  const [viewManualRev, setViewManualRev] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: "expense" | "revenue" | "bulk-expense" | "bulk-revenue"; id?: string; count?: number } | null>(null);
 
   // Add Expense form
   const [showExpForm, setShowExpForm] = useState(false);
@@ -94,8 +96,35 @@ export default function HospitalAdminFinancePage() {
 
   const loadRevenue = useCallback(async () => {
     setRevLoading(true);
-    const d = await api<ApiResponse<any>>("/api/revenue?limit=100");
-    if (d.success) setRevenues(d.data?.revenues || []);
+    const [billsRes, manualRes] = await Promise.all([
+      api<ApiResponse<any>>("/api/billing?status=PAID&limit=100"),
+      api<ApiResponse<any>>("/api/revenue?limit=100"),
+    ]);
+    const bills = (billsRes.success ? billsRes.data?.bills || [] : []).map((b: any) => ({
+      _type: "bill",
+      id: b.id,
+      date: b.paidAt || b.createdAt,
+      description: b.patient?.name || "—",
+      subText: b.patient?.patientId,
+      amount: b.total,
+      source: b.payments?.[0]?.method || "PAID",
+      billNo: b.billNo,
+      billItems: b.billItems,
+      _raw: b,
+    }));
+    const manual = (manualRes.success ? manualRes.data?.revenues || [] : []).map((r: any) => ({
+      _type: "manual",
+      id: r.id,
+      date: r.createdAt,
+      description: r.description || "—",
+      subText: null,
+      amount: r.amount,
+      source: (r.sourceType || "OTHER").replace(/_/g, " "),
+      billNo: null,
+      _raw: r,
+    }));
+    const merged = [...bills, ...manual].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    setAllRevenue(merged);
     setRevLoading(false);
   }, []);
 
@@ -133,35 +162,58 @@ export default function HospitalAdminFinancePage() {
   };
 
   const deleteExpense = async (id: string) => {
-    if (!confirm("Delete this expense?")) return;
+    setDeleteConfirm({ type: "expense", id });
+  };
+
+  const confirmDeleteExpense = async (id: string) => {
     await api<ApiResponse<any>>(`/api/expense/${id}`, "DELETE");
+    setDeleteConfirm(null);
     loadExpenses(); loadStats();
   };
 
   const deleteRevenue = async (id: string) => {
-    if (!confirm("Delete this revenue entry?")) return;
+    setDeleteConfirm({ type: "revenue", id });
+  };
+
+  const confirmDeleteRevenue = async (id: string) => {
     await api<ApiResponse<any>>(`/api/revenue/${id}`, "DELETE");
+    setDeleteConfirm(null);
     loadRevenue(); loadStats();
   };
 
   const bulkDeleteRevenues = async () => {
     if (selectedRev.size === 0) return;
-    if (!confirm(`Delete ${selectedRev.size} selected revenue entr${selectedRev.size === 1 ? 'y' : 'ies'}?`)) return;
-    await Promise.all([...selectedRev].map(id => api<ApiResponse<any>>(`/api/revenue/${id}`, "DELETE")));
+    const deletable = [...selectedRev].filter(id => allRevenue.find(r => r.id === id)?._type === "manual");
+    if (deletable.length === 0) { alert("Only manually-added revenue entries can be deleted. Billing revenue is managed from the Billing page."); return; }
+    setDeleteConfirm({ type: "bulk-revenue", count: deletable.length });
+  };
+
+  const confirmBulkDeleteRevenues = async () => {
+    const deletable = [...selectedRev].filter(id => allRevenue.find(r => r.id === id)?._type === "manual");
+    await Promise.all(deletable.map(id => api<ApiResponse<any>>(`/api/revenue/${id}`, "DELETE")));
     setSelectedRev(new Set());
+    setDeleteConfirm(null);
     await loadRevenue();
     await loadStats();
   };
 
   const bulkDeleteExpenses = async () => {
     if (selectedExp.size === 0) return;
-    if (!confirm(`Delete ${selectedExp.size} selected expense(s)?`)) return;
+    const deletable = [...selectedExp].filter(id => {
+      const row = filteredExpenses.find((r: any) => r.id === id);
+      return row && !(row as any)._isPurchase;
+    });
+    setDeleteConfirm({ type: "bulk-expense", count: deletable.length });
+  };
+
+  const confirmBulkDeleteExpenses = async () => {
     const deletable = [...selectedExp].filter(id => {
       const row = filteredExpenses.find((r: any) => r.id === id);
       return row && !(row as any)._isPurchase;
     });
     await Promise.all(deletable.map(id => api<ApiResponse<any>>(`/api/expense/${id}`, "DELETE")));
     setSelectedExp(new Set());
+    setDeleteConfirm(null);
     loadExpenses(); loadStats();
   };
 
@@ -180,9 +232,11 @@ export default function HospitalAdminFinancePage() {
       }));
     }
     return filteredRevenues.map((r: any) => ({
-      Date: fmtDate(r.createdAt),
-      Source: (r.sourceType || "OTHER").replace(/_/g, " "),
-      Description: r.description || "",
+      Type: r._type === "bill" ? "Billing" : "Manual",
+      Date: fmtDate(r.date),
+      "Bill No": r.billNo || "—",
+      Description: r.description || "—",
+      Source: r.source || "—",
       Amount: r.amount,
     }));
   };
@@ -228,7 +282,7 @@ export default function HospitalAdminFinancePage() {
     { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={16} />, route: "/hospitaladmin/dashboard" },
     { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} />, route: "/hospitaladmin/appointments" },
     { id: "staff", label: "Staff", icon: <Users size={16} />, route: "/hospitaladmin/dashboard?tab=staff" },
-    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/dashboard?tab=patients" },
+    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/patients" },
     { id: "inventory", label: "Inventory", icon: <ClipboardList size={16} />, route: "/hospitaladmin/dashboard?tab=inventory" },
     { id: "billing", label: "Billing", icon: <CreditCard size={16} />, route: "/hospitaladmin/billing" },
     { id: "finance", label: "Finance", icon: <IndianRupee size={16} />, route: "/hospitaladmin/finance" },
@@ -266,19 +320,20 @@ export default function HospitalAdminFinancePage() {
     return 0;
   });
 
-  const filteredRevenues = revenues.filter((r: any) => {
+  const filteredRevenues = allRevenue.filter((r: any) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
-      (r.sourceType || "").toLowerCase().includes(q) ||
       (r.description || "").toLowerCase().includes(q) ||
+      (r.source || "").toLowerCase().includes(q) ||
+      (r.billNo || "").toLowerCase().includes(q) ||
       String(r.amount || 0).includes(q)
     );
   }).sort((a: any, b: any) => {
     const dir = revSort.dir === "asc" ? 1 : -1;
-    if (revSort.key === "date") return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    if (revSort.key === "date") return dir * (new Date(a.date).getTime() - new Date(b.date).getTime());
     if (revSort.key === "amount") return dir * ((a.amount || 0) - (b.amount || 0));
-    if (revSort.key === "source") return dir * ((a.sourceType || "").localeCompare(b.sourceType || ""));
+    if (revSort.key === "source") return dir * ((a.source || "").localeCompare(b.source || ""));
     return 0;
   });
 
@@ -451,7 +506,7 @@ export default function HospitalAdminFinancePage() {
                     </>
                   )}
                 </div>
-                <button className="fin-btn primary" type="button" onClick={() => { tab === "expenses" ? setShowExpForm(!showExpForm) : setShowRevForm(!showRevForm); }}><Plus size={16} /> {tab === "expenses" ? (showExpForm ? "Cancel" : "Add Expense") : (showRevForm ? "Cancel" : "Add Revenue")}</button>
+                <button className="fin-btn primary" type="button" onClick={() => { tab === "expenses" ? (setShowExpForm(true), setExpMsg("")) : (setShowRevForm(true), setRevMsg("")); }}><Plus size={16} /> {tab === "expenses" ? "Add Expense" : "Add Revenue"}</button>
               </div>
             </div>
 
@@ -528,18 +583,13 @@ export default function HospitalAdminFinancePage() {
               </div>
               <div className="fin-toolbar">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div className="fin-hint">{tab === "expenses" ? "Operational expenses + inventory purchase orders." : "Revenue entries from manual additions."}</div>
+                  <div className="fin-hint">{tab === "expenses" ? "Operational expenses + inventory purchase orders." : "Billing revenue (paid bills) + manually added revenue entries."}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
                   {selectedExp.size > 0 && tab === "expenses" && (
                     <button type="button" onClick={bulkDeleteExpenses} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                       <Trash2 size={11} /> Delete {selectedExp.size}
-                    </button>
-                  )}
-                  {selectedRev.size > 0 && tab === "revenue" && (
-                    <button type="button" onClick={bulkDeleteRevenues} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                      <Trash2 size={11} /> Delete {selectedRev.size}
                     </button>
                   )}
                   {tab === "expenses" ? (
@@ -564,76 +614,6 @@ export default function HospitalAdminFinancePage() {
                   </button>
                 </div>
               </div>
-
-              {/* ── Inline Add Expense Form ── */}
-              {showExpForm && tab === "expenses" && (
-                <div style={{ margin: "0 0 12px", padding: 18, background: "#faf5ff", border: "1.5px solid #e9d5ff", borderRadius: 14 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#6d28d9", marginBottom: 12 }}>New Expense</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Title *</label>
-                      <input value={expForm.title} onChange={e => setExpForm({ ...expForm, title: e.target.value })} placeholder="e.g. Electricity bill" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #d8b4fe", fontSize: 13, outline: "none" }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Category</label>
-                      <select value={expForm.category} onChange={e => setExpForm({ ...expForm, category: e.target.value })} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #d8b4fe", fontSize: 13, outline: "none", background: "#fff" }}>
-                        {["SALARY","EQUIPMENT","MAINTENANCE","UTILITY","MEDICINE","HOUSEKEEPING","MARKETING","INSURANCE_EXPENSE","OTHER"].map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Amount (₹) *</label>
-                      <input type="number" min="1" value={expForm.amount} onChange={e => setExpForm({ ...expForm, amount: e.target.value })} placeholder="Enter amount" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #d8b4fe", fontSize: 13, outline: "none" }} />
-                    </div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Date *</label>
-                      <input type="date" value={expForm.date} onChange={e => setExpForm({ ...expForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #d8b4fe", fontSize: 13, outline: "none" }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Description</label>
-                      <input value={expForm.description} onChange={e => setExpForm({ ...expForm, description: e.target.value })} placeholder="Optional details" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #d8b4fe", fontSize: 13, outline: "none" }} />
-                    </div>
-                  </div>
-                  {expMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "9px 14px", borderRadius: 8, marginBottom: 10, textAlign: "center" }}>{expMsg}</div>}
-                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                    <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                    <button type="button" disabled={expSaving} onClick={saveExpense} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: expSaving ? .6 : 1 }}>
-                      {expSaving ? "Saving…" : "Save Expense"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Inline Add Revenue Form ── */}
-              {showRevForm && tab === "revenue" && (
-                <div style={{ margin: "0 0 12px", padding: 18, background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 14 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#15803d", marginBottom: 12 }}>New Revenue</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Source Type</label>
-                      <select value={revForm.sourceType} onChange={e => setRevForm({ ...revForm, sourceType: e.target.value })} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #86efac", fontSize: 13, outline: "none", background: "#fff" }}>
-                        {["CONSULTATION","PROCEDURE","BED_CHARGE","PHARMACY","LAB_TEST","OTHER"].map(s => <option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Amount (₹) *</label>
-                      <input type="number" min="1" value={revForm.amount} onChange={e => setRevForm({ ...revForm, amount: e.target.value })} placeholder="Enter amount" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #86efac", fontSize: 13, outline: "none" }} />
-                    </div>
-                  </div>
-                  <div style={{ marginBottom: 10 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>Description</label>
-                    <input value={revForm.description} onChange={e => setRevForm({ ...revForm, description: e.target.value })} placeholder="e.g. Payment received for consultation" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1.5px solid #86efac", fontSize: 13, outline: "none" }} />
-                  </div>
-                  {revMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "9px 14px", borderRadius: 8, marginBottom: 10, textAlign: "center" }}>{revMsg}</div>}
-                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                    <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                    <button type="button" disabled={revSaving} onClick={saveRevenue} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#16a34a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: revSaving ? .6 : 1 }}>
-                      {revSaving ? "Saving…" : "Save Revenue"}
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="fin-table-wrap">
                 {tab === "expenses" ? (
@@ -684,11 +664,16 @@ export default function HospitalAdminFinancePage() {
                               </span>
                             </td>
                             <td>
-                              {!(r as any)._isPurchase && (
-                                <button type="button" onClick={() => deleteExpense(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
-                                  <Trash2 size={13} color="#ef4444" />
+                              <div style={{ display: "flex", gap: 4 }}>
+                                <button type="button" onClick={() => setViewExpense(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Details">
+                                  <Eye size={13} color="#3b82f6" />
                                 </button>
-                              )}
+                                {!(r as any)._isPurchase && (
+                                  <button type="button" onClick={() => deleteExpense(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
+                                    <Trash2 size={13} color="#ef4444" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -703,7 +688,8 @@ export default function HospitalAdminFinancePage() {
                   ) : filteredRevenues.length === 0 ? (
                     <div style={{ padding: 56, textAlign: "center", color: "#94a3b8" }}>
                       <TrendingUp size={32} color="#e2e8f0" style={{ marginBottom: 8 }} />
-                      <div style={{ fontWeight: 600 }}>No paid bills found</div>
+                      <div style={{ fontWeight: 600 }}>No revenue entries found</div>
+                      <div style={{ fontSize: 12, marginTop: 4 }}>Paid bills appear automatically · use "Add Revenue" for other income</div>
                     </div>
                   ) : (
                     <table className="fin-table">
@@ -717,33 +703,63 @@ export default function HospitalAdminFinancePage() {
                               {selectedRev.size === 0 ? <Square size={15} color="#94a3b8" /> : selectedRev.size === filteredRevenues.length ? <CheckSquare size={15} color="#2563eb" /> : <MinusSquare size={15} color="#2563eb" />}
                             </button>
                           </th>
+                          <th>Type</th>
                           <th>Date</th>
-                          <th>Source</th>
-                          <th>Description</th>
+                          <th>Description / Patient</th>
+                          <th>Source / Bill</th>
                           <th>Amount</th>
                           <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredRevenues.map((r: any) => (
-                          <tr key={r.id} style={{ background: selectedRev.has(r.id) ? "#f0fdf4" : undefined }}>
+                          <tr key={`${r._type}-${r.id}`} style={{ background: selectedRev.has(r.id) ? "#f0fdf4" : undefined }}>
                             <td>
                               <button type="button" onClick={() => toggleRevSelect(r.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}>
                                 {selectedRev.has(r.id) ? <CheckSquare size={15} color="#2563eb" /> : <Square size={15} color="#cbd5e1" />}
                               </button>
                             </td>
-                            <td>{fmtDate(r.createdAt)}</td>
                             <td>
-                              <span style={{ padding: "3px 8px", borderRadius: 100, background: "#eff6ff", color: "#2563eb", fontSize: 11, fontWeight: 700 }}>
-                                {(r.sourceType || "OTHER").replace(/_/g, " ")}
+                              {r._type === "bill" ? (
+                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#eff6ff", color: "#2563eb", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                                  Billing
+                                </span>
+                              ) : (
+                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#f0fdf4", color: "#16a34a", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                                  Manual
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ color: "#64748b", fontSize: 12 }}>{fmtDate(r.date)}</td>
+                            <td>
+                              <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{r.description}</div>
+                              {r.subText && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{r.subText}</div>}
+                              {r.billNo && <div style={{ fontSize: 10, color: "#93c5fd", marginTop: 1, fontWeight: 700 }}>{r.billNo}</div>}
+                            </td>
+                            <td>
+                              <span style={{ padding: "3px 8px", borderRadius: 100, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize: 11, fontWeight: 600 }}>
+                                {r.source}
                               </span>
                             </td>
-                            <td style={{ fontSize: 12, color: "#64748b" }}>{r.description || "—"}</td>
-                            <td className="fin-amt" style={{ color: "#16a34a" }}>{fmtINR(r.amount)}</td>
+                            <td className="fin-amt" style={{ color: "#16a34a", fontWeight: 700 }}>{fmtINR(r.amount)}</td>
                             <td>
-                              <button type="button" onClick={() => deleteRevenue(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
-                                <Trash2 size={13} color="#ef4444" />
-                              </button>
+                              <div style={{ display: "flex", gap: 4 }}>
+                                {r._type === "bill" && (
+                                  <button type="button" onClick={() => setViewBill(r._raw)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Bill Details">
+                                    <Eye size={13} color="#3b82f6" />
+                                  </button>
+                                )}
+                                {r._type === "manual" && (
+                                  <>
+                                    <button type="button" onClick={() => setViewManualRev(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Details">
+                                      <Eye size={13} color="#3b82f6" />
+                                    </button>
+                                    <button type="button" onClick={() => deleteRevenue(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
+                                      <Trash2 size={13} color="#ef4444" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -756,6 +772,96 @@ export default function HospitalAdminFinancePage() {
           </div>
         </main>
       </div>
+
+      {/* ═══ Add Expense Modal ═══ */}
+      {showExpForm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setShowExpForm(false); setExpMsg(""); }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 520, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
+            <div style={{ background: "linear-gradient(135deg,#6366f1,#4338ca)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>New Entry</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>Add Expense</div>
+              </div>
+              <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+            </div>
+            <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Title *</label>
+                <input value={expForm.title} onChange={e => setExpForm({ ...expForm, title: e.target.value })} placeholder="e.g. Electricity bill" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Category</label>
+                  <select value={expForm.category} onChange={e => setExpForm({ ...expForm, category: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", background: "#fff" }}>
+                    {["SALARY","EQUIPMENT","MAINTENANCE","UTILITY","MEDICINE","HOUSEKEEPING","MARKETING","INSURANCE_EXPENSE","OTHER"].map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
+                  <input type="number" min="1" value={expForm.amount} onChange={e => setExpForm({ ...expForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Date *</label>
+                <input type="date" value={expForm.date} onChange={e => setExpForm({ ...expForm, date: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
+                <textarea value={expForm.description} onChange={e => setExpForm({ ...expForm, description: e.target.value })} placeholder="Optional details…" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", resize: "vertical" }} />
+              </div>
+              {expMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{expMsg}</div>}
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={saveExpense} disabled={expSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6366f1,#4338ca)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: expSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                  {expSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{expSaving ? "Saving…" : "Add Expense"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Add Revenue Modal ═══ */}
+      {showRevForm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setShowRevForm(false); setRevMsg(""); }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
+            <div style={{ background: "linear-gradient(135deg,#16a34a,#15803d)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>New Entry</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>Add Revenue</div>
+              </div>
+              <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+            </div>
+            <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Source Type</label>
+                  <select value={revForm.sourceType} onChange={e => setRevForm({ ...revForm, sourceType: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", background: "#fff" }}>
+                    {["CONSULTATION","PROCEDURE","BED_CHARGE","PHARMACY","LAB_TEST","OTHER"].map(s => <option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
+                  <input type="number" min="1" value={revForm.amount} onChange={e => setRevForm({ ...revForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
+                <textarea value={revForm.description} onChange={e => setRevForm({ ...revForm, description: e.target.value })} placeholder="e.g. Payment received for consultation" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", resize: "vertical" }} />
+              </div>
+              {revMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{revMsg}</div>}
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={saveRevenue} disabled={revSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#16a34a,#15803d)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: revSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                  {revSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{revSaving ? "Saving…" : "Add Revenue"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Transaction Detail Modal ═══ */}
       {viewBill && (
@@ -878,6 +984,117 @@ export default function HospitalAdminFinancePage() {
                   <span style={{ fontWeight: 700 }}>Notes:</span> {viewBill.notes}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ View Expense Details Modal ═══ */}
+      {viewExpense && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setViewExpense(null)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
+            <div style={{ background: "linear-gradient(135deg,#6366f1,#4338ca)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>Expense Details</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>{viewExpense.title || "Expense"}</div>
+              </div>
+              <button type="button" onClick={() => setViewExpense(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+            </div>
+            <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewExpense.date)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#4338ca" }}>{fmtINR(viewExpense.amount)}</div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Category</div>
+                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#eef2ff", color: "#4338ca", fontSize: 12, fontWeight: 700 }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Type</div>
+                <span className={`fin-badge ${(viewExpense as any)._isPurchase ? "warn" : "ok"}`}>{(viewExpense as any)._isPurchase ? "Purchase Order" : "Expense"}</span>
+              </div>
+              {viewExpense.description && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
+                  <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{viewExpense.description}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ View Manual Revenue Details Modal ═══ */}
+      {viewManualRev && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setViewManualRev(null)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
+            <div style={{ background: "linear-gradient(135deg,#16a34a,#15803d)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>Revenue Details</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>Manual Entry</div>
+              </div>
+              <button type="button" onClick={() => setViewManualRev(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+            </div>
+            <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewManualRev.date)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#16a34a" }}>{fmtINR(viewManualRev.amount)}</div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Source Type</div>
+                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 700 }}>{viewManualRev.source}</span>
+              </div>
+              {viewManualRev.description && viewManualRev.description !== "—" && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
+                  <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{viewManualRev.description}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Delete Confirmation Modal ═══ */}
+      {deleteConfirm && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setDeleteConfirm(null)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 16, width: "95%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,.25)" }}>
+            <div style={{ padding: "24px 24px 20px", textAlign: "center" }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <AlertTriangle size={28} color="#dc2626" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", marginBottom: 8 }}>Confirm Deletion</div>
+              <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                {deleteConfirm.type === "expense" && "Are you sure you want to delete this expense? This action cannot be undone."}
+                {deleteConfirm.type === "revenue" && "Are you sure you want to delete this revenue entry? This action cannot be undone."}
+                {deleteConfirm.type === "bulk-expense" && `Are you sure you want to delete ${deleteConfirm.count} selected expense${deleteConfirm.count === 1 ? "" : "s"}? This action cannot be undone.`}
+                {deleteConfirm.type === "bulk-revenue" && `Are you sure you want to delete ${deleteConfirm.count} selected revenue entr${deleteConfirm.count === 1 ? "y" : "ies"}? This action cannot be undone.`}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 0, borderTop: "1px solid #f1f5f9" }}>
+              <button type="button" onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "14px", border: "none", background: "none", color: "#64748b", fontSize: 14, fontWeight: 600, cursor: "pointer", borderRadius: "0 0 0 16px" }}>Cancel</button>
+              <div style={{ width: 1, background: "#f1f5f9" }} />
+              <button type="button" onClick={() => {
+                if (deleteConfirm.type === "expense" && deleteConfirm.id) confirmDeleteExpense(deleteConfirm.id);
+                else if (deleteConfirm.type === "revenue" && deleteConfirm.id) confirmDeleteRevenue(deleteConfirm.id);
+                else if (deleteConfirm.type === "bulk-expense") confirmBulkDeleteExpenses();
+                else if (deleteConfirm.type === "bulk-revenue") confirmBulkDeleteRevenues();
+              }} style={{ flex: 1, padding: "14px", border: "none", background: "none", color: "#dc2626", fontSize: 14, fontWeight: 700, cursor: "pointer", borderRadius: "0 0 16px 0" }}>Delete</button>
             </div>
           </div>
         </div>

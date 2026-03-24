@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const dateFrom = url.searchParams.get("dateFrom") || "";
     const dateTo   = url.searchParams.get("dateTo")   || "";
 
-    const where: any = { hospitalId: auth.hospitalId };
+    const where: any = { hospitalId: auth.hospitalId, referenceId: null };
     if (source)   where.sourceType = source;
     if (dateFrom || dateTo) {
       where.createdAt = {};
@@ -43,16 +43,16 @@ export async function GET(req: NextRequest) {
 
     const [todayAgg, monthAgg, bySource] = await Promise.all([
       (prisma as any).revenue.aggregate({
-        where: { hospitalId: auth.hospitalId, createdAt: { gte: todayStart } },
+        where: { hospitalId: auth.hospitalId, referenceId: null, createdAt: { gte: todayStart } },
         _sum: { amount: true },
       }),
       (prisma as any).revenue.aggregate({
-        where: { hospitalId: auth.hospitalId, createdAt: { gte: monthStart } },
+        where: { hospitalId: auth.hospitalId, referenceId: null, createdAt: { gte: monthStart } },
         _sum: { amount: true },
       }),
       (prisma as any).revenue.groupBy({
         by: ["sourceType"],
-        where: { hospitalId: auth.hospitalId, createdAt: { gte: monthStart } },
+        where: { hospitalId: auth.hospitalId, referenceId: null, createdAt: { gte: monthStart } },
         _sum: { amount: true },
         orderBy: { _sum: { amount: "desc" } },
       }),
