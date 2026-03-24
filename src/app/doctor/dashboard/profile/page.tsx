@@ -332,15 +332,24 @@ export default function DoctorProfilePage() {
             <div style={sectionCard(accent + "20")}>
               <h4 style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>System Info</h4>
               {[
-                { label: "Doctor ID", val: doctor?.id?.slice(0, 8) + "..." },
-                { label: "User ID", val: doctor?.userId ? doctor.userId.slice(0, 8) + "..." : "Not linked" },
+                { label: "Doctor ID", val: doctor?.doctorCode || "Not assigned" },
+                { label: "User ID", val: doctor?.user?.userCode || (doctor?.userId ? "Not assigned" : "Not linked") },
                 { label: "Credentials Sent", val: doctor?.credentialsSent ? "Yes" : "No" },
                 { label: "Account Active", val: doctor?.isActive ? "Yes" : "No" },
                 { label: "Joined", val: doctor?.createdAt ? new Date(doctor.createdAt).toLocaleDateString("en-IN") : "—" },
               ].map(({ label, val }) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <span style={{ fontSize: 11, color: "#94a3b8" }}>{label}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>{val || "—"}</span>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    color: (label === "Doctor ID" || label === "User ID") && val && val !== "Not assigned" && val !== "Not linked"
+                      ? accent : "#475569",
+                    background: (label === "Doctor ID" || label === "User ID") && val && val !== "Not assigned" && val !== "Not linked"
+                      ? accent + "15" : "transparent",
+                    padding: (label === "Doctor ID" || label === "User ID") && val && val !== "Not assigned" && val !== "Not linked"
+                      ? "2px 8px" : "0",
+                    borderRadius: 6,
+                  }}>{val || "—"}</span>
                 </div>
               ))}
             </div>

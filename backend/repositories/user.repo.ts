@@ -1,8 +1,17 @@
 import prisma from "../config/db";
 import { Prisma } from "@prisma/client";
 
+export const generateUserCode = async (hospitalId: string): Promise<string> => {
+  const count = await (prisma as any).user.count({ where: { hospitalId } });
+  return `USR-${String(count + 1).padStart(4, "0")}`;
+};
+
 export const createUser = async (data: Prisma.UserCreateInput) => {
-  return await prisma.user.create({ data });
+  const hospitalId = typeof data.hospital === "object" && "connect" in data.hospital
+    ? (data.hospital as any).connect?.id
+    : undefined;
+  const userCode = hospitalId ? await generateUserCode(hospitalId) : undefined;
+  return await (prisma as any).user.create({ data: { ...data, ...(userCode ? { userCode } : {}) } });
 };
 
 export const findUserByEmail = async (email: string) => {

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       where: { userId: user.userId },
       include: {
         department: { select: { id: true, name: true } },
-        user: { select: { id: true, email: true, name: true, profilePhoto: true, createdAt: true } },
+        user: { select: { id: true, email: true, name: true, profilePhoto: true, userCode: true, createdAt: true } },
       },
     });
 
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({
       id: doctor.id,
+      doctorCode: doctor.doctorCode,
       hospitalId: doctor.hospitalId,
       name: doctor.name,
       email: doctor.email || doctor.user?.email,

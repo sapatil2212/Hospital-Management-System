@@ -5,6 +5,11 @@ import { Prisma } from "@prisma/client";
 // DOCTOR REPOSITORY - Enhanced with pagination, filtering, and relations
 // ─────────────────────────────────────────────────────────────────────────────
 
+export const generateDoctorCode = async (hospitalId: string): Promise<string> => {
+  const count = await (prisma as any).doctor.count({ where: { hospitalId } });
+  return `DOC-${String(count + 1).padStart(4, "0")}`;
+};
+
 export interface DoctorQueryOptions {
   hospitalId: string;
   search?: string;
@@ -29,8 +34,9 @@ export interface PaginatedResult<T> {
 
 // Create a new doctor
 export const createDoctor = async (data: Prisma.DoctorUncheckedCreateInput) => {
-  return prisma.doctor.create({
-    data,
+  const doctorCode = await generateDoctorCode(data.hospitalId as string);
+  return (prisma as any).doctor.create({
+    data: { ...data, doctorCode },
     include: {
       department: { select: { id: true, name: true, code: true } },
       _count: { select: { availability: true } },
