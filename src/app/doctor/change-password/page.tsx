@@ -37,7 +37,7 @@ export default function DoctorChangePasswordPage() {
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     const labels = ["", "Weak", "Fair", "Good", "Strong", "Very Strong"];
-    const colors = ["", "#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#059669"];
+    const colors = ["", "#ef4444", "#f59e0b", "#0E898F", "#10b981", "#059669"];
     return { score, label: labels[score] || "", color: colors[score] || "" };
   };
 

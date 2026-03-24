@@ -29,8 +29,8 @@ const doctors = [
     role: "Chief Executive Officer",
     specialty: "Dental & Aesthetic Expert",
     description: "A highly skilled dental and aesthetic expert with extensive experience in smile designing and cosmetic dentistry. She specializes in implantology, root canal treatments, and clear aligner therapy (Invisalign).",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
+    color: "#0E898F",
+    bgColor: "#E6F4F4",
   },
   {
     name: "Dr. Sandiip Jaibhave",
@@ -47,8 +47,8 @@ const features = [
     icon: <Cpu size={28} />,
     title: "AI-Based Diagnosis",
     description: "Latest AI-powered machines for skin, hair, and dental diagnosis.",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
+    color: "#0E898F",
+    bgColor: "#E6F4F4",
   },
   {
     icon: <Zap size={28} />,

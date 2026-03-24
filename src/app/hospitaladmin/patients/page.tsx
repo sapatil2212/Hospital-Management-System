@@ -93,7 +93,7 @@ function PatientsPanel() {
 
   const statusStyle = (s: string) => {
     const m: any = {
-      SCHEDULED: { background: "#eff6ff", color: "#3b82f6" },
+      SCHEDULED: { background: "#E6F4F4", color: "#0E898F" },
       CONFIRMED: { background: "#f0f9ff", color: "#0ea5e9" },
       COMPLETED: { background: "#dcfce7", color: "#16a34a" },
       CANCELLED: { background: "#fee2e2", color: "#dc2626" },
@@ -125,7 +125,7 @@ function PatientsPanel() {
           <div style={{ marginLeft: "auto" }}>
             <button
               onClick={() => loadPatientDetails(selectedPatient.id)}
-              style={{ padding: "8px 14px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 9, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+              style={{ padding: "8px 14px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 9, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
             >
               <RefreshCw size={14} /> Refresh
             </button>
@@ -134,13 +134,13 @@ function PatientsPanel() {
 
         {detailsLoading ? (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
-            <Loader2 size={32} color="#3b82f6" style={{ animation: "spin 1s linear infinite", margin: "0 auto" }} />
+            <Loader2 size={32} color="#0E898F" style={{ animation: "spin 1s linear infinite", margin: "0 auto" }} />
             <p style={{ marginTop: 14, color: "#64748b", fontSize: 14 }}>Loading patient records...</p>
           </div>
         ) : (
           <>
             {/* Hero card */}
-            <div style={{ background: "linear-gradient(135deg,#1d4ed8 0%,#7c3aed 100%)", borderRadius: 16, padding: "28px 32px", marginBottom: 20, color: "#fff" }}>
+            <div style={{ background: "linear-gradient(135deg,#07595D 0%,#7c3aed 100%)", borderRadius: 16, padding: "28px 32px", marginBottom: 20, color: "#fff" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
                 <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", border: "2.5px solid rgba(255,255,255,0.35)", flexShrink: 0 }}>
                   <UserCircle size={42} />
@@ -180,7 +180,7 @@ function PatientsPanel() {
             {/* Stat chips */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
               {[
-                { icon: <CalendarDays size={20} color="#3b82f6" />, bg: "#eff6ff", label: "Appointments", val: appointments.length },
+                { icon: <CalendarDays size={20} color="#0E898F" />, bg: "#E6F4F4", label: "Appointments", val: appointments.length },
                 { icon: <Stethoscope size={20} color="#16a34a" />, bg: "#f0fdf4", label: "Procedures", val: procedures.length },
                 { icon: <CreditCard size={20} color="#f59e0b" />, bg: "#fef3c7", label: "Pending Bills", val: `₹${totalPending.toLocaleString()}` },
                 { icon: <IndianRupee size={20} color="#16a34a" />, bg: "#dcfce7", label: "Total Revenue", val: `₹${totalPaid.toLocaleString()}` },
@@ -207,8 +207,8 @@ function PatientsPanel() {
                   <button key={t.id} onClick={() => setDetailTab(t.id as any)} style={{
                     flex: 1, padding: "14px 16px", border: "none",
                     background: detailTab === t.id ? "#fff" : "transparent",
-                    borderBottom: detailTab === t.id ? "2px solid #3b82f6" : "2px solid transparent",
-                    color: detailTab === t.id ? "#3b82f6" : "#64748b",
+                    borderBottom: detailTab === t.id ? "2px solid #0E898F" : "2px solid transparent",
+                    color: detailTab === t.id ? "#0E898F" : "#64748b",
                     fontWeight: 600, fontSize: 13, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 7, transition: "all 0.15s"
                   }}>
@@ -355,7 +355,7 @@ function PatientsPanel() {
                           <tbody>
                             {bills.map((b: any) => (
                               <tr key={b.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 700, color: "#3b82f6", fontFamily: "monospace" }}>{b.billNo}</td>
+                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 700, color: "#0E898F", fontFamily: "monospace" }}>{b.billNo}</td>
                                 <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>{new Date(b.createdAt).toLocaleDateString()}</td>
                                 <td style={{ padding: "14px", fontSize: 13 }}>₹{(b.subtotal || 0).toLocaleString()}</td>
                                 <td style={{ padding: "14px", fontSize: 13, color: "#16a34a" }}>-₹{(b.discount || 0).toLocaleString()}</td>
@@ -395,7 +395,7 @@ function PatientsPanel() {
         </div>
         <button
           onClick={() => router.push("/hospitaladmin/appointments")}
-          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(59,130,246,0.3)" }}
+          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#0E898F,#07595D)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(59,130,246,0.3)" }}
         >
           <Plus size={15} /> Register New Patient
         </button>
@@ -420,7 +420,7 @@ function PatientsPanel() {
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
         {loading ? (
           <div style={{ padding: "70px 0", textAlign: "center", color: "#94a3b8" }}>
-            <Loader2 size={28} color="#3b82f6" style={{ animation: "spin 1s linear infinite", margin: "0 auto 12px", display: "block" }} />
+            <Loader2 size={28} color="#0E898F" style={{ animation: "spin 1s linear infinite", margin: "0 auto 12px", display: "block" }} />
             <div style={{ fontSize: 13 }}>Loading patients...</div>
           </div>
         ) : patients.length === 0 ? (
@@ -450,7 +450,7 @@ function PatientsPanel() {
                     </td>
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0ea5e9,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0).toUpperCase()}</div>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0ea5e9,#07595D)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0).toUpperCase()}</div>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{p.name}</span>
                       </div>
                     </td>
@@ -465,13 +465,13 @@ function PatientsPanel() {
                     <td style={{ padding: "15px 16px" }}>
                       <span style={{ fontSize: 12, background: "#fef3c7", color: "#f59e0b", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>{p.bloodGroup || "—"}</span>
                     </td>
-                    <td style={{ padding: "15px 16px", fontSize: 13, fontWeight: 700, color: "#2563eb" }}>{p._count?.appointments || 0}</td>
+                    <td style={{ padding: "15px 16px", fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments || 0}</td>
                     <td style={{ padding: "15px 16px", fontSize: 12, color: "#94a3b8" }}>{new Date(p.createdAt).toLocaleDateString()}</td>
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
                           onClick={() => { setSelectedPatient(p); loadPatientDetails(p.id); }}
-                          style={{ padding: "6px 12px", background: "#eff6ff", color: "#3b82f6", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600 }}
+                          style={{ padding: "6px 12px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600 }}
                         >
                           <Eye size={13} /> View
                         </button>
@@ -502,7 +502,7 @@ function PatientsPanel() {
                     if (pg < 1 || pg > totalPages) return null;
                     return (
                       <button key={i} onClick={() => setCurrentPage(pg)}
-                        style={{ width: 32, height: 32, border: "1px solid #e2e8f0", borderRadius: 7, background: currentPage === pg ? "#3b82f6" : "#fff", color: currentPage === pg ? "#fff" : "#64748b", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                        style={{ width: 32, height: 32, border: "1px solid #e2e8f0", borderRadius: 7, background: currentPage === pg ? "#0E898F" : "#fff", color: currentPage === pg ? "#fff" : "#64748b", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                         {pg}
                       </button>
                     );
@@ -589,21 +589,21 @@ export default function PatientsPage() {
         .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
         .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
         .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
         .hd-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
         .hd-logo-sub{font-size:10px;color:#94a3b8}
         .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
         .hd-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
         .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
         .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#eff6ff;color:#2563eb;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#3b82f6;position:absolute;left:0}
+        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
+        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;left:0}
         .hd-nb.on .hd-nb-dot{display:block}
         .hd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
         .hd-user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
         .hd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .hd-urole{font-size:10px;font-weight:500;color:#3b82f6}
+        .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .hd-logout:hover{background:#fee2e2}
         .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
@@ -615,7 +615,7 @@ export default function PatientsPage() {
         .hd-notif{width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
         .hd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #fff}
         .hd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .hd-profile-name{font-size:11px;font-weight:600;color:#1e293b}
         .hd-profile-role{font-size:9px;color:#64748b}
         .hd-center{padding:32px 24px;overflow-y:auto;flex:1}
@@ -633,7 +633,7 @@ export default function PatientsPage() {
             {navItems.slice(0, 7).map(n => (
               <button key={n.id} className={`hd-nb${n.id === "patients" ? " on" : ""}`} onClick={() => router.push(n.route)} style={{ position: "relative" }}>
                 {n.id === "patients" && <div className="hd-nb-dot" />}
-                <span style={{ color: n.id === "patients" ? "#2563eb" : "#94a3b8", display: "flex" }}>{n.icon}</span>
+                <span style={{ color: n.id === "patients" ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
                 {n.label}
               </button>
             ))}

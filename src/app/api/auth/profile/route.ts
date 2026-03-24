@@ -8,8 +8,7 @@ import { z } from "zod";
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  phone: z.string().optional(),
-  profilePhoto: z.string().optional(),
+  profilePhoto: z.string().nullish(),
 });
 
 export async function PUT(req: NextRequest) {
@@ -26,19 +25,21 @@ export async function PUT(req: NextRequest) {
 
     const { profilePhoto, ...userFields } = result.data;
 
-    // Update user fields (name, email)
-    const updatedUser = await updateUser(user!.userId, userFields);
+    // Build user update data (only fields that exist on User model)
+    const userUpdateData: { name?: string; email?: string; profilePhoto?: string | null } = {};
+    if (userFields.name !== undefined) userUpdateData.name = userFields.name;
+    if (userFields.email !== undefined) userUpdateData.email = userFields.email;
+    if (profilePhoto !== undefined) userUpdateData.profilePhoto = profilePhoto ?? null;
+
+    // Update user record
+    const updatedUser = await updateUser(user!.userId, userUpdateData);
 
     // Handle profile photo for different roles
-    if (profilePhoto) {
-      if (user!.role === "DOCTOR") {
-        // Update Doctor's profileImage
-        await prisma.doctor.updateMany({
-          where: { userId: user!.userId },
-          data: { profileImage: profilePhoto },
-        });
-      }
-      // For other roles, profilePhoto is currently not supported as their models don't have this field
+    if (profilePhoto && user!.role === "DOCTOR") {
+      await prisma.doctor.updateMany({
+        where: { userId: user!.userId },
+        data: { profileImage: profilePhoto },
+      });
     }
 
     // Filter out password

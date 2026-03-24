@@ -11,11 +11,11 @@ import styles from "./blog.module.css";
 const categories = ["All", "Technology", "Patient Care", "Wellness", "Research"];
 
 const posts = [
-  { image: "/images/blog-medtech.png", category: "Technology", date: "Mar 15, 2026", author: "Dr. Sarah Chen", title: "The Future of AI in Healthcare Diagnostics", excerpt: "Discover how artificial intelligence is revolutionizing the way doctors diagnose and treat complex medical conditions.", color: "#3B82F6", bgColor: "#EFF6FF" },
+  { image: "/images/blog-medtech.png", category: "Technology", date: "Mar 15, 2026", author: "Dr. Sarah Chen", title: "The Future of AI in Healthcare Diagnostics", excerpt: "Discover how artificial intelligence is revolutionizing the way doctors diagnose and treat complex medical conditions.", color: "#0E898F", bgColor: "#E6F4F4" },
   { image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 12, 2026", author: "Dr. James Wilson", title: "Why Regular Health Checkups Save Lives", excerpt: "Learn about the importance of preventive healthcare and routine checkups for early detection.", color: "#10B981", bgColor: "#D1FAE5" },
   { image: "/images/blog-wellness.png", category: "Wellness", date: "Mar 10, 2026", author: "Dr. Emily Park", title: "5 Simple Habits for Better Heart Health", excerpt: "Small lifestyle changes can make a big difference. Here are five evidence-based habits for a healthier heart.", color: "#8B5CF6", bgColor: "#EDE9FE" },
   { image: "/images/about-team.png", category: "Research", date: "Mar 8, 2026", author: "Dr. Michael Rivera", title: "Breakthroughs in Gene Therapy for Rare Diseases", excerpt: "New advances in gene therapy are opening doors for treating previously untreatable genetic conditions.", color: "#F97316", bgColor: "#FFF7ED" },
-  { image: "/images/blog-medtech.png", category: "Technology", date: "Mar 5, 2026", author: "Dr. Sarah Chen", title: "Telemedicine: The New Normal in Healthcare", excerpt: "How virtual consultations are making healthcare more accessible and convenient for millions.", color: "#3B82F6", bgColor: "#EFF6FF" },
+  { image: "/images/blog-medtech.png", category: "Technology", date: "Mar 5, 2026", author: "Dr. Sarah Chen", title: "Telemedicine: The New Normal in Healthcare", excerpt: "How virtual consultations are making healthcare more accessible and convenient for millions.", color: "#0E898F", bgColor: "#E6F4F4" },
   { image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 3, 2026", author: "Dr. James Wilson", title: "Understanding Mental Health in the Workplace", excerpt: "A comprehensive guide to recognizing and addressing mental health challenges in professional settings.", color: "#10B981", bgColor: "#D1FAE5" },
 ];
 

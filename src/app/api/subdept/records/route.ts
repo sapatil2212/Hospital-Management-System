@@ -7,25 +7,41 @@ import { addProcedureChargeToBill } from "../../../../../backend/services/billin
 
 export const dynamic = "force-dynamic";
 
-// GET /api/subdept/records — list procedure records for this sub-dept
+// GET /api/subdept/records — list procedure records
+// SUB_DEPT_HEAD: scoped to their sub-dept
+// HOSPITAL_ADMIN / RECEPTIONIST: can filter by patientId across hospital
 export async function GET(req: NextRequest) {
   const { user, error } = await authMiddleware(req);
   if (error) return error;
-  if (user!.role !== "SUB_DEPT_HEAD") return errorResponse("Forbidden", 403);
+
+  const allowed = ["SUB_DEPT_HEAD", "HOSPITAL_ADMIN", "RECEPTIONIST"];
+  if (!allowed.includes(user!.role)) return errorResponse("Forbidden", 403);
 
   try {
-    const profile = await getSubDeptProfile(user!.userId);
-    const subDeptId = (profile as any).id;
-    const hospitalId = (profile as any).hospitalId;
-
     const url = new URL(req.url);
-    const page   = Math.max(1, parseInt(url.searchParams.get("page")  || "1"));
-    const limit  = Math.min(50, parseInt(url.searchParams.get("limit") || "20"));
-    const search = url.searchParams.get("search") || "";
-    const dateFrom = url.searchParams.get("dateFrom");
-    const dateTo   = url.searchParams.get("dateTo");
+    const page      = Math.max(1, parseInt(url.searchParams.get("page")  || "1"));
+    const limit     = Math.min(100, parseInt(url.searchParams.get("limit") || "20"));
+    const search    = url.searchParams.get("search") || "";
+    const dateFrom  = url.searchParams.get("dateFrom");
+    const dateTo    = url.searchParams.get("dateTo");
+    const patientId = url.searchParams.get("patientId") || "";
 
-    const where: any = { subDepartmentId: subDeptId, hospitalId };
+    let hospitalId: string;
+    const where: any = {};
+
+    if (user!.role === "SUB_DEPT_HEAD") {
+      const profile = await getSubDeptProfile(user!.userId);
+      const subDeptId = (profile as any).id;
+      hospitalId = (profile as any).hospitalId;
+      where.subDepartmentId = subDeptId;
+      where.hospitalId = hospitalId;
+    } else {
+      // HOSPITAL_ADMIN / RECEPTIONIST — use hospitalId from JWT
+      hospitalId = (user as any).hospitalId;
+      where.hospitalId = hospitalId;
+      if (patientId) where.patientId = patientId;
+    }
+
     if (search) {
       where.patient = {
         OR: [
@@ -45,9 +61,10 @@ export async function GET(req: NextRequest) {
       (prisma as any).procedureRecord.findMany({
         where,
         include: {
-          patient:   { select: { id: true, name: true, patientId: true, phone: true, gender: true } },
-          procedure: { select: { id: true, name: true, type: true, fee: true } },
-          appointment: {
+          patient:      { select: { id: true, name: true, patientId: true, phone: true, gender: true } },
+          procedure:    { select: { id: true, name: true, type: true, fee: true } },
+          subDepartment: { select: { id: true, name: true, type: true } },
+          appointment:  {
             select: { id: true, timeSlot: true, doctor: { select: { name: true, specialization: true } } },
           },
         },
@@ -58,21 +75,15 @@ export async function GET(req: NextRequest) {
       (prisma as any).procedureRecord.count({ where }),
     ]);
 
-    // Revenue stats
-    const stats = await (prisma as any).procedureRecord.aggregate({
-      where: { subDepartmentId: subDeptId, hospitalId },
-      _sum: { amount: true },
-      _count: { id: true },
-    });
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const todayStats = await (prisma as any).procedureRecord.aggregate({
-      where: { subDepartmentId: subDeptId, hospitalId, performedAt: { gte: todayStart } },
-      _sum: { amount: true },
-      _count: { id: true },
-    });
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const statsWhere = user!.role === "SUB_DEPT_HEAD" ? where : { hospitalId, ...(patientId ? { patientId } : {}) };
+    const [stats, todayStats] = await Promise.all([
+      (prisma as any).procedureRecord.aggregate({ where: statsWhere, _sum: { amount: true }, _count: { id: true } }),
+      (prisma as any).procedureRecord.aggregate({ where: { ...statsWhere, performedAt: { gte: todayStart } }, _sum: { amount: true }, _count: { id: true } }),
+    ]);
 
     return successResponse({
-      records,
+      data: records,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
       stats: {
         totalRevenue: stats._sum.amount || 0,

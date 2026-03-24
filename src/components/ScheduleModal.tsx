@@ -720,7 +720,7 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
                 return stats.enabledDays > 0 ? (
                   <div className="sched-stats-panel">
                     <div className="sched-stat-card">
-                      <div className="sched-stat-icon" style={{background: "#eff6ff", color: "#3b82f6"}}>
+                      <div className="sched-stat-icon" style={{background: "#E6F4F4", color: "#0E898F"}}>
                         <Calendar size={18} />
                       </div>
                       <div>
@@ -1260,7 +1260,7 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .sched-close:hover { background: #e2e8f0; }
         .sched-tabs { display: flex; gap: 4px; padding: 0 24px; border-bottom: 1px solid #e2e8f0; }
         .sched-tab { padding: 12px 16px; border: none; background: none; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; }
-        .sched-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .sched-tab.active { color: #0E898F; border-bottom-color: #0E898F; }
         .sched-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
         .sched-loading { text-align: center; padding: 40px; color: #64748b; }
         .sched-quick-setup { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #bae6fd; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
@@ -1291,13 +1291,13 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .sched-bulk-field input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; width: 120px; }
         .sched-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
         .sched-day-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; background: #f8fafc; transition: all 0.2s; }
-        .sched-day-card.enabled { border-color: #3b82f6; background: #fff; }
+        .sched-day-card.enabled { border-color: #0E898F; background: #fff; }
         .sched-day-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .sched-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .sched-checkbox input { width: 16px; height: 16px; cursor: pointer; }
         .sched-day-name { font-size: 14px; font-weight: 700; color: #1e293b; }
-        .sched-copy-btn { padding: 6px; border: none; background: #eff6ff; color: #3b82f6; border-radius: 6px; cursor: pointer; display: flex; align-items: center; }
-        .sched-copy-btn:hover { background: #dbeafe; }
+        .sched-copy-btn { padding: 6px; border: none; background: #E6F4F4; color: #0E898F; border-radius: 6px; cursor: pointer; display: flex; align-items: center; }
+        .sched-copy-btn:hover { background: #B3E0E0; }
         .sched-day-content { display: flex; flex-direction: column; gap: 12px; }
         .sched-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .sched-field { display: flex; flex-direction: column; gap: 4px; }
@@ -1329,9 +1329,9 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .sched-template-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
         .sched-template-btns { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
         .sched-template-edit-row { flex: 1; display: flex; gap: 6px; align-items: center; }
-        .sched-template-edit-input { flex: 1; padding: 7px 10px; border: 1.5px solid #93c5fd; border-radius: 6px; font-size: 13px; outline: none; }
+        .sched-template-edit-input { flex: 1; padding: 7px 10px; border: 1.5px solid #80CCCC; border-radius: 6px; font-size: 13px; outline: none; }
         .sched-tpl-btn { padding: 6px 12px; border-radius: 7px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
-        .sched-tpl-btn.blue { background: #eff6ff; color: #2563eb; } .sched-tpl-btn.blue:hover { background: #dbeafe; }
+        .sched-tpl-btn.blue { background: #E6F4F4; color: #0A6B70; } .sched-tpl-btn.blue:hover { background: #B3E0E0; }
         .sched-tpl-btn.gray { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; } .sched-tpl-btn.gray:hover { background: #f1f5f9; }
         .sched-tpl-btn.green { background: #f0fdf4; color: #16a34a; } .sched-tpl-btn.green:hover { background: #dcfce7; }
         .sched-tpl-btn.red { background: #fff5f5; color: #ef4444; } .sched-tpl-btn.red:hover { background: #fee2e2; }
@@ -1352,27 +1352,27 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .sched-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .sched-cal-cell { border-radius: 8px; padding: 8px 6px; min-height: 80px; display: flex; flex-direction: column; gap: 2px; }
         .scc-empty { background: transparent; }
-        .scc-active { background: #eff6ff; border: 1.5px solid #bfdbfe; }
+        .scc-active { background: #E6F4F4; border: 1.5px solid #B3E0E0; }
         .scc-off { background: #f8fafc; border: 1.5px solid #e2e8f0; }
-        .scc-today { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+        .scc-today { border-color: #0E898F !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
         .scc-date { font-size: 13px; font-weight: 700; color: #1e293b; }
-        .scc-active .scc-date { color: #1d4ed8; }
-        .scc-time { font-size: 10px; color: #3b82f6; font-weight: 600; }
+        .scc-active .scc-date { color: #07595D; }
+        .scc-time { font-size: 10px; color: #0E898F; font-weight: 600; }
         .scc-slots { font-size: 10px; color: #16a34a; font-weight: 700; background: #dcfce7; border-radius: 4px; padding: 1px 4px; display: inline-block; }
         .scc-breaks { font-size: 9px; color: #f59e0b; font-weight: 600; }
         .scc-off-label { font-size: 10px; color: #94a3b8; font-style: italic; }
         .sched-cal-legend { display: flex; gap: 20px; justify-content: center; padding: 8px 0; }
         .scl-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; }
         .scl-dot { width: 12px; height: 12px; border-radius: 3px; }
-        .scl-dot.active { background: #bfdbfe; border: 1.5px solid #3b82f6; }
+        .scl-dot.active { background: #B3E0E0; border: 1.5px solid #0E898F; }
         .scl-dot.off { background: #e2e8f0; border: 1.5px solid #cbd5e1; }
-        .scl-dot.today { background: #fff; border: 2px solid #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+        .scl-dot.today { background: #fff; border: 2px solid #0E898F; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
         .sched-cal-cell { cursor: pointer; transition: all 0.15s; }
         .sched-cal-cell:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .scc-selected { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.25) !important; background: #faf5ff !important; }
         .sched-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; justify-content: flex-end; }
-        .sched-btn-primary { padding: 10px 20px; border: none; background: #3b82f6; color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .sched-btn-primary:hover { background: #2563eb; }
+        .sched-btn-primary { padding: 10px 20px; border: none; background: #0E898F; color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .sched-btn-primary:hover { background: #0A6B70; }
         .sched-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .sched-btn-secondary { padding: 10px 20px; border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
         .sched-btn-secondary:hover { background: #f8fafc; }
@@ -1382,11 +1382,11 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         @keyframes toastIn { from { opacity:0; top:4px; } to { opacity:1; top:12px; } }
         .vm-tabs { display: flex; align-items: center; gap: 4px; padding: 0 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0; }
         .vm-tab { display: flex; align-items: center; gap: 6px; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #64748b; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all .15s; margin-bottom: -1px; }
-        .vm-tab:hover { color: #3b82f6; }
-        .vm-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .vm-tab:hover { color: #0E898F; }
+        .vm-tab.active { color: #0E898F; border-bottom-color: #0E898F; }
         .vm-month-nav { display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 6px 0; }
         .vm-nav-btn { width: 28px; height: 28px; border: 1px solid #e2e8f0; background: #fff; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; transition: all .12s; }
-        .vm-nav-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #3b82f6; }
+        .vm-nav-btn:hover { background: #E6F4F4; border-color: #B3E0E0; color: #0E898F; }
         .vm-month-label { font-size: 13px; font-weight: 700; color: #1e293b; min-width: 140px; text-align: center; }
         .vm-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 10px; }
         .vm-empty-icon { font-size: 48px; }
@@ -1396,7 +1396,7 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .view-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
         .view-stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; }
         .view-stat.green { background: #f0fdf4; border-color: #bbf7d0; }
-        .view-stat.blue { background: #eff6ff; border-color: #bfdbfe; }
+        .view-stat.blue { background: #E6F4F4; border-color: #B3E0E0; }
         .view-stat.purple { background: #faf5ff; border-color: #e9d5ff; }
         .view-stat-v { display: block; font-size: 24px; font-weight: 800; color: #1e293b; }
         .view-stat-of { font-size: 14px; font-weight: 500; color: #94a3b8; margin-left: 2px; }
@@ -1406,13 +1406,13 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .view-day-card.vdc-off { opacity: .55; background: #f1f5f9; }
         .view-day-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
         .view-day-name { font-size: 12px; font-weight: 800; background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 6px; }
-        .view-day-time { font-size: 12px; font-weight: 600; color: #1d4ed8; flex: 1; }
+        .view-day-time { font-size: 12px; font-weight: 600; color: #07595D; flex: 1; }
         .view-day-slots { font-size: 11px; background: #dcfce7; color: #15803d; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
         .view-day-off-badge { font-size: 11px; background: #f1f5f9; color: #94a3b8; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
         .view-day-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
         .view-day-meta span { font-size: 11px; color: #64748b; background: #f1f5f9; padding: 2px 7px; border-radius: 5px; }
         .view-day-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-        .view-slot-chip { padding: 3px 7px; background: #dbeafe; color: #1d4ed8; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .view-slot-chip { padding: 3px 7px; background: #B3E0E0; color: #07595D; border-radius: 4px; font-size: 10px; font-weight: 600; }
         .view-slot-more { padding: 3px 7px; background: #f1f5f9; color: #64748b; border-radius: 4px; font-size: 10px; font-weight: 600; }
         .vm-cal { display: flex; flex-direction: column; gap: 14px; }
         .vm-cal-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
@@ -1426,21 +1426,21 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .vm-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
         .vm-cell { border-radius: 8px; padding: 6px; min-height: 70px; display: flex; flex-direction: column; font-size: 10px; }
         .vm-cell.empty { background: transparent; }
-        .vm-cell.working { background: #eff6ff; border: 1.5px solid #bfdbfe; }
+        .vm-cell.working { background: #E6F4F4; border: 1.5px solid #B3E0E0; }
         .vm-cell.off { background: #f8fafc; border: 1px solid #f1f5f9; }
-        .vm-cell.today { outline: 2px solid #3b82f6; outline-offset: -1px; }
+        .vm-cell.today { outline: 2px solid #0E898F; outline-offset: -1px; }
         .vm-cell-date { font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
-        .vm-cell.today .vm-cell-date { color: #3b82f6; }
-        .vm-cell-time { font-size: 9px; font-weight: 600; color: #2563eb; line-height: 1.3; }
+        .vm-cell.today .vm-cell-date { color: #0E898F; }
+        .vm-cell-time { font-size: 9px; font-weight: 600; color: #0A6B70; line-height: 1.3; }
         .vm-cell-slots { font-size: 9px; background: #dcfce7; color: #15803d; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-top: 2px; display: inline-block; }
         .vm-cell-break { font-size: 9px; color: #d97706; margin-top: 2px; }
         .vm-cell-off { font-size: 10px; color: #cbd5e1; font-style: italic; margin-top: auto; }
         .vm-cal-legend { display: flex; gap: 16px; justify-content: center; font-size: 12px; color: #64748b; align-items: center; padding-top: 4px; }
         .vm-cal-legend span { display: flex; align-items: center; gap: 5px; }
         .vmcl-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-        .vmcl-dot.working { background: #bfdbfe; border: 1.5px solid #3b82f6; }
+        .vmcl-dot.working { background: #B3E0E0; border: 1.5px solid #0E898F; }
         .vmcl-dot.off { background: #f1f5f9; border: 1px solid #e2e8f0; }
-        .vmcl-dot.today { background: #fff; border: 2px solid #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
+        .vmcl-dot.today { background: #fff; border: 2px solid #0E898F; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
         .saved-confirm { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .saved-confirm-body { flex: 1; overflow-y: auto; padding: 28px 28px 20px; display: flex; flex-direction: column; gap: 20px; }
         .saved-check { display: flex; align-items: center; gap: 16px; }
@@ -1456,13 +1456,13 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .saved-days-list { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
         .saved-day-row { display: flex; align-items: center; gap: 12px; padding: 6px 8px; background: #fff; border-radius: 7px; border: 1px solid #f1f5f9; }
         .saved-day-name { font-size: 12px; font-weight: 800; color: #1e293b; width: 32px; text-transform: uppercase; }
-        .saved-day-time { font-size: 12px; color: #3b82f6; font-weight: 600; flex: 1; }
+        .saved-day-time { font-size: 12px; color: #0E898F; font-weight: 600; flex: 1; }
         .saved-day-slots { font-size: 11px; background: #dcfce7; color: #15803d; font-weight: 700; padding: 2px 8px; border-radius: 100px; }
         .saved-day-break { font-size: 11px; background: #fef3c7; color: #d97706; font-weight: 600; padding: 2px 8px; border-radius: 100px; }
         .saved-question { font-size: 14px; font-weight: 600; color: #475569; text-align: center; padding: 4px 0; }
         .saved-actions { display: flex; flex-direction: column; gap: 10px; }
         .saved-btn-carry, .saved-btn-new { display: flex; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 12px; border: 2px solid; cursor: pointer; text-align: left; transition: all .15s; width: 100%; background: #fff; }
-        .saved-btn-carry { border-color: #3b82f6; } .saved-btn-carry:hover { background: #eff6ff; }
+        .saved-btn-carry { border-color: #0E898F; } .saved-btn-carry:hover { background: #E6F4F4; }
         .saved-btn-new { border-color: #8b5cf6; } .saved-btn-new:hover { background: #faf5ff; }
         .saved-btn-icon { font-size: 24px; flex-shrink: 0; }
         .saved-btn-title { font-size: 14px; font-weight: 700; color: #1e293b; }

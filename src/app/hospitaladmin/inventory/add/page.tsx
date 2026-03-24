@@ -180,15 +180,15 @@ export default function AddInventoryPage() {
         .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
         .hd-sb{width:240px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
         .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;cursor:pointer}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
         .hd-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
         .hd-logo-sub{font-size:10px;color:#94a3b8}
         .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
         .hd-nav-sec{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
         .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;border:none;background:none;color:#64748b;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
         .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#eff6ff;color:#2563eb;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#3b82f6;position:absolute;right:8px}
+        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
+        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;right:8px}
         .hd-nb.on .hd-nb-dot{display:block}
         .hd-main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
         .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
@@ -198,24 +198,24 @@ export default function AddInventoryPage() {
         .hd-body{padding:40px 24px;max-width:1000px;margin:0 auto;width:100%}
         .hd-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);padding:32px 24px;margin-bottom:24px}
         .hd-sec-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #f1f5f9}
-        .hd-sec-num{width:26px;height:26px;background:#eff6ff;color:#3b82f6;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+        .hd-sec-num{width:26px;height:26px;background:#E6F4F4;color:#0E898F;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
         .hd-sec-title{font-size:13px;font-weight:700;color:#1e293b}
         .hd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
         @media(max-width:768px){.hd-grid{grid-template-columns:1fr}}
         .hd-mf{margin-bottom:4px}
         .hd-ml{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
         .hd-mi{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:12px;color:#1e293b;outline:none;transition:all .2s}
-        .hd-mi:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+        .hd-mi:focus{border-color:#0E898F;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
         .hd-mi::placeholder{color:#cbd5e1}
         .hd-radio-group{display:flex;gap:16px;margin-top:6px}
         .hd-radio-label{display:flex;align-items:center;gap:8px;font-size:11px;color:#475569;cursor:pointer}
-        .hd-radio-label input{accent-color:#3b82f6;width:15px;height:15px}
-        .hd-btn-primary{padding:10px 24px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
-        .hd-btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+        .hd-radio-label input{accent-color:#0E898F;width:15px;height:15px}
+        .hd-btn-primary{padding:10px 24px;border-radius:10px;border:none;background:#0E898F;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
+        .hd-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
         .hd-btn-sec{padding:10px 20px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
         .hd-btn-sec:hover{background:#f8fafc;color:#1e293b}
         .hd-upload-box{border:2px dashed #e2e8f0;border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .2s}
-        .hd-upload-box:hover{border-color:#3b82f6;background:#eff6ff}
+        .hd-upload-box:hover{border-color:#0E898F;background:#E6F4F4}
         .hd-upload-icon{width:48px;height:48px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#64748b}
         .hd-upload-text{font-size:11px;font-weight:600;color:#475569}
         .hd-upload-sub{font-size:10px;color:#94a3b8;margin-top:4px}
@@ -241,7 +241,7 @@ export default function AddInventoryPage() {
                 }}
                 className={`hd-nb${activeSection === section.id ? " on" : ""}`}
               >
-                <span style={{color: activeSection === section.id ? "#2563eb" : "#94a3b8", display: "flex"}}>{section.icon}</span>
+                <span style={{color: activeSection === section.id ? "#0A6B70" : "#94a3b8", display: "flex"}}>{section.icon}</span>
                 {section.label}
                 {activeSection === section.id && <div className="hd-nb-dot" />}
               </button>

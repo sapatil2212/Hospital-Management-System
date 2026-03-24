@@ -22,7 +22,7 @@ const SUB_DEPT_META: Record<string, DeptMeta> = {
   ONCOLOGY:    { Icon: Activity,    gradient: "linear-gradient(135deg,#f97316,#c2410c)", accent: "#c2410c", lightBg: "#fff7ed", borderColor: "#fed7aa" },
   CARDIOLOGY:  { Icon: Heart,       gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
   PATHOLOGY:   { Icon: Microscope,  gradient: "linear-gradient(135deg,#10b981,#047857)", accent: "#047857", lightBg: "#f0fdf4", borderColor: "#a7f3d0" },
-  PHARMACY:    { Icon: Pill,        gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
+  PHARMACY:    { Icon: Pill,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#07595D", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
   BILLING:     { Icon: Receipt,     gradient: "linear-gradient(135deg,#f59e0b,#b45309)", accent: "#b45309", lightBg: "#fffbeb", borderColor: "#fde68a" },
   RADIOLOGY:   { Icon: Scan,        gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
   LABORATORY:  { Icon: TestTube2,   gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
@@ -31,14 +31,14 @@ const SUB_DEPT_META: Record<string, DeptMeta> = {
 };
 
 const PROC_TYPE_COLOR: Record<string, string> = {
-  DIAGNOSTIC: "#3b82f6", TREATMENT: "#10b981", CONSULTATION: "#8b5cf6",
+  DIAGNOSTIC: "#0E898F", TREATMENT: "#10b981", CONSULTATION: "#8b5cf6",
   SURGERY: "#ef4444", THERAPY: "#f97316", MEDICATION: "#06b6d4", OTHER: "#94a3b8",
 };
 
 const STATUS_CFG: Record<string, { label: string; bg: string; color: string; border: string }> = {
   SCHEDULED:   { label: "Scheduled",   bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
   CONFIRMED:   { label: "Confirmed",   bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
-  IN_PROGRESS: { label: "In Progress", bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
+  IN_PROGRESS: { label: "In Progress", bg: "#E6F4F4", color: "#0A6B70", border: "#B3E0E0" },
   COMPLETED:   { label: "Completed",   bg: "#f0fdf4", color: "#059669", border: "#a7f3d0" },
   CANCELLED:   { label: "Cancelled",   bg: "#fff5f5", color: "#ef4444", border: "#fecaca" },
   NO_SHOW:     { label: "No Show",     bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
@@ -869,7 +869,7 @@ export default function SubDeptDashboard() {
                           </td>
                           <td>
                             <div style={{display:"flex",gap:6}}>
-                              <button className="sd2-btn" style={{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}} onClick={()=>openEditProc(p)}><Edit2 size={11}/>Edit</button>
+                              <button className="sd2-btn" style={{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}} onClick={()=>openEditProc(p)}><Edit2 size={11}/>Edit</button>
                               <button className="sd2-btn" style={{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}} onClick={()=>deleteProc(p.id)}><Trash2 size={11}/>Delete</button>
                             </div>
                           </td>
@@ -1019,7 +1019,7 @@ export default function SubDeptDashboard() {
                           </td>
                           <td>
                             <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
-                              <button onClick={()=>setViewingRecord(r)} className="sd2-btn" style={{background:"#eff6ff",color:"#3b82f6",border:"1px solid #bfdbfe",padding:"4px 8px"}} title="View Details">
+                              <button onClick={()=>setViewingRecord(r)} className="sd2-btn" style={{background:"#E6F4F4",color:"#0E898F",border:"1px solid #B3E0E0",padding:"4px 8px"}} title="View Details">
                                 <Eye size={11}/>
                               </button>
                               <button onClick={()=>setEditingRecord(r)} className="sd2-btn" style={{background:"#fef3c7",color:"#d97706",border:"1px solid #fde68a",padding:"4px 8px"}} title="Edit Record">

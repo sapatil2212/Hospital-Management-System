@@ -63,7 +63,7 @@ export default function SubDeptLoginPage() {
                 placeholder="dept@hospital.com"
                 required
                 style={{ width: "100%", padding: "11px 14px", background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }}
-                onFocus={e => (e.target.style.borderColor = "#93c5fd")}
+                onFocus={e => (e.target.style.borderColor = "#80CCCC")}
                 onBlur={e => (e.target.style.borderColor = "#e2e8f0")}
               />
             </div>
@@ -77,7 +77,7 @@ export default function SubDeptLoginPage() {
                   placeholder="••••••••"
                   required
                   style={{ width: "100%", padding: "11px 42px 11px 14px", background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }}
-                  onFocus={e => (e.target.style.borderColor = "#93c5fd")}
+                  onFocus={e => (e.target.style.borderColor = "#80CCCC")}
                   onBlur={e => (e.target.style.borderColor = "#e2e8f0")}
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)}

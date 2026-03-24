@@ -59,6 +59,7 @@ model User {
   role          Role
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
+  profilePhoto  String?        @db.Text
   doctor             Doctor?
   sessions           Session[]
   staff              Staff?

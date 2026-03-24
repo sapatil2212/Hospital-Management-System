@@ -344,7 +344,7 @@ export default function SuperAdminDashboard() {
                 {[
                   {icon:<Building2 size={20} color="#fff"/>,    label:"Total Hospitals",  val:hospitals_mock.length,                                    sub:"1 pending approval", bg:"#fff5f5", iconBg:"#dc2626"},
                   {icon:<CheckCircle2 size={20} color="#fff"/>,  label:"Verified Tenants",  val:hospitals_mock.filter(h=>h.isVerified).length,            sub:"2 active",           bg:"#f0fdf4", iconBg:"#10b981"},
-                  {icon:<TrendingUp size={20} color="#fff"/>,    label:"Total Patients",   val:hospitals_mock.reduce((s,h)=>s+h.patients,0),             sub:"across all hospitals",bg:"#eff6ff", iconBg:"#3b82f6"},
+                  {icon:<TrendingUp size={20} color="#fff"/>,    label:"Total Patients",   val:hospitals_mock.reduce((s,h)=>s+h.patients,0),             sub:"across all hospitals",bg:"#E6F4F4", iconBg:"#0E898F"},
                   {icon:<AlertTriangle size={20} color="#fff"/>, label:"Pending",           val:hospitals_mock.filter(h=>!h.isVerified).length,            sub:"needs verification",  bg:"#fefce8", iconBg:"#ca8a04"},
                 ].map((s,i)=>(
                   <div key={i} className="sad-sc" style={{background:s.bg}}>
@@ -449,9 +449,9 @@ export default function SuperAdminDashboard() {
                 <div className="sad-card-body">
                   {activity_mock.map((a,i)=>(
                     <div key={i} className="sad-act-item">
-                      <div className="sad-act-dot" style={{background:{info:"#3b82f6",warn:"#f59e0b",success:"#10b981",danger:"#ef4444"}[a.type]}}/>
+                      <div className="sad-act-dot" style={{background:{info:"#0E898F",warn:"#f59e0b",success:"#10b981",danger:"#ef4444"}[a.type]}}/>
                       <div><div className="sad-act-msg">{a.msg}</div><div className="sad-act-time">{a.time}</div></div>
-                      <span className="sad-badge" style={a.type==="success"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.type==="danger"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:a.type==="warn"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}}>{a.type}</span>
+                      <span className="sad-badge" style={a.type==="success"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.type==="danger"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:a.type==="warn"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}}>{a.type}</span>
                     </div>
                   ))}
                 </div>

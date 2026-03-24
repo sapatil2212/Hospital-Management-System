@@ -112,7 +112,7 @@ export default function StaffProfilePage() {
         .sd-nb:hover{background:#f8fafc;color:#334155}
         .sd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
         .sd-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .sd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .sd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
         .sd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .sd-urole{font-size:10px;font-weight:500;color:#10b981}
         .sd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
@@ -126,7 +126,7 @@ export default function StaffProfilePage() {
         .sd-notif{width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
         .sd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#10b981;border:1.5px solid #fff}
         .sd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .sd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .sd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .sd-profile-name{font-size:12px;font-weight:600;color:#1e293b}
         .sd-profile-role{font-size:10px;color:#10b981}
         .sd-center{padding:32px 24px;overflow-y:auto;flex:1}
@@ -211,7 +211,7 @@ export default function StaffProfilePage() {
               {/* User Info Card */}
               <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", padding: 24, marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div onClick={handlePhotoClick} style={{ width: 80, height: 80, borderRadius: 16, background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(135deg, #10b981, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#fff", cursor: "pointer", position: "relative", boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }}>
+                  <div onClick={handlePhotoClick} style={{ width: 80, height: 80, borderRadius: 16, background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(135deg, #10b981, #0E898F)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#fff", cursor: "pointer", position: "relative", boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }}>
                     {!profilePhoto && initials(user?.name || "")}
                     <div style={{ position: "absolute", bottom: -4, right: -4, width: 28, height: 28, borderRadius: "50%", background: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", border: "3px solid #fff", boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}>
                       <Camera size={12} color="#fff" />
@@ -226,7 +226,7 @@ export default function StaffProfilePage() {
                       <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 600 }}>
                         <Shield size={12} />{user?.role?.replace("_", " ")}
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#eff6ff", color: "#3b82f6", fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#E6F4F4", color: "#0E898F", fontSize: 11, fontWeight: 600 }}>
                         <Building2 size={12} />{user?.hospital?.name || "Hospital"}
                       </span>
                     </div>

@@ -23,7 +23,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "2
 const STATUS_CFG: Record<string, { bg: string; color: string; label: string }> = {
   PENDING:        { bg: "#fffbeb", color: "#b45309", label: "Pending" },
   PAID:           { bg: "#f0fdf4", color: "#16a34a", label: "Paid" },
-  PARTIALLY_PAID: { bg: "#eff6ff", color: "#2563eb", label: "Partial" },
+  PARTIALLY_PAID: { bg: "#E6F4F4", color: "#0A6B70", label: "Partial" },
   CANCELLED:      { bg: "#fff5f5", color: "#ef4444", label: "Cancelled" },
 };
 
@@ -165,7 +165,7 @@ function BillDetailModal({ billId, onClose, onPayment }: { billId: string; onClo
             <div key={item.id} style={{ padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr 80px 80px 90px", gap: 8, borderBottom: "1px solid #e2e8f0", alignItems: "center" }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{item.name}</div>
-                <span style={{ fontSize: 10, padding: "1px 7px", borderRadius: 100, background: "#eff6ff", color: "#2563eb", fontWeight: 700 }}>{item.type.replace(/_/g, " ")}</span>
+                <span style={{ fontSize: 10, padding: "1px 7px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontWeight: 700 }}>{item.type.replace(/_/g, " ")}</span>
               </div>
               <div style={{ textAlign: "center", fontSize: 13, color: "#64748b" }}>{item.quantity}</div>
               <div style={{ textAlign: "right", fontSize: 13, color: "#64748b" }}>₹{fmt(item.unitPrice)}</div>
@@ -188,7 +188,7 @@ function BillDetailModal({ billId, onClose, onPayment }: { billId: string; onClo
                 <input value={tax} onChange={e => setTax(e.target.value)} type="number" style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
               </div>
             </div>
-            <button onClick={updateBill} disabled={saving} style={{ padding: "7px 16px", borderRadius: 8, border: "none", background: "#3b82f6", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            <button onClick={updateBill} disabled={saving} style={{ padding: "7px 16px", borderRadius: 8, border: "none", background: "#0E898F", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
               {saving ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Save size={12} />} Update
             </button>
           </div>
@@ -764,7 +764,7 @@ export default function FinanceDashboard() {
                 {[
                   { label: "Total Bills",  value: stats.bills?.total,   color: "#334155", bg: "#f8fafc" },
                   { label: "Paid",         value: stats.bills?.paid,    color: "#16a34a", bg: "#f0fdf4" },
-                  { label: "Partial",      value: stats.bills?.partial, color: "#2563eb", bg: "#eff6ff" },
+                  { label: "Partial",      value: stats.bills?.partial, color: "#0A6B70", bg: "#E6F4F4" },
                   { label: "Pending",      value: stats.bills?.pending, color: "#ef4444", bg: "#fff5f5" },
                 ].map((s, i) => (
                   <div key={i} style={{ background: s.bg, borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
@@ -777,9 +777,9 @@ export default function FinanceDashboard() {
               {/* Expense Breakdown */}
               {stats.expenses && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-                  <div style={{ background: "#eff6ff", borderRadius: 14, padding: "16px 20px", border: "1px solid #bfdbfe" }}>
+                  <div style={{ background: "#E6F4F4", borderRadius: 14, padding: "16px 20px", border: "1px solid #B3E0E0" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: "#0A6B70", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <TrendingDown size={18} color="#fff" />
                       </div>
                       <div style={{ fontSize: 11, color: "#1e40af", fontWeight: 700, letterSpacing: ".05em" }}>OPERATIONAL EXPENSES</div>
@@ -833,7 +833,7 @@ export default function FinanceDashboard() {
                     {(stats.revenueBySource || []).map((s: any) => {
                       const maxVal = Math.max(...(stats.revenueBySource || []).map((x: any) => x._sum.amount || 0), 1);
                       const pct = ((s._sum.amount || 0) / maxVal) * 100;
-                      const colors: Record<string, string> = { CONSULTATION: "#f59e0b", PROCEDURE: "#10b981", BED_CHARGE: "#6366f1", PHARMACY: "#3b82f6", LAB_TEST: "#8b5cf6", OTHER: "#94a3b8" };
+                      const colors: Record<string, string> = { CONSULTATION: "#f59e0b", PROCEDURE: "#10b981", BED_CHARGE: "#6366f1", PHARMACY: "#0E898F", LAB_TEST: "#8b5cf6", OTHER: "#94a3b8" };
                       const c = colors[s.sourceType] || "#94a3b8";
                       return (
                         <div key={s.sourceType} style={{ marginBottom: 12 }}>
@@ -1000,7 +1000,7 @@ export default function FinanceDashboard() {
               {/* Expense Breakdown Info */}
               {expMeta.stats && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-                  <div style={{ background: "#eff6ff", borderRadius: 12, padding: "14px 18px", border: "1px solid #bfdbfe" }}>
+                  <div style={{ background: "#E6F4F4", borderRadius: 12, padding: "14px 18px", border: "1px solid #B3E0E0" }}>
                     <div style={{ fontSize: 11, color: "#1e40af", marginBottom: 4, fontWeight: 600 }}>OPERATIONAL EXPENSES</div>
                     <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>₹{fmt(expMeta.stats.fromExpenseTable || 0)}</div>
                     <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>Salary, utilities, maintenance, etc.</div>
@@ -1038,7 +1038,7 @@ export default function FinanceDashboard() {
                           <td style={{ color: "#94a3b8", fontSize: 12 }}>{ex.description || "—"}</td>
                           <td>
                             <div style={{ display: "flex", gap: 5 }}>
-                              <button onClick={() => { setEditExp(ex); setExpForm({ title: ex.title, category: ex.category, amount: String(ex.amount), date: ex.date?.split("T")[0] || new Date().toISOString().split("T")[0], description: ex.description || "" }); setShowExpForm(true); }} className="fin-btn" style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }}><Pencil size={11} /></button>
+                              <button onClick={() => { setEditExp(ex); setExpForm({ title: ex.title, category: ex.category, amount: String(ex.amount), date: ex.date?.split("T")[0] || new Date().toISOString().split("T")[0], description: ex.description || "" }); setShowExpForm(true); }} className="fin-btn" style={{ background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" }}><Pencil size={11} /></button>
                               <button onClick={() => deleteExpense(ex.id)} className="fin-btn" style={{ background: "#fff5f5", color: "#ef4444", border: "1px solid #fecaca" }}><Trash2 size={11} /></button>
                             </div>
                           </td>
@@ -1079,7 +1079,7 @@ export default function FinanceDashboard() {
                     {revMeta.stats.bySource.map((s: any) => {
                       const maxVal = Math.max(...revMeta.stats.bySource.map((x: any) => x._sum.amount || 0), 1);
                       const pct = ((s._sum.amount || 0) / maxVal) * 100;
-                      const colors: Record<string, string> = { CONSULTATION: "#f59e0b", PROCEDURE: "#10b981", BED_CHARGE: "#6366f1", PHARMACY: "#3b82f6", LAB_TEST: "#8b5cf6", OTHER: "#94a3b8" };
+                      const colors: Record<string, string> = { CONSULTATION: "#f59e0b", PROCEDURE: "#10b981", BED_CHARGE: "#6366f1", PHARMACY: "#0E898F", LAB_TEST: "#8b5cf6", OTHER: "#94a3b8" };
                       const c = colors[s.sourceType] || "#94a3b8";
                       return (
                         <div key={s.sourceType} style={{ marginBottom: 14 }}>

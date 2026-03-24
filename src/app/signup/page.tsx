@@ -46,7 +46,7 @@ export default function HospitalSignupPage() {
     { label: "", color: "#9ca3af" },
     { label: "Weak", color: "#ef4444" },
     { label: "Fair", color: "#f59e0b" },
-    { label: "Good", color: "#3b82f6" },
+    { label: "Good", color: "#0E898F" },
     { label: "Strong", color: "#10b981" },
     { label: "Excellent", color: "#059669" },
   ][passwordStrength] || { label: "", color: "#9ca3af" };

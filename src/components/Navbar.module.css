@@ -1,5 +1,5 @@
 .topBar {
-  background: linear-gradient(135deg, var(--primary-800), var(--primary-900));
+  background: linear-gradient(135deg, #0E898F, #0A6B70);
   color: var(--white);
   padding: var(--space-2) 0;
   font-size: var(--font-size-xs);
@@ -416,14 +416,14 @@
   background: var(--primary-50);
 }
 
-/* Book Appointment – primary solid */
+/* Book Appointment – aesthetic dark teal */
 .navCta {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #0E898F, #0A6B70);
   color: var(--white);
-  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.30);
+  box-shadow: 0 2px 12px rgba(14, 137, 143, 0.35);
 }
 .navCta:hover {
-  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 4px 18px rgba(14, 137, 143, 0.50);
 }
 
 /* Emergency – red solid */

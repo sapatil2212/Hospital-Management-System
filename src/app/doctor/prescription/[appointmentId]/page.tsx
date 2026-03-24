@@ -296,14 +296,14 @@ export default function PrescriptionPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {msg.t && <div style={{ padding: "5px 12px", borderRadius: 7, fontSize: 11, fontWeight: 600, animation: "fadeIn .3s", background: msg.c === "s" ? "#f0fdf4" : "#fff5f5", color: msg.c === "s" ? "#16a34a" : "#ef4444", border: `1px solid ${msg.c === "s" ? "#bbf7d0" : "#fecaca"}` }}>{msg.t}</div>}
           {finalized && locked && (
-            <button onClick={() => setEditMode(true)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#2563eb", fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Pencil size={12} /> Edit</button>
+            <button onClick={() => setEditMode(true)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Pencil size={12} /> Edit</button>
           )}
           {finalized && editMode && (
             <button onClick={() => setEditMode(false)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Eye size={12} /> View</button>
           )}
           <button onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}><Printer size={12} /> Print</button>
-          <button onClick={email} disabled={emailSending || !patient?.email} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: patient?.email ? "#3b82f6" : "#cbd5e1", fontSize: 11, fontWeight: 600, cursor: patient?.email ? "pointer" : "not-allowed" }}>{emailSending ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Mail size={12} />} Email</button>
-          <button onClick={save} disabled={saving || locked} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 8, border: "none", background: locked ? "#e2e8f0" : "linear-gradient(135deg,#3b82f6,#2563eb)", color: locked ? "#94a3b8" : "#fff", fontSize: 11, fontWeight: 700, cursor: locked ? "default" : "pointer" }}>{saving ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Save size={12} />} Save</button>
+          <button onClick={email} disabled={emailSending || !patient?.email} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: patient?.email ? "#0E898F" : "#cbd5e1", fontSize: 11, fontWeight: 600, cursor: patient?.email ? "pointer" : "not-allowed" }}>{emailSending ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Mail size={12} />} Email</button>
+          <button onClick={save} disabled={saving || locked} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 8, border: "none", background: locked ? "#e2e8f0" : "linear-gradient(135deg,#0E898F,#0A6B70)", color: locked ? "#94a3b8" : "#fff", fontSize: 11, fontWeight: 700, cursor: locked ? "default" : "pointer" }}>{saving ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Save size={12} />} Save</button>
           <button onClick={complete} disabled={completing || !canComplete} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 8, border: "none", background: canComplete ? "linear-gradient(135deg,#10b981,#059669)" : "#dcfce7", color: canComplete ? "#fff" : "#16a34a", fontSize: 11, fontWeight: 700, cursor: canComplete ? "pointer" : "default" }}>{completing ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <CheckCircle2 size={12} />} {canComplete ? (rx?.status === "DRAFT" ? "Complete" : "Re-Complete") : rx?.status}</button>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function PrescriptionPage() {
                 </div>
               </div>
               <div className="noprint" style={{ display: "flex", gap: 5 }}>
-                <button onClick={() => { const next = !showHist; setShowHist(next); setShowAi(false); if (next) void ensureHistoryLoaded(); }} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: `1px solid ${showHist ? "#bfdbfe" : "#e2e8f0"}`, background: showHist ? "#eff6ff" : "#fff", color: showHist ? "#2563eb" : "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}><History size={12} /> History{histLoaded ? ` (${hist.length})` : ""}</button>
+                <button onClick={() => { const next = !showHist; setShowHist(next); setShowAi(false); if (next) void ensureHistoryLoaded(); }} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: `1px solid ${showHist ? "#B3E0E0" : "#e2e8f0"}`, background: showHist ? "#E6F4F4" : "#fff", color: showHist ? "#0A6B70" : "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}><History size={12} /> History{histLoaded ? ` (${hist.length})` : ""}</button>
                 <button onClick={() => { setShowAi(!showAi); setShowHist(false); }} style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: `1px solid ${showAi ? "#c4b5fd" : "#e2e8f0"}`, background: showAi ? "#f5f3ff" : "#fff", color: showAi ? "#7c3aed" : "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}><Brain size={12} /> AI Panel</button>
               </div>
             </div>
@@ -356,7 +356,7 @@ export default function PrescriptionPage() {
           </SectionCard>
 
           {/* Chief Complaint */}
-          <SectionCard title="Chief Complaint" icon={<Stethoscope size={14} />} accent="#3b82f6" expanded={sections.complaint} onToggle={() => tog("complaint")}>
+          <SectionCard title="Chief Complaint" icon={<Stethoscope size={14} />} accent="#0E898F" expanded={sections.complaint} onToggle={() => tog("complaint")}>
             <div style={{ display: "flex", gap: 8 }}>
               <textarea value={complaint} onChange={e => setComplaint(e.target.value)} placeholder="Patient's chief complaint, symptoms, duration..." rows={3} disabled={locked}
                 style={{ flex: 1, padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#334155", outline: "none", resize: "vertical", background: locked ? "#f8fafc" : "#fff" }} />
@@ -636,7 +636,7 @@ function PrescriptionPrintView({ doctor, patient, appt, rx, settings }: { doctor
       {hs?.letterhead && hs.letterheadType === "PDF" && (
         <div className="noprint" style={{ padding: 10, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, marginBottom: 10, fontSize: "10pt" }}>
           <strong>Note:</strong> A PDF letterhead is configured. Please print the prescription and then feed the letterhead paper into the printer, or use a PDF editor to merge them.
-          <a href={hs.letterhead} target="_blank" rel="noreferrer" style={{ marginLeft: 10, color: "#3b82f6" }}>View PDF Letterhead</a>
+          <a href={hs.letterhead} target="_blank" rel="noreferrer" style={{ marginLeft: 10, color: "#0E898F" }}>View PDF Letterhead</a>
         </div>
       )}
 

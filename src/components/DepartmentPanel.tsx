@@ -426,11 +426,11 @@ export default function DepartmentPanel() {
         .dept-toolbar-right{display:flex;align-items:center;gap:10px}
         .dept-filter-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:500;cursor:pointer}
         .dept-filter-btn:hover{border-color:#cbd5e1}
-        .dept-filter-btn.active{background:#eff6ff;border-color:#3b82f6;color:#3b82f6}
+        .dept-filter-btn.active{background:#E6F4F4;border-color:#0E898F;color:#0E898F}
         .dept-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
         .dept-filter-select{padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#334155;background:#fff;cursor:pointer}
-        .dept-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
-        .dept-btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+        .dept-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
+        .dept-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
         .dept-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
         .dept-btn-ghost{padding:10px 20px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer}
         .dept-btn-ghost:hover{border-color:#cbd5e1;background:#f8fafc}
@@ -448,12 +448,12 @@ export default function DepartmentPanel() {
         .dept-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700}
         .dept-badge.green{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
         .dept-badge.red{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-        .dept-badge.blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+        .dept-badge.blue{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
         .dept-badge.purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe}
         .dept-badge.orange{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa}
         .dept-badge.gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
         .dept-icon-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
-        .dept-edit{background:#eff6ff;color:#3b82f6}.dept-edit:hover{background:#dbeafe}
+        .dept-edit{background:#E6F4F4;color:#0E898F}.dept-edit:hover{background:#B3E0E0}
         .dept-del{background:#fff5f5;color:#ef4444}.dept-del:hover{background:#fee2e2}
         .dept-actions{display:flex;gap:6px;align-items:center}
         .dept-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:#94a3b8;font-size:14px}
@@ -464,7 +464,7 @@ export default function DepartmentPanel() {
         .dept-page-btn{width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
         .dept-page-btn:hover:not(:disabled){background:#f8fafc;border-color:#cbd5e1}
         .dept-page-btn:disabled{opacity:.4;cursor:not-allowed}
-        .dept-page-btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+        .dept-page-btn.active{background:#0E898F;border-color:#0E898F;color:#fff}
         .dept-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
         .dept-modal{background:#fff;border-radius:18px;padding:0;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
         .dept-modal-lg{max-width:720px}
@@ -479,7 +479,7 @@ export default function DepartmentPanel() {
         .dept-section:last-child{margin-bottom:0}
         .dept-section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
         .dept-section-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center}
-        .dept-section-icon.blue{background:#eff6ff;color:#3b82f6}
+        .dept-section-icon.blue{background:#E6F4F4;color:#0E898F}
         .dept-section-icon.green{background:#f0fdf4;color:#16a34a}
         .dept-section-icon.purple{background:#f5f3ff;color:#7c3aed}
         .dept-section-icon.orange{background:#fff7ed;color:#ea580c}
@@ -490,7 +490,7 @@ export default function DepartmentPanel() {
         .dept-field.full{grid-column:1/-1}
         .dept-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
         .dept-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
-        .dept-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
+        .dept-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
         .dept-input::placeholder{color:#94a3b8}
         .dept-input.error{border-color:#fca5a5}
         .dept-textarea{min-height:80px;resize:vertical}
@@ -500,7 +500,7 @@ export default function DepartmentPanel() {
         .dept-toggle-label{font-size:13px;color:#334155;font-weight:500}
         .dept-toggle-desc{font-size:11px;color:#94a3b8;margin-top:2px}
         .dept-toggle{width:44px;height:24px;border-radius:100px;background:#e2e8f0;border:none;cursor:pointer;position:relative;transition:background .2s}
-        .dept-toggle.on{background:#3b82f6}
+        .dept-toggle.on{background:#0E898F}
         .dept-toggle.disabled{opacity:.5;cursor:not-allowed}
         .dept-toggle-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
         .dept-toggle.on .dept-toggle-thumb{transform:translateX(20px)}
@@ -513,7 +513,7 @@ export default function DepartmentPanel() {
         @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
         .dept-toast-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
         .dept-toast-error{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-        .dept-toast-info{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+        .dept-toast-info{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
         .dept-toast-close{background:none;border:none;cursor:pointer;color:inherit;opacity:.7;padding:0}
         .dept-toast-close:hover{opacity:1}
         @keyframes spin{to{transform:rotate(360deg)}}

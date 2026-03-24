@@ -26,7 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 const STATUS_CFG: Record<string, { label: string; dot: string; badge: [string, string, string] }> = {
   SCHEDULED:   { label: "Scheduled",   dot: "#94a3b8", badge: ["#f8fafc",   "#475569",  "#e2e8f0"] },
   CONFIRMED:   { label: "Confirmed",   dot: "#10b981", badge: ["#f0fdf4",   "#16a34a",  "#bbf7d0"] },
-  IN_PROGRESS: { label: "In Progress", dot: "#3b82f6", badge: ["#eff6ff",   "#2563eb",  "#bfdbfe"] },
+  IN_PROGRESS: { label: "In Progress", dot: "#0E898F", badge: ["#E6F4F4",   "#0A6B70",  "#B3E0E0"] },
   COMPLETED:   { label: "Completed",   dot: "#059669", badge: ["#f0fdf4",   "#059669",  "#a7f3d0"] },
   CANCELLED:   { label: "Cancelled",   dot: "#ef4444", badge: ["#fff5f5",   "#ef4444",  "#fecaca"] },
   NO_SHOW:     { label: "No Show",     dot: "#f97316", badge: ["#fff7ed",   "#c2410c",  "#fed7aa"] },
@@ -151,14 +151,14 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
         <div style={{ display: "flex", gap: 8 }}>
           {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && (
             <button onClick={() => onStartPrescription(appt.id)} disabled={saving}
-              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
+              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
               {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <PlayCircle size={15} />}
               Start Consultation
             </button>
           )}
           {appt.status === "IN_PROGRESS" && (
             <button onClick={() => onStartPrescription(appt.id)} disabled={saving}
-              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#3b82f6,#2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
+              style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
               {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <PlayCircle size={15} />}
               Continue Prescription
             </button>
@@ -180,7 +180,7 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
         {appt.patient?.id && (
           <button 
             onClick={() => { setSelectedPatientId(appt.patient.id); onClose(); }}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12, fontSize: 12, color: "#3b82f6", fontWeight: 600, background: "none", border: "none", cursor: "pointer", width: "100%" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12, fontSize: 12, color: "#0E898F", fontWeight: 600, background: "none", border: "none", cursor: "pointer", width: "100%" }}
           >
             <FileText size={12} />View Full Patient Profile
           </button>
@@ -370,7 +370,7 @@ export default function DoctorDashboard() {
 
               <div className="doc-stats">
                 {[
-                  {icon:<CalendarDays size={20} color="#fff"/>, label:isToday?"Today's Appointments":"Appointments", val:todayTotal, sub:`${todayRemaining} remaining`, bg:"#eff6ff", iconBg:"#3b82f6"},
+                  {icon:<CalendarDays size={20} color="#fff"/>, label:isToday?"Today's Appointments":"Appointments", val:todayTotal, sub:`${todayRemaining} remaining`, bg:"#E6F4F4", iconBg:"#0E898F"},
                   {icon:<CheckCircle2 size={20} color="#fff"/>, label:"Completed", val:todayDone, sub:isToday?"today so far":"on this day", bg:"#f0fdf4", iconBg:"#10b981"},
                   {icon:<Clock size={20} color="#fff"/>, label:"Remaining", val:todayRemaining, sub:"scheduled / confirmed", bg:"#fff7ed", iconBg:"#f59e0b"},
                   {icon:<UserRound size={20} color="#fff"/>, label:"Total Patients", val:allPatients.length, sub:"all time", bg:"#fdf4ff", iconBg:"#a855f7"},
@@ -383,7 +383,7 @@ export default function DoctorDashboard() {
               </div>
 
               {inProgress && (
-                <div style={{background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",borderRadius:14,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
+                <div style={{background:"linear-gradient(135deg,#0E898F,#07595D)",borderRadius:14,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <div style={{width:8,height:8,borderRadius:"50%",background:"#fff",animation:"pulse 1.5s ease-in-out infinite"}}/>
                     <div>
@@ -454,7 +454,7 @@ export default function DoctorDashboard() {
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                   {canConsult && (
                                     <button onClick={()=>handleStartPrescription(a.id)}
-                                      style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"none",background:a.status==="IN_PROGRESS"?"linear-gradient(135deg,#3b82f6,#2563eb)":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:a.status==="IN_PROGRESS"?"0 3px 10px rgba(59,130,246,.3)":"0 3px 10px rgba(16,185,129,.3)"}}>
+                                      style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"none",background:a.status==="IN_PROGRESS"?"linear-gradient(135deg,#0E898F,#0A6B70)":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:a.status==="IN_PROGRESS"?"0 3px 10px rgba(59,130,246,.3)":"0 3px 10px rgba(16,185,129,.3)"}}>
                                       <PlayCircle size={12}/>{a.status==="IN_PROGRESS"?"Continue":"Consult"}
                                     </button>
                                   )}
@@ -465,7 +465,7 @@ export default function DoctorDashboard() {
                                         <FileText size={12}/>View Rx
                                       </button>
                                       <button onClick={()=>handleEditPrescription(a.id)}
-                                        style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                                        style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid #B3E0E0",background:"#E6F4F4",color:"#0A6B70",fontSize:11,fontWeight:700,cursor:"pointer"}}>
                                         <Pencil size={12}/>Edit Rx
                                       </button>
                                     </>
@@ -517,7 +517,7 @@ export default function DoctorDashboard() {
                             <td>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setSelectedPatientId(p.id); }}
-                                style={{fontSize:11,color:"#3b82f6",fontWeight:600,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
+                                style={{fontSize:11,color:"#0E898F",fontWeight:600,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
                                 Profile <ChevronRight size={11}/>
                               </button>
                             </td>
@@ -547,7 +547,7 @@ export default function DoctorDashboard() {
             ) : appointments.slice(0,6).map((a:any)=>{
               const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
               return (
-                <div key={a.id} className="doc-critical-card" style={{background:a.status==="IN_PROGRESS"?"#eff6ff":a.status==="COMPLETED"?"#f0fdf4":"#f8fafc",border:`1px solid ${a.status==="IN_PROGRESS"?"#bfdbfe":a.status==="COMPLETED"?"#bbf7d0":"#e2e8f0"}`}}>
+                <div key={a.id} className="doc-critical-card" style={{background:a.status==="IN_PROGRESS"?"#E6F4F4":a.status==="COMPLETED"?"#f0fdf4":"#f8fafc",border:`1px solid ${a.status==="IN_PROGRESS"?"#B3E0E0":a.status==="COMPLETED"?"#bbf7d0":"#e2e8f0"}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
                     <div style={{fontSize:13,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{a.patient?.name||"—"}</div>
                     <span className="doc-badge" style={{background:sc.badge[0],color:sc.badge[1],border:`1px solid ${sc.badge[2]}`}}>{sc.label}</span>
@@ -555,7 +555,7 @@ export default function DoctorDashboard() {
                   <div style={{fontSize:11,color:"#64748b"}}>{a.timeSlot} · Token #{a.tokenNumber||"—"}</div>
                   {["SCHEDULED","CONFIRMED","IN_PROGRESS"].includes(a.status) && (
                     <button onClick={()=>setConsultAppt(a)}
-                      style={{marginTop:7,width:"100%",padding:"5px 0",borderRadius:7,border:"none",background:a.status==="IN_PROGRESS"?"#3b82f6":accent,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                      style={{marginTop:7,width:"100%",padding:"5px 0",borderRadius:7,border:"none",background:a.status==="IN_PROGRESS"?"#0E898F":accent,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
                       {a.status==="IN_PROGRESS"?"Continue":"Consult"}
                     </button>
                   )}
@@ -566,7 +566,7 @@ export default function DoctorDashboard() {
                         View Rx
                       </button>
                       <button onClick={()=>handleEditPrescription(a.id)}
-                        style={{flex:1,padding:"5px 0",borderRadius:7,border:"1px solid #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                        style={{flex:1,padding:"5px 0",borderRadius:7,border:"1px solid #B3E0E0",background:"#E6F4F4",color:"#0A6B70",fontSize:11,fontWeight:700,cursor:"pointer"}}>
                         Edit
                       </button>
                     </div>

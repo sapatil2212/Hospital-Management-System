@@ -282,7 +282,7 @@ export default function PrescriptionSettingsPanel() {
         {/* Live Preview Column */}
         <div style={{ position: "sticky", top: 80 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-            <Eye size={18} color="#3b82f6" /> 
+            <Eye size={18} color="#0E898F" /> 
             Live Preview
           </div>
           
@@ -293,13 +293,13 @@ export default function PrescriptionSettingsPanel() {
             hospitalStamp={hospitalStamp} 
           />
 
-          <div style={{ marginTop: 20, background: "#eff6ff", borderRadius: 16, padding: 16, border: "1px solid #bfdbfe", display: "flex", gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
+          <div style={{ marginTop: 20, background: "#E6F4F4", borderRadius: 16, padding: 16, border: "1px solid #B3E0E0", display: "flex", gap: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#0E898F", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
               <Monitor size={16} />
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#1e3a8a", marginBottom: 2 }}>Instant Preview</div>
-              <p style={{ fontSize: 11, color: "#3b82f6", lineHeight: 1.5 }}>Changes appear instantly. Remember to save to apply them to your actual prescriptions.</p>
+              <p style={{ fontSize: 11, color: "#0E898F", lineHeight: 1.5 }}>Changes appear instantly. Remember to save to apply them to your actual prescriptions.</p>
             </div>
           </div>
         </div>
@@ -366,7 +366,7 @@ function PrescriptionPreview({ settings, doctor, signature, hospitalStamp }: any
 
       {/* Content Placeholders */}
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 800, marginBottom: 6, fontSize: "12px", color: "#3b82f6" }}>Rx</div>
+        <div style={{ fontWeight: 800, marginBottom: 6, fontSize: "12px", color: "#0E898F" }}>Rx</div>
         
         {s.display.showDiagnosis && (
           <div style={{ marginBottom: 8 }}>
@@ -434,7 +434,7 @@ function Section({ title, icon, children }: { title: string; icon: any; children
   return (
     <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden" }}>
       <div style={{ padding: "14px 18px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ color: "#3b82f6" }}>{icon}</div>
+        <div style={{ color: "#0E898F" }}>{icon}</div>
         <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{title}</div>
       </div>
       <div style={{ padding: 20 }}>

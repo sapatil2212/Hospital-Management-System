@@ -145,7 +145,7 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
     )}
     <form onSubmit={save} className="cfg-form">
       <div className="cfg-field" style={{gridColumn:"1/-1",marginBottom:16}}>
-        <label className="cfg-lbl" style={{color:"#3b82f6",fontSize:13,marginBottom:12,display:"block"}}>Hospital Logo</label>
+        <label className="cfg-lbl" style={{color:"#0E898F",fontSize:13,marginBottom:12,display:"block"}}>Hospital Logo</label>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           {f.logo && (
             <div style={{width:80,height:80,borderRadius:12,border:"2px solid #e2e8f0",padding:8,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff"}}>
@@ -155,7 +155,7 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
           <div style={{flex:1}}>
             <label className="cfg-lbl">Upload Hospital Logo (PNG, JPG, SVG)</label>
             <input type="file" accept="image/*" className="cfg-input" onChange={handleLogoUpload} style={{marginBottom:4}}/>
-            {uploadingLogo && <span style={{fontSize:11,color:"#3b82f6",display:"block"}}>Uploading logo...</span>}
+            {uploadingLogo && <span style={{fontSize:11,color:"#0E898F",display:"block"}}>Uploading logo...</span>}
             {f.logo && <a href={f.logo} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#10b981",display:"block",marginTop:4}}>View current logo</a>}
             <p style={{fontSize:11,color:"#94a3b8",marginTop:6}}>Recommended: Square image, transparent background, min 200x200px</p>
           </div>
@@ -167,12 +167,12 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
       ))}
       
       <div className="cfg-field" style={{gridColumn:"1/-1",marginTop:10,paddingTop:10,borderTop:"1px solid #f1f5f9"}}>
-        <label className="cfg-lbl" style={{color:"#3b82f6",fontSize:12,marginBottom:10}}>Prescription Letterhead Settings</label>
+        <label className="cfg-lbl" style={{color:"#0E898F",fontSize:12,marginBottom:10}}>Prescription Letterhead Settings</label>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
           <div className="cfg-field">
             <label className="cfg-lbl">Upload Letterhead (Image/PDF)</label>
             <input type="file" accept="image/*,application/pdf" className="cfg-input" onChange={handleUpload}/>
-            {uploading && <span style={{fontSize:11,color:"#3b82f6"}}>Uploading...</span>}
+            {uploading && <span style={{fontSize:11,color:"#0E898F"}}>Uploading...</span>}
             {f.letterhead && <a href={f.letterhead} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#10b981",marginTop:4}}>View current letterhead</a>}
           </div>
           <div className="cfg-field">
@@ -339,15 +339,15 @@ function ConfigureContent(){
       .cfg-wrap{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
       .cfg-sb{width:240px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,.04)}
       .cfg-sb-logo{padding:20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-      .cfg-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3)}
+      .cfg-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3)}
       .cfg-sb-nav{flex:1;padding:12px;overflow-y:auto}
       .cfg-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
       .cfg-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:left;position:relative;margin-bottom:2px}
       .cfg-nb:hover{background:#f8fafc;color:#334155}
-      .cfg-nb.on{background:#eff6ff;color:#2563eb;font-weight:600}
-      .cfg-nb.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:#3b82f6;border-radius:4px}
+      .cfg-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
+      .cfg-nb.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:#0E898F;border-radius:4px}
       .cfg-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
-      .cfg-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+      .cfg-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
       .cfg-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
       .cfg-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
       .cfg-main{margin-left:240px;flex:1;min-height:100vh}
@@ -358,7 +358,7 @@ function ConfigureContent(){
       .cfg-onboard{background:#fff;border:1px solid #fde68a;border-radius:16px;padding:22px;margin-bottom:22px;box-shadow:0 1px 4px rgba(234,179,8,.1)}
       .cfg-onboard-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
       .cfg-progress-bar{height:8px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:8px}
-      .cfg-progress-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:100px;transition:width .5s}
+      .cfg-progress-fill{height:100%;background:linear-gradient(90deg,#0E898F,#10b981);border-radius:100px;transition:width .5s}
       .cfg-steps{display:flex;flex-wrap:wrap;gap:8px}
       .cfg-step{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b}
       .cfg-step.done{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
@@ -367,10 +367,10 @@ function ConfigureContent(){
       .cfg-field{display:flex;flex-direction:column;gap:5px}
       .cfg-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
       .cfg-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
-      .cfg-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
+      .cfg-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
       .cfg-input::placeholder{color:#94a3b8}
-      .cfg-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
-      .cfg-btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+      .cfg-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
+      .cfg-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
       .cfg-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
       .cfg-btn-ghost{padding:10px 20px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer}
       .cfg-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
@@ -386,9 +386,9 @@ function ConfigureContent(){
       .cfg-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700}
       .cfg-badge.green{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
       .cfg-badge.red{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-      .cfg-badge.blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+      .cfg-badge.blue{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
       .cfg-icon-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
-      .cfg-edit{background:#eff6ff;color:#3b82f6}.cfg-edit:hover{background:#dbeafe}
+      .cfg-edit{background:#E6F4F4;color:#0E898F}.cfg-edit:hover{background:#B3E0E0}
       .cfg-del{background:#fff5f5;color:#ef4444}.cfg-del:hover{background:#fee2e2}
       .cfg-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
       .cfg-modal{background:#fff;border-radius:18px;padding:24px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto}
@@ -419,7 +419,7 @@ function ConfigureContent(){
         <div className="cfg-sb-foot">
           <div className="cfg-user">
             <div className="cfg-av">{user?.name?initials(user.name):"HA"}</div>
-            <div style={{overflow:"hidden"}}><div style={{fontSize:12,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{user?.name||"Admin"}</div><div style={{fontSize:10,color:"#3b82f6",fontWeight:500}}>Hospital Admin</div></div>
+            <div style={{overflow:"hidden"}}><div style={{fontSize:12,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{user?.name||"Admin"}</div><div style={{fontSize:10,color:"#0E898F",fontWeight:500}}>Hospital Admin</div></div>
           </div>
           <button className="cfg-logout" onClick={logout}><LogOut size={13}/>Log Out</button>
         </div>
@@ -427,7 +427,7 @@ function ConfigureContent(){
 
       <main className="cfg-main">
         <header className="cfg-topbar">
-          <div className="cfg-topbar-title"><Settings size={20} color="#3b82f6"/>Configure Hospital</div>
+          <div className="cfg-topbar-title"><Settings size={20} color="#0E898F"/>Configure Hospital</div>
           <div className="cfg-topbar-right">
             <div style={{width:36,height:36,borderRadius:10,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}><Bell size={16} color="#64748b"/><span style={{position:"absolute",top:7,right:7,width:7,height:7,borderRadius:"50%",background:"#ef4444",border:"1.5px solid #fff"}}/></div>
             <div className="cfg-av">{user?.name?initials(user.name):"HA"}</div>

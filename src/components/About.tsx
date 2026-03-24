@@ -19,8 +19,8 @@ const features = [
     title: "Patient-Centered Care",
     description:
       "Putting you at the heart of everything we do. Our patient-centered approach ensures personalized treatment.",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
+    color: "#0E898F",
+    bgColor: "#E6F4F4",
   },
   {
     icon: <Stethoscope size={24} />,

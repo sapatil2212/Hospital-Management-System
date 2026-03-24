@@ -23,7 +23,7 @@ function getDeptAccent(deptName?: string): string {
   if (n.includes("cardio")) return "#ef4444";
   if (n.includes("neuro")) return "#8b5cf6";
   if (n.includes("ortho")) return "#f59e0b";
-  if (n.includes("pedia") || n.includes("child")) return "#3b82f6";
+  if (n.includes("pedia") || n.includes("child")) return "#0E898F";
   if (n.includes("gyne") || n.includes("obs")) return "#ec4899";
   if (n.includes("onco") || n.includes("cancer")) return "#6366f1";
   if (n.includes("derma") || n.includes("skin")) return "#14b8a6";

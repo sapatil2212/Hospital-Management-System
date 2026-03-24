@@ -67,7 +67,7 @@ export default function AppointmentsPage() {
         {/* Sidebar */}
         <aside style={{ width: 240, background: "#fff", borderRight: "1px solid #e2e8f0", display: "flex", flexDirection: "column", position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 50, boxShadow: "2px 0 8px rgba(0,0,0,.04)" }}>
           <div style={{ padding: "20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 4px 12px rgba(59,130,246,.3)" }}>
+            <div style={{ width: 36, height: 36, background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 4px 12px rgba(59,130,246,.3)" }}>
               <CalendarCheck size={18} />
             </div>
             <div>
@@ -82,8 +82,8 @@ export default function AppointmentsPage() {
               const Icon = t.icon;
               return (
                 <button key={t.id} onClick={() => setTab(t.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: tab === t.id ? "#eff6ff" : "none", color: tab === t.id ? "#2563eb" : "#64748b", fontSize: 13, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", textAlign: "left", marginBottom: 2, position: "relative" }}>
-                  {tab === t.id && <span style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: 20, background: "#3b82f6", borderRadius: 4 }} />}
+                  style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: tab === t.id ? "#E6F4F4" : "none", color: tab === t.id ? "#0A6B70" : "#64748b", fontSize: 13, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", textAlign: "left", marginBottom: 2, position: "relative" }}>
+                  {tab === t.id && <span style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: 20, background: "#0E898F", borderRadius: 4 }} />}
                   <Icon size={15} style={{ flexShrink: 0 }} />{t.label}
                 </button>
               );
@@ -102,12 +102,12 @@ export default function AppointmentsPage() {
 
           <div style={{ padding: "14px 16px 18px", borderTop: "1px solid #f1f5f9" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#3b82f6,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
                 {user?.name ? initials(user.name) : "HA"}
               </div>
               <div style={{ overflow: "hidden" }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name || "Admin"}</div>
-                <div style={{ fontSize: 10, color: "#3b82f6", fontWeight: 500 }}>Hospital Admin</div>
+                <div style={{ fontSize: 10, color: "#0E898F", fontWeight: 500 }}>Hospital Admin</div>
               </div>
             </div>
             <button onClick={logout} style={{ width: "100%", padding: 8, borderRadius: 9, background: "#fff5f5", border: "1px solid #fee2e2", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
@@ -124,7 +124,7 @@ export default function AppointmentsPage() {
                 <ArrowLeft size={14} />
               </button>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
-                {TABS.find(t => t.id === tab)?.icon && (() => { const Icon = TABS.find(t => t.id === tab)!.icon; return <Icon size={20} color="#3b82f6" />; })()}
+                {TABS.find(t => t.id === tab)?.icon && (() => { const Icon = TABS.find(t => t.id === tab)!.icon; return <Icon size={20} color="#0E898F" />; })()}
                 {TABS.find(t => t.id === tab)?.label}
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function AppointmentsPage() {
                 <Bell size={16} color="#64748b" />
                 <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: "#ef4444", border: "1.5px solid #fff" }} />
               </div>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#3b82f6,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                 {user?.name ? initials(user.name) : "HA"}
               </div>
             </div>
@@ -254,12 +254,12 @@ function PatientsListPanel({ onSelectPatient }: { onSelectPatient: (id: string) 
                       <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 100, background: "#f1f5f9", color: "#64748b", fontWeight: 600 }}>{p.gender}</span>
                     ) : "—"}
                   </td>
-                  <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#2563eb" }}>{p._count?.appointments || 0}</td>
+                  <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments || 0}</td>
                   <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#10b981" }}>{p._count?.followUps || 0}</td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={(e) => { e.stopPropagation(); onSelectPatient(p.id); }}
-                        style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eff6ff", color: "#3b82f6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#E6F4F4", color: "#0E898F", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         title="View Patient">
                         <ChevronRight size={13} />
                       </button>

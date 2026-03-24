@@ -239,8 +239,8 @@ export default function AvailabilityModal({ open, onClose, doctor }: Availabilit
         .avail-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:#94a3b8}
         .avail-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
         .avail-day{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:all .15s}
-        .avail-day:hover{border-color:#93c5fd;background:#eff6ff}
-        .avail-day.selected{border-color:#3b82f6;background:#eff6ff}
+        .avail-day:hover{border-color:#80CCCC;background:#E6F4F4}
+        .avail-day.selected{border-color:#0E898F;background:#E6F4F4}
         .avail-day.has-schedule{border-color:#bbf7d0;background:#f0fdf4}
         .avail-day.copy-target{border-color:#fbbf24;background:#fef9c3}
         .avail-day-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px}
@@ -249,7 +249,7 @@ export default function AvailabilityModal({ open, onClose, doctor }: Availabilit
         .avail-day-empty{font-size:11px;color:#94a3b8}
         .avail-day-actions{display:flex;gap:4px;justify-content:center;margin-top:8px}
         .avail-day-btn{width:24px;height:24px;border-radius:6px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff;color:#64748b;font-size:10px}
-        .avail-day-btn.edit{color:#3b82f6}.avail-day-btn.edit:hover{background:#dbeafe}
+        .avail-day-btn.edit{color:#0E898F}.avail-day-btn.edit:hover{background:#B3E0E0}
         .avail-day-btn.copy{color:#f59e0b}.avail-day-btn.copy:hover{background:#fef3c7}
         .avail-day-btn.del{color:#ef4444}.avail-day-btn.del:hover{background:#fee2e2}
         .avail-edit-panel{margin-top:20px;padding:20px;background:#f8fafc;border-radius:14px;border:1px solid #e2e8f0}
@@ -258,11 +258,11 @@ export default function AvailabilityModal({ open, onClose, doctor }: Availabilit
         .avail-field{display:flex;flex-direction:column;gap:5px}
         .avail-lbl{font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b}
         .avail-input{background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b}
-        .avail-input:focus{border-color:#93c5fd;outline:none}
+        .avail-input:focus{border-color:#80CCCC;outline:none}
         .avail-select{background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;cursor:pointer}
         .avail-edit-actions{display:flex;gap:10px;margin-top:16px}
         .avail-btn{padding:10px 20px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
-        .avail-btn-primary{background:#3b82f6;color:#fff}.avail-btn-primary:hover{background:#2563eb}
+        .avail-btn-primary{background:#0E898F;color:#fff}.avail-btn-primary:hover{background:#0A6B70}
         .avail-btn-primary:disabled{opacity:.5;cursor:not-allowed}
         .avail-btn-ghost{background:#fff;border:1.5px solid #e2e8f0;color:#64748b}.avail-btn-ghost:hover{background:#f8fafc}
         .avail-btn-warning{background:#f59e0b;color:#fff}.avail-btn-warning:hover{background:#d97706}

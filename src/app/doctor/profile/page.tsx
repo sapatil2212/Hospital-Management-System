@@ -136,7 +136,7 @@ export default function DoctorProfilePage() {
         .doc-notif{width:36px;height:36px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
         .doc-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#10b981;border:1.5px solid #fff}
         .doc-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;cursor:pointer}
-        .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .doc-profile-name{font-size:12px;font-weight:600;color:#1e293b}
         .doc-profile-role{font-size:10px;color:#059669}
         .doc-center{padding:32px 24px;overflow-y:auto;flex:1}
@@ -166,7 +166,7 @@ export default function DoctorProfilePage() {
           </nav>
           <div className="doc-sb-foot">
             <div className="doc-user">
-              <div className="doc-av" style={{background:"linear-gradient(135deg,#10b981,#3b82f6)"}}>{initials(doctorName)}</div>
+              <div className="doc-av" style={{background:"linear-gradient(135deg,#10b981,#0E898F)"}}>{initials(doctorName)}</div>
               <div><div className="doc-uname">{doctorName}</div><div className="doc-urole" style={{color:"#059669"}}>Doctor · {deptName}</div></div>
             </div>
             <button className="doc-logout" onClick={logout}>
@@ -221,7 +221,7 @@ export default function DoctorProfilePage() {
               {/* User Info Card */}
               <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #d1fae5", boxShadow: "0 1px 4px rgba(16,185,129,0.04)", padding: 24, marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div onClick={handlePhotoClick} style={{ width: 80, height: 80, borderRadius: 16, background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(135deg, #10b981, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#fff", cursor: "pointer", position: "relative", boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }}>
+                  <div onClick={handlePhotoClick} style={{ width: 80, height: 80, borderRadius: 16, background: profilePhoto ? `url(${profilePhoto}) center/cover` : "linear-gradient(135deg, #10b981, #0E898F)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#fff", cursor: "pointer", position: "relative", boxShadow: "0 4px 12px rgba(16,185,129,0.25)" }}>
                     {!profilePhoto && initials(doctorName)}
                     <div style={{ position: "absolute", bottom: -4, right: -4, width: 28, height: 28, borderRadius: "50%", background: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", border: "3px solid #fff", boxShadow: "0 2px 6px rgba(0,0,0,0.15)" }}>
                       <Camera size={12} color="#fff" />
@@ -236,7 +236,7 @@ export default function DoctorProfilePage() {
                       <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#ecfdf5", color: "#059669", fontSize: 11, fontWeight: 600 }}>
                         <Shield size={12} />Doctor
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#eff6ff", color: "#3b82f6", fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#E6F4F4", color: "#0E898F", fontSize: 11, fontWeight: 600 }}>
                         <Building2 size={12} />{deptName}
                       </span>
                     </div>

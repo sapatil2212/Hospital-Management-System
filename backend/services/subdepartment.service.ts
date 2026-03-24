@@ -97,7 +97,7 @@ const TYPE_COLORS: Record<string, string> = {
   ONCOLOGY: "#f97316",
   CARDIOLOGY: "#ef4444",
   PATHOLOGY: "#10b981",
-  PHARMACY: "#3b82f6",
+  PHARMACY: "#0E898F",
   BILLING: "#f59e0b",
   RADIOLOGY: "#6366f1",
   LABORATORY: "#14b8a6",

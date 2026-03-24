@@ -30,7 +30,7 @@ interface FollowUp {
 function StatsBar({ stats }: { stats: any }) {
   if (!stats) return null;
   const items = [
-    { label: "Today", value: stats.today, color: "#2563eb", bg: "#eff6ff", icon: Clock },
+    { label: "Today", value: stats.today, color: "#0A6B70", bg: "#E6F4F4", icon: Clock },
     { label: "Pending", value: stats.pending, color: "#d97706", bg: "#fffbeb", icon: AlertCircle },
     { label: "Overdue", value: stats.overdue, color: "#dc2626", bg: "#fff5f5", icon: AlertCircle },
     { label: "Completed", value: stats.completed, color: "#059669", bg: "#f0fdf4", icon: CheckCircle },
@@ -68,7 +68,7 @@ function FollowUpCard({
     <div style={{
       background: "#fff",
       borderRadius: 14,
-      border: `1px solid ${isOverdue ? "#fecaca" : isToday ? "#bfdbfe" : "#e2e8f0"}`,
+      border: `1px solid ${isOverdue ? "#fecaca" : isToday ? "#B3E0E0" : "#e2e8f0"}`,
       padding: "16px 20px",
       boxShadow: isOverdue ? "0 2px 8px rgba(239,68,68,.08)" : isToday ? "0 2px 8px rgba(59,130,246,.08)" : "0 1px 4px rgba(0,0,0,.04)",
       transition: "all .15s",
@@ -78,7 +78,7 @@ function FollowUpCard({
           {/* Date Badge */}
           <div style={{
             width: 52, height: 52, borderRadius: 12, flexShrink: 0,
-            background: isOverdue ? "linear-gradient(135deg,#ef4444,#dc2626)" : isToday ? "linear-gradient(135deg,#3b82f6,#2563eb)" : "linear-gradient(135deg,#10b981,#059669)",
+            background: isOverdue ? "linear-gradient(135deg,#ef4444,#dc2626)" : isToday ? "linear-gradient(135deg,#0E898F,#0A6B70)" : "linear-gradient(135deg,#10b981,#059669)",
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff",
           }}>
             <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1 }}>{fuDate.getDate()}</div>
@@ -90,7 +90,7 @@ function FollowUpCard({
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
               {isOverdue && <span style={{ fontSize: 9, fontWeight: 700, color: "#dc2626", background: "#fff5f5", border: "1px solid #fecaca", padding: "2px 7px", borderRadius: 100 }}>OVERDUE</span>}
-              {isToday && <span style={{ fontSize: 9, fontWeight: 700, color: "#2563eb", background: "#eff6ff", border: "1px solid #bfdbfe", padding: "2px 7px", borderRadius: 100 }}>TODAY</span>}
+              {isToday && <span style={{ fontSize: 9, fontWeight: 700, color: "#0A6B70", background: "#E6F4F4", border: "1px solid #B3E0E0", padding: "2px 7px", borderRadius: 100 }}>TODAY</span>}
               {isUpcoming && fuDate.getTime() - now.getTime() < 86400000 * 3 && (
                 <span style={{ fontSize: 9, fontWeight: 700, color: "#0891b2", background: "#ecfeff", border: "1px solid #a5f3fc", padding: "2px 7px", borderRadius: 100 }}>IN {Math.ceil((fuDate.getTime() - now.getTime()) / 86400000)} DAY(S)</span>
               )}
@@ -143,7 +143,7 @@ function FollowUpCard({
 
           <button 
             onClick={() => onViewPatient(fu.patientId)}
-            style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "right" }}
+            style={{ fontSize: 11, color: "#0E898F", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "right" }}
           >
             View Profile →
           </button>
@@ -222,7 +222,7 @@ export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (
         <div style={{ display: "flex", gap: 4, background: "#fff", padding: 4, borderRadius: 12, border: "1px solid #e2e8f0" }}>
           {FILTER_TABS.map(t => (
             <button key={t.id} onClick={() => { setActiveFilter(t.id); setPage(1); }}
-              style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: activeFilter === t.id ? "#3b82f6" : "none", color: activeFilter === t.id ? "#fff" : "#64748b", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, transition: "all .15s" }}>
+              style={{ padding: "7px 16px", borderRadius: 9, border: "none", background: activeFilter === t.id ? "#0E898F" : "none", color: activeFilter === t.id ? "#fff" : "#64748b", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, transition: "all .15s" }}>
               {t.label}
               {t.count !== null && t.count !== undefined && (
                 <span style={{ minWidth: 18, height: 18, borderRadius: 100, background: activeFilter === t.id ? "rgba(255,255,255,.3)" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, padding: "0 5px" }}>

@@ -1,0 +1,1165 @@
+/*!*****************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./src/app/globals.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************/
+/* ========================================
+   HEALTHCARE SAAS LANDING PAGE
+   Design System & Global Styles
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ---------- CSS Custom Properties ---------- */
+:root {
+  /* Primary Colors - Teal */
+  --primary: #0E898F;
+  --primary-dark: #0A6B70;
+  --primary-light: #14A3A8;
+  --primary-50: #E6F4F4;
+  --primary-100: #B3E0E0;
+  --primary-200: #80CCCC;
+  --primary-600: #0A6B70;
+  --primary-700: #07595D;
+  --primary-800: #054749;
+  --primary-900: #033536;
+
+  /* Neutral Colors */
+  --white: #FFFFFF;
+  /* Background Colors */
+  --bg-light: #F8FAFC;
+  --bg-blue: #E6F4F4;
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* Accent Colors */
+  --success: #10B981;
+  --success-light: #D1FAE5;
+  --warning: #F59E0B;
+  --warning-light: #FEF3C7;
+  --error: #EF4444;
+  --error-light: #FEE2E2;
+  --accent-purple: #8B5CF6;
+  --accent-purple-light: #EDE9FE;
+  --accent-teal: #14B8A6;
+  --accent-teal-light: #CCFBF1;
+  --accent-pink: #EC4899;
+  --accent-pink-light: #FCE7F3;
+  --accent-orange: #F97316;
+  --accent-orange-light: #FFF7ED;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  --font-size-6xl: 3.5rem;
+
+  /* Spacing (8px grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.08);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+  --shadow-blue: 0 10px 30px rgba(14, 137, 143, 0.2);
+  --shadow-blue-lg: 0 20px 40px rgba(14, 137, 143, 0.3);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Glass effect */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: 20px;
+}
+
+/* ---------- CSS Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--gray-800);
+  background-color: var(--white);
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: var(--font-family);
+}
+
+input, textarea {
+  font-family: var(--font-family);
+  outline: none;
+  border: none;
+}
+
+/* ---------- Container ---------- */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* ---------- Section ---------- */
+.section {
+  padding: var(--space-24) 0;
+}
+
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--primary-50);
+  color: var(--primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+  letter-spacing: 0.02em;
+}
+
+.section-label svg {
+  width: 16px;
+  height: 16px;
+}
+
+.section-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1.2;
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--gray-500);
+  line-height: 1.7;
+  max-width: 600px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-8);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%,
+    transparent 100%
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.btn:hover::after {
+  opacity: 1;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+  box-shadow: var(--shadow-blue);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-blue-lg);
+}
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--gray-800);
+  border: 2px solid var(--gray-200);
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-10);
+  font-size: var(--font-size-lg);
+}
+
+.btn-sm {
+  padding: var(--space-2) var(--space-6);
+  font-size: var(--font-size-sm);
+}
+
+/* ---------- Glass Card ---------- */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---------- Card ---------- */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-base);
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ---------- Animations ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delay {
+  animation: float 6s ease-in-out infinite 2s;
+}
+
+.animate-float-delay-2 {
+  animation: float 6s ease-in-out infinite 4s;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+  .section-title {
+    font-size: var(--font-size-3xl);
+  }
+  .section {
+    padding: var(--space-16) 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--space-4);
+  }
+  .section-title {
+    font-size: var(--font-size-2xl);
+  }
+  .section-subtitle {
+    font-size: var(--font-size-base);
+  }
+  .section {
+    padding: var(--space-12) 0;
+  }
+}
+
+/*!**************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/AppointmentModal.module.css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************************/
+/* ─── Overlay ─── */
+.AppointmentModal_overlay__z5CQA {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* ─── Modal ─── */
+.AppointmentModal_modal__KJrrN {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.AppointmentModal_closeBtn__Jq8yP {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.AppointmentModal_closeBtn__Jq8yP:hover {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+/* ─── Success ─── */
+.AppointmentModal_successOverlay__XZ1Wi {
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.AppointmentModal_successIcon__v_t4q {
+  color: var(--success);
+  margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_successOverlay__XZ1Wi h3 {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.AppointmentModal_successOverlay__XZ1Wi p {
+  font-size: var(--font-size-base);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* ─── Stepper ─── */
+.AppointmentModal_stepper__XhwRH {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: var(--space-6) var(--space-8) var(--space-4);
+  border-bottom: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+
+.AppointmentModal_stepItem__MkHr0 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1;
+  position: relative;
+}
+
+.AppointmentModal_stepCircle__8atHH {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.AppointmentModal_stepLabel__tT_Fn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  max-width: 100px;
+  line-height: 1.3;
+  transition: color 0.3s ease;
+}
+
+.AppointmentModal_stepLine__CDlTA {
+  flex: 1 1;
+  height: 2px;
+  background: var(--gray-200);
+  margin: 0 var(--space-2);
+  border-radius: 1px;
+  transition: background 0.3s ease;
+}
+
+.AppointmentModal_stepLineDone__OYA62 {
+  background: var(--primary);
+}
+
+.AppointmentModal_stepActive__jfLkh .AppointmentModal_stepCircle__8atHH {
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+.AppointmentModal_stepActive__jfLkh .AppointmentModal_stepLabel__tT_Fn {
+  color: var(--gray-700);
+}
+
+.AppointmentModal_stepCurrent__DyVem .AppointmentModal_stepCircle__8atHH {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 0 0 4px var(--primary-100);
+}
+
+.AppointmentModal_stepCurrent__DyVem .AppointmentModal_stepLabel__tT_Fn {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ─── Step Body (scrollable) ─── */
+.AppointmentModal_stepBody__VSpBd {
+  flex: 1 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8);
+}
+
+.AppointmentModal_stepTitle__e8C78 {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-4);
+}
+
+/* ─── Form Layout ─── */
+.AppointmentModal_formRow__1eprd {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-4);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* ─── Field ─── */
+.AppointmentModal_field__Fw8PL {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  position: relative;
+}
+
+.AppointmentModal_fieldFocused__n3124 .AppointmentModal_inputWrap__tv3Sa {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.AppointmentModal_fieldFocused__n3124 .AppointmentModal_label__dWlX8 {
+  color: var(--primary);
+}
+
+.AppointmentModal_fieldError__JKRe8 .AppointmentModal_inputWrap__tv3Sa {
+  border-color: var(--error) !important;
+}
+
+.AppointmentModal_fieldError__JKRe8 .AppointmentModal_label__dWlX8 {
+  color: var(--error) !important;
+}
+
+.AppointmentModal_label__dWlX8 {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--gray-600);
+  transition: color var(--transition-fast);
+}
+
+.AppointmentModal_inputWrap__tv3Sa {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: var(--white);
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_fieldIconWrap__oLWRP {
+  color: var(--gray-400);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.AppointmentModal_textareaIcon__4NSOv {
+  align-self: flex-start;
+  margin-top: var(--space-3);
+}
+
+.AppointmentModal_input__soHVO {
+  flex: 1 1;
+  padding: 6px var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  background: transparent;
+}
+
+.AppointmentModal_input__soHVO::placeholder {
+  color: var(--gray-400);
+  font-size: 11px;
+}
+
+.AppointmentModal_textarea__iuw_a {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.AppointmentModal_errorMsg__ZXDyA {
+  font-size: var(--font-size-xs);
+  color: var(--error);
+  font-weight: 500;
+}
+
+/* ─── Custom Select ─── */
+.AppointmentModal_customSelect__qrvpO {
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.AppointmentModal_customSelect__qrvpO:hover {
+  border-color: var(--gray-300);
+}
+
+.AppointmentModal_selectValue__rYtB1 {
+  flex: 1 1;
+  padding: 6px var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.AppointmentModal_placeholder__a4r07 {
+  color: var(--gray-400);
+}
+
+.AppointmentModal_selectChevron__VDXW1 {
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.AppointmentModal_selectChevronOpen__zguPC {
+  transform: rotate(180deg);
+}
+
+/* ─── Dropdown Panel ─── */
+.AppointmentModal_dropdownPanel__138J_ {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  padding: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+  transform-origin: bottom center;
+}
+
+/* ─── Dropdown Option ─── */
+.AppointmentModal_dropdownOption__yKSGy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--gray-700);
+  cursor: pointer;
+  background: none;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_dropdownOption__yKSGy:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_dropdownOptionSelected__ootID {
+  background: var(--primary-50);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.AppointmentModal_optionIcon__CIbQM {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_dropdownOption__yKSGy:hover .AppointmentModal_optionIcon__CIbQM,
+.AppointmentModal_dropdownOptionSelected__ootID .AppointmentModal_optionIcon__CIbQM {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.AppointmentModal_optionLabel__zgrxT {
+  flex: 1 1;
+}
+
+.AppointmentModal_optionDesc__hgOwG {
+  display: block;
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 1px;
+}
+
+.AppointmentModal_dropdownOptionSelected__ootID .AppointmentModal_optionDesc__hgOwG {
+  color: var(--primary-300);
+}
+
+.AppointmentModal_optionCheck__ZSqRk {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* ─── Calendar ─── */
+.AppointmentModal_calendarInner__zbdYQ {
+  padding: var(--space-1);
+}
+
+.AppointmentModal_calNav__Xz9EB {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.AppointmentModal_calNavBtn__MMVPL {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_calNavBtn__MMVPL:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_calNavTitle__2FRrQ {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.AppointmentModal_calDayNames__zN9o4 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 2px;
+}
+
+.AppointmentModal_calDayName___UnVE {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  padding: 4px 0;
+}
+
+.AppointmentModal_calGrid__HeCOh {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-gap: 2px;
+  gap: 2px;
+}
+
+.AppointmentModal_calDay__eLBQW {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+  background: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.AppointmentModal_calDay__eLBQW:hover:not(:disabled) {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_calDayOther__H3pnW {
+  color: var(--gray-300);
+}
+
+.AppointmentModal_calDayDisabled__TV1WK {
+  color: var(--gray-200) !important;
+  cursor: not-allowed;
+}
+
+.AppointmentModal_calDayToday__gIpaE {
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.AppointmentModal_calDaySelected__X3zJW {
+  background: var(--primary) !important;
+  color: var(--white) !important;
+  border-color: var(--primary) !important;
+  font-weight: 700;
+}
+
+/* ─── Time ─── */
+
+.AppointmentModal_timeGroup__7MCKA {
+  padding: var(--space-2);
+}
+
+.AppointmentModal_timeGroup__7MCKA+.AppointmentModal_timeGroup__7MCKA {
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_timeGroupLabel__DNa_E {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-400);
+  margin-bottom: var(--space-2);
+  padding-left: 2px;
+}
+
+.AppointmentModal_timeGrid__Lum9X {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: var(--space-2);
+  gap: var(--space-2);
+}
+
+.AppointmentModal_timeChip__wfNF8 {
+  padding: 6px 4px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-600);
+  background: var(--bg-light);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.AppointmentModal_timeChip__wfNF8:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+  border-color: var(--primary-100);
+}
+
+.AppointmentModal_timeChipSelected__3kxfT {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.AppointmentModal_timeChipSelected__3kxfT:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+/* Custom time */
+.AppointmentModal_customTimeSection__tA6op {
+  padding: var(--space-2);
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_customTimeRow__7foVV {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.AppointmentModal_customTimeInput__2Dihw {
+  flex: 1 1;
+  padding: 6px var(--space-3);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  background: var(--bg-light);
+  transition: border-color var(--transition-fast);
+}
+
+.AppointmentModal_customTimeInput__2Dihw:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.AppointmentModal_customTimeConfirm__uL9TS {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px var(--space-3);
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.AppointmentModal_customTimeConfirm__uL9TS:hover {
+  background: var(--primary-dark);
+}
+
+/* ─── Footer ─── */
+.AppointmentModal_footer__1qAHF {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-8);
+  border-top: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+
+.AppointmentModal_footerSpacer__tXVsk {
+  flex: 1 1;
+}
+
+.AppointmentModal_footerBtn__A8Dqp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.AppointmentModal_confirmBtn__KRn8L {
+  padding: var(--space-3) var(--space-6) !important;
+}
+
+.AppointmentModal_spinner__PMmdd {
+  animation: AppointmentModal_spin__70hc_ 1s linear infinite;
+}
+
+@keyframes AppointmentModal_spin__70hc_ {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Step 3 Summary ─── */
+.AppointmentModal_confirmSubtext__CygaR {
+  font-size: var(--font-size-sm);
+  color: var(--gray-400);
+  margin-bottom: var(--space-4);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.AppointmentModal_summaryCard__Ohy5_ {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.AppointmentModal_summarySection__y97Nf {
+  padding: var(--space-4);
+}
+
+.AppointmentModal_summarySection__y97Nf+.AppointmentModal_summarySection__y97Nf {
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_summarySectionHeader__VDD6s {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.AppointmentModal_summarySectionHeader__VDD6s span {
+  flex: 1 1;
+}
+
+.AppointmentModal_editBtn__WJ_I0 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  background: var(--primary-50);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_editBtn__WJ_I0:hover {
+  background: var(--primary-100);
+}
+
+.AppointmentModal_summaryGrid__zADZf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-4);
+}
+
+.AppointmentModal_summaryItem__H4gpY {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.AppointmentModal_summaryItemFull__uuDv9 {
+  grid-column: 1 / -1;
+}
+
+.AppointmentModal_summaryLabel__dr8WO {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.AppointmentModal_summaryValue__DgQaz {
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .AppointmentModal_modal__KJrrN {
+    max-height: 95vh;
+  }
+
+  .AppointmentModal_stepper__XhwRH {
+    padding: var(--space-4);
+    gap: 0;
+  }
+
+  .AppointmentModal_stepLabel__tT_Fn {
+    display: none;
+  }
+
+  .AppointmentModal_stepBody__VSpBd {
+    padding: var(--space-4);
+  }
+
+  .AppointmentModal_footer__1qAHF {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .AppointmentModal_formRow__1eprd {
+    grid-template-columns: 1fr;
+  }
+
+  .AppointmentModal_summaryGrid__zADZf {
+    grid-template-columns: 1fr;
+  }
+
+  .AppointmentModal_timeGrid__Lum9X {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

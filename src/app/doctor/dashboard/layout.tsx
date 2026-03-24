@@ -58,7 +58,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-nb.on svg{color:var(--dept-accent,#059669)}
         .doc-sb-foot{padding:14px 16px 18px;border-top:1px solid #ecfdf5}
         .doc-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;margin-bottom:10px}
-        .doc-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .doc-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
         .doc-uname{font-size:12px;font-weight:600;color:#1e293b}
         .doc-urole{font-size:10px;font-weight:500;color:#059669}
         .doc-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
@@ -73,7 +73,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-notif{width:36px;height:36px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
         .doc-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#10b981;border:1.5px solid #fff}
         .doc-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;cursor:pointer}
-        .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .doc-profile-name{font-size:12px;font-weight:600;color:#1e293b}
         .doc-profile-role{font-size:10px;color:#059669}
         .doc-body{display:grid;grid-template-columns:1fr;flex:1}
@@ -122,7 +122,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <div className="doc-user">
               {doctor?.profileImage
                 ? <img src={doctor.profileImage} alt={doctorName} style={{ width: 32, height: 32, borderRadius: 9, objectFit: "cover" }} />
-                : <div className="doc-av" style={{ background: `linear-gradient(135deg,${accent},#3b82f6)` }}>{initials(doctorName)}</div>
+                : <div className="doc-av" style={{ background: `linear-gradient(135deg,${accent},#0E898F)` }}>{initials(doctorName)}</div>
               }
               <div><div className="doc-uname">{doctorName}</div><div className="doc-urole" style={{ color: accent }}>Doctor · {deptName}</div></div>
             </div>
@@ -142,7 +142,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               <div className="doc-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative", cursor: "pointer" }}>
                 {doctor?.profileImage
                   ? <img src={doctor.profileImage} alt={doctorName} style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />
-                  : <div className="doc-profile-av" style={{ background: `linear-gradient(135deg,${accent},#3b82f6)` }}>{initials(doctorName)}</div>
+                  : <div className="doc-profile-av" style={{ background: `linear-gradient(135deg,${accent},#0E898F)` }}>{initials(doctorName)}</div>
                 }
                 <div><div className="doc-profile-name">{doctorName.split(" ")[0]}</div><div className="doc-profile-role" style={{ color: accent }}>{deptName}</div></div>
                 <ChevronDown size={14} color="#64748b" style={{ marginLeft: 6 }} />

@@ -216,7 +216,7 @@ function UploadField({ label, value, fieldKey, uploadType, accept, onChange, hin
             <img src={value} alt={label} className="dp-upload-img" />
           ) : (
             <div className="dp-upload-doc-prev">
-              <FileText size={30} color="#3b82f6" />
+              <FileText size={30} color="#0E898F" />
               <span>Document uploaded</span>
               <a href={value} target="_blank" rel="noreferrer" className="dp-upload-view-link">View</a>
             </div>
@@ -575,7 +575,7 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     @keyframes dpIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
     .dp-toast-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
     .dp-toast-error{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-    .dp-toast-info{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+    .dp-toast-info{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
     .dp-toast-close{background:none;border:none;cursor:pointer;color:inherit;opacity:.7;padding:0;margin-left:4px}
     .dp-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
     .dp-confirm{background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -585,17 +585,17 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-search-input::placeholder{color:#94a3b8}
     .dp-toolbar-right{display:flex;align-items:center;gap:10px}
     .dp-filter-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:500;cursor:pointer}
-    .dp-filter-btn.active{background:#eff6ff;border-color:#3b82f6;color:#3b82f6}
+    .dp-filter-btn.active{background:#E6F4F4;border-color:#0E898F;color:#0E898F}
     .dp-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
     .dp-filter-select{padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;color:#334155;background:#fff;cursor:pointer}
-    .dp-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
-    .dp-btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+    .dp-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
+    .dp-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
     .dp-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
     .dp-btn-ghost{padding:10px 20px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
     .dp-btn-ghost:hover{border-color:#cbd5e1;background:#f8fafc}
     .dp-btn-danger{padding:10px 20px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
     .dp-btn-sm{padding:5px 10px;font-size:11px;border-radius:7px;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:500;white-space:nowrap;transition:all .12s}
-    .dp-btn-sm.blue{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}
+    .dp-btn-sm.blue{background:#E6F4F4;border-color:#B3E0E0;color:#0A6B70}
     .dp-btn-sm.green{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
     .dp-btn-sm.amber{background:#fffbeb;border-color:#fde68a;color:#b45309}
     .dp-btn-sm.gray{background:#f8fafc;border-color:#cbd5e1;color:#475569}
@@ -609,17 +609,17 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-tbl tr:last-child td{border-bottom:none}
     .dp-tbl tbody tr:hover td{background:#fafbfc}
     .dp-doc-info{display:flex;align-items:center;gap:10px}
-    .dp-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#e0f2fe,#bfdbfe);display:flex;align-items:center;justify-content:center;color:#2563eb;font-weight:700;font-size:14px;overflow:hidden;flex-shrink:0}
+    .dp-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#e0f2fe,#B3E0E0);display:flex;align-items:center;justify-content:center;color:#0A6B70;font-weight:700;font-size:14px;overflow:hidden;flex-shrink:0}
     .dp-avatar img{width:100%;height:100%;object-fit:cover}
     .dp-doc-name{font-weight:600;color:#1e293b;font-size:13px}
     .dp-doc-meta{font-size:11px;color:#94a3b8;margin-top:1px}
     .dp-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700}
     .dp-badge.green{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
     .dp-badge.red{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-    .dp-badge.blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+    .dp-badge.blue{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
     .dp-badge.gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
     .dp-icon-btn{width:29px;height:29px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
-    .dp-edit{background:#eff6ff;color:#3b82f6}.dp-edit:hover{background:#dbeafe}
+    .dp-edit{background:#E6F4F4;color:#0E898F}.dp-edit:hover{background:#B3E0E0}
     .dp-del{background:#fff5f5;color:#ef4444}.dp-del:hover{background:#fee2e2}
     .dp-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
     .dp-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:#94a3b8;font-size:14px}
@@ -630,9 +630,9 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-page-btn{width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
     .dp-page-btn:hover:not(:disabled){background:#f8fafc}
     .dp-page-btn:disabled{opacity:.4;cursor:not-allowed}
-    .dp-page-btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .dp-page-btn.active{background:#0E898F;border-color:#0E898F;color:#fff}
     .dp-toggle{width:44px;height:24px;border-radius:100px;background:#e2e8f0;border:none;cursor:pointer;position:relative;transition:background .2s}
-    .dp-toggle.on{background:#3b82f6}.dp-toggle.disabled{opacity:.5;cursor:not-allowed}
+    .dp-toggle.on{background:#0E898F}.dp-toggle.disabled{opacity:.5;cursor:not-allowed}
     .dp-toggle-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
     .dp-toggle.on .dp-toggle-thumb{transform:translateX(20px)}
     .dp-creds-sent{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#16a34a;font-weight:600;background:#f0fdf4;padding:4px 10px;border-radius:100px;border:1px solid #bbf7d0}
@@ -646,7 +646,7 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-section{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}
     .dp-section-hd{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#1e293b;padding:13px 18px;background:#f8fafc;border-bottom:1px solid #f1f5f9}
     .dp-sec-ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .dp-sec-ic.blue{background:#eff6ff;color:#3b82f6}.dp-sec-ic.purple{background:#faf5ff;color:#7c3aed}
+    .dp-sec-ic.blue{background:#E6F4F4;color:#0E898F}.dp-sec-ic.purple{background:#faf5ff;color:#7c3aed}
     .dp-sec-ic.green{background:#f0fdf4;color:#16a34a}.dp-sec-ic.orange{background:#fff7ed;color:#ea580c}
     .dp-sec-ic.red{background:#fff5f5;color:#ef4444}
     .dp-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
@@ -655,12 +655,12 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
     .dp-req{color:#ef4444}
     .dp-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%;font-family:inherit}
-    .dp-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
+    .dp-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
     .dp-input::placeholder{color:#94a3b8}
     .dp-input.err{border-color:#fca5a5}
     .dp-textarea{resize:vertical;min-height:68px}
     .dp-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;width:100%;cursor:pointer;font-family:inherit}
-    .dp-select:focus{border-color:#93c5fd}
+    .dp-select:focus{border-color:#80CCCC}
     .dp-error{font-size:11px;color:#ef4444;margin-top:2px}
     .dp-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0}
     .dp-toggle-lbl{font-size:13px;color:#334155;font-weight:600}
@@ -668,7 +668,7 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-uploads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;padding:18px}
     .dp-upload-field{display:flex;flex-direction:column;gap:6px}
     .dp-upload-zone{display:flex;align-items:center;justify-content:center;border:1.5px dashed #cbd5e1;border-radius:10px;cursor:pointer;background:#fafbfc;transition:all .15s;min-height:120px}
-    .dp-upload-zone:hover{border-color:#93c5fd;background:#eff6ff}
+    .dp-upload-zone:hover{border-color:#80CCCC;background:#E6F4F4}
     .dp-upload-zone.loading{opacity:.7;cursor:not-allowed}
     .dp-upload-inner{display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px;text-align:center}
     .dp-upload-txt{font-size:12px;color:#64748b;font-weight:500}
@@ -676,7 +676,7 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-upload-preview{position:relative;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#f8fafc}
     .dp-upload-img{width:100%;height:130px;object-fit:cover;display:block}
     .dp-upload-doc-prev{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#64748b;font-size:12px}
-    .dp-upload-view-link{font-size:11px;color:#3b82f6;text-decoration:none;font-weight:600}
+    .dp-upload-view-link{font-size:11px;color:#0E898F;text-decoration:none;font-weight:600}
     .dp-upload-remove{position:absolute;top:7px;right:7px;background:rgba(239,68,68,.9);border:none;border-radius:6px;color:#fff;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center}
     @keyframes dpSpin{to{transform:rotate(360deg)}}
     .dp-spin{animation:dpSpin .7s linear infinite}

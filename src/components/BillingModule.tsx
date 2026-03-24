@@ -21,7 +21,7 @@ interface LineItem {
   referenceId?: string;
 }
 const ITEM_TYPES = [
-  { value: "CONSULTATION", label: "Consultation", icon: Stethoscope, color: "#3b82f6" },
+  { value: "CONSULTATION", label: "Consultation", icon: Stethoscope, color: "#0E898F" },
   { value: "PROCEDURE",    label: "Procedure",    icon: Scissors,   color: "#8b5cf6" },
   { value: "LAB_TEST",     label: "Lab Test",     icon: FlaskConical,color: "#10b981" },
   { value: "RADIOLOGY",    label: "Radiology",    icon: Scan,       color: "#f59e0b" },
@@ -199,7 +199,7 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
       {/* Stats */}
       <div className="bm-stats-row">
         {[
-          { label:"Today's Collection", val:fmtCur(stats.todayRevenue),  icon:<IndianRupee size={18}/>, bg:"#eff6ff", ic:"#3b82f6" },
+          { label:"Today's Collection", val:fmtCur(stats.todayRevenue),  icon:<IndianRupee size={18}/>, bg:"#E6F4F4", ic:"#0E898F" },
           { label:"Month Revenue",       val:fmtCur(stats.monthRevenue),  icon:<TrendingUpIcon/>,        bg:"#f0fdf4", ic:"#10b981" },
           { label:"Pending Bills",       val:stats.pendingCount,          icon:<Clock size={18}/>,       bg:"#fff7ed", ic:"#f59e0b" },
           { label:"Total Bills",         val:pagination.total,            icon:<Receipt size={18}/>,     bg:"#fdf4ff", ic:"#a855f7" },
@@ -261,7 +261,7 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
                   const sc = STATUS_COLORS[b.status] || STATUS_COLORS.PENDING;
                   const isSelected = selectedBills.includes(b.id);
                   return (
-                    <tr key={b.id} className="bm-tbl-row" onClick={()=>onOpen(b.id)} style={isSelected?{background:"#eff6ff"}:{}}>
+                    <tr key={b.id} className="bm-tbl-row" onClick={()=>onOpen(b.id)} style={isSelected?{background:"#E6F4F4"}:{}}>
                       <td onClick={e=>e.stopPropagation()}>
                         <input 
                           type="checkbox" 
@@ -287,7 +287,7 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
                           <button className="bm-action-btn" onClick={()=>onOpen(b.id)} title="View Bill"><Eye size={13}/></button>
                           {b.status !== "PAID" && b.status !== "CANCELLED" && (
                             <>
-                              <button className="bm-action-btn" onClick={()=>onOpen(b.id)} title="Edit Bill" style={{color:"#3b82f6"}}><Edit size={13}/></button>
+                              <button className="bm-action-btn" onClick={()=>onOpen(b.id)} title="Edit Bill" style={{color:"#0E898F"}}><Edit size={13}/></button>
                               <button className="bm-action-btn" onClick={()=>onOpen(b.id)} title="Record Payment" style={{color:"#10b981"}}><CreditCard size={13}/></button>
                             </>
                           )}
@@ -466,7 +466,7 @@ function NewBill({ hospitalInfo, onBack, onCreated }:{ hospitalInfo:any; onBack:
         <div>
           {/* Patient Search */}
           <div className="bm-section-card">
-            <div className="bm-section-head"><User size={15} color="#3b82f6"/><span>Patient</span></div>
+            <div className="bm-section-head"><User size={15} color="#0E898F"/><span>Patient</span></div>
             <div style={{position:"relative"}}>
               <div className="bm-search-wrap">
                 <Search size={14} color="#94a3b8"/>
@@ -507,7 +507,7 @@ function NewBill({ hospitalInfo, onBack, onCreated }:{ hospitalInfo:any; onBack:
 
           {/* Add Charges */}
           <div className="bm-section-card" style={{marginTop:16}}>
-            <div className="bm-section-head"><Plus size={15} color="#3b82f6"/><span>Add Charges</span></div>
+            <div className="bm-section-head"><Plus size={15} color="#0E898F"/><span>Add Charges</span></div>
             <div className="bm-add-tabs">
               {(["catalog","appointment","manual"] as const).map(m=>(
                 <button key={m} className={`bm-add-tab${addMode===m?" active":""}`} onClick={()=>setAddMode(m)}>
@@ -541,7 +541,7 @@ function NewBill({ hospitalInfo, onBack, onCreated }:{ hospitalInfo:any; onBack:
                             <div style={{fontSize:12,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
                             <div style={{fontSize:10,color:"#94a3b8"}}>{ti.label}</div>
                           </div>
-                          <div style={{fontSize:12,fontWeight:700,color:"#3b82f6",whiteSpace:"nowrap"}}>{fmtCur(item.amount)}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"#0E898F",whiteSpace:"nowrap"}}>{fmtCur(item.amount)}</div>
                           <div className="bm-cat-add"><Plus size={10}/></div>
                         </div>
                       );
@@ -619,7 +619,7 @@ function NewBill({ hospitalInfo, onBack, onCreated }:{ hospitalInfo:any; onBack:
           {/* Line Items Table */}
           {lineItems.length>0 && (
             <div className="bm-section-card" style={{marginTop:16}}>
-              <div className="bm-section-head"><Receipt size={15} color="#3b82f6"/><span>Bill Items ({lineItems.length})</span></div>
+              <div className="bm-section-head"><Receipt size={15} color="#0E898F"/><span>Bill Items ({lineItems.length})</span></div>
               <table className="bm-tbl" style={{marginTop:8}}>
                 <thead>
                   <tr><th>Description</th><th>Type</th><th>Qty</th><th>Rate</th><th>Amount</th><th></th></tr>
@@ -650,7 +650,7 @@ function NewBill({ hospitalInfo, onBack, onCreated }:{ hospitalInfo:any; onBack:
         {/* RIGHT: Bill Summary */}
         <div>
           <div className="bm-summary-card">
-            <div className="bm-section-head"><FileText size={15} color="#3b82f6"/><span>Bill Summary</span></div>
+            <div className="bm-section-head"><FileText size={15} color="#0E898F"/><span>Bill Summary</span></div>
 
             {/* Discount */}
             <div className="bm-sum-row-lbl">Discount</div>
@@ -815,9 +815,9 @@ function BillDetail({ bill, loading, hospitalInfo, onBack, onRefresh }:any) {
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:13px;color:#334155;background:#fff;padding:0}
 .print-wrap{max-width:800px;margin:0 auto;padding:32px 40px 40px;background:#fff}
-.hospital-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #3b82f6;padding-bottom:18px;margin-bottom:24px}
+.hospital-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0E898F;padding-bottom:18px;margin-bottom:24px}
 .h-logo-img{width:70px;height:70px;object-fit:contain}
-.h-logo{width:70px;height:70px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:900;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
+.h-logo{width:70px;height:70px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:900;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
 .h-name{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-0.02em}
 .h-sub{font-size:12px;color:#64748b;margin-top:3px;line-height:1.5}
 .bill-info-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;background:#f8fafc;border-radius:12px;padding:16px 18px;border:1px solid #e2e8f0}
@@ -831,7 +831,7 @@ body{font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:13px;color:#33415
 .items-table tbody tr:hover{background:#f8fafc}
 .totals-section{width:300px;margin-left:auto;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
 .total-row{display:flex;justify-content:space-between;padding:9px 16px;font-size:13px;border-bottom:1px solid #f1f5f9;color:#475569}
-.grand-row{display:flex;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:15px;font-weight:800}
+.grand-row{display:flex;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#0E898F,#0A6B70);color:#fff;font-size:15px;font-weight:800}
 .payment-section{margin-top:24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
 .pay-head{background:#f8fafc;padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b}
 .pay-row{display:flex;gap:14px;padding:10px 16px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#475569}
@@ -842,7 +842,7 @@ body{font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:13px;color:#33415
 .sig-line{border-top:1.5px solid #334155;margin-top:40px;padding-top:8px;font-size:11px;color:#64748b;font-weight:500}
 .action-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e2e8f0;padding:16px 24px;display:flex;justify-content:center;gap:12px;box-shadow:0 -4px 12px rgba(0,0,0,0.08);z-index:1000}
 .action-btn{padding:10px 24px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;font-family:'Inter',sans-serif}
-.btn-download{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+.btn-download{background:linear-gradient(135deg,#0E898F,#0A6B70);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
 .btn-download:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(59,130,246,0.4)}
 .btn-print{background:#fff;color:#475569;border:1.5px solid #e2e8f0}
 .btn-print:hover{background:#f8fafc;border-color:#cbd5e1}
@@ -1031,7 +1031,7 @@ ${printContent}
 
           {/* Items */}
           <div className="bm-section-card" style={{marginTop:14}}>
-            <div className="bm-section-head"><Receipt size={15} color="#3b82f6"/><span>Charges</span></div>
+            <div className="bm-section-head"><Receipt size={15} color="#0E898F"/><span>Charges</span></div>
             <table className="bm-tbl" style={{marginTop:8}}>
               <thead>
                 <tr><th>#</th><th>Description</th><th>Type</th><th>Qty</th><th>Rate</th><th>Amount</th>{editMode && <th></th>}</tr>
@@ -1085,7 +1085,7 @@ ${printContent}
                   {bill.payments.map((p:any)=>(
                     <tr key={p.id}>
                       <td style={{fontSize:12,color:"#64748b"}}>{fmtDateTime(p.paidAt)}</td>
-                      <td><span style={{fontSize:11,fontWeight:600,color:"#3b82f6",background:"#eff6ff",padding:"2px 8px",borderRadius:4}}>{p.method}</span></td>
+                      <td><span style={{fontSize:11,fontWeight:600,color:"#0E898F",background:"#E6F4F4",padding:"2px 8px",borderRadius:4}}>{p.method}</span></td>
                       <td style={{fontSize:11,color:"#94a3b8"}}>{p.transactionId||"—"}</td>
                       <td style={{fontWeight:700,color:"#10b981"}}>{fmtCur(p.amount)}</td>
                       <td><span style={{fontSize:10,fontWeight:700,color:"#166534",background:"#f0fdf4",padding:"2px 7px",borderRadius:4}}>{p.status}</span></td>
@@ -1100,7 +1100,7 @@ ${printContent}
         {/* Summary Sidebar */}
         <div>
           <div className="bm-summary-card">
-            <div className="bm-section-head"><IndianRupee size={15} color="#3b82f6"/><span>Amount Summary</span></div>
+            <div className="bm-section-head"><IndianRupee size={15} color="#0E898F"/><span>Amount Summary</span></div>
             <div className="bm-totals">
               <div className="bm-total-row"><span>Subtotal</span><span>{fmtCur(calculatedSubtotal)}</span></div>
               <div className="bm-total-row" style={{color:"#10b981"}}>
@@ -1242,7 +1242,7 @@ function PrintBill({ bill, hospitalInfo }:{ bill:any; hospitalInfo:any }) {
           </div>
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:20,fontWeight:900,color:"#3b82f6",letterSpacing:"-0.02em"}}>TAX INVOICE</div>
+          <div style={{fontSize:20,fontWeight:900,color:"#0E898F",letterSpacing:"-0.02em"}}>TAX INVOICE</div>
           <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginTop:4,fontFamily:"monospace"}}>{bill.billNo}</div>
           <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{fmtDate(bill.createdAt)}</div>
           <div style={{marginTop:8,display:"inline-flex",padding:"4px 14px",borderRadius:100,background:sc.bg,border:`1.5px solid ${sc.color}`}}>
@@ -1320,7 +1320,7 @@ function PrintBill({ bill, hospitalInfo }:{ bill:any; hospitalInfo:any }) {
           {bill.payments.map((p:any)=>(
             <div key={p.id} className="pay-row">
               <span style={{color:"#94a3b8",minWidth:130}}>{fmtDateTime(p.paidAt)}</span>
-              <span style={{fontWeight:600,color:"#3b82f6",minWidth:80}}>{p.method}</span>
+              <span style={{fontWeight:600,color:"#0E898F",minWidth:80}}>{p.method}</span>
               {p.transactionId && <span style={{color:"#64748b",flex:1}}>Ref: {p.transactionId}</span>}
               <span style={{fontWeight:700,color:"#10b981",marginLeft:"auto"}}>₹{Number(p.amount).toLocaleString("en-IN",{minimumFractionDigits:2})}</span>
             </div>
@@ -1379,15 +1379,15 @@ const BM_CSS = `
 .bm-stat-val{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.01em}
 .bm-filters{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .bm-search-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 13px;transition:border-color .2s}
-.bm-search-wrap:focus-within{border-color:#93c5fd}
+.bm-search-wrap:focus-within{border-color:#80CCCC}
 .bm-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%;font-family:'Inter',sans-serif}
 .bm-search::placeholder{color:#94a3b8}
 .bm-clear-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;color:#94a3b8;padding:0}
 .bm-clear-btn:hover{color:#475569}
 .bm-select{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;font-size:13px;color:#475569;font-family:'Inter',sans-serif;cursor:pointer;outline:none}
-.bm-select:focus{border-color:#93c5fd}
+.bm-select:focus{border-color:#80CCCC}
 .bm-icon-btn{width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all .15s;flex-shrink:0}
-.bm-icon-btn:hover{background:#eff6ff;color:#3b82f6;border-color:#bfdbfe}
+.bm-icon-btn:hover{background:#E6F4F4;color:#0E898F;border-color:#B3E0E0}
 .bm-table-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow:hidden}
 .bm-tbl-wrap{overflow-x:auto}
 .bm-tbl{width:100%;border-collapse:collapse}
@@ -1396,7 +1396,7 @@ const BM_CSS = `
 .bm-tbl tbody tr:last-child td{border-bottom:none}
 .bm-tbl-row{cursor:pointer;transition:background .15s}
 .bm-tbl-row:hover td{background:#f8fafc}
-.bm-bill-no{font-weight:700;color:#3b82f6;font-size:13px;font-family:monospace}
+.bm-bill-no{font-weight:700;color:#0E898F;font-size:13px;font-family:monospace}
 .bm-pt-name{font-weight:600;color:#1e293b;font-size:13px}
 .bm-pt-id{font-size:11px;color:#94a3b8}
 .bm-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
@@ -1404,17 +1404,17 @@ const BM_CSS = `
 .bm-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 0}
 .bm-pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #f1f5f9}
 .bm-pg-btn{width:28px;height:28px;border-radius:7px;border:1px solid #e2e8f0;background:#fff;font-size:12px;cursor:pointer;color:#64748b}
-.bm-pg-btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff;font-weight:700}
+.bm-pg-btn.active{background:#0E898F;border-color:#0E898F;color:#fff;font-weight:700}
 .bm-action-btn{width:28px;height:28px;border-radius:7px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;transition:all .15s}
-.bm-action-btn:hover{background:#eff6ff;color:#3b82f6}
-.bm-btn-primary{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25);white-space:nowrap;font-family:'Inter',sans-serif}
-.bm-btn-primary:hover:not(:disabled){background:#2563eb;transform:translateY(-1px)}
+.bm-action-btn:hover{background:#E6F4F4;color:#0E898F}
+.bm-btn-primary{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:none;background:#0E898F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25);white-space:nowrap;font-family:'Inter',sans-serif}
+.bm-btn-primary:hover:not(:disabled){background:#0A6B70;transform:translateY(-1px)}
 .bm-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .bm-btn-secondary{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Inter',sans-serif}
 .bm-btn-secondary:hover{background:#f8fafc;border-color:#cbd5e1}
 .bm-export-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:100;min-width:180px;padding:4px;overflow:hidden}
 .bm-export-dropdown button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:none;background:none;font-size:13px;font-weight:500;color:#475569;cursor:pointer;border-radius:8px;transition:all .15s;text-align:left;font-family:'Inter',sans-serif}
-.bm-export-dropdown button:hover{background:#f0f9ff;color:#3b82f6}
+.bm-export-dropdown button:hover{background:#f0f9ff;color:#0E898F}
 .bm-back-btn{width:34px;height:34px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all .15s;flex-shrink:0}
 .bm-back-btn:hover{background:#f1f5f9}
 .bm-create-grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
@@ -1433,24 +1433,24 @@ const BM_CSS = `
 .bm-add-tab.active{background:#fff;color:#1e293b;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
 .bm-type-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .bm-type-tab{padding:4px 10px;border-radius:7px;border:1px solid #e2e8f0;background:#f8fafc;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
-.bm-type-tab.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.bm-type-tab.active{background:#0E898F;color:#fff;border-color:#0E898F}
 .bm-catalog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:280px;overflow-y:auto}
 @media(max-width:900px){.bm-catalog-grid{grid-template-columns:1fr}}
 .bm-catalog-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .15s;background:#fff}
-.bm-catalog-item:hover{border-color:#93c5fd;background:#f0f9ff;transform:translateY(-1px)}
+.bm-catalog-item:hover{border-color:#80CCCC;background:#f0f9ff;transform:translateY(-1px)}
 .bm-cat-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bm-cat-add{width:20px;height:20px;border-radius:5px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#3b82f6;flex-shrink:0;opacity:0;transition:opacity .15s}
+.bm-cat-add{width:20px;height:20px;border-radius:5px;background:#E6F4F4;display:flex;align-items:center;justify-content:center;color:#0E898F;flex-shrink:0;opacity:0;transition:opacity .15s}
 .bm-catalog-item:hover .bm-cat-add{opacity:1}
 .bm-appt-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
 .bm-appt-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;transition:all .15s}
 .bm-appt-row.added{background:#f0fdf4;border-color:#bbf7d0}
-.bm-btn-sm{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:1px solid #3b82f6;background:#fff;color:#3b82f6;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;flex-shrink:0;font-family:'Inter',sans-serif}
+.bm-btn-sm{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:1px solid #0E898F;background:#fff;color:#0E898F;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;flex-shrink:0;font-family:'Inter',sans-serif}
 .bm-btn-sm.added{border-color:#10b981;color:#10b981;background:#f0fdf4}
 .bm-btn-sm:disabled{opacity:.5;cursor:default}
 .bm-manual-form{padding:4px 0}
 .bm-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:5px}
 .bm-inp{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif;margin-bottom:10px}
-.bm-inp:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,0.2)}
+.bm-inp:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,0.2)}
 .bm-inp::placeholder{color:#94a3b8}
 .bm-qty-inp{width:54px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:5px 8px;font-size:12px;color:#1e293b;outline:none;text-align:center;font-family:'Inter',sans-serif}
 .bm-del-btn{width:26px;height:26px;border-radius:7px;background:#fff5f5;border:1px solid #fee2e2;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#ef4444;transition:all .15s}
@@ -1458,7 +1458,7 @@ const BM_CSS = `
 .bm-summary-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,0.04);position:sticky;top:22px}
 .bm-sum-row-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px;margin-top:2px}
 .bm-disc-type{flex:1;padding:7px 12px;border:none;background:none;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
-.bm-disc-type.on{background:#3b82f6;color:#fff}
+.bm-disc-type.on{background:#0E898F;color:#fff}
 .bm-totals{border:1px solid #e2e8f0;border-radius:11px;overflow:hidden;margin-top:14px}
 .bm-total-row{display:flex;justify-content:space-between;padding:8px 14px;font-size:13px;color:#475569;border-bottom:1px solid #f1f5f9}
 .bm-total-row:last-child{border-bottom:none}

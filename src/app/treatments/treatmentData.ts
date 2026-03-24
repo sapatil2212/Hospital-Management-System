@@ -8,8 +8,8 @@ export const treatments = [
     label: "PRP/GFC for Hair",
     fullTitle: "PRP/GFC for Hair",
     icon: Sparkles,
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
+    color: "#0E898F",
+    bgColor: "#E6F4F4",
     image: "/images/treatment-dermatology.png",
     heroDesc: "Natural hair regrowth therapy using your own platelet-rich plasma for stronger, healthier hair growth.",
     features: [
@@ -28,8 +28,8 @@ export const treatments = [
     label: "General OPD",
     fullTitle: "Your First Step to Better Health Starts Here",
     icon: Stethoscope,
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
+    color: "#0E898F",
+    bgColor: "#E6F4F4",
     image: "/images/treatment-opd.png",
     heroDesc: "Get quick and reliable consultations for everyday health concerns. Our experienced doctors ensure accurate diagnosis and the right treatment — without long waiting times.",
     features: [

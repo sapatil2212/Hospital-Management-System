@@ -10,7 +10,7 @@ const testimonials = [
     name: "Jessica Thompson",
     role: "Heart Surgery Patient",
     avatar: "JT",
-    color: "#3B82F6",
+    color: "#0E898F",
     rating: 5,
     text: "The care I received at MediCare+ was exceptional. From my initial consultation to post-surgery recovery, every step was handled with professionalism and genuine compassion. Dr. Chen and her team saved my life.",
   },

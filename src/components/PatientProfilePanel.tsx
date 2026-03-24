@@ -14,7 +14,7 @@ const api = async (url: string, method = "GET", body?: any) => {
 };
 
 const STATUS_COLORS: Record<string, { color: string; bg: string; border: string }> = {
-  SCHEDULED: { color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+  SCHEDULED: { color: "#0A6B70", bg: "#E6F4F4", border: "#B3E0E0" },
   CONFIRMED: { color: "#059669", bg: "#f0fdf4", border: "#bbf7d0" },
   COMPLETED: { color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe" },
   CANCELLED: { color: "#dc2626", bg: "#fff5f5", border: "#fecaca" },

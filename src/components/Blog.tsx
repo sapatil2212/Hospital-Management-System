@@ -15,8 +15,8 @@ const posts = [
     title: "The Future of AI in Healthcare Diagnostics",
     excerpt:
       "Discover how artificial intelligence is revolutionizing the way doctors diagnose and treat complex medical conditions.",
-    categoryColor: "#3B82F6",
-    categoryBg: "#EFF6FF",
+    categoryColor: "#0E898F",
+    categoryBg: "#E6F4F4",
   },
   {
     image: "/images/blog-consultation.png",

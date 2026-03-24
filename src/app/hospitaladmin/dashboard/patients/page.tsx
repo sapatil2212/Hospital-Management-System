@@ -177,7 +177,7 @@ export default function PatientsPage() {
 
   const getStatusColor = (status: string) => {
     const colors: any = {
-      SCHEDULED: { bg: "#eff6ff", color: "#3b82f6" },
+      SCHEDULED: { bg: "#E6F4F4", color: "#0E898F" },
       CONFIRMED: { bg: "#f0f9ff", color: "#0ea5e9" },
       COMPLETED: { bg: "#dcfce7", color: "#16a34a" },
       CANCELLED: { bg: "#fee2e2", color: "#dc2626" },
@@ -210,7 +210,7 @@ export default function PatientsPage() {
             </div>
             <button
               onClick={() => loadPatientDetails(selectedPatient.id)}
-              style={{ padding: "8px 16px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: 14 }}
+              style={{ padding: "8px 16px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: 14 }}
             >
               <RefreshCw size={16} /> Refresh
             </button>
@@ -218,7 +218,7 @@ export default function PatientsPage() {
 
           {detailsLoading ? (
             <div style={{ textAlign: "center", padding: 60 }}>
-              <Loader2 size={32} color="#3b82f6" style={{ animation: "spin 1s linear infinite" }} />
+              <Loader2 size={32} color="#0E898F" style={{ animation: "spin 1s linear infinite" }} />
               <p style={{ marginTop: 16, color: "#64748b" }}>Loading patient details...</p>
             </div>
           ) : (
@@ -280,8 +280,8 @@ export default function PatientsPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
                 <div style={{ background: "#fff", borderRadius: 12, padding: 20, border: "1px solid #e2e8f0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <CalendarDays size={24} color="#3b82f6" />
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <CalendarDays size={24} color="#0E898F" />
                     </div>
                     <div>
                       <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Appointments</div>
@@ -341,8 +341,8 @@ export default function PatientsPage() {
                         padding: "16px 24px",
                         border: "none",
                         background: activeTab === tab.id ? "#fff" : "transparent",
-                        borderBottom: activeTab === tab.id ? "2px solid #3b82f6" : "2px solid transparent",
-                        color: activeTab === tab.id ? "#3b82f6" : "#64748b",
+                        borderBottom: activeTab === tab.id ? "2px solid #0E898F" : "2px solid transparent",
+                        color: activeTab === tab.id ? "#0E898F" : "#64748b",
                         fontWeight: 600,
                         fontSize: 14,
                         cursor: "pointer",
@@ -581,7 +581,7 @@ export default function PatientsPage() {
           </div>
           <button
             onClick={() => router.push("/hospitaladmin/appointments")}
-            style={{ padding: "10px 20px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ padding: "10px 20px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
           >
             <Plus size={16} /> Register New Patient
           </button>
@@ -596,7 +596,7 @@ export default function PatientsPage() {
 
           {loading ? (
             <div style={{ textAlign: "center", padding: 60 }}>
-              <Loader2 size={32} color="#3b82f6" style={{ animation: "spin 1s linear infinite" }} />
+              <Loader2 size={32} color="#0E898F" style={{ animation: "spin 1s linear infinite" }} />
               <p style={{ marginTop: 16, color: "#64748b" }}>Loading patients...</p>
             </div>
           ) : patients.length === 0 ? (
@@ -625,7 +625,7 @@ export default function PatientsPage() {
                   <tbody>
                     {patients.map((patient) => (
                       <tr key={patient.id} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                        <td style={{ padding: "18px 20px", fontSize: 13, color: "#3b82f6", fontWeight: 700, fontFamily: "monospace" }}>{patient.patientId}</td>
+                        <td style={{ padding: "18px 20px", fontSize: 13, color: "#0E898F", fontWeight: 700, fontFamily: "monospace" }}>{patient.patientId}</td>
                         <td style={{ padding: "18px 20px", fontSize: 14, color: "#1e293b", fontWeight: 600 }}>{patient.name}</td>
                         <td style={{ padding: "18px 20px", fontSize: 14, color: "#64748b" }}>{patient.phone}</td>
                         <td style={{ padding: "18px 20px", fontSize: 14, color: "#64748b" }}>{patient.email || "—"}</td>
@@ -638,7 +638,7 @@ export default function PatientsPage() {
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                             <button
                               onClick={() => handleViewPatient(patient)}
-                              style={{ padding: "6px 10px", background: "#eff6ff", color: "#3b82f6", border: "none", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600 }}
+                              style={{ padding: "6px 10px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600 }}
                               title="View Details"
                             >
                               <Eye size={14} /> View

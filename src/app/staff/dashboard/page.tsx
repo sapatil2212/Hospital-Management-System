@@ -37,12 +37,12 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; accent: string }> = {
-  NURSE: { bg: "#eff6ff", text: "#1d4ed8", accent: "#3b82f6" },
+  NURSE: { bg: "#E6F4F4", text: "#07595D", accent: "#0E898F" },
   TECHNICIAN: { bg: "#f5f3ff", text: "#6d28d9", accent: "#8b5cf6" },
   PHARMACIST: { bg: "#f0fdf4", text: "#15803d", accent: "#22c55e" },
   RECEPTIONIST: { bg: "#fdf4ff", text: "#7e22ce", accent: "#a855f7" },
   LAB_TECHNICIAN: { bg: "#fefce8", text: "#854d0e", accent: "#eab308" },
-  ACCOUNTANT: { bg: "#eff6ff", text: "#1e40af", accent: "#3b82f6" },
+  ACCOUNTANT: { bg: "#E6F4F4", text: "#1e40af", accent: "#0E898F" },
   ADMIN: { bg: "#fff1f2", text: "#be123c", accent: "#f43f5e" },
   SUPPORT: { bg: "#f8fafc", text: "#475569", accent: "#64748b" },
   OTHER: { bg: "#f8fafc", text: "#475569", accent: "#64748b" },
@@ -343,7 +343,7 @@ export default function StaffDashboard() {
                     {[
                       { label: "Status", value: profile.isActive ? "Active" : "Inactive", icon: <CheckCircle size={18} color={profile.isActive ? "#10b981" : "#ef4444"} />, bg: profile.isActive ? "#f0fdf4" : "#fff5f5", textColor: profile.isActive ? "#15803d" : "#dc2626" },
                       { label: "Role", value: ROLE_LABELS[profile.role] || profile.role, icon: <Shield size={18} color={roleColors.accent} />, bg: roleColors.bg, textColor: roleColors.text },
-                      { label: "Department", value: profile.department?.name || "Not Assigned", icon: <Building2 size={18} color="#3b82f6" />, bg: "#eff6ff", textColor: "#1d4ed8" },
+                      { label: "Department", value: profile.department?.name || "Not Assigned", icon: <Building2 size={18} color="#0E898F" />, bg: "#E6F4F4", textColor: "#07595D" },
                       { label: "Tenure", value: monthsWorked < 1 ? "< 1 month" : `${monthsWorked}mo`, icon: <Calendar size={18} color="#8b5cf6" />, bg: "#f5f3ff", textColor: "#6d28d9" },
                     ].map(s => (
                       <div key={s.label} className="sd-stat-card" style={{ background: s.bg }}>
@@ -387,7 +387,7 @@ export default function StaffDashboard() {
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           {[
                             { label: "Appointments", icon: <CalendarDays size={15} />, onClick: () => setTab("appointments"), color: "#10b981", bg: "#f0fdf4", border: "#bbf7d0" },
-                            { label: "Follow-ups", icon: <Clock size={15} />, onClick: () => setTab("followups"), color: "#3b82f6", bg: "#eff6ff", border: "#bfdbfe" },
+                            { label: "Follow-ups", icon: <Clock size={15} />, onClick: () => setTab("followups"), color: "#0E898F", bg: "#E6F4F4", border: "#B3E0E0" },
                             { label: "Patients", icon: <Users size={15} />, onClick: () => setTab("patients"), color: "#8b5cf6", bg: "#f5f3ff", border: "#ddd6fe" },
                           ].map(a => (
                             <button key={a.label} onClick={a.onClick} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10, background: a.bg, border: `1px solid ${a.border}`, cursor: "pointer", color: a.color, fontSize: 13, fontWeight: 600, fontFamily: "'Inter',sans-serif" }}>
@@ -482,7 +482,7 @@ export default function StaffDashboard() {
                             <div>
                               <button
                                 onClick={() => setSelectedPatientId(p.id)}
-                                style={{ fontSize: 12, color: "#3b82f6", fontWeight: 600, background: "#eff6ff", border: "1px solid #bfdbfe", padding: "5px 10px", borderRadius: 7, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
+                                style={{ fontSize: 12, color: "#0E898F", fontWeight: 600, background: "#E6F4F4", border: "1px solid #B3E0E0", padding: "5px 10px", borderRadius: 7, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
                               >
                                 View Profile
                               </button>

@@ -57,7 +57,7 @@ const ROLE_BADGE: Record<string, string> = {
 };
 
 const AVATAR_GRAD: Record<string, string> = {
-  NURSE: "linear-gradient(135deg,#dbeafe,#bfdbfe)",
+  NURSE: "linear-gradient(135deg,#B3E0E0,#B3E0E0)",
   TECHNICIAN: "linear-gradient(135deg,#ede9fe,#ddd6fe)",
   PHARMACIST: "linear-gradient(135deg,#dcfce7,#bbf7d0)",
   RECEPTIONIST: "linear-gradient(135deg,#fce7f3,#fbcfe8)",
@@ -69,7 +69,7 @@ const AVATAR_GRAD: Record<string, string> = {
 };
 
 const AVATAR_COLOR: Record<string, string> = {
-  NURSE: "#1d4ed8", TECHNICIAN: "#6d28d9", PHARMACIST: "#15803d",
+  NURSE: "#07595D", TECHNICIAN: "#6d28d9", PHARMACIST: "#15803d",
   RECEPTIONIST: "#be185d", LAB_TECHNICIAN: "#92400e", ACCOUNTANT: "#3730a3",
   ADMIN: "#b91c1c", SUPPORT: "#475569", OTHER: "#475569",
 };
@@ -98,7 +98,7 @@ const CSS = `
   .sp-toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.12);animation:spIn .3s ease;pointer-events:all;font-family:inherit}
   .sp-toast-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
   .sp-toast-error{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-  .sp-toast-info{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+  .sp-toast-info{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
   .sp-toast-close{background:none;border:none;cursor:pointer;color:inherit;opacity:.6;padding:0;margin-left:auto;display:flex;align-items:center}
 
   /* Overlay / confirm */
@@ -130,7 +130,7 @@ const CSS = `
   .sp-btn-sm.amber:hover{background:#fef3c7}
   .sp-btn-sm:disabled{opacity:.5;cursor:not-allowed}
   .sp-icon-btn{width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
-  .sp-edit{background:#eff6ff;color:#3b82f6}.sp-edit:hover{background:#dbeafe}
+  .sp-edit{background:#E6F4F4;color:#0E898F}.sp-edit:hover{background:#B3E0E0}
   .sp-del{background:#fff5f5;color:#ef4444}.sp-del:hover{background:#fee2e2}
 
   /* Table */
@@ -148,7 +148,7 @@ const CSS = `
 
   /* Badges */
   .sp-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700}
-  .sp-badge.blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+  .sp-badge.blue{background:#E6F4F4;color:#07595D;border:1px solid #B3E0E0}
   .sp-badge.purple{background:#faf5ff;color:#6d28d9;border:1px solid #ede9fe}
   .sp-badge.green{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
   .sp-badge.pink{background:#fdf2f8;color:#be185d;border:1px solid #fbcfe8}
@@ -190,7 +190,7 @@ const CSS = `
   .sp-section-hd{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#1e293b;padding:13px 18px;background:#f8fafc;border-bottom:1px solid #f1f5f9}
   .sp-sec-ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .sp-sec-ic.green{background:#f0fdf4;color:#10b981}
-  .sp-sec-ic.blue{background:#eff6ff;color:#3b82f6}
+  .sp-sec-ic.blue{background:#E6F4F4;color:#0E898F}
   .sp-sec-ic.purple{background:#faf5ff;color:#7c3aed}
   .sp-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
   .sp-field{display:flex;flex-direction:column;gap:5px}
@@ -645,7 +645,7 @@ export default function StaffPanel() {
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span className="sp-creds-sent"><Check size={11} /> Sent</span>
                         <button className="sp-btn-sm" disabled={resendingCreds === member.id}
-                          style={{ borderColor: "#bfdbfe", background: "#eff6ff", color: "#2563eb" }}
+                          style={{ borderColor: "#B3E0E0", background: "#E6F4F4", color: "#0A6B70" }}
                           onClick={() => handleResendCredentials(member)}>
                           {resendingCreds === member.id
                             ? <><Loader2 size={11} className="sp-spin" /> Resending...</>

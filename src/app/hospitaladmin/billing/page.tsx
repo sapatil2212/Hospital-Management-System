@@ -52,35 +52,35 @@ export default function BillingPage() {
         .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
         .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
         .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
         .hd-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
         .hd-logo-sub{font-size:10px;color:#94a3b8}
         .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
         .hd-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
         .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
         .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#eff6ff;color:#2563eb;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#3b82f6;position:absolute;left:0}
+        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
+        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;left:0}
         .hd-nb.on .hd-nb-dot{display:block}
         .hd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
         .hd-user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
         .hd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .hd-urole{font-size:10px;font-weight:500;color:#3b82f6}
+        .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .hd-logout:hover{background:#fee2e2}
         .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
         .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
         .hd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
-        .hd-search-wrap:focus-within{border-color:#93c5fd}
+        .hd-search-wrap:focus-within{border-color:#80CCCC}
         .hd-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
         .hd-search::placeholder{color:#94a3b8}
         .hd-topbar-right{display:flex;align-items:center;gap:12px}
         .hd-notif{width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .15s}
-        .hd-notif:hover{background:#eff6ff}
+        .hd-notif:hover{background:#E6F4F4}
         .hd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #fff}
         .hd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .hd-profile-name{font-size:11px;font-weight:600;color:#1e293b}
         .hd-profile-role{font-size:9px;color:#64748b}
         .hd-center{padding:32px 24px;overflow-y:auto;flex:1}
@@ -97,7 +97,7 @@ export default function BillingPage() {
             {navItems.slice(0, 7).map(n => (
               <button key={n.id} className={`hd-nb${n.id === "billing" ? " on" : ""}`} onClick={() => n.route && router.push(n.route)} style={{ position: "relative" }}>
                 {n.id === "billing" && <div className="hd-nb-dot" />}
-                <span style={{ color: n.id === "billing" ? "#2563eb" : "#94a3b8", display: "flex" }}>{n.icon}</span>
+                <span style={{ color: n.id === "billing" ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
                 {n.label}
               </button>
             ))}

@@ -64,7 +64,7 @@ const BED_TYPES  = ["NORMAL","ICU","VENTILATOR","ELECTRIC","PEDIATRIC"];
 
 const WARD_TYPE_COLOR: Record<string, string> = {
   ICU: "#ef4444", NICU: "#ec4899", PICU: "#f97316",
-  EMERGENCY: "#dc2626", GENERAL: "#3b82f6", PRIVATE: "#8b5cf6",
+  EMERGENCY: "#dc2626", GENERAL: "#0E898F", PRIVATE: "#8b5cf6",
   SEMI_PRIVATE: "#6366f1", MATERNITY: "#ec4899", ISOLATION: "#f59e0b",
 };
 
@@ -95,7 +95,7 @@ const CSS = `
   .wb-toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.15);animation:wbIn .3s ease;pointer-events:all;font-family:inherit;min-width:280px}
   .wb-toast-success{background:#f0fdf4;color:#16a34a;border:1px solid #86efac}
   .wb-toast-error{background:#fff5f5;color:#ef4444;border:1px solid #fca5a5}
-  .wb-toast-info{background:#eff6ff;color:#2563eb;border:1px solid #93c5fd}
+  .wb-toast-info{background:#E6F4F4;color:#0A6B70;border:1px solid #80CCCC}
   .wb-toast-close{background:none;border:none;cursor:pointer;color:inherit;opacity:.6;padding:0;margin-left:auto;display:flex;align-items:center}
 
   /* Overlay */
@@ -109,7 +109,7 @@ const CSS = `
 
   /* Buttons */
   .wb-btn{padding:10px 20px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;font-family:inherit}
-  .wb-btn-primary{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.28)}
+  .wb-btn-primary{background:linear-gradient(135deg,#0E898F,#0A6B70);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.28)}
   .wb-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(59,130,246,.38)}
   .wb-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
   .wb-btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 4px 12px rgba(16,185,129,.28)}
@@ -122,7 +122,7 @@ const CSS = `
   .wb-btn-ghost:hover{background:#f8fafc;border-color:#cbd5e1}
   .wb-btn-sm{padding:6px 12px;font-size:11px;border-radius:7px;font-weight:600}
   .wb-icon-btn{width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
-  .wb-icon-btn-blue{background:#eff6ff;color:#3b82f6}.wb-icon-btn-blue:hover{background:#dbeafe}
+  .wb-icon-btn-blue{background:#E6F4F4;color:#0E898F}.wb-icon-btn-blue:hover{background:#B3E0E0}
   .wb-icon-btn-red{background:#fff5f5;color:#ef4444}.wb-icon-btn-red:hover{background:#fee2e2}
   .wb-icon-btn-gray{background:#f1f5f9;color:#64748b}.wb-icon-btn-gray:hover{background:#e2e8f0}
 
@@ -137,14 +137,14 @@ const CSS = `
   /* Breadcrumb */
   .wb-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:13px;flex-wrap:wrap}
   .wb-bc-item{color:#94a3b8;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:4px;transition:color .15s}
-  .wb-bc-item:hover{color:#3b82f6}
+  .wb-bc-item:hover{color:#0E898F}
   .wb-bc-sep{color:#cbd5e1;font-size:11px}
   .wb-bc-cur{color:#1e293b;font-weight:700}
 
   /* Stats bar */
   .wb-stats-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
   .wb-stat-chip{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;font-size:12px;font-weight:600;border:1px solid transparent}
-  .wb-stat-total{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+  .wb-stat-total{background:#E6F4F4;color:#0A6B70;border-color:#B3E0E0}
   .wb-stat-available{background:#f0fdf4;color:#16a34a;border-color:#86efac}
   .wb-stat-occupied{background:#fff5f5;color:#b91c1c;border-color:#fca5a5}
   .wb-stat-maintenance{background:#fffbeb;color:#92400e;border-color:#fcd34d}
@@ -153,7 +153,7 @@ const CSS = `
   /* Ward Cards */
   .wb-ward-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;animation:wbFadeUp .25s ease}
   .wb-ward-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;transition:all .2s;cursor:pointer}
-  .wb-ward-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.1);transform:translateY(-2px);border-color:#bfdbfe}
+  .wb-ward-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.1);transform:translateY(-2px);border-color:#B3E0E0}
   .wb-ward-card-head{padding:18px 18px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
   .wb-ward-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .wb-ward-name{font-size:15px;font-weight:800;color:#1e293b;margin-bottom:3px}
@@ -169,10 +169,10 @@ const CSS = `
   /* Room Cards */
   .wb-room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;animation:wbFadeUp .25s ease}
   .wb-room-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden;transition:all .2s;cursor:pointer}
-  .wb-room-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.09);transform:translateY(-2px);border-color:#93c5fd}
+  .wb-room-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.09);transform:translateY(-2px);border-color:#80CCCC}
   .wb-room-head{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
   .wb-room-no{font-size:16px;font-weight:800;color:#1e293b}
-  .wb-room-type{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+  .wb-room-type{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
   .wb-room-beds-strip{display:flex;gap:4px;padding:8px 16px;flex-wrap:wrap;min-height:36px;align-items:center}
   .wb-mini-bed{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;border:1px solid transparent;transition:all .15s}
   .wb-room-foot{padding:8px 16px;background:#f8fafc;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f1f5f9;font-size:11px;color:#64748b}
@@ -197,12 +197,12 @@ const CSS = `
   .wb-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
   .wb-req{color:#ef4444}
   .wb-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%;font-family:inherit}
-  .wb-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.18)}
+  .wb-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.18)}
   .wb-input::placeholder{color:#94a3b8}
   .wb-input.err{border-color:#fca5a5}
   .wb-textarea{resize:vertical;min-height:72px}
   .wb-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;width:100%;cursor:pointer;font-family:inherit}
-  .wb-select:focus{border-color:#93c5fd}
+  .wb-select:focus{border-color:#80CCCC}
   .wb-error{font-size:11px;color:#ef4444}
 
   /* Section header */
@@ -218,7 +218,7 @@ const CSS = `
 
   /* Badge */
   .wb-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;border:1px solid}
-  .wb-badge-blue{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+  .wb-badge-blue{background:#E6F4F4;color:#0A6B70;border-color:#B3E0E0}
   .wb-badge-green{background:#f0fdf4;color:#16a34a;border-color:#86efac}
   .wb-badge-red{background:#fff5f5;color:#b91c1c;border-color:#fca5a5}
   .wb-badge-gray{background:#f8fafc;color:#475569;border-color:#e2e8f0}
@@ -228,7 +228,7 @@ const CSS = `
   .wb-setup-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:32px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
   .wb-setup-steps{display:flex;gap:0;margin:24px 0;align-items:stretch;flex-wrap:wrap}
   .wb-step{flex:1;min-width:160px;padding:20px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;text-align:center;position:relative}
-  .wb-step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+  .wb-step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0E898F,#0A6B70);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
   .wb-step-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px}
   .wb-step-desc{font-size:11px;color:#94a3b8}
   .wb-step-arr{display:flex;align-items:center;padding:0 6px;color:#94a3b8}
@@ -394,9 +394,9 @@ function RoomModal({ open, onClose, editItem, wards, defaultWardId, onSuccess, a
                     style={{
                       padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
                       cursor: "pointer", transition: "all .15s", fontFamily: "inherit",
-                      border: `1.5px solid ${!customRoomType && form.roomType === t ? "#3b82f6" : "#e2e8f0"}`,
-                      background: !customRoomType && form.roomType === t ? "#eff6ff" : "#f8fafc",
-                      color: !customRoomType && form.roomType === t ? "#2563eb" : "#64748b",
+                      border: `1.5px solid ${!customRoomType && form.roomType === t ? "#0E898F" : "#e2e8f0"}`,
+                      background: !customRoomType && form.roomType === t ? "#E6F4F4" : "#f8fafc",
+                      color: !customRoomType && form.roomType === t ? "#0A6B70" : "#64748b",
                       boxShadow: !customRoomType && form.roomType === t ? "0 0 0 3px rgba(59,130,246,.1)" : "none",
                     }}
                   >
@@ -520,9 +520,9 @@ function BedModal({ open, onClose, editItem, wards, rooms, defaultWardId, defaul
                     style={{
                       padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
                       cursor: "pointer", transition: "all .15s", fontFamily: "inherit",
-                      border: `1.5px solid ${!customBedType && form.bedType === t ? "#3b82f6" : "#e2e8f0"}`,
-                      background: !customBedType && form.bedType === t ? "#eff6ff" : "#f8fafc",
-                      color: !customBedType && form.bedType === t ? "#2563eb" : "#64748b",
+                      border: `1.5px solid ${!customBedType && form.bedType === t ? "#0E898F" : "#e2e8f0"}`,
+                      background: !customBedType && form.bedType === t ? "#E6F4F4" : "#f8fafc",
+                      color: !customBedType && form.bedType === t ? "#0A6B70" : "#64748b",
                       boxShadow: !customBedType && form.bedType === t ? "0 0 0 3px rgba(59,130,246,.1)" : "none",
                     }}
                   >
@@ -652,7 +652,7 @@ function BulkBedModal({ open, onClose, wards, rooms, defaultWardId, defaultRoomI
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {preview.map(n => (
-                  <span key={n} style={{ fontSize: 12, fontWeight: 600, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: 6, padding: "3px 8px" }}>{n}</span>
+                  <span key={n} style={{ fontSize: 12, fontWeight: 600, background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0", borderRadius: 6, padding: "3px 8px" }}>{n}</span>
                 ))}
                 {parseInt(form.count) > 8 && <span style={{ fontSize: 12, color: "#94a3b8" }}>+{parseInt(form.count) - 8} more</span>}
               </div>
@@ -1170,7 +1170,7 @@ export default function WardBedPanel() {
             <div className="wb-ward-grid">
               {filteredWards.map(ward => {
                 const s = ward.stats || { total: 0, available: 0, occupied: 0, maintenance: 0, reserved: 0 };
-                const color = WARD_TYPE_COLOR[ward.type] || "#3b82f6";
+                const color = WARD_TYPE_COLOR[ward.type] || "#0E898F";
                 return (
                   <div key={ward.id} className="wb-ward-card" onClick={() => goToRooms(ward)}>
                     <div className="wb-ward-card-head">
@@ -1200,7 +1200,7 @@ export default function WardBedPanel() {
                     )}
                     <div className="wb-ward-stats">
                       {[
-                        { val: s.total, lbl: "Total", color: "#2563eb" },
+                        { val: s.total, lbl: "Total", color: "#0A6B70" },
                         { val: s.available, lbl: "Free", color: "#16a34a" },
                         { val: s.occupied, lbl: "Busy", color: "#b91c1c" },
                         { val: s.maintenance + s.reserved, lbl: "Other", color: "#92400e" },
@@ -1249,7 +1249,7 @@ export default function WardBedPanel() {
           </div>
 
           <div className="wb-sec-hd">
-            <div className="wb-sec-ic" style={{ background: `${WARD_TYPE_COLOR[selectedWard.type] || "#3b82f6"}18`, color: WARD_TYPE_COLOR[selectedWard.type] || "#3b82f6" }}>
+            <div className="wb-sec-ic" style={{ background: `${WARD_TYPE_COLOR[selectedWard.type] || "#0E898F"}18`, color: WARD_TYPE_COLOR[selectedWard.type] || "#0E898F" }}>
               <Building2 size={16} />
             </div>
             <div className="wb-sec-title">{selectedWard.name}</div>
@@ -1339,7 +1339,7 @@ export default function WardBedPanel() {
           </div>
 
           <div className="wb-sec-hd">
-            <div className="wb-sec-ic" style={{ background: "#eff6ff", color: "#2563eb" }}><BedDouble size={16} /></div>
+            <div className="wb-sec-ic" style={{ background: "#E6F4F4", color: "#0A6B70" }}><BedDouble size={16} /></div>
             <div className="wb-sec-title">Room {selectedRoom.roomNumber}</div>
             <span className="wb-sec-count">{roomBeds.length} beds</span>
             {Object.entries({ AVAILABLE: bedStats.AVAILABLE, OCCUPIED: bedStats.OCCUPIED, MAINTENANCE: bedStats.MAINTENANCE, RESERVED: bedStats.RESERVED }).filter(([, v]) => v > 0).map(([k, v]) => {

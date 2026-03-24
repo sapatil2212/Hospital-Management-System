@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import styles from "./contact.module.css";
 
 const contactInfo = [
-  { icon: <MapPin size={22} />, title: "Visit Us", detail: "Rajashree Hospital, Near Canada Corner, Gangapur Road, Nashik, Maharastra 411052", color: "#3B82F6", bgColor: "#EFF6FF" },
+  { icon: <MapPin size={22} />, title: "Visit Us", detail: "Rajashree Hospital, Near Canada Corner, Gangapur Road, Nashik, Maharastra 411052", color: "#0E898F", bgColor: "#E6F4F4" },
   { icon: <Phone size={22} />, title: "Call Us", detail: "+91 90590 53938", color: "#10B981", bgColor: "#D1FAE5" },
   { icon: <Mail size={22} />, title: "Email Us", detail: "rajashreehospital2026@gmail.com", color: "#8B5CF6", bgColor: "#EDE9FE" },
   { icon: <Clock size={22} />, title: "Working Hours", detail: "Mon – Fri: 8:00 AM – 7:00 PM", color: "#F59E0B", bgColor: "#FEF3C7" },

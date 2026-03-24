@@ -29,7 +29,7 @@ const api = async (url: string, method = "GET", body?: any) => {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  SCHEDULED: { label: "Scheduled", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+  SCHEDULED: { label: "Scheduled", color: "#0A6B70", bg: "#E6F4F4", border: "#B3E0E0" },
   CONFIRMED: { label: "Confirmed", color: "#059669", bg: "#f0fdf4", border: "#bbf7d0" },
   COMPLETED: { label: "Completed", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe" },
   CANCELLED: { label: "Cancelled", color: "#dc2626", bg: "#fff5f5", border: "#fecaca" },
@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  OPD: "#3b82f6", ONLINE: "#8b5cf6", FOLLOW_UP: "#10b981", EMERGENCY: "#ef4444",
+  OPD: "#0E898F", ONLINE: "#8b5cf6", FOLLOW_UP: "#10b981", EMERGENCY: "#ef4444",
 };
 
 const fmt12 = (t: string) => {
@@ -166,7 +166,7 @@ function PatientSearchBox({ onSelect }: { onSelect: (p: Patient) => void }) {
           )}
         </div>
         <button onClick={() => { setShowAdd(v => !v); setDupPatient(null); setMsg(""); }}
-          style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px dashed #cbd5e1", background: showAdd ? "#eff6ff" : "#fff", color: showAdd ? "#2563eb" : "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+          style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px dashed #cbd5e1", background: showAdd ? "#E6F4F4" : "#fff", color: showAdd ? "#0A6B70" : "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
           <Plus size={14} />New Patient
         </button>
       </div>
@@ -421,11 +421,11 @@ function BookingForm({ patient, onSuccess, onCancel }: { patient: Patient; onSuc
             <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Appointment Date *</label>
             <div style={{ display: "flex", gap: 6 }}>
               <button type="button" onClick={() => setForm(p => ({ ...p, appointmentDate: today, timeSlot: "" }))}
-                style={{ padding: "2px 8px", borderRadius: 6, border: `1px solid ${form.appointmentDate === today ? "#0ea5e9" : "#e2e8f0"}`, background: form.appointmentDate === today ? "#eff6ff" : "#f8fafc", color: form.appointmentDate === today ? "#0ea5e9" : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}>
+                style={{ padding: "2px 8px", borderRadius: 6, border: `1px solid ${form.appointmentDate === today ? "#0ea5e9" : "#e2e8f0"}`, background: form.appointmentDate === today ? "#E6F4F4" : "#f8fafc", color: form.appointmentDate === today ? "#0ea5e9" : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}>
                 Today
               </button>
               <button type="button" onClick={() => setForm(p => ({ ...p, appointmentDate: tomorrow, timeSlot: "" }))}
-                style={{ padding: "2px 8px", borderRadius: 6, border: `1px solid ${form.appointmentDate === tomorrow ? "#0ea5e9" : "#e2e8f0"}`, background: form.appointmentDate === tomorrow ? "#eff6ff" : "#f8fafc", color: form.appointmentDate === tomorrow ? "#0ea5e9" : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}>
+                style={{ padding: "2px 8px", borderRadius: 6, border: `1px solid ${form.appointmentDate === tomorrow ? "#0ea5e9" : "#e2e8f0"}`, background: form.appointmentDate === tomorrow ? "#E6F4F4" : "#f8fafc", color: form.appointmentDate === tomorrow ? "#0ea5e9" : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}>
                 Tomorrow
               </button>
             </div>
@@ -829,7 +829,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                       <div style={{ fontSize: 11, color: "#94a3b8" }}>{appt.doctor?.specialization || appt.department?.name || "—"}</div>
                     </td>
                     <td style={{ padding: "12px 14px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: isToday ? "#2563eb" : "#334155" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isToday ? "#0A6B70" : "#334155" }}>
                         {isToday ? "Today" : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
                       </div>
                       <div style={{ fontSize: 11, color: "#94a3b8" }}>{fmt12(appt.timeSlot)}</div>
@@ -852,7 +852,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                     <td style={{ padding: "12px 14px" }}>
                       <div style={{ display: "flex", gap: 5 }}>
                         <button onClick={() => setViewTarget(appt)} title="View Details"
-                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#eff6ff", color: "#3b82f6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#E6F4F4", color: "#0E898F", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Eye size={13} />
                         </button>
                         <button onClick={() => setEditTarget(appt)} title="Edit Appointment"
@@ -1026,7 +1026,7 @@ function StatsBar() {
 
   if (!stats) return null;
   const items = [
-    { label: "Today's Appointments", value: stats.today, color: "#2563eb", bg: "#eff6ff" },
+    { label: "Today's Appointments", value: stats.today, color: "#0A6B70", bg: "#E6F4F4" },
     { label: "Scheduled", value: stats.scheduled, color: "#d97706", bg: "#fffbeb" },
     { label: "Completed", value: stats.completed, color: "#059669", bg: "#f0fdf4" },
     { label: "Total Patients", value: stats.patientTotal, color: "#7c3aed", bg: "#f5f3ff" },
@@ -1115,7 +1115,7 @@ export default function AppointmentPanel({ onViewPatient }: { onViewPatient?: (i
       {/* Today's/All Appointments */}
       <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-          <ClipboardList size={18} color="#3b82f6" />Appointments
+          <ClipboardList size={18} color="#0E898F" />Appointments
         </div>
         <AppointmentTable onRefresh={refreshKey} onViewPatient={(id) => onViewPatient?.(id)} />
       </div>

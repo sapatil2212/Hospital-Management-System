@@ -63,7 +63,7 @@ const SUB_DEPT_TYPES = [
   { value: "ONCOLOGY",    label: "Cancer / Oncology", Icon: Activity,    color: "#f97316" },
   { value: "CARDIOLOGY",  label: "Cardiology",        Icon: Heart,       color: "#ef4444" },
   { value: "PATHOLOGY",   label: "Pathology Lab",     Icon: Microscope,  color: "#10b981" },
-  { value: "PHARMACY",    label: "Pharmacy Store",    Icon: Pill,        color: "#3b82f6" },
+  { value: "PHARMACY",    label: "Pharmacy Store",    Icon: Pill,        color: "#0E898F" },
   { value: "BILLING",     label: "Billing Dept",      Icon: Receipt,     color: "#f59e0b" },
   { value: "RADIOLOGY",   label: "Radiology",         Icon: Scan,        color: "#6366f1" },
   { value: "LABORATORY",  label: "Laboratory",        Icon: TestTube2,   color: "#14b8a6" },
@@ -429,11 +429,11 @@ export default function SubDepartmentPanel() {
         .sd-search-input::placeholder{color:#94a3b8}
         .sd-toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
         .sd-filter-btn{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:500;cursor:pointer}
-        .sd-filter-btn.active{background:#eff6ff;border-color:#3b82f6;color:#3b82f6}
+        .sd-filter-btn.active{background:#E6F4F4;border-color:#0E898F;color:#0E898F}
         .sd-filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
         .sd-filter-select{padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;color:#334155;background:#fff;cursor:pointer}
-        .sd-btn-primary{padding:9px 18px;border-radius:9px;border:none;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
-        .sd-btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+        .sd-btn-primary{padding:9px 18px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
+        .sd-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
         .sd-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
         .sd-btn-ghost{padding:9px 18px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer}
         .sd-btn-ghost:hover{background:#f8fafc}
@@ -457,18 +457,18 @@ export default function SubDepartmentPanel() {
         .sd-card-foot{padding:12px 16px;border-top:1px solid #f8fafc;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
         .sd-card-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
         .sd-icon-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
-        .sd-edit{background:#eff6ff;color:#3b82f6}.sd-edit:hover{background:#dbeafe}
+        .sd-edit{background:#E6F4F4;color:#0E898F}.sd-edit:hover{background:#B3E0E0}
         .sd-del{background:#fff5f5;color:#ef4444}.sd-del:hover{background:#fee2e2}
         .sd-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
         .sd-badge.green{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
         .sd-badge.red{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-        .sd-badge.blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+        .sd-badge.blue{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
         .sd-badge.purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe}
         .sd-badge.orange{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa}
         .sd-badge.teal{background:#f0fdfa;color:#0d9488;border:1px solid #99f6e4}
         .sd-badge.gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
         .sd-proc-count{font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:4px;cursor:pointer}
-        .sd-proc-count:hover{color:#3b82f6}
+        .sd-proc-count:hover{color:#0E898F}
         .sd-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:#94a3b8;font-size:14px}
         .sd-empty{text-align:center;padding:60px 20px;color:#94a3b8;font-size:14px;background:#fff;border-radius:14px;border:1px solid #e2e8f0}
         .sd-pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 0;margin-top:12px}
@@ -477,7 +477,7 @@ export default function SubDepartmentPanel() {
         .sd-page-btn{width:30px;height:30px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
         .sd-page-btn:hover:not(:disabled){background:#f8fafc}
         .sd-page-btn:disabled{opacity:.4;cursor:not-allowed}
-        .sd-page-btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+        .sd-page-btn.active{background:#0E898F;border-color:#0E898F;color:#fff}
         .sd-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
         .sd-modal{background:#fff;border-radius:18px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:92vh;overflow:hidden;display:flex;flex-direction:column}
         .sd-modal-lg{max-width:720px}
@@ -494,11 +494,11 @@ export default function SubDepartmentPanel() {
         .sd-field.full{grid-column:1/-1}
         .sd-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
         .sd-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
-        .sd-input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
+        .sd-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
         .sd-input::placeholder{color:#94a3b8}
         .sd-textarea{min-height:72px;resize:vertical}
         .sd-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;width:100%;cursor:pointer}
-        .sd-select:focus{border-color:#93c5fd}
+        .sd-select:focus{border-color:#80CCCC}
         .sd-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
         .sd-type-card{padding:10px 8px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;text-align:center;transition:all .15s;font-size:11px;font-weight:600;color:#64748b}
         .sd-type-card.selected{border-color:var(--type-color);background:var(--type-bg);color:var(--type-color)}
@@ -506,7 +506,7 @@ export default function SubDepartmentPanel() {
         .sd-type-icon{font-size:18px;margin-bottom:4px}
         .sd-toggle-wrap{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0}
         .sd-toggle{width:40px;height:22px;border-radius:100px;background:#e2e8f0;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
-        .sd-toggle.on{background:#3b82f6}
+        .sd-toggle.on{background:#0E898F}
         .sd-toggle-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
         .sd-toggle.on .sd-toggle-thumb{transform:translateX(18px)}
         .sd-confirm-icon{margin-bottom:14px}
@@ -518,7 +518,7 @@ export default function SubDepartmentPanel() {
         @keyframes sdSlide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
         .sd-toast-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
         .sd-toast-error{background:#fff5f5;color:#ef4444;border:1px solid #fecaca}
-        .sd-toast-info{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+        .sd-toast-info{background:#E6F4F4;color:#0A6B70;border:1px solid #B3E0E0}
         @keyframes spin{to{transform:rotate(360deg)}}
         .sd-spin{animation:spin .7s linear infinite}
         .sd-proc-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:6px}
@@ -530,7 +530,7 @@ export default function SubDepartmentPanel() {
         .sd-proc-fee{font-size:11px;font-weight:700;color:#16a34a}
         .sd-proc-dur{font-size:11px;color:#94a3b8}
         .sd-proc-actions{display:flex;gap:4px;flex-shrink:0}
-        .sd-proc-form{background:#fff;border:1.5px solid #3b82f6;border-radius:12px;padding:16px;margin-bottom:12px}
+        .sd-proc-form{background:#fff;border:1.5px solid #0E898F;border-radius:12px;padding:16px;margin-bottom:12px}
         .sd-flow-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600}
         .sd-creds-sent{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
       `}</style>
@@ -708,8 +708,8 @@ export default function SubDepartmentPanel() {
                     <div className="sd-field">
                       <label className="sd-lbl">Accent Color</label>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input type="color" value={form.color || "#3b82f6"} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} style={{ width: 38, height: 36, border: "1.5px solid #e2e8f0", borderRadius: 9, cursor: "pointer", padding: 2 }} />
-                        <input className="sd-input" value={form.color} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} placeholder="#3b82f6" style={{ flex: 1 }} />
+                        <input type="color" value={form.color || "#0E898F"} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} style={{ width: 38, height: 36, border: "1.5px solid #e2e8f0", borderRadius: 9, cursor: "pointer", padding: 2 }} />
+                        <input className="sd-input" value={form.color} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} placeholder="#0E898F" style={{ flex: 1 }} />
                       </div>
                     </div>
                     <div className="sd-field full">
@@ -730,7 +730,7 @@ export default function SubDepartmentPanel() {
                   <div className="sd-section-title" style={{ justifyContent: "space-between" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 6 }}><User size={14} />Head of Department (HOD)</span>
                     <a href="/hospitaladmin/configure?tab=staff" target="_blank" rel="noreferrer"
-                      style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#3b82f6", textDecoration: "none", padding: "3px 8px", borderRadius: 6, background: "#eff6ff", border: "1px solid #bfdbfe" }}>
+                      style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#0E898F", textDecoration: "none", padding: "3px 8px", borderRadius: 6, background: "#E6F4F4", border: "1px solid #B3E0E0" }}>
                       <UserPlus size={11} />Create New<ExternalLink size={9} />
                     </a>
                   </div>
@@ -761,14 +761,14 @@ export default function SubDepartmentPanel() {
                             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid #f1f5f9" }}
                             onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
                             onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                            <div style={{ width: 32, height: 32, borderRadius: 9, background: h.kind === "DOCTOR" ? "#eff6ff" : "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {h.kind === "DOCTOR" ? <Stethoscope size={14} color="#3b82f6" /> : <User size={14} color="#8b5cf6" />}
+                            <div style={{ width: 32, height: 32, borderRadius: 9, background: h.kind === "DOCTOR" ? "#E6F4F4" : "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {h.kind === "DOCTOR" ? <Stethoscope size={14} color="#0E898F" /> : <User size={14} color="#8b5cf6" />}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{h.name}</div>
                               <div style={{ fontSize: 11, color: "#94a3b8" }}>{h.role}{h.email ? ` · ${h.email}` : ""}</div>
                             </div>
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: h.kind === "DOCTOR" ? "#eff6ff" : "#f5f3ff", color: h.kind === "DOCTOR" ? "#3b82f6" : "#8b5cf6", border: "1px solid", borderColor: h.kind === "DOCTOR" ? "#bfdbfe" : "#ddd6fe" }}>{h.kind}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: h.kind === "DOCTOR" ? "#E6F4F4" : "#f5f3ff", color: h.kind === "DOCTOR" ? "#0E898F" : "#8b5cf6", border: "1px solid", borderColor: h.kind === "DOCTOR" ? "#B3E0E0" : "#ddd6fe" }}>{h.kind}</span>
                           </div>
                         ))}
                       </div>

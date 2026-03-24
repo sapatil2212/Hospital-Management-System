@@ -212,7 +212,7 @@ export default function LeaveModal({ open, onClose, doctor }: LeaveModalProps) {
         .leave-item-info{flex:1}
         .leave-item-dates{font-size:14px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:6px}
         .leave-item-reason{font-size:12px;color:#64748b;margin-top:4px}
-        .leave-item-days{font-size:11px;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:100px;font-weight:600}
+        .leave-item-days{font-size:11px;background:#E6F4F4;color:#0A6B70;padding:2px 8px;border-radius:100px;font-weight:600}
         .leave-item-status{font-size:10px;padding:3px 8px;border-radius:100px;font-weight:700}
         .leave-item-status.approved{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
         .leave-item-status.pending{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa}
@@ -220,7 +220,7 @@ export default function LeaveModal({ open, onClose, doctor }: LeaveModalProps) {
         .leave-del-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff5f5;color:#ef4444}
         .leave-del-btn:hover{background:#fee2e2}
         .leave-add-btn{width:100%;padding:14px;border-radius:12px;border:2px dashed #e2e8f0;background:none;color:#64748b;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px}
-        .leave-add-btn:hover{border-color:#93c5fd;background:#eff6ff;color:#3b82f6}
+        .leave-add-btn:hover{border-color:#80CCCC;background:#E6F4F4;color:#0E898F}
         .leave-form{margin-top:16px;padding:20px;background:#f8fafc;border-radius:14px;border:1px solid #e2e8f0}
         .leave-form-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:16px;display:flex;align-items:center;gap:8px}
         .leave-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -228,16 +228,16 @@ export default function LeaveModal({ open, onClose, doctor }: LeaveModalProps) {
         .leave-field.full{grid-column:1/-1}
         .leave-lbl{font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b}
         .leave-input{background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b}
-        .leave-input:focus{border-color:#93c5fd;outline:none}
+        .leave-input:focus{border-color:#80CCCC;outline:none}
         .leave-input.error{border-color:#fca5a5}
         .leave-textarea{min-height:80px;resize:vertical}
         .leave-error{font-size:11px;color:#ef4444;margin-top:2px}
         .leave-form-actions{display:flex;gap:10px;margin-top:16px}
         .leave-btn{padding:10px 20px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
-        .leave-btn-primary{background:#3b82f6;color:#fff}.leave-btn-primary:hover{background:#2563eb}
+        .leave-btn-primary{background:#0E898F;color:#fff}.leave-btn-primary:hover{background:#0A6B70}
         .leave-btn-primary:disabled{opacity:.5;cursor:not-allowed}
         .leave-btn-ghost{background:#fff;border:1.5px solid #e2e8f0;color:#64748b}.leave-btn-ghost:hover{background:#f8fafc}
-        .leave-preview{margin-top:12px;padding:12px;background:#eff6ff;border-radius:10px;font-size:13px;color:#2563eb;display:flex;align-items:center;gap:8px}
+        .leave-preview{margin-top:12px;padding:12px;background:#E6F4F4;border-radius:10px;font-size:13px;color:#0A6B70;display:flex;align-items:center;gap:8px}
         @keyframes leaveSpin{to{transform:rotate(360deg)}}
         .leave-spin{animation:leaveSpin .7s linear infinite}
         .leave-toast-container{position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}

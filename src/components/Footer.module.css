@@ -15,11 +15,11 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-8);
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #0E898F, #0A6B70);
   border-radius: var(--radius-2xl);
   padding: var(--space-10) var(--space-12);
   transform: translateY(-50%);
-  box-shadow: var(--shadow-blue-lg);
+  box-shadow: 0 20px 50px rgba(14, 137, 143, 0.35);
 }
 
 .nlContent {

@@ -231,7 +231,7 @@ export default function ReceptionistDashboard() {
                 {icon:<ClipboardList size={20} color="#fff"/>,  label:"Total Today",  val:queue.length,                                      sub:"appointments", bg:"#fefce8", iconBg:"#eab308"},
                 {icon:<Clock size={20} color="#fff"/>,           label:"Waiting",      val:queue.filter(q=>q.status==="waiting").length,       sub:"in queue",     bg:"#fff7ed", iconBg:"#f97316"},
                 {icon:<Play size={20} color="#fff"/>,            label:"In Progress",  val:queue.filter(q=>q.status==="in-progress").length,   sub:"with doctor",  bg:"#f0fdf4", iconBg:"#10b981"},
-                {icon:<Check size={20} color="#fff"/>,           label:"Completed",    val:queue.filter(q=>q.status==="completed").length,      sub:"done today",   bg:"#eff6ff", iconBg:"#3b82f6"},
+                {icon:<Check size={20} color="#fff"/>,           label:"Completed",    val:queue.filter(q=>q.status==="completed").length,      sub:"done today",   bg:"#E6F4F4", iconBg:"#0E898F"},
               ].map((s,i)=>(
                 <div key={i} className="rec-sc" style={{background:s.bg}}>
                   <div className="rec-sc-icon" style={{background:s.iconBg}}>{s.icon}</div>
@@ -262,14 +262,14 @@ export default function ReceptionistDashboard() {
                             <div style={{fontSize:11,color:"#94a3b8"}}>{a.dept}</div>
                           </td>
                           <td style={{fontWeight:700,fontSize:12,color:"#334155"}}>{a.time}</td>
-                          <td><span className="rec-badge" style={a.status==="in-progress"?{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe"}:a.status==="waiting"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:a.status==="completed"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.status==="cancelled"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>{a.status.replace("-"," ")}</span></td>
+                          <td><span className="rec-badge" style={a.status==="in-progress"?{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}:a.status==="waiting"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:a.status==="completed"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.status==="cancelled"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>{a.status.replace("-"," ")}</span></td>
                           <td>
                             <div style={{display:"flex",gap:6}}>
                               {a.status!=="completed"&&a.status!=="cancelled"&&(
                                 <button className="rec-action-btn" onClick={()=>updateStatus(a.token,"completed")} style={{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0",display:"flex",alignItems:"center",gap:3}}><Check size={11}/>Done</button>
                               )}
                               {a.status==="waiting"&&(
-                                <button className="rec-action-btn" onClick={()=>updateStatus(a.token,"in-progress")} style={{background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe",display:"flex",alignItems:"center",gap:3}}><Play size={11}/>Call</button>
+                                <button className="rec-action-btn" onClick={()=>updateStatus(a.token,"in-progress")} style={{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0",display:"flex",alignItems:"center",gap:3}}><Play size={11}/>Call</button>
                               )}
                               {a.status!=="cancelled"&&a.status!=="completed"&&(
                                 <button className="rec-action-btn" onClick={()=>updateStatus(a.token,"cancelled")} style={{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca",display:"flex",alignItems:"center",gap:3}}><X size={11}/></button>

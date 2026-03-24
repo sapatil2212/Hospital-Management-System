@@ -37,7 +37,7 @@ export default function HospitalAdminChangePasswordPage() {
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     const labels = ["", "Weak", "Fair", "Good", "Strong", "Very Strong"];
-    const colors = ["", "#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#059669"];
+    const colors = ["", "#ef4444", "#f59e0b", "#0E898F", "#10b981", "#059669"];
     return { score, label: labels[score] || "", color: colors[score] || "" };
   };
 
@@ -90,7 +90,7 @@ export default function HospitalAdminChangePasswordPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+      background: "linear-gradient(135deg, #E6F4F4 0%, #B3E0E0 100%)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -102,10 +102,10 @@ export default function HospitalAdminChangePasswordPage() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         .cp-card { background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.10); padding: 40px; width: 100%; max-width: 460px; }
         .cp-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; text-decoration: none; }
-        .cp-logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(59,130,246,0.35); }
+        .cp-logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0E898F, #07595D); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(59,130,246,0.35); }
         .cp-logo-text { font-size: 20px; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; }
-        .cp-logo-accent { color: #3b82f6; }
-        .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(59,130,246,0.1); color: #2563eb; border: 1px solid rgba(59,130,246,0.25); margin-bottom: 12px; }
+        .cp-logo-accent { color: #0E898F; }
+        .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(59,130,246,0.1); color: #0A6B70; border: 1px solid rgba(59,130,246,0.25); margin-bottom: 12px; }
         .cp-heading { font-size: 26px; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; margin-bottom: 6px; }
         .cp-sub { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
         .cp-err { display: flex; align-items: flex-start; gap: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px; color: #dc2626; line-height: 1.5; }
@@ -115,7 +115,7 @@ export default function HospitalAdminChangePasswordPage() {
         .cp-wrap { position: relative; }
         .cp-input { width: 100%; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 11px; padding: 13px 42px 13px 14px; font-size: 14px; color: #111827; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
         .cp-input::placeholder { color: #9ca3af; }
-        .cp-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .cp-input:focus { border-color: #0E898F; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
         .cp-input.err { border-color: #ef4444; }
         .cp-eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9ca3af; display: flex; align-items: center; padding: 0; transition: color 0.2s; }
         .cp-eye:hover { color: #374151; }
@@ -128,7 +128,7 @@ export default function HospitalAdminChangePasswordPage() {
         .cp-req.met { color: #10b981; }
         .cp-req-dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; flex-shrink: 0; }
         .cp-req.met .cp-req-dot { background: #10b981; }
-        .cp-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; box-shadow: 0 4px 18px rgba(59,130,246,0.3); margin-top: 8px; }
+        .cp-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0E898F, #07595D); color: #fff; box-shadow: 0 4px 18px rgba(59,130,246,0.3); margin-top: 8px; }
         .cp-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(59,130,246,0.42); }
         .cp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
         .cp-btn-shine { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%); background-size: 200% 100%; animation: cp-shine 3s infinite; }
@@ -136,7 +136,7 @@ export default function HospitalAdminChangePasswordPage() {
         .cp-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: cp-spin 0.7s linear infinite; }
         @keyframes cp-spin { to{ transform: rotate(360deg); } }
         .cp-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280; }
-        .cp-footer a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+        .cp-footer a { color: #0E898F; text-decoration: none; font-weight: 600; }
         .cp-footer a:hover { opacity: 0.8; }
         .cp-divider { height: 1px; background: #f1f5f9; margin: 20px 0; }
       `}</style>

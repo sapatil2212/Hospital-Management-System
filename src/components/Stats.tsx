@@ -10,8 +10,8 @@ const stats = [
     icon: <Users size={28} />,
     value: "30M+",
     label: "Patients Served",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
+    color: "#0E898F",
+    bgColor: "#E6F4F4",
   },
   {
     icon: <Percent size={28} />,

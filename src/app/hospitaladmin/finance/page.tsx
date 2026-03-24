@@ -348,35 +348,35 @@ export default function HospitalAdminFinancePage() {
         .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
         .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
         .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
         .hd-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
         .hd-logo-sub{font-size:10px;color:#94a3b8}
         .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
         .hd-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
         .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
         .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#eff6ff;color:#2563eb;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#3b82f6;position:absolute;left:0}
+        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
+        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;left:0}
         .hd-nb.on .hd-nb-dot{display:block}
         .hd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
         .hd-user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
         .hd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .hd-urole{font-size:10px;font-weight:500;color:#3b82f6}
+        .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .hd-logout:hover{background:#fee2e2}
         .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
         .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
         .hd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
-        .hd-search-wrap:focus-within{border-color:#93c5fd}
+        .hd-search-wrap:focus-within{border-color:#80CCCC}
         .hd-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
         .hd-search::placeholder{color:#94a3b8}
         .hd-topbar-right{display:flex;align-items:center;gap:12px}
         .hd-notif{width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .15s}
-        .hd-notif:hover{background:#eff6ff}
+        .hd-notif:hover{background:#E6F4F4}
         .hd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #fff}
         .hd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .hd-profile-name{font-size:11px;font-weight:600;color:#1e293b}
         .hd-profile-role{font-size:9px;color:#64748b}
         .hd-center{padding:32px 24px;overflow-y:auto;flex:1}
@@ -386,7 +386,7 @@ export default function HospitalAdminFinancePage() {
         .fin-sub{font-size:12px;color:#94a3b8;margin-top:4px}
         .fin-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .fin-btn{display:flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-        .fin-btn.primary{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.25)}
+        .fin-btn.primary{background:linear-gradient(135deg,#0A6B70,#07595D);color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.25)}
         .fin-btn.primary:hover{transform:translateY(-1px)}
         .fin-btn.ghost{background:#fff;border:1px solid #e2e8f0;color:#334155}
         .fin-btn.ghost:hover{background:#f8fafc}
@@ -403,7 +403,7 @@ export default function HospitalAdminFinancePage() {
         .fin-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}
         .fin-tabs{display:flex;gap:6px;padding:10px;border-bottom:1px solid #f1f5f9;background:#fbfdff}
         .fin-tab{border:none;background:none;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
-        .fin-tab.on{background:#eff6ff;color:#2563eb}
+        .fin-tab.on{background:#E6F4F4;color:#0A6B70}
         .fin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f5f9}
         .fin-hint{font-size:12px;color:#94a3b8}
 
@@ -429,7 +429,7 @@ export default function HospitalAdminFinancePage() {
             {navItems.slice(0, 7).map(n => (
               <button key={n.id} className={`hd-nb${n.id === "finance" ? " on" : ""}`} onClick={() => n.route && router.push(n.route)} style={{ position: "relative" }}>
                 {n.id === "finance" && <div className="hd-nb-dot" />}
-                <span style={{ color: n.id === "finance" ? "#2563eb" : "#94a3b8", display: "flex" }}>{n.icon}</span>
+                <span style={{ color: n.id === "finance" ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
                 {n.label}
               </button>
             ))}
@@ -496,7 +496,7 @@ export default function HospitalAdminFinancePage() {
                           <FileSpreadsheet size={15} color="#16a34a" /> Export as CSV
                         </button>
                         <button type="button" onClick={() => exportAs("json")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                          <FileJson size={15} color="#2563eb" /> Export as JSON
+                          <FileJson size={15} color="#0A6B70" /> Export as JSON
                         </button>
                         <div style={{ height: 1, background: "#f1f5f9" }} />
                         <button type="button" onClick={() => exportAs("print")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
@@ -518,7 +518,7 @@ export default function HospitalAdminFinancePage() {
             ) : (
               <div className="fin-stats">
                 <div className="fin-card">
-                  <div className="fin-ic" style={{ background: "#eff6ff", color: "#2563eb" }}><TrendingUp size={18} /></div>
+                  <div className="fin-ic" style={{ background: "#E6F4F4", color: "#0A6B70" }}><TrendingUp size={18} /></div>
                   <div>
                     <div className="fin-lbl">Total Revenue</div>
                     <div className="fin-val">{fmtINR(totalRevenue)}</div>
@@ -556,8 +556,8 @@ export default function HospitalAdminFinancePage() {
             {!statsLoading && stats && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
                 <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <TrendingDown size={15} color="#2563eb" />
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <TrendingDown size={15} color="#0A6B70" />
                   </div>
                   <div>
                     <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Operational Expenses</div>
@@ -595,7 +595,7 @@ export default function HospitalAdminFinancePage() {
                   {tab === "expenses" ? (
                     <>
                       {[{ k: "date", l: "Date" }, { k: "amount", l: "Amount" }, { k: "category", l: "Category" }].map(s => (
-                        <button key={s.k} type="button" onClick={() => toggleExpSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${expSort.key === s.k ? "#93c5fd" : "#e2e8f0"}`, background: expSort.key === s.k ? "#eff6ff" : "#f8fafc", color: expSort.key === s.k ? "#2563eb" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        <button key={s.k} type="button" onClick={() => toggleExpSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${expSort.key === s.k ? "#80CCCC" : "#e2e8f0"}`, background: expSort.key === s.k ? "#E6F4F4" : "#f8fafc", color: expSort.key === s.k ? "#0A6B70" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                           {s.l} <ArrowUpDown size={10} />
                         </button>
                       ))}
@@ -603,7 +603,7 @@ export default function HospitalAdminFinancePage() {
                   ) : (
                     <>
                       {[{ k: "date", l: "Date" }, { k: "amount", l: "Amount" }, { k: "source", l: "Source" }].map(s => (
-                        <button key={s.k} type="button" onClick={() => toggleRevSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${revSort.key === s.k ? "#93c5fd" : "#e2e8f0"}`, background: revSort.key === s.k ? "#eff6ff" : "#f8fafc", color: revSort.key === s.k ? "#2563eb" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        <button key={s.k} type="button" onClick={() => toggleRevSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${revSort.key === s.k ? "#80CCCC" : "#e2e8f0"}`, background: revSort.key === s.k ? "#E6F4F4" : "#f8fafc", color: revSort.key === s.k ? "#0A6B70" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                           {s.l} <ArrowUpDown size={10} />
                         </button>
                       ))}
@@ -635,7 +635,7 @@ export default function HospitalAdminFinancePage() {
                               if (selectedExp.size === filteredExpenses.length) setSelectedExp(new Set());
                               else setSelectedExp(new Set(filteredExpenses.map((r: any) => r.id)));
                             }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}>
-                              {selectedExp.size === 0 ? <Square size={15} color="#94a3b8" /> : selectedExp.size === filteredExpenses.length ? <CheckSquare size={15} color="#2563eb" /> : <MinusSquare size={15} color="#2563eb" />}
+                              {selectedExp.size === 0 ? <Square size={15} color="#94a3b8" /> : selectedExp.size === filteredExpenses.length ? <CheckSquare size={15} color="#0A6B70" /> : <MinusSquare size={15} color="#0A6B70" />}
                             </button>
                           </th>
                           <th>Date</th>
@@ -648,10 +648,10 @@ export default function HospitalAdminFinancePage() {
                       </thead>
                       <tbody>
                         {filteredExpenses.map((r: any) => (
-                          <tr key={r.id} style={{ background: selectedExp.has(r.id) ? "#eff6ff" : undefined }}>
+                          <tr key={r.id} style={{ background: selectedExp.has(r.id) ? "#E6F4F4" : undefined }}>
                             <td>
                               <button type="button" onClick={() => toggleExpSelect(r.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}>
-                                {selectedExp.has(r.id) ? <CheckSquare size={15} color="#2563eb" /> : <Square size={15} color="#cbd5e1" />}
+                                {selectedExp.has(r.id) ? <CheckSquare size={15} color="#0A6B70" /> : <Square size={15} color="#cbd5e1" />}
                               </button>
                             </td>
                             <td>{fmtDate(r.date)}</td>
@@ -666,7 +666,7 @@ export default function HospitalAdminFinancePage() {
                             <td>
                               <div style={{ display: "flex", gap: 4 }}>
                                 <button type="button" onClick={() => setViewExpense(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Details">
-                                  <Eye size={13} color="#3b82f6" />
+                                  <Eye size={13} color="#0E898F" />
                                 </button>
                                 {!(r as any)._isPurchase && (
                                   <button type="button" onClick={() => deleteExpense(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
@@ -700,7 +700,7 @@ export default function HospitalAdminFinancePage() {
                               if (selectedRev.size === filteredRevenues.length) setSelectedRev(new Set());
                               else setSelectedRev(new Set(filteredRevenues.map((r: any) => r.id)));
                             }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}>
-                              {selectedRev.size === 0 ? <Square size={15} color="#94a3b8" /> : selectedRev.size === filteredRevenues.length ? <CheckSquare size={15} color="#2563eb" /> : <MinusSquare size={15} color="#2563eb" />}
+                              {selectedRev.size === 0 ? <Square size={15} color="#94a3b8" /> : selectedRev.size === filteredRevenues.length ? <CheckSquare size={15} color="#0A6B70" /> : <MinusSquare size={15} color="#0A6B70" />}
                             </button>
                           </th>
                           <th>Type</th>
@@ -716,12 +716,12 @@ export default function HospitalAdminFinancePage() {
                           <tr key={`${r._type}-${r.id}`} style={{ background: selectedRev.has(r.id) ? "#f0fdf4" : undefined }}>
                             <td>
                               <button type="button" onClick={() => toggleRevSelect(r.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}>
-                                {selectedRev.has(r.id) ? <CheckSquare size={15} color="#2563eb" /> : <Square size={15} color="#cbd5e1" />}
+                                {selectedRev.has(r.id) ? <CheckSquare size={15} color="#0A6B70" /> : <Square size={15} color="#cbd5e1" />}
                               </button>
                             </td>
                             <td>
                               {r._type === "bill" ? (
-                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#eff6ff", color: "#2563eb", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
                                   Billing
                                 </span>
                               ) : (
@@ -734,7 +734,7 @@ export default function HospitalAdminFinancePage() {
                             <td>
                               <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{r.description}</div>
                               {r.subText && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{r.subText}</div>}
-                              {r.billNo && <div style={{ fontSize: 10, color: "#93c5fd", marginTop: 1, fontWeight: 700 }}>{r.billNo}</div>}
+                              {r.billNo && <div style={{ fontSize: 10, color: "#80CCCC", marginTop: 1, fontWeight: 700 }}>{r.billNo}</div>}
                             </td>
                             <td>
                               <span style={{ padding: "3px 8px", borderRadius: 100, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize: 11, fontWeight: 600 }}>
@@ -746,13 +746,13 @@ export default function HospitalAdminFinancePage() {
                               <div style={{ display: "flex", gap: 4 }}>
                                 {r._type === "bill" && (
                                   <button type="button" onClick={() => setViewBill(r._raw)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Bill Details">
-                                    <Eye size={13} color="#3b82f6" />
+                                    <Eye size={13} color="#0E898F" />
                                   </button>
                                 )}
                                 {r._type === "manual" && (
                                   <>
                                     <button type="button" onClick={() => setViewManualRev(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Details">
-                                      <Eye size={13} color="#3b82f6" />
+                                      <Eye size={13} color="#0E898F" />
                                     </button>
                                     <button type="button" onClick={() => deleteRevenue(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
                                       <Trash2 size={13} color="#ef4444" />
@@ -869,7 +869,7 @@ export default function HospitalAdminFinancePage() {
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} onClick={() => setViewBill(null)} />
           <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 560, maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 80px rgba(0,0,0,.2)", padding: "0" }}>
             {/* Header */}
-            <div style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", padding: "22px 24px 18px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div style={{ background: "linear-gradient(135deg,#0A6B70,#07595D)", padding: "22px 24px 18px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 4 }}>Transaction Details</div>
                 <div style={{ fontSize: 22, fontWeight: 800 }}>{viewBill.billNo}</div>
@@ -882,8 +882,8 @@ export default function HospitalAdminFinancePage() {
             <div style={{ padding: "20px 24px 24px" }}>
               {/* Patient Info */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 16 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <UserIcon size={18} color="#2563eb" />
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <UserIcon size={18} color="#0A6B70" />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, color: "#1e293b", fontSize: 14 }}>{viewBill.patient?.name}</div>
@@ -897,8 +897,8 @@ export default function HospitalAdminFinancePage() {
                   <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Total Paid</div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: "#166534" }}>{fmtINR(viewBill.total)}</div>
                 </div>
-                <div style={{ background: "#eff6ff", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#2563eb", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Subtotal</div>
+                <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: 10, color: "#0A6B70", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Subtotal</div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: "#1e40af" }}>{fmtINR(viewBill.subtotal)}</div>
                 </div>
                 <div style={{ background: "#fefce8", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>

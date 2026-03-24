@@ -1,0 +1,1951 @@
+/*!**************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/AppointmentModal.module.css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************************/
+/* ─── Overlay ─── */
+.AppointmentModal_overlay__z5CQA {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* ─── Modal ─── */
+.AppointmentModal_modal__KJrrN {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.AppointmentModal_closeBtn__Jq8yP {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.AppointmentModal_closeBtn__Jq8yP:hover {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+/* ─── Success ─── */
+.AppointmentModal_successOverlay__XZ1Wi {
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.AppointmentModal_successIcon__v_t4q {
+  color: var(--success);
+  margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_successOverlay__XZ1Wi h3 {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.AppointmentModal_successOverlay__XZ1Wi p {
+  font-size: var(--font-size-base);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* ─── Stepper ─── */
+.AppointmentModal_stepper__XhwRH {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: var(--space-6) var(--space-8) var(--space-4);
+  border-bottom: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+
+.AppointmentModal_stepItem__MkHr0 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1;
+  position: relative;
+}
+
+.AppointmentModal_stepCircle__8atHH {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.AppointmentModal_stepLabel__tT_Fn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  max-width: 100px;
+  line-height: 1.3;
+  transition: color 0.3s ease;
+}
+
+.AppointmentModal_stepLine__CDlTA {
+  flex: 1 1;
+  height: 2px;
+  background: var(--gray-200);
+  margin: 0 var(--space-2);
+  border-radius: 1px;
+  transition: background 0.3s ease;
+}
+
+.AppointmentModal_stepLineDone__OYA62 {
+  background: var(--primary);
+}
+
+.AppointmentModal_stepActive__jfLkh .AppointmentModal_stepCircle__8atHH {
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+.AppointmentModal_stepActive__jfLkh .AppointmentModal_stepLabel__tT_Fn {
+  color: var(--gray-700);
+}
+
+.AppointmentModal_stepCurrent__DyVem .AppointmentModal_stepCircle__8atHH {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 0 0 4px var(--primary-100);
+}
+
+.AppointmentModal_stepCurrent__DyVem .AppointmentModal_stepLabel__tT_Fn {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ─── Step Body (scrollable) ─── */
+.AppointmentModal_stepBody__VSpBd {
+  flex: 1 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8);
+}
+
+.AppointmentModal_stepTitle__e8C78 {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-4);
+}
+
+/* ─── Form Layout ─── */
+.AppointmentModal_formRow__1eprd {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-4);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* ─── Field ─── */
+.AppointmentModal_field__Fw8PL {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  position: relative;
+}
+
+.AppointmentModal_fieldFocused__n3124 .AppointmentModal_inputWrap__tv3Sa {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.AppointmentModal_fieldFocused__n3124 .AppointmentModal_label__dWlX8 {
+  color: var(--primary);
+}
+
+.AppointmentModal_fieldError__JKRe8 .AppointmentModal_inputWrap__tv3Sa {
+  border-color: var(--error) !important;
+}
+
+.AppointmentModal_fieldError__JKRe8 .AppointmentModal_label__dWlX8 {
+  color: var(--error) !important;
+}
+
+.AppointmentModal_label__dWlX8 {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--gray-600);
+  transition: color var(--transition-fast);
+}
+
+.AppointmentModal_inputWrap__tv3Sa {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: var(--white);
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_fieldIconWrap__oLWRP {
+  color: var(--gray-400);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.AppointmentModal_textareaIcon__4NSOv {
+  align-self: flex-start;
+  margin-top: var(--space-3);
+}
+
+.AppointmentModal_input__soHVO {
+  flex: 1 1;
+  padding: 6px var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  background: transparent;
+}
+
+.AppointmentModal_input__soHVO::placeholder {
+  color: var(--gray-400);
+  font-size: 11px;
+}
+
+.AppointmentModal_textarea__iuw_a {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.AppointmentModal_errorMsg__ZXDyA {
+  font-size: var(--font-size-xs);
+  color: var(--error);
+  font-weight: 500;
+}
+
+/* ─── Custom Select ─── */
+.AppointmentModal_customSelect__qrvpO {
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.AppointmentModal_customSelect__qrvpO:hover {
+  border-color: var(--gray-300);
+}
+
+.AppointmentModal_selectValue__rYtB1 {
+  flex: 1 1;
+  padding: 6px var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.AppointmentModal_placeholder__a4r07 {
+  color: var(--gray-400);
+}
+
+.AppointmentModal_selectChevron__VDXW1 {
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.AppointmentModal_selectChevronOpen__zguPC {
+  transform: rotate(180deg);
+}
+
+/* ─── Dropdown Panel ─── */
+.AppointmentModal_dropdownPanel__138J_ {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  padding: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+  transform-origin: bottom center;
+}
+
+/* ─── Dropdown Option ─── */
+.AppointmentModal_dropdownOption__yKSGy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--gray-700);
+  cursor: pointer;
+  background: none;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_dropdownOption__yKSGy:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_dropdownOptionSelected__ootID {
+  background: var(--primary-50);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.AppointmentModal_optionIcon__CIbQM {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_dropdownOption__yKSGy:hover .AppointmentModal_optionIcon__CIbQM,
+.AppointmentModal_dropdownOptionSelected__ootID .AppointmentModal_optionIcon__CIbQM {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.AppointmentModal_optionLabel__zgrxT {
+  flex: 1 1;
+}
+
+.AppointmentModal_optionDesc__hgOwG {
+  display: block;
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 1px;
+}
+
+.AppointmentModal_dropdownOptionSelected__ootID .AppointmentModal_optionDesc__hgOwG {
+  color: var(--primary-300);
+}
+
+.AppointmentModal_optionCheck__ZSqRk {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* ─── Calendar ─── */
+.AppointmentModal_calendarInner__zbdYQ {
+  padding: var(--space-1);
+}
+
+.AppointmentModal_calNav__Xz9EB {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.AppointmentModal_calNavBtn__MMVPL {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_calNavBtn__MMVPL:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_calNavTitle__2FRrQ {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.AppointmentModal_calDayNames__zN9o4 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 2px;
+}
+
+.AppointmentModal_calDayName___UnVE {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  padding: 4px 0;
+}
+
+.AppointmentModal_calGrid__HeCOh {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-gap: 2px;
+  gap: 2px;
+}
+
+.AppointmentModal_calDay__eLBQW {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+  background: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.AppointmentModal_calDay__eLBQW:hover:not(:disabled) {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_calDayOther__H3pnW {
+  color: var(--gray-300);
+}
+
+.AppointmentModal_calDayDisabled__TV1WK {
+  color: var(--gray-200) !important;
+  cursor: not-allowed;
+}
+
+.AppointmentModal_calDayToday__gIpaE {
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.AppointmentModal_calDaySelected__X3zJW {
+  background: var(--primary) !important;
+  color: var(--white) !important;
+  border-color: var(--primary) !important;
+  font-weight: 700;
+}
+
+/* ─── Time ─── */
+
+.AppointmentModal_timeGroup__7MCKA {
+  padding: var(--space-2);
+}
+
+.AppointmentModal_timeGroup__7MCKA+.AppointmentModal_timeGroup__7MCKA {
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_timeGroupLabel__DNa_E {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-400);
+  margin-bottom: var(--space-2);
+  padding-left: 2px;
+}
+
+.AppointmentModal_timeGrid__Lum9X {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: var(--space-2);
+  gap: var(--space-2);
+}
+
+.AppointmentModal_timeChip__wfNF8 {
+  padding: 6px 4px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-600);
+  background: var(--bg-light);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.AppointmentModal_timeChip__wfNF8:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+  border-color: var(--primary-100);
+}
+
+.AppointmentModal_timeChipSelected__3kxfT {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.AppointmentModal_timeChipSelected__3kxfT:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+/* Custom time */
+.AppointmentModal_customTimeSection__tA6op {
+  padding: var(--space-2);
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_customTimeRow__7foVV {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.AppointmentModal_customTimeInput__2Dihw {
+  flex: 1 1;
+  padding: 6px var(--space-3);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  background: var(--bg-light);
+  transition: border-color var(--transition-fast);
+}
+
+.AppointmentModal_customTimeInput__2Dihw:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.AppointmentModal_customTimeConfirm__uL9TS {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px var(--space-3);
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.AppointmentModal_customTimeConfirm__uL9TS:hover {
+  background: var(--primary-dark);
+}
+
+/* ─── Footer ─── */
+.AppointmentModal_footer__1qAHF {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-8);
+  border-top: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+
+.AppointmentModal_footerSpacer__tXVsk {
+  flex: 1 1;
+}
+
+.AppointmentModal_footerBtn__A8Dqp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.AppointmentModal_confirmBtn__KRn8L {
+  padding: var(--space-3) var(--space-6) !important;
+}
+
+.AppointmentModal_spinner__PMmdd {
+  animation: AppointmentModal_spin__70hc_ 1s linear infinite;
+}
+
+@keyframes AppointmentModal_spin__70hc_ {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Step 3 Summary ─── */
+.AppointmentModal_confirmSubtext__CygaR {
+  font-size: var(--font-size-sm);
+  color: var(--gray-400);
+  margin-bottom: var(--space-4);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.AppointmentModal_summaryCard__Ohy5_ {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.AppointmentModal_summarySection__y97Nf {
+  padding: var(--space-4);
+}
+
+.AppointmentModal_summarySection__y97Nf+.AppointmentModal_summarySection__y97Nf {
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_summarySectionHeader__VDD6s {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.AppointmentModal_summarySectionHeader__VDD6s span {
+  flex: 1 1;
+}
+
+.AppointmentModal_editBtn__WJ_I0 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  background: var(--primary-50);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_editBtn__WJ_I0:hover {
+  background: var(--primary-100);
+}
+
+.AppointmentModal_summaryGrid__zADZf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-4);
+}
+
+.AppointmentModal_summaryItem__H4gpY {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.AppointmentModal_summaryItemFull__uuDv9 {
+  grid-column: 1 / -1;
+}
+
+.AppointmentModal_summaryLabel__dr8WO {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.AppointmentModal_summaryValue__DgQaz {
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .AppointmentModal_modal__KJrrN {
+    max-height: 95vh;
+  }
+
+  .AppointmentModal_stepper__XhwRH {
+    padding: var(--space-4);
+    gap: 0;
+  }
+
+  .AppointmentModal_stepLabel__tT_Fn {
+    display: none;
+  }
+
+  .AppointmentModal_stepBody__VSpBd {
+    padding: var(--space-4);
+  }
+
+  .AppointmentModal_footer__1qAHF {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .AppointmentModal_formRow__1eprd {
+    grid-template-columns: 1fr;
+  }
+
+  .AppointmentModal_summaryGrid__zADZf {
+    grid-template-columns: 1fr;
+  }
+
+  .AppointmentModal_timeGrid__Lum9X {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+/*!****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/Navbar.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************/
+.Navbar_topBar__ZjMUY {
+  background: linear-gradient(135deg, #0E898F, #0A6B70);
+  color: var(--white);
+  padding: var(--space-2) 0;
+  font-size: var(--font-size-xs);
+}
+
+.Navbar_topBarLink__o9SoS {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0.9;
+  text-decoration: none;
+  color: var(--white);
+  transition: opacity var(--transition-fast);
+}
+
+.Navbar_topBarLink__o9SoS:hover {
+  opacity: 1;
+}
+
+.Navbar_topBarInner__xwHp6 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.Navbar_topBarLeft__EnsRD {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.Navbar_topBarRight__q6HVu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.Navbar_topBarItem__orEKy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0.9;
+}
+
+.Navbar_topBarDivider__MKeXg {
+  opacity: 0.3;
+}
+
+/* Navbar */
+.Navbar_navbar__fk_p7 {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all var(--transition-base);
+  border-bottom: 1px solid transparent;
+}
+
+.Navbar_scrolled___WOss {
+  box-shadow: var(--shadow-lg);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.Navbar_navInner__OAkyY {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+/* Logo */
+.Navbar_logo__UM0Ax {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  z-index: 10;
+}
+
+.Navbar_logoIcon__jhC9K {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-blue);
+}
+
+.Navbar_logoText__ZgrAJ {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  letter-spacing: -0.02em;
+}
+
+.Navbar_logoAccent__UiZ4M {
+  color: var(--primary);
+}
+
+.Navbar_logoImage__yr2dQ {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Desktop Nav */
+.Navbar_desktopNav__Za2sj {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.Navbar_navLink__id1IU {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--gray-600);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  position: relative;
+  padding: var(--space-2) 0;
+  background: none;
+}
+
+.Navbar_navLink__id1IU::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base);
+}
+
+.Navbar_navLink__id1IU:hover {
+  color: var(--primary);
+}
+
+.Navbar_navLink__id1IU:hover::after {
+  width: 100%;
+}
+
+.Navbar_navLinkActive__CmfE_ {
+  color: var(--primary);
+}
+
+.Navbar_navLinkActive__CmfE_::after {
+  width: 100%;
+}
+
+/* ========== Dropdown ========== */
+.Navbar_dropdownTrigger__pef7x {
+  position: relative;
+}
+
+.Navbar_dropdownBtn__lWY52 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.Navbar_chevron__Se63D {
+  transition: transform var(--transition-base);
+  flex-shrink: 0;
+}
+
+.Navbar_chevronOpen__O7x_F {
+  transform: rotate(180deg);
+}
+
+/* Mega Dropdown Panel */
+.Navbar_megaDropdown__5S2an {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  padding: var(--space-6);
+  z-index: 1001;
+  min-width: 680px;
+}
+
+.Navbar_megaDropdown__5S2an::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: transparent;
+}
+
+.Navbar_megaDropdown__5S2an::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 16px;
+  height: 16px;
+  background: var(--white);
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-left: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 3px 0 0 0;
+}
+
+.Navbar_dropdownInner__U4rxY {
+  display: flex;
+  gap: var(--space-6);
+}
+
+/* Links Column */
+.Navbar_dropdownLinks__CvJuH {
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+}
+
+.Navbar_dropdownHeader__7gqVg {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.Navbar_dropdownItem__GD6VA {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.Navbar_dropdownItem__GD6VA:hover {
+  background: var(--primary-50);
+}
+
+.Navbar_dropdownItemActive__l5z1Q {
+  background: var(--primary-50);
+}
+
+.Navbar_dropdownItemIcon__veK5u {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.Navbar_dropdownItem__GD6VA:hover .Navbar_dropdownItemIcon__veK5u {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.Navbar_dropdownItemLabel__9KeZV {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--gray-800);
+  line-height: 1.3;
+}
+
+.Navbar_dropdownItemDesc__LYYj4 {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--gray-400);
+  line-height: 1.3;
+}
+
+.Navbar_viewAllLink__ZhZhc {
+  display: inline-block;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  border-top: 1px solid var(--gray-100);
+  padding-top: var(--space-3);
+}
+
+.Navbar_viewAllLink__ZhZhc:hover {
+  color: var(--primary-dark);
+}
+
+/* Image Column */
+.Navbar_dropdownImage__pR4cq {
+  position: relative;
+  width: 320px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.Navbar_dropdownImg__O9P5N {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-xl);
+}
+
+.Navbar_dropdownImageOverlay___wxvX {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-4);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.Navbar_dropdownImageOverlay___wxvX span {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--white);
+}
+
+.Navbar_dropdownImageOverlay___wxvX p {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Nav Actions */
+.Navbar_navActions__YsS7O {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ── Shared base for ALL navbar buttons ── */
+.Navbar_navBtn__CBja_ {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 0.8125rem;        /* 13px – identical for every button */
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast),
+              transform var(--transition-fast), color var(--transition-fast);
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer sweep on every button */
+.Navbar_navBtn__CBja_::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.38) 45%,
+    rgba(255, 255, 255, 0.55) 55%,
+    transparent 100%
+  );
+  animation: Navbar_shimmerShift__SzzO9 2.8s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+@keyframes Navbar_shimmerShift__SzzO9 {
+  0%   { left: -80%; opacity: 1; }
+  55%  { left: 130%; opacity: 1; }
+  56%  { opacity: 0; }
+  100% { left: 130%; opacity: 0; }
+}
+
+.Navbar_navBtn__CBja_:hover {
+  transform: translateY(-1px);
+}
+
+/* Login – outline / secondary */
+.Navbar_navLogin__sirYI {
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.Navbar_navLogin__sirYI:hover {
+  background: var(--primary-50);
+}
+
+/* Book Appointment – aesthetic dark teal */
+.Navbar_navCta__3nejB {
+  background: linear-gradient(135deg, #0E898F, #0A6B70);
+  color: var(--white);
+  box-shadow: 0 2px 12px rgba(14, 137, 143, 0.35);
+}
+.Navbar_navCta__3nejB:hover {
+  box-shadow: 0 4px 18px rgba(14, 137, 143, 0.50);
+}
+
+/* Emergency – red solid */
+.Navbar_navEmergency__s1tbY {
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(229, 62, 62, 0.30);
+}
+.Navbar_navEmergency__s1tbY:hover {
+  background: linear-gradient(135deg, #c53030, #9b2c2c);
+  box-shadow: 0 4px 18px rgba(229, 62, 62, 0.45);
+}
+
+/* Hamburger */
+.Navbar_hamburger__b7KpD {
+  display: none;
+  background: none;
+  color: var(--gray-700);
+  padding: var(--space-2);
+  z-index: 10;
+}
+
+/* Mobile Menu */
+.Navbar_mobileMenu__g3FB_ {
+  display: none;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--gray-100);
+  background: var(--white);
+  overflow: hidden;
+}
+
+.Navbar_mobileLink__qh5Fz {
+  display: block;
+  padding: var(--space-3) 0;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--gray-700);
+  text-decoration: none;
+  border-bottom: 1px solid var(--gray-100);
+  transition: color var(--transition-fast);
+}
+
+.Navbar_mobileLink__qh5Fz:hover {
+  color: var(--primary);
+}
+
+.Navbar_mobileLinkActive__Q3_On {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.Navbar_mobileDropdownBtn__dk7tD {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  cursor: pointer;
+}
+
+.Navbar_mobileSubMenu__YMzV4 {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-left: var(--space-4);
+  padding-bottom: var(--space-2);
+}
+
+.Navbar_mobileSubLink__ZulNP {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  font-size: var(--font-size-sm);
+  color: var(--gray-600);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.Navbar_mobileSubLink__ZulNP:hover {
+  color: var(--primary);
+}
+
+.Navbar_mobileCta__4yeJ_ {
+  margin-top: var(--space-3);
+  width: 100%;
+  justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .Navbar_desktopNav__Za2sj {
+    display: none;
+  }
+
+  .Navbar_navActions__YsS7O {
+    display: none;
+  }
+
+  .Navbar_hamburger__b7KpD {
+    display: flex;
+  }
+
+  .Navbar_mobileMenu__g3FB_ {
+    display: flex;
+  }
+}
+
+@media (max-width: 640px) {
+  .Navbar_topBarLeft__EnsRD {
+    gap: var(--space-2);
+  }
+
+  .Navbar_topBarDivider__MKeXg,
+  .Navbar_topBarRight__q6HVu {
+    display: none;
+  }
+}
+/*!****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/Footer.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************/
+.Footer_footer__UaG1g {
+  background: var(--gray-900);
+  color: var(--gray-300);
+  position: relative;
+}
+
+/* Newsletter */
+.Footer_newsletterWrapper__LXqU_ {
+  position: relative;
+  z-index: 2;
+}
+
+.Footer_newsletter__ISWxG {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  background: linear-gradient(135deg, #0E898F, #0A6B70);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-10) var(--space-12);
+  transform: translateY(-50%);
+  box-shadow: 0 20px 50px rgba(14, 137, 143, 0.35);
+}
+
+.Footer_nlContent__fYkmT {
+  flex: 1 1;
+}
+
+.Footer_nlTitle__enQ4R {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: var(--space-2);
+}
+
+.Footer_nlText__SKGlq {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.Footer_nlForm__U8hAS {
+  display: flex;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.Footer_inputWrapper__HWNhs {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.Footer_inputIcon__9CL_w {
+  position: absolute;
+  left: var(--space-4);
+  color: var(--gray-400);
+}
+
+.Footer_nlInput__t6X2U {
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.15);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  color: var(--white);
+  font-size: var(--font-size-sm);
+  width: 280px;
+  transition: all var(--transition-base);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.Footer_nlInput__t6X2U::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.Footer_nlInput__t6X2U:focus {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.Footer_nlButton__ncIWy {
+  background: var(--white) !important;
+  color: var(--primary) !important;
+  box-shadow: none !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.Footer_nlButton__ncIWy:hover {
+  background: var(--gray-100) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Footer Content */
+.Footer_footerContent__nZq4z {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  grid-gap: var(--space-10);
+  gap: var(--space-10);
+  padding: 0 0 var(--space-12);
+}
+
+.Footer_footerNoNewsletter__iHMa7 {
+  padding-top: var(--space-16);
+}
+
+/* Footer Logo */
+.Footer_footerLogo__FBvBQ {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  margin-bottom: var(--space-4);
+}
+
+.Footer_logoIcon__Y12Ym {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Footer_logoText__UJ4c3 {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--white);
+}
+
+.Footer_logoAccent__O57tg {
+  color: var(--primary-light);
+}
+
+.Footer_footerLogoImage__FicoW {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+
+.Footer_footerAbout__6fEFt {
+  font-size: var(--font-size-sm);
+  line-height: 1.8;
+  margin-bottom: var(--space-5);
+  color: var(--gray-400);
+}
+
+/* Social Links */
+.Footer_socialLinks__QXggH {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.Footer_socialLink__VOPU_ {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--gray-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  transition: all var(--transition-base);
+}
+
+.Footer_socialLink__VOPU_:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+/* Columns */
+.Footer_footerCol__ysoBa {
+  display: flex;
+  flex-direction: column;
+}
+
+.Footer_colTitle__sNZTr {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: var(--space-6);
+  position: relative;
+  padding-bottom: var(--space-3);
+}
+
+.Footer_colTitle__sNZTr::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: var(--radius-full);
+}
+
+.Footer_linkList__TTzpJ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.Footer_footerLink__twEJY {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-400);
+  text-decoration: none;
+  transition: all var(--transition-base);
+}
+
+.Footer_footerLink__twEJY:hover {
+  color: var(--primary-light);
+  transform: translateX(4px);
+}
+
+/* Contact */
+.Footer_contactList__4NX6j {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.Footer_contactItem__NC8Fl {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+.Footer_contactIcon__abcDN {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Bottom Bar */
+.Footer_bottomBar__TdDhH {
+  border-top: 1px solid var(--gray-800);
+  padding: var(--space-5) 0;
+}
+
+.Footer_bottomInner__zvcW5 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.Footer_copyright__j5CNb {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+}
+
+.Footer_bottomLinks__OBXsy {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.Footer_bottomLinks__OBXsy a {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+.Footer_bottomLinks__OBXsy a:hover {
+  color: var(--primary-light);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .Footer_footerContent__nZq4z {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8);
+  }
+
+  .Footer_newsletter__ISWxG {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .Footer_nlForm__U8hAS {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .Footer_nlInput__t6X2U {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .Footer_footerContent__nZq4z {
+    grid-template-columns: 1fr;
+  }
+
+  .Footer_newsletter__ISWxG {
+    padding: var(--space-6);
+  }
+
+  .Footer_bottomInner__zvcW5 {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .Footer_bottomLinks__OBXsy {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-4);
+  }
+}
+
+/*!**************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/app/about/about.module.css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************/
+.about_pageHero__pXvpw {
+  background: linear-gradient(135deg, var(--bg-blue) 0%, #f0f7ff 50%, var(--white) 100%);
+  padding: var(--space-24) 0 var(--space-20);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.about_pageHero__pXvpw::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary-100), transparent);
+}
+
+.about_heroContent__aq_ck { 
+  max-width: 800px; 
+  margin: 0 auto; 
+  position: relative;
+  z-index: 2;
+}
+
+.about_heroTitle__ew_Rg { 
+  font-size: clamp(2.5rem, 5vw, 4rem); 
+  font-weight: 900; 
+  color: var(--gray-900); 
+  line-height: 1.1; 
+  margin-bottom: var(--space-6); 
+  letter-spacing: -0.04em; 
+}
+
+.about_accent__cBsa3 { 
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+  -webkit-background-clip: text; 
+  -webkit-text-fill-color: transparent; 
+  background-clip: text; 
+}
+
+.about_heroSubtext__DTjlN { 
+  font-size: var(--font-size-xl); 
+  color: var(--gray-600); 
+  line-height: 1.6; 
+  max-width: 680px; 
+  margin: 0 auto;
+  font-weight: 500;
+}
+
+.about_section__iIVqi { padding: var(--space-24) 0; }
+.about_sectionHeader__FsNOB { text-align: center; margin-bottom: var(--space-16); }
+
+/* Mission / Philosophy */
+.about_missionGrid__duJLs { 
+  display: grid; 
+  grid-template-columns: 1.1fr 0.9fr; 
+  grid-gap: var(--space-16); 
+  gap: var(--space-16); 
+  align-items: center; 
+}
+
+.about_imageWrapper__4EuRX {
+  position: relative;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-2xl);
+}
+
+.about_imageWrapper__4EuRX::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-2xl);
+  pointer-events: none;
+}
+
+.about_image__mD_hE { 
+  width: 100%; 
+  height: auto; 
+  object-fit: cover; 
+  transition: transform var(--transition-slow);
+}
+
+.about_imageWrapper__4EuRX:hover .about_image__mD_hE {
+  transform: scale(1.05);
+}
+
+.about_missionContent__J82Op {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.about_missionText__JwwEn { 
+  font-size: var(--font-size-lg); 
+  color: var(--gray-600); 
+  line-height: 1.8; 
+}
+
+.about_checkList__b_Zpj { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--space-4); 
+}
+
+.about_checkItem__l3gmh { 
+  display: flex; 
+  align-items: flex-start; 
+  gap: var(--space-4); 
+  font-size: var(--font-size-base); 
+  color: var(--gray-700); 
+  font-weight: 500;
+}
+
+.about_checkIconWrapper__1HynW {
+  width: 24px;
+  height: 24px;
+  background: var(--primary-50);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Doctors Section */
+.about_doctorsSection__zP_2Y {
+  padding: var(--space-24) 0;
+  background: #f8faff;
+}
+
+.about_doctorsGrid__XKD5x {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: var(--space-10);
+  gap: var(--space-10);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.about_doctorCard__x6d0L {
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-100);
+  transition: all var(--transition-spring);
+  display: flex;
+  flex-direction: column;
+}
+
+.about_doctorCard__x6d0L:hover {
+  transform: translateY(-12px);
+  box-shadow: var(--shadow-2xl);
+  border-color: var(--primary-200);
+}
+
+.about_doctorHeader__w7bs4 {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.about_doctorHeader__w7bs4::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, var(--white), transparent);
+}
+
+.about_doctorContent__xE9Bx {
+  padding: var(--space-8);
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.about_doctorName__JSEWg {
+  font-size: var(--font-size-3xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+  letter-spacing: -0.02em;
+}
+
+.about_doctorRole__dBJFK {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  background: var(--gray-50);
+  border-radius: var(--radius-full);
+}
+
+.about_doctorSpecialty__484CB {
+  display: block;
+  font-size: var(--font-size-base);
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: var(--space-5);
+}
+
+.about_doctorDesc__ag5sA {
+  font-size: var(--font-size-base);
+  color: var(--gray-500);
+  line-height: 1.7;
+  margin-bottom: var(--space-6);
+}
+
+/* Why Stand Apart / Values */
+.about_valuesSection__KnXEl { 
+  padding: var(--space-24) 0; 
+  background: var(--white); 
+}
+
+.about_valuesGrid___dSzy { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  grid-gap: var(--space-8); 
+  gap: var(--space-8); 
+}
+
+.about_valueCard__UQvxp { 
+  background: var(--white); 
+  border-radius: var(--radius-2xl); 
+  padding: var(--space-10) var(--space-8); 
+  text-align: center; 
+  box-shadow: var(--shadow-md); 
+  transition: all var(--transition-base); 
+  border: 1px solid var(--gray-50);
+}
+
+.about_valueCard__UQvxp:hover {
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-100);
+  transform: translateY(-6px);
+}
+
+.about_valueIcon__aoSUk { 
+  width: 72px; 
+  height: 72px; 
+  border-radius: var(--radius-xl); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 0 auto var(--space-6); 
+  box-shadow: 0 8px 20px -8px currentColor;
+}
+
+.about_valueTitle__ks1i_ { 
+  font-size: var(--font-size-xl); 
+  font-weight: 800; 
+  color: var(--gray-900); 
+  margin-bottom: var(--space-3); 
+}
+
+.about_valueDesc__3KZVy { 
+  font-size: var(--font-size-sm); 
+  color: var(--gray-600); 
+  line-height: 1.7; 
+}
+
+/* Infrastructure */
+.about_infraSection__DdhMU {
+  padding: var(--space-24) 0;
+  background: var(--bg-light);
+}
+
+.about_infraHeader__tNWjh {
+  text-align: center;
+  margin-bottom: var(--space-16);
+}
+
+.about_infraSubtext__7F_SB {
+  font-size: var(--font-size-lg);
+  color: var(--gray-600);
+  max-width: 680px;
+  margin: var(--space-4) auto 0;
+  font-weight: 500;
+}
+
+.about_infraGrid__3isST {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: var(--space-6);
+  gap: var(--space-6);
+}
+
+.about_infraItem__RL17J {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--white);
+  padding: var(--space-6) var(--space-8);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-50);
+  font-size: var(--font-size-base);
+  color: var(--gray-800);
+  font-weight: 600;
+  transition: all var(--transition-base);
+}
+
+.about_infraItem__RL17J:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-100);
+  transform: translateX(8px);
+}
+
+.about_infraIcon__mitvx {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .about_missionGrid__duJLs { grid-template-columns: 1fr; gap: var(--space-10); }
+  .about_valuesGrid___dSzy { grid-template-columns: repeat(2, 1fr); }
+  .about_doctorsGrid__XKD5x { grid-template-columns: 1fr; max-width: 540px; }
+  .about_infraGrid__3isST { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .about_heroTitle__ew_Rg { font-size: 2.5rem; }
+  .about_valuesGrid___dSzy { grid-template-columns: 1fr; }
+  .about_infraGrid__3isST { grid-template-columns: 1fr; }
+  .about_section__iIVqi { padding: var(--space-16) 0; }
+}
+

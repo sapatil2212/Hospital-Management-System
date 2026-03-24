@@ -87,7 +87,7 @@ export const createSubDepartment = async (hospitalId: string, data: CreateSubDep
       code: data.code || null,
       type: data.type,
       description: data.description || null,
-      color: data.color || "#3b82f6",
+      color: data.color || "#0E898F",
       flow: data.flow || null,
       departmentId: data.departmentId || null,
       hodStaffId: data.hodStaffId || null,

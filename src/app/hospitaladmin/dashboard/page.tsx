@@ -74,7 +74,7 @@ function MiniCalendar() {
         <div style={{ display: "flex", gap: 4 }}>
           {["‹", "›"].map((a, i) => (
             <button key={i} onClick={() => setCur(c => { const nm = c.m + (i ? 1 : -1); return nm < 0 ? { y: c.y - 1, m: 11 } : nm > 11 ? { y: c.y + 1, m: 0 } : { ...c, m: nm }; })}
-              style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: i ? "#3b82f6" : "#e2e8f0", color: i ? "#fff" : "#64748b", cursor: "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: i ? "#0E898F" : "#e2e8f0", color: i ? "#fff" : "#64748b", cursor: "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {a}
             </button>
           ))}
@@ -85,7 +85,7 @@ function MiniCalendar() {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
         {cells.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: 12, fontWeight: isToday(d) ? 700 : 400, padding: "5px 0", borderRadius: 8, cursor: d ? "pointer" : "default", background: isToday(d) ? "#3b82f6" : "transparent", color: isToday(d) ? "#fff" : d ? "#334155" : "transparent", transition: "background .15s" }}>
+          <div key={i} style={{ textAlign: "center", fontSize: 12, fontWeight: isToday(d) ? 700 : 400, padding: "5px 0", borderRadius: 8, cursor: d ? "pointer" : "default", background: isToday(d) ? "#0E898F" : "transparent", color: isToday(d) ? "#fff" : d ? "#334155" : "transparent", transition: "background .15s" }}>
             {d || ""}
           </div>
         ))}
@@ -340,7 +340,7 @@ function InventoryPanel() {
         ].map(t => (
           <button key={t.id} onClick={() => setView(t.id as any)}
             className={`hd-filter-btn ${view === t.id ? "on" : ""}`}
-            style={{ background: view === t.id ? "#3b82f6" : "#fff", color: view === t.id ? "#fff" : "#64748b", border: "1px solid #e2e8f0", padding: "8px 16px", borderRadius: 10, fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+            style={{ background: view === t.id ? "#0E898F" : "#fff", color: view === t.id ? "#fff" : "#64748b", border: "1px solid #e2e8f0", padding: "8px 16px", borderRadius: 10, fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -397,7 +397,7 @@ function InventoryPanel() {
                           <td>{a.minStock}</td>
                           <td>
                             <div style={{ display: "flex", gap: 6 }}>
-                              <button type="button" className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }} onClick={() => openItemModal(a.id, "view")} title="View">
+                              <button type="button" className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => openItemModal(a.id, "view")} title="View">
                                 <Eye size={12} />
                               </button>
                             </div>
@@ -431,7 +431,7 @@ function InventoryPanel() {
                           <td style={{ color: "#f59e0b", fontWeight: 600 }}>{new Date(a.expiryDate).toLocaleDateString()}</td>
                           <td>
                             <div style={{ display: "flex", gap: 6 }}>
-                              <button type="button" className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }} onClick={() => openItemModal(a.itemId, "view")} title="View Item">
+                              <button type="button" className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => openItemModal(a.itemId, "view")} title="View Item">
                                 <Eye size={12} />
                               </button>
                             </div>
@@ -473,7 +473,7 @@ function InventoryPanel() {
                     <td><span className={`hd-badge ${i.isActive ? "on" : ""}`} style={{ background: i.isActive ? "#dcfce7" : "#fee2e2", color: i.isActive ? "#166534" : "#991b1b" }}>{i.isActive ? "Active" : "Inactive"}</span></td>
                     <td>
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button type="button" className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }} onClick={() => openItemModal(i.id, "view")} title="View">
+                        <button type="button" className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => openItemModal(i.id, "view")} title="View">
                           <Eye size={12} />
                         </button>
                         <button type="button" className="hd-card-icon-btn" onClick={() => openItemModal(i.id, "edit")} title="Edit">
@@ -522,7 +522,7 @@ function InventoryPanel() {
                     <td><span className="hd-badge on" style={{ background: "#dcfce7", color: "#166534" }}>{p.status}</span></td>
                     <td>
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button type="button" className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }} onClick={() => openPurchaseModal(p.id, "view")} title="View">
+                        <button type="button" className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => openPurchaseModal(p.id, "view")} title="View">
                           <Eye size={12} />
                         </button>
                         <button type="button" className="hd-card-icon-btn" onClick={() => openPurchaseModal(p.id, "edit")} title="Edit">
@@ -564,7 +564,7 @@ function InventoryPanel() {
                     <td>{s.email || "—"}</td>
                     <td>
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button type="button" className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }} onClick={() => openSupplierModal(s.id, "view")} title="View">
+                        <button type="button" className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => openSupplierModal(s.id, "view")} title="View">
                           <Eye size={12} />
                         </button>
                         <button type="button" className="hd-card-icon-btn" onClick={() => openSupplierModal(s.id, "edit")} title="Edit">
@@ -608,7 +608,7 @@ function InventoryPanel() {
                     <td style={{ fontSize: 12 }}>{m.performedBy || "System"}</td>
                     <td>
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button type="button" className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }} onClick={() => setMovementModalData(m)} title="View">
+                        <button type="button" className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => setMovementModalData(m)} title="View">
                           <Eye size={12} />
                         </button>
                       </div>
@@ -735,11 +735,11 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                 padding: "14px 16px",
                 fontSize: 12,
                 fontWeight: 600,
-                color: activeTab === t.id ? "#3b82f6" : "#64748b",
+                color: activeTab === t.id ? "#0E898F" : "#64748b",
                 border: "none",
                 background: "none",
                 cursor: "pointer",
-                borderBottom: `2px solid ${activeTab === t.id ? "#3b82f6" : "transparent"}`,
+                borderBottom: `2px solid ${activeTab === t.id ? "#0E898F" : "transparent"}`,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -894,7 +894,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                 <label className="hd-ml">Product Categories Supplied</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
                   {["Medicines", "Surgical", "Consumables", "Equipment"].map(cat => (
-                    <label key={cat} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", background: form.categoriesSupplied.includes(cat) ? "#eff6ff" : "#f8fafc", padding: "6px 12px", borderRadius: 8, border: `1px solid ${form.categoriesSupplied.includes(cat) ? "#3b82f6" : "#e2e8f0"}`, transition: "all .2s" }}>
+                    <label key={cat} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", background: form.categoriesSupplied.includes(cat) ? "#E6F4F4" : "#f8fafc", padding: "6px 12px", borderRadius: 8, border: `1px solid ${form.categoriesSupplied.includes(cat) ? "#0E898F" : "#e2e8f0"}`, transition: "all .2s" }}>
                       <input
                         type="checkbox"
                         checked={form.categoriesSupplied.includes(cat)}
@@ -904,7 +904,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                         }}
                         style={{ display: "none" }}
                       />
-                      {form.categoriesSupplied.includes(cat) && <CheckCircle2 size={12} color="#3b82f6" />}
+                      {form.categoriesSupplied.includes(cat) && <CheckCircle2 size={12} color="#0E898F" />}
                       {cat}
                     </label>
                   ))}
@@ -965,7 +965,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                       height: "120px",
                       borderStyle: "dashed",
                       background: form.documents[doc.key] ? "#f0fdf4" : uploading[doc.key] ? "#f8fafc" : "#fff",
-                      borderColor: form.documents[doc.key] ? "#22c55e" : uploading[doc.key] ? "#3b82f6" : "#e2e8f0",
+                      borderColor: form.documents[doc.key] ? "#22c55e" : uploading[doc.key] ? "#0E898F" : "#e2e8f0",
                       position: "relative",
                       transition: "all .2s",
                       display: "flex",
@@ -985,8 +985,8 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 
                     {uploading[doc.key] ? (
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <span className="hd-spin" style={{ borderTopColor: "#3b82f6", width: 16, height: 16 }} />
-                        <div style={{ fontSize: 10, fontWeight: 600, color: "#3b82f6" }}>Uploading...</div>
+                        <span className="hd-spin" style={{ borderTopColor: "#0E898F", width: 16, height: 16 }} />
+                        <div style={{ fontSize: 10, fontWeight: 600, color: "#0E898F" }}>Uploading...</div>
                       </div>
                     ) : form.documents[doc.key] ? (
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" }}>
@@ -1000,7 +1000,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
                             target="_blank"
                             rel="noreferrer"
                             onClick={e => e.stopPropagation()}
-                            style={{ fontSize: 9, fontWeight: 700, color: "#3b82f6", textDecoration: "underline", display: "block", marginTop: 2 }}
+                            style={{ fontSize: 9, fontWeight: 700, color: "#0E898F", textDecoration: "underline", display: "block", marginTop: 2 }}
                           >
                             View File
                           </a>
@@ -1197,7 +1197,7 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
         <form onSubmit={submit} style={{ maxHeight: "85vh", overflowY: "auto", padding: "24px" }}>
           {/* Section 1: Supplier & Purchase Info */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
               <Building2 size={16} /> 1. Supplier & Purchase Info
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
@@ -1252,7 +1252,7 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
 
           {/* Section 2: Purchase Items */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Package size={16} /> 2. Purchase Items</div>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ position: "relative", width: 250 }}>
@@ -1288,9 +1288,9 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
                 <button
                   type="button"
                   onClick={() => addItem()}
-                  style={{ padding: "8px 16px", borderRadius: 10, background: "#3b82f6", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all .15s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#2563eb"}
-                  onMouseLeave={e => e.currentTarget.style.background = "#3b82f6"}
+                  style={{ padding: "8px 16px", borderRadius: 10, background: "#0E898F", color: "#fff", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#0A6B70"}
+                  onMouseLeave={e => e.currentTarget.style.background = "#0E898F"}
                 >
                   <Plus size={16} /> Add Blank Row
                 </button>
@@ -1434,7 +1434,7 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
           {/* Section 4 & 5: Summary & Payment */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: 32, alignItems: "start" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
                 <IndianRupee size={16} /> 5. Payment Details
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -1476,7 +1476,7 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
                 <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 800, color: "#1e293b" }}>
                   <span>Grand Total</span>
-                  <span style={{ color: "#3b82f6" }}>₹{grandTotal.toLocaleString()}</span>
+                  <span style={{ color: "#0E898F" }}>₹{grandTotal.toLocaleString()}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, color: balanceAmount > 0 ? "#f59e0b" : "#10b981", marginTop: 8 }}>
                   <span>Balance Amount</span>
@@ -1564,7 +1564,7 @@ function PatientsManagementPanel() {
       <div className="hd-tbl-wrap">
         {loading ? (
           <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8" }}>
-            <Loader2 size={24} className="hd-spin" style={{ margin: "0 auto 10px", borderColor: "#3b82f6" }} />
+            <Loader2 size={24} className="hd-spin" style={{ margin: "0 auto 10px", borderColor: "#0E898F" }} />
             <div style={{ fontSize: 13 }}>Loading patients...</div>
           </div>
         ) : patients.length === 0 ? (
@@ -1609,7 +1609,7 @@ function PatientsManagementPanel() {
                     <td><span className="hd-badge" style={{ background: "#fef3c7", color: "#f59e0b" }}>{p.bloodGroup || "—"}</span></td>
                     <td>
                       <div style={{ display: "flex", gap: 12 }}>
-                        <div title="Appointments"><div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>Visits</div><div style={{ fontSize: 12, fontWeight: 700, color: "#2563eb" }}>{p._count?.appointments || 0}</div></div>
+                        <div title="Appointments"><div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>Visits</div><div style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments || 0}</div></div>
                         <div title="Follow-ups"><div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>F/Up</div><div style={{ fontSize: 12, fontWeight: 700, color: "#10b981" }}>{p._count?.followUps || 0}</div></div>
                       </div>
                     </td>
@@ -1634,7 +1634,7 @@ function PatientsManagementPanel() {
                     if (pageNum < 1 || pageNum > totalPages) return null;
                     return (
                       <button key={i} className={`hd-filter-btn${currentPage === pageNum ? " on" : ""}`} onClick={() => setCurrentPage(pageNum)}
-                        style={{ minWidth: 32, justifyContent: "center", background: currentPage === pageNum ? "#3b82f6" : "#f1f5f9", color: currentPage === pageNum ? "#fff" : "#64748b" }}>
+                        style={{ minWidth: 32, justifyContent: "center", background: currentPage === pageNum ? "#0E898F" : "#f1f5f9", color: currentPage === pageNum ? "#fff" : "#64748b" }}>
                         {pageNum}
                       </button>
                     );
@@ -1698,7 +1698,7 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
   if (loading) return (
     <div className="hd-modal-bg">
       <div className="hd-modal" style={{ textAlign: "center", padding: 40 }}>
-        <Loader2 size={24} className="hd-spin" style={{ margin: "0 auto 10px", borderColor: "#3b82f6" }} />
+        <Loader2 size={24} className="hd-spin" style={{ margin: "0 auto 10px", borderColor: "#0E898F" }} />
         <div style={{ fontSize: 13, color: "#64748b" }}>Loading patient profile...</div>
       </div>
     </div>
@@ -1874,8 +1874,8 @@ function DashboardContent() {
   const maxBar = Math.max(...barData.map(b => b.val));
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize: 14 }}>
-      <div style={{ width: 32, height: 32, border: "3px solid #bfdbfe", borderTop: "3px solid #3b82f6", borderRadius: "50%", animation: "sp 0.8s linear infinite" }} />
+    <div style={{ minHeight: "100vh", background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize: 14 }}>
+      <div style={{ width: 32, height: 32, border: "3px solid #B3E0E0", borderTop: "3px solid #0E898F", borderRadius: "50%", animation: "sp 0.8s linear infinite" }} />
       <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
       Loading dashboard...
     </div>
@@ -1898,7 +1898,7 @@ function DashboardContent() {
   const completedAppts = apptStats?.completed ?? 0;
 
   const stats = [
-    { label: "Total Staff", val: mockStaff.length, sub: `${mockStaff.filter(s => s.role === "DOCTOR").length} doctors`, icon: <Users size={20} color="#fff" />, bg: "#eff6ff", iconBg: "#3b82f6" },
+    { label: "Total Staff", val: mockStaff.length, sub: `${mockStaff.filter(s => s.role === "DOCTOR").length} doctors`, icon: <Users size={20} color="#fff" />, bg: "#E6F4F4", iconBg: "#0E898F" },
     { label: "Total Patients", val: totalPatients, sub: newPatientsToday > 0 ? `+${newPatientsToday} new today` : "lifetime records", icon: <UserRound size={20} color="#fff" />, bg: "#f0fdf4", iconBg: "#10b981" },
     { label: "Today Appointments", val: todayAppts, sub: `${completedAppts} completed`, icon: <CalendarDays size={20} color="#fff" />, bg: "#fdf4ff", iconBg: "#a855f7" },
     { label: "Available Beds", val: 14, sub: "2 ICU, 12 general", icon: <Bed size={20} color="#fff" />, bg: "#fff7ed", iconBg: "#f59e0b" },
@@ -1914,35 +1914,35 @@ function DashboardContent() {
         .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
         .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
         .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
         .hd-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
         .hd-logo-sub{font-size:10px;color:#94a3b8}
         .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
         .hd-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
         .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
         .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#eff6ff;color:#2563eb;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#3b82f6;position:absolute;left:0}
+        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
+        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;left:0}
         .hd-nb.on .hd-nb-dot{display:block}
         .hd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
         .hd-user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
         .hd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .hd-urole{font-size:10px;font-weight:500;color:#3b82f6}
+        .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .hd-logout:hover{background:#fee2e2}
         .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
         .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
         .hd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
-        .hd-search-wrap:focus-within{border-color:#93c5fd}
+        .hd-search-wrap:focus-within{border-color:#80CCCC}
         .hd-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
         .hd-search::placeholder{color:#94a3b8}
         .hd-topbar-right{display:flex;align-items:center;gap:12px}
         .hd-notif{width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .15s}
-        .hd-notif:hover{background:#eff6ff}
+        .hd-notif:hover{background:#E6F4F4}
         .hd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #fff}
         .hd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .hd-profile-name{font-size:11px;font-weight:600;color:#1e293b}
         .hd-profile-role{font-size:9px;color:#64748b}
         .hd-body{display:grid;grid-template-columns:1fr 260px;flex:1;min-height:0}
@@ -1964,7 +1964,7 @@ function DashboardContent() {
         .hd-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}
         .hd-card-body{padding:16px 18px}
         .hd-card-icon-btn{width:28px;height:28px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;transition:background .15s}
-        .hd-card-icon-btn:hover{background:#eff6ff;color:#3b82f6}
+        .hd-card-icon-btn:hover{background:#E6F4F4;color:#0E898F}
         .hd-chart{display:flex;align-items:flex-end;gap:10px;height:140px}
         .hd-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
         .hd-bar{width:100%;border-radius:6px 6px 0 0;transition:opacity .2s;cursor:pointer;min-width:18px}
@@ -1984,17 +1984,17 @@ function DashboardContent() {
         .hd-right-sec{margin-bottom:22px}
         .hd-right-title{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:12px}
         .hd-appt-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;cursor:pointer;transition:all .15s;background:#fff}
-        .hd-appt-item.active{background:#3b82f6;border-color:#3b82f6}
+        .hd-appt-item.active{background:#0E898F;border-color:#0E898F}
         .hd-appt-item.active .hd-appt-name{color:#fff}
         .hd-appt-item.active .hd-appt-doc{color:rgba(255,255,255,0.75)}
         .hd-appt-item.active .hd-appt-time{color:rgba(255,255,255,0.7)}
-        .hd-appt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#eff6ff}
+        .hd-appt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#E6F4F4}
         .hd-appt-item.active .hd-appt-ic{background:rgba(255,255,255,0.18)}
         .hd-appt-name{font-size:12px;font-weight:700;color:#1e293b;flex:1}
         .hd-appt-doc{font-size:10px;color:#64748b;margin-top:1px}
         .hd-appt-time{font-size:9px;color:#94a3b8;white-space:nowrap}
-        .hd-btn-primary{padding:8px 16px;border-radius:9px;border:none;background:#3b82f6;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
-        .hd-btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+        .hd-btn-primary{padding:8px 16px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
+        .hd-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
         .hd-filter-btn{padding:6px 14px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px}
         .hd-modal-bg{position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
         .hd-modal{background:#fff;border-radius:18px;padding:32px 28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
@@ -2003,12 +2003,12 @@ function DashboardContent() {
         .hd-mf{margin-bottom:13px}
         .hd-ml{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:5px}
         .hd-mi{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:11px;color:#1e293b;outline:none;transition:border-color .2s}
-        .hd-mi:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,0.25)}
+        .hd-mi:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,0.25)}
         .hd-mi::placeholder{color:#cbd5e1}
         .hd-ma{display:flex;gap:10px;margin-top:18px}
         .hd-mcancel{flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:600;cursor:pointer}
         .hd-mcancel:hover{background:#f8fafc}
-        .hd-msubmit{flex:2;padding:10px;border-radius:9px;border:none;background:#3b82f6;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
+        .hd-msubmit{flex:2;padding:10px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
         .hd-msubmit:disabled{opacity:.55;cursor:not-allowed}
         .hd-spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
         @keyframes sp{to{transform:rotate(360deg)}}
@@ -2059,7 +2059,7 @@ function DashboardContent() {
             {navItems.slice(0, 7).map(n => (
               <button key={n.id} className={`hd-nb${tab === n.id ? " on" : ""}`} onClick={() => n.route ? router.push(n.route) : setTab(n.id)} style={{ position: "relative" }}>
                 {tab === n.id && <div className="hd-nb-dot" />}
-                <span style={{ color: tab === n.id ? "#2563eb" : "#94a3b8", display: "flex" }}>{n.icon}</span>
+                <span style={{ color: tab === n.id ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
                 {n.label}
               </button>
             ))}
@@ -2067,7 +2067,7 @@ function DashboardContent() {
             {navItems.slice(7).map(n => (
               <button key={n.id} className={`hd-nb${tab === n.id ? " on" : ""}`} onClick={() => setTab(n.id)} style={{ position: "relative" }}>
                 {tab === n.id && <div className="hd-nb-dot" />}
-                <span style={{ color: tab === n.id ? "#2563eb" : "#94a3b8", display: "flex" }}>{n.icon}</span>
+                <span style={{ color: tab === n.id ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
                 {n.label}
               </button>
             ))}
@@ -2222,7 +2222,7 @@ function DashboardContent() {
                 <div className="hd-chart" style={{ flex: 1 }}>
                   {barData.map((b, i) => (
                     <div key={i} className="hd-bar-wrap">
-                      <div className="hd-bar" style={{ height: `${(b.val / maxBar) * 130}px`, background: i === 2 || i === 6 ? "linear-gradient(180deg,#3b82f6,#60a5fa)" : "linear-gradient(180deg,#bfdbfe,#dbeafe)" }} />
+                      <div className="hd-bar" style={{ height: `${(b.val / maxBar) * 130}px`, background: i === 2 || i === 6 ? "linear-gradient(180deg,#0E898F,#14A3A8)" : "linear-gradient(180deg,#B3E0E0,#B3E0E0)" }} />
                       <span className="hd-bar-lbl">{b.month}</span>
                     </div>
                   ))}
@@ -2240,9 +2240,9 @@ function DashboardContent() {
               { icon: <Settings size={14} />, msg: "Breakdown in elevator on 2nd floor", time: "18 minutes ago", highlight: false },
               { icon: <AlertTriangle size={14} />, msg: "Damage reported at the main entrance door", time: "2 hours ago", highlight: false }
               ].map((r: any, i: number) => (
-                <div key={i} className="hd-report-item" style={{ background: r.highlight ? "linear-gradient(135deg,#3b82f6,#1d4ed8)" : "#f8fafc", border: r.highlight ? "none" : "1px solid #f1f5f9", marginBottom: 8 }}>
+                <div key={i} className="hd-report-item" style={{ background: r.highlight ? "linear-gradient(135deg,#0E898F,#07595D)" : "#f8fafc", border: r.highlight ? "none" : "1px solid #f1f5f9", marginBottom: 8 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span style={{ marginTop: 1, color: r.highlight ? "#fff" : "#3b82f6", display: "flex", flexShrink: 0 }}>{r.icon}</span>
+                    <span style={{ marginTop: 1, color: r.highlight ? "#fff" : "#0E898F", display: "flex", flexShrink: 0 }}>{r.icon}</span>
                     <div>
                       <div className="hd-ri-msg" style={{ color: r.highlight ? "#fff" : "#334155" }}>{r.msg}</div>
                       <div className="hd-ri-time" style={{ color: r.highlight ? "rgba(255,255,255,0.65)" : "#94a3b8" }}>{r.time}</div>
@@ -2270,10 +2270,10 @@ function DashboardContent() {
                     <td>{p.age}</td>
                     <td><span style={{ color: "#ef4444", fontWeight: 700 }}>{p.blood}</span></td>
                     <td>{p.gender}</td>
-                    <td><span className="hd-badge" style={p.status === "IPD" ? { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" } : p.status === "Discharged" ? { background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" } : { background: "#fefce8", color: "#ca8a04", border: "1px solid #fde68a" }}>{p.status}</span></td>
+                    <td><span className="hd-badge" style={p.status === "IPD" ? { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" } : p.status === "Discharged" ? { background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" } : { background: "#fefce8", color: "#ca8a04", border: "1px solid #fde68a" }}>{p.status}</span></td>
                     <td>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button className="hd-card-icon-btn" style={{ background: "#eff6ff", color: "#3b82f6", border: "none" }}><Pencil size={12} /></button>
+                        <button className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }}><Pencil size={12} /></button>
                         <button className="hd-card-icon-btn" style={{ background: "#fff5f5", color: "#ef4444", border: "none" }}><Trash2 size={12} /></button>
                       </div>
                     </td>
@@ -2287,7 +2287,7 @@ function DashboardContent() {
 
       {tab === "appointments" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", borderRadius: 16, padding: "28px 28px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 16, padding: "28px 28px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}><CalendarCheck size={24} />Appointment Management</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,.75)", maxWidth: 440 }}>Book appointments, manage follow-ups, and view your full patient registry in the dedicated module.</div>
@@ -2298,7 +2298,7 @@ function DashboardContent() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
             {[
-              { label: "Book Appointment", desc: "Search patient + pick doctor + select slot", color: "#3b82f6", bg: "#eff6ff", path: "/hospitaladmin/appointments", icon: <CalendarCheck size={18} /> },
+              { label: "Book Appointment", desc: "Search patient + pick doctor + select slot", color: "#0E898F", bg: "#E6F4F4", path: "/hospitaladmin/appointments", icon: <CalendarCheck size={18} /> },
               { label: "Follow-up Dashboard", desc: "Track pending, overdue and completed follow-ups", color: "#10b981", bg: "#f0fdf4", path: "/hospitaladmin/appointments", icon: <RefreshCw size={18} /> },
               { label: "Patient Registry", desc: "View full patient history and profiles", color: "#7c3aed", bg: "#f5f3ff", path: "/hospitaladmin/appointments", icon: <Users size={18} /> },
             ].map((card) => (
@@ -2327,11 +2327,11 @@ function DashboardContent() {
                   <tr key={s.id}>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#3b82f6,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(s.name)}</div>
+                        <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(s.name)}</div>
                         <span className="hd-td-name">{s.name}</span>
                       </div>
                     </td>
-                    <td><span className="hd-badge" style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }}>{s.role.replace("_", " ")}</span></td>
+                    <td><span className="hd-badge" style={{ background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" }}>{s.role.replace("_", " ")}</span></td>
                     <td>{s.dept}</td>
                     <td>{s.patients || "—"}</td>
                     <td><span className="hd-badge" style={s.status === "active" ? { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" } : { background: "#fff5f5", color: "#ef4444", border: "1px solid #fecaca" }}>{s.status}</span></td>
@@ -2382,7 +2382,7 @@ function DashboardContent() {
           {doctorAppts.map((d, i) => (
             <div key={i} className={`hd-appt-item${d.active ? " active" : ""}`}>
               <div className="hd-appt-ic">
-                <Stethoscope size={17} color={d.active ? "#fff" : "#3b82f6"} />
+                <Stethoscope size={17} color={d.active ? "#fff" : "#0E898F"} />
               </div>
               <div style={{ flex: 1, overflow: "hidden" }}>
                 <div className="hd-appt-name">{d.name}</div>
