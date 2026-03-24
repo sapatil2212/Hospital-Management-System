@@ -103,6 +103,12 @@
   color: var(--primary);
 }
 
+.logoImage {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
 /* Desktop Nav */
 .desktopNav {
   display: flex;

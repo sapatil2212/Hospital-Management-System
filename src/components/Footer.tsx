@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
-  Heart,
   MapPin,
   Phone,
   Mail,
@@ -83,12 +83,13 @@ export default function Footer() {
         {/* About Column */}
         <div className={styles.footerCol}>
           <a href="#home" className={styles.footerLogo}>
-            <div className={styles.logoIcon}>
-              <Heart size={20} fill="white" />
-            </div>
-            <span className={styles.logoText}>
-              Medi<span className={styles.logoAccent}>Care+</span>
-            </span>
+            <Image
+              src="/logo/celeb-aesthecia-logo.png"
+              alt="Celeb Aesthecia"
+              width={140}
+              height={42}
+              className={styles.footerLogoImage}
+            />
           </a>
           <p className={styles.footerAbout}>
             Providing world-class healthcare services with compassion and
@@ -145,9 +146,9 @@ export default function Footer() {
             <div className={styles.contactItem}>
               <MapPin size={18} className={styles.contactIcon} />
               <span>
-                Rajashree Hospital, Near Canada Corner,
+                3/Alampat Business Centre, Near cycle circle,
                 <br />
-                Gangapur Road, Nashik, Maharastra 411052
+                Krushi Nagar, college road, Nashik 422001
               </span>
             </div>
             <div className={styles.contactItem}>
@@ -156,7 +157,7 @@ export default function Footer() {
             </div>
             <div className={styles.contactItem}>
               <Mail size={18} className={styles.contactIcon} />
-              <span>rajashreehospital2026@gmail.com</span>
+              <span>celebaesthecia666@gmail.com</span>
             </div>
           </div>
         </div>
@@ -166,7 +167,7 @@ export default function Footer() {
       <div className={styles.bottomBar}>
         <div className={`container ${styles.bottomInner}`}>
           <p className={styles.copyright}>
-            © 2026 MediCare+. All rights reserved.
+            © 2026 Celeb Aesthecia. All rights reserved.
           </p>
           <div className={styles.bottomLinks}>
             <a href="#">Privacy Policy</a>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Menu, X, Heart, Phone, LogIn, ChevronDown,
+  Menu, X, Phone, LogIn, ChevronDown,
   Stethoscope, SmilePlus, Sparkles, Ribbon, HeartPulse, PhoneCall,
 } from "lucide-react";
 import Link from "next/link";
@@ -97,12 +97,14 @@ export default function Navbar() {
         <div className={`container ${styles.navInner}`}>
           {/* Logo */}
           <Link href="/" className={styles.logo}>
-            <div className={styles.logoIcon}>
-              <Heart size={22} fill="white" />
-            </div>
-            <span className={styles.logoText}>
-              Medi<span className={styles.logoAccent}>Care+</span>
-            </span>
+            <Image
+              src="/logo/celeb-aesthecia-logo.png"
+              alt="Celeb Aesthecia"
+              width={160}
+              height={48}
+              className={styles.logoImage}
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}

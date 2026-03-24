@@ -3,9 +3,9 @@ import { AppointmentProvider } from "@/components/AppointmentProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MediCare+ | Trusted Specialist for Every Medical Need",
+  title: "Celeb Aesthecia | Trusted Specialist for Every Medical Need",
   description:
-    "Experience world-class healthcare with MediCare+. Schedule appointments with top specialists, access 24/7 care, and join 30M+ satisfied patients. Your health, our priority.",
+    "Experience world-class healthcare with Celeb Aesthecia. Schedule appointments with top specialists, access 24/7 care, and join 30M+ satisfied patients. Your health, our priority.",
   keywords: [
     "healthcare",
     "medical",
@@ -16,10 +16,16 @@ export const metadata: Metadata = {
     "neurology",
     "dermatology",
   ],
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo/favicon-icon.png", type: "image/png" }
+    ],
+  },
   openGraph: {
-    title: "MediCare+ | Trusted Specialist for Every Medical Need",
+    title: "Celeb Aesthecia | Trusted Specialist for Every Medical Need",
     description:
-      "Experience world-class healthcare with MediCare+. Schedule appointments with top specialists.",
+      "Experience world-class healthcare with Celeb Aesthecia. Schedule appointments with top specialists.",
     type: "website",
   },
 };

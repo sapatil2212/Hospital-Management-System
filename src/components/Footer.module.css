@@ -130,6 +130,12 @@
   color: var(--primary-light);
 }
 
+.footerLogoImage {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+
 .footerAbout {
   font-size: var(--font-size-sm);
   line-height: 1.8;
