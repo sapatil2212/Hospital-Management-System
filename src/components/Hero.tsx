@@ -17,49 +17,49 @@ import styles from "./Hero.module.css";
 
 const slides = [
   {
-    headline: "Comprehensive Care for",
-    headlineAccent: "General Health",
-    headlineSuffix: "Needs",
+    headline: "India's First",
+    headlineAccent: "AI-Based Robotic",
+    headlineSuffix: "Aesthetic Hospital",
     subtext:
-      "Expert general OPD services prioritizing your everyday wellness and routine medical needs with compassionate care.",
+      "AI-powered diagnostics and robotic precision delivering safe, personalized, and result-driven care.",
     image: "/images/treatment-opd-2.png",
-    imageAlt: "General OPD Consultation",
+    imageAlt: "AI-Based Robotic Aesthetic Hospital",
   },
   {
-    headline: "Advanced Care for",
-    headlineAccent: "Dental",
-    headlineSuffix: "Health",
+    headline: "Advanced AI",
+    headlineAccent: "Skin",
+    headlineSuffix: "Treatments",
     subtext:
-      "Modern and painless dentistry for all ages. From routine check-ups to advanced treatments by experienced specialists.",
-    image: "/images/treatment-dental-2.png",
-    imageAlt: "Dental Care Consultation",
-  },
-  {
-    headline: "Specialized Treatments for",
-    headlineAccent: "Skin & Hair",
-    headlineSuffix: "Health",
-    subtext:
-      "Trusted dermatology services, from cosmetic solutions to clinical treatments, leaving you with healthy, glowing skin.",
+      "Precision-based skin analysis and treatments for safe, natural, and visible results.",
     image: "/images/treatment-dermatology-2.png",
-    imageAlt: "Dermatology Specialist",
+    imageAlt: "AI Skin Treatments",
   },
   {
-    headline: "Transformative & Compassionate",
-    headlineAccent: "Cancer Care",
-    headlineSuffix: "Therapy",
+    headline: "AI-Driven",
+    headlineAccent: "Hair",
+    headlineSuffix: "Restoration",
     subtext:
-      "Advanced oncology care offering early detection, personalized therapy plans, and unwavering support for cancer patients.",
+      "Smart diagnosis and advanced solutions for effective, long-lasting hair results.",
+    image: "/images/treatment-dermatology.png",
+    imageAlt: "AI Hair Restoration",
+  },
+  {
+    headline: "Next-Gen",
+    headlineAccent: "Dental Care",
+    headlineSuffix: "& Surgery",
+    subtext:
+      "High-precision dental treatments with advanced imaging and modular OT safety.",
+    image: "/images/treatment-dental-2.png",
+    imageAlt: "Advanced Dental Care",
+  },
+  {
+    headline: "Advanced Head & Neck",
+    headlineAccent: "Oncology",
+    headlineSuffix: "Care",
+    subtext:
+      "Expert-led, technology-driven care focused on accuracy, safety, and better outcomes.",
     image: "/images/treatment-cancer-2.png",
-    imageAlt: "Cancer Care Treatment",
-  },
-  {
-    headline: "Prioritizing Your",
-    headlineAccent: "Heart Health",
-    headlineSuffix: "Every Day",
-    subtext:
-      "State-of-the-art cardiology treatments and dedicated heart specialists to protect your cardiovascular wellness.",
-    image: "/images/treatment-cardiology-2.png",
-    imageAlt: "Cardiology and Heart Health",
+    imageAlt: "Head & Neck Oncology Care",
   },
 ];
 
@@ -97,7 +97,7 @@ export default function Hero() {
             transition={{ delay: 0.2 }}
           >
             <HeartPulse size={16} />
-            <span>Your Health, Our Priority</span>
+            <span>AI-Powered Aesthetic Care</span>
           </motion.div>
 
           <AnimatePresence mode="wait">

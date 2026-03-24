@@ -60,6 +60,7 @@ model User {
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   profilePhoto  String?        @db.Text
+  userCode      String?
   doctor             Doctor?
   sessions           Session[]
   staff              Staff?
@@ -200,6 +201,7 @@ model Procedure {
 model Doctor {
   id                String                   @id @default(uuid())
   hospitalId        String
+  doctorCode        String?
   name              String
   email             String
   phone             String?

@@ -13,11 +13,10 @@ import { useAppointment } from "./AppointmentProvider";
 import styles from "./Navbar.module.css";
 
 const treatments = [
-  { label: "General OPD", href: "/treatments/general-opd", icon: <Stethoscope size={18} /> },
-  { label: "Dental", href: "/treatments/dental", icon: <SmilePlus size={18} /> },
-  { label: "Dermatology", href: "/treatments/dermatology", icon: <Sparkles size={18} /> },
-  { label: "Cancer", href: "/treatments/cancer", icon: <Ribbon size={18} /> },
-  { label: "Cardiology", href: "/treatments/cardiology", icon: <HeartPulse size={18} /> },
+  { label: "Skin Treatments", href: "/treatments/skin", icon: <Sparkles size={18} /> },
+  { label: "Hair Treatments", href: "/treatments/hair", icon: <Ribbon size={18} /> },
+  { label: "Dental Care", href: "/treatments/dental", icon: <SmilePlus size={18} /> },
+  { label: "Head & Neck Oncology", href: "/treatments/oncology", icon: <HeartPulse size={18} /> },
 ];
 
 const navLinks = [

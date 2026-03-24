@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
   User, Mail, Save, Loader2, CheckCircle, AlertCircle,
-  Shield, Key, Camera, Phone, Stethoscope, GraduationCap,
-  MapPin, Calendar, Droplets, FileText, CreditCard, Eye, EyeOff,
+  Shield, Key, Camera, Stethoscope,
+  FileText, CreditCard, Eye, EyeOff,
   Lock, Upload, ExternalLink, BadgeCheck,
 } from "lucide-react";
 import { useDoctorDashboard } from "../DoctorDashboardContext";
