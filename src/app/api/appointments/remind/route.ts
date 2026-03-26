@@ -3,13 +3,14 @@ import { requireRole } from "../../../../../backend/middlewares/role.middleware"
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import prisma from "../../../../../backend/config/db";
 import { sendAppointmentReminder } from "../../../../../backend/utils/mailer";
+import { getSettings } from "../../../../../backend/services/config.service";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/appointments/remind
 // Body: { appointmentId } — sends reminder email to the patient
 export async function POST(req: NextRequest) {
-  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF"]);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "SUB_DEPT_HEAD"]);
   if (auth.error) return auth.error;
 
   try {
@@ -31,6 +32,10 @@ export async function POST(req: NextRequest) {
     const email = appt.patient?.email;
     if (!email) return errorResponse("Patient has no email address on record", 422);
 
+    // Fetch hospital settings to get logo
+    const settings = await getSettings(auth.hospitalId);
+    const hospitalLogo = settings?.logo || null;
+
     await sendAppointmentReminder({
       to:              email,
       patientName:     appt.patient.name,
@@ -42,6 +47,7 @@ export async function POST(req: NextRequest) {
       tokenNumber:     appt.tokenNumber,
       type:            appt.type,
       hospitalName:    appt.hospital?.name ?? "Hospital",
+      hospitalLogo:    hospitalLogo,
     });
 
     return successResponse({ sent: true }, "Reminder sent successfully");

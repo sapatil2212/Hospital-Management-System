@@ -14,6 +14,7 @@ import { findDoctorById } from "../repositories/doctor.repo";
 import { CreateAppointmentInput, UpdateAppointmentInput } from "../validations/appointment.validation";
 import { sendAppointmentConfirmation } from "../utils/mailer";
 import { generateBillFromAppointment, addWorkflowChargesToBill } from "./billing.service";
+import { getSettings } from "./config.service";
 import prisma from "../config/db";
 
 const px = prisma as any;
@@ -110,6 +111,10 @@ export const bookAppointment = async (
   // Send confirmation email asynchronously
   if (patient.email) {
     const deptName = (appointment as any).department?.name || "General";
+    // Fetch hospital settings to get logo
+    const settings = await getSettings(hospitalId);
+    const hospitalLogo = settings?.logo || null;
+
     sendAppointmentConfirmation({
       to: patient.email,
       patientName: patient.name,
@@ -126,6 +131,7 @@ export const bookAppointment = async (
       tokenNumber,
       type: input.type || "OPD",
       hospitalName,
+      hospitalLogo,
     }).catch(() => {});
   }
 

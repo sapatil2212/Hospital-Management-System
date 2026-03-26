@@ -81,7 +81,10 @@
   .brandSide { padding: var(--space-12) var(--space-6); min-height: 300px; }
   .brandTitle { font-size: var(--font-size-2xl); }
 }
+@media (max-width: 768px) {
+  .brandSide { display: none; }
+  .formSide { min-height: 100vh; }
+}
 @media (max-width: 640px) {
-  .brandStats { gap: var(--space-3); padding: var(--space-4); }
   .formSide { padding: var(--space-6); }
 }

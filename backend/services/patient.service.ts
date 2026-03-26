@@ -11,6 +11,7 @@ import {
 } from "../repositories/patient.repo";
 import { CreatePatientInput, UpdatePatientInput } from "../validations/patient.validation";
 import { sendPatientWelcome } from "../utils/mailer";
+import { getSettings } from "./config.service";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PATIENT SERVICE
@@ -59,11 +60,16 @@ export const registerPatient = async (
 
   // Send welcome email asynchronously (fire-and-forget)
   if (input.email) {
+    // Fetch hospital settings to get logo
+    const settings = await getSettings(hospitalId);
+    const hospitalLogo = settings?.logo || null;
+
     sendPatientWelcome({
       to: input.email,
       name: input.name,
       patientId: patient.patientId,
       hospitalName,
+      hospitalLogo,
     }).catch(() => {
       // Email failure must not block registration
     });

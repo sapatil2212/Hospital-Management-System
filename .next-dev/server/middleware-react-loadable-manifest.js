@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app\\\\subdept\\\\dashboard\\\\page.tsx -> @/components/AppointmentPanel\":{\"id\":\"app\\\\subdept\\\\dashboard\\\\page.tsx -> @/components/AppointmentPanel\",\"files\":[\"static/chunks/_app-pages-browser_src_components_AppointmentPanel_tsx.js\"]},\"app\\\\subdept\\\\dashboard\\\\page.tsx -> @/components/BillingQueue\":{\"id\":\"app\\\\subdept\\\\dashboard\\\\page.tsx -> @/components/BillingQueue\",\"files\":[\"static/chunks/_app-pages-browser_src_components_BillingQueue_tsx.js\"]}}"

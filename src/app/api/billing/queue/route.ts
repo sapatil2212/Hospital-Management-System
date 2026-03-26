@@ -3,7 +3,7 @@ import { requireRole } from "../../../../../backend/middlewares/role.middleware"
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { getBillingQueue, BillingServiceError } from "../../../../../backend/services/billing.service";
 
-const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "STAFF"];
+const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "STAFF", "SUB_DEPT_HEAD"];
 export const dynamic = "force-dynamic";
 
 // GET /api/billing/queue — get billing queue (transferred appointments with bills)

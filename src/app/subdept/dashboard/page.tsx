@@ -17,7 +17,7 @@ import {
   ShieldCheck, BarChart2, Package
 } from "lucide-react";
 
-const BillingModuleLazy = dynamic(() => import("@/components/BillingModule"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Module...</span></div> });
+const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Queue...</span></div> });
 const AppointmentPanelLazy = dynamic(() => import("@/components/AppointmentPanel"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Appointments...</span></div> });
 
 // ─── Department metadata ──────────────────────────────────────────────────────
@@ -1184,7 +1184,7 @@ export default function SubDeptDashboard() {
             {tab==="appointments" && <AppointmentPanelLazy />}
 
             {/* ═══════════════════ BILLING (Reception) ═══════════════════ */}
-            {tab==="billing" && (<div><BillingModuleLazy /></div>)}
+            {tab==="billing" && <BillingQueueLazy />}
 
             {/* ═══════════════════ PATIENTS (Reception) ═══════════════════ */}
             {tab==="patients" && (<>

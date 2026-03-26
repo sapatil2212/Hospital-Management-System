@@ -714,6 +714,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split("T")[0]);
+  const [showAll, setShowAll] = useState(false);
   const [followUpTarget, setFollowUpTarget] = useState<Appointment | null>(null);
   const [viewTarget, setViewTarget] = useState<Appointment | null>(null);
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
@@ -728,11 +729,11 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
     const params = new URLSearchParams({ page: String(page), limit: "15" });
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
-    if (dateFilter) params.set("date", dateFilter);
+    if (!showAll && dateFilter) params.set("date", dateFilter);
     const d = await api(`/api/appointments?${params}`);
     if (d.success) { setAppointments(d.data.data || []); setPagination(d.data.pagination || { page: 1, total: 0, totalPages: 1 }); }
     setLoading(false);
-  }, [page, search, statusFilter, dateFilter, onRefresh]);
+  }, [page, search, statusFilter, dateFilter, showAll, onRefresh]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -775,14 +776,19 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
             placeholder="Search patient, doctor..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         </div>
         <input type="date"
-          style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#334155", outline: "none" }}
-          value={dateFilter} onChange={e => { setDateFilter(e.target.value); setPage(1); }} />
+          style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: showAll ? "#f1f5f9" : "#f8fafc", fontSize: 13, color: "#334155", outline: "none", opacity: showAll ? 0.5 : 1 }}
+          value={dateFilter} onChange={e => { setDateFilter(e.target.value); setPage(1); }} disabled={showAll} />
+        <label style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer", userSelect: "none" }}>
+          <input type="checkbox" checked={showAll} onChange={e => { setShowAll(e.target.checked); setPage(1); }}
+            style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#0ea5e9" }} />
+          Show All Appointments
+        </label>
         <select style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#334155", outline: "none" }}
           value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
           <option value="">All Status</option>
           {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <button onClick={() => { setDateFilter(""); setSearch(""); setStatusFilter(""); }}
+        <button onClick={() => { setDateFilter(new Date().toISOString().split("T")[0]); setSearch(""); setStatusFilter(""); setShowAll(false); }}
           style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
           <RefreshCw size={12} />Clear
         </button>

@@ -848,6 +848,10 @@ model Prescription {
   followUpNotes   String?                @db.Text
   consultationFee Float?
   aiSuggestions   String?                @db.Text
+  voiceRecordingUrl String?              @db.Text
+  transcription   String?                @db.Text
+  transcriptionMetadata String?          @db.Text
+  aiProcessedAt   DateTime?
   status          PrescriptionStatus     @default(DRAFT)
   currentDeptId   String?
   doctorNotes     String?                @db.Text

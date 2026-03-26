@@ -22,7 +22,7 @@ import {
 import { z } from "zod";
 import { DepartmentType } from "@prisma/client";
 
-const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
 
 // Sub-department validation schema
 const subDeptSchema = z.object({

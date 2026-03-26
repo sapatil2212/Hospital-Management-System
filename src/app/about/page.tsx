@@ -21,6 +21,7 @@ import {
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { MissionSection, AboutHero, WhoWeAre } from "@/components/About-Component";
 import styles from "./about.module.css";
 
 const doctors = [
@@ -87,28 +88,16 @@ export default function AboutPage() {
     <>
       <Navbar />
       <main>
-        {/* Page Hero */}
-        <section className={styles.pageHero}>
-          <div className="container">
-            <motion.div
-              className={styles.heroContent}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="section-label">
-                <HeartHandshake size={16} />
-                About Celeb Aesthecia
-              </span>
-              <h1 className={styles.heroTitle}>
-                India's First <span className={styles.accent}>AI-Based Robotic</span> Aesthetic Hospital
-              </h1>
-              <p className={styles.heroSubtext}>
-                Redefining healthcare by integrating Artificial Intelligence, robotic precision, and globally approved medical technologies.
-              </p>
-            </motion.div>
-          </div>
-        </section>
+        {/* About Hero Banner */}
+        <div className="container">
+          <AboutHero />
+        </div>
+
+        {/* Who We Are Section */}
+        <WhoWeAre />
+
+        {/* New Mission Section Component */}
+        <MissionSection />
 
         {/* Mission Section */}
         <section className={styles.section} ref={ref}>

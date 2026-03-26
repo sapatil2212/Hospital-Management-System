@@ -41,6 +41,8 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
   const [subDeptId, setSubDeptId] = useState<string>(appt.subDepartmentId || "");
   const [subDeptNote, setSubDeptNote] = useState<string>(appt.subDeptNote || "");
   const [showReferral, setShowReferral] = useState(!!(appt.subDepartmentId));
+  const [transferToBilling, setTransferToBilling] = useState(false);
+  const [billingNote, setBillingNote] = useState("");
   const [services, setServices] = useState<any[]>([]);
   const [showServicePlan, setShowServicePlan] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState("");
@@ -55,6 +57,45 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
     }).catch(() => {});
   }, []);
 
+  const doBillingTransfer = async () => {
+    const r = await api("/api/billing/transfer", "POST", {
+      appointmentId: appt.id,
+      note: billingNote || "Transferred from consultation"
+    });
+    if (!r.success) {
+      setMsg(r.message || "Failed to transfer to billing");
+      return false;
+    }
+    return true;
+  };
+
+  const handleStartPrescription = async () => {
+    if (transferToBilling) {
+      setSaving(true);
+      const ok = await doBillingTransfer();
+      setSaving(false);
+      if (!ok) return;
+    }
+    onStartPrescription(appt.id);
+  };
+
+  const handleCompleteAndBill = async () => {
+    setSaving(true);
+    const body: any = { status: "COMPLETED", notes: notes || undefined };
+    if (showReferral && subDeptId) {
+      body.subDepartmentId = subDeptId;
+      body.subDeptNote = subDeptNote || undefined;
+    }
+    const d = await api(`/api/appointments/${appt.id}`, "PUT", body);
+    if (d.success) {
+      await doBillingTransfer();
+      onDone(); onClose();
+    } else {
+      setMsg(d.message || "Failed to complete");
+    }
+    setSaving(false);
+  };
+
   const update = async (status: string) => {
     setSaving(true);
     const body: any = { status, notes: notes || undefined };
@@ -65,6 +106,13 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
       body.subDepartmentId = null;
       body.subDeptNote = null;
     }
+    
+    // Transfer to billing if selected
+    if (transferToBilling) {
+      const ok = await doBillingTransfer();
+      if (!ok) { setSaving(false); return; }
+    }
+    
     const d = await api(`/api/appointments/${appt.id}`, "PUT", body);
     if (d.success) {
       if (status === "COMPLETED" && showServicePlan && selectedServiceId && appt.patient?.id && !planCreated) {
@@ -167,6 +215,30 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
           )}
         </div>
 
+        <div style={{ marginBottom: 14, background: transferToBilling ? "#fef3c7" : "#f8fafc", borderRadius: 12, border: `1.5px solid ${transferToBilling ? "#fde68a" : "#e2e8f0"}`, overflow: "hidden" }}>
+          <button onClick={() => setTransferToBilling(v => !v)}
+            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: transferToBilling ? "#f59e0b" : "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ChevronRight size={12} color={transferToBilling ? "#fff" : "#94a3b8"} style={{ transform: transferToBilling ? "rotate(90deg)" : "none", transition: "transform .2s" }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: transferToBilling ? "#92400e" : "#64748b" }}>
+                {transferToBilling ? "Transferring to Billing" : "Transfer to Billing (optional)"}
+              </span>
+            </div>
+          </button>
+          {transferToBilling && (
+            <div style={{ padding: "0 14px 14px" }}>
+              <textarea value={billingNote} onChange={e => setBillingNote(e.target.value)} rows={2}
+                placeholder="Billing notes (optional)..."
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #fde68a", background: "#fff", fontSize: 12, color: "#334155", outline: "none", resize: "none", fontFamily: "'Inter',sans-serif" }} />
+              <div style={{ fontSize: 11, color: "#92400e", marginTop: 8, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                ✓ Patient will be sent to billing queue with consultation fee
+              </div>
+            </div>
+          )}
+        </div>
+
         <div style={{ marginBottom: 14, background: showServicePlan ? "#eff6ff" : "#f8fafc", borderRadius: 12, border: `1.5px solid ${showServicePlan ? "#bfdbfe" : "#e2e8f0"}`, overflow: "hidden" }}>
           <button onClick={() => setShowServicePlan(v => !v)}
             style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "'Inter',sans-serif" }}>
@@ -203,17 +275,24 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
 
         <div style={{ display: "flex", gap: 8 }}>
           {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && (
-            <button onClick={() => onStartPrescription(appt.id)} disabled={saving}
+            <button onClick={handleStartPrescription} disabled={saving}
               style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
               {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <PlayCircle size={15} />}
               Start Consultation
             </button>
           )}
           {appt.status === "IN_PROGRESS" && (
-            <button onClick={() => onStartPrescription(appt.id)} disabled={saving}
+            <button onClick={handleStartPrescription} disabled={saving}
               style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(59,130,246,.3)" }}>
               {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <PlayCircle size={15} />}
               Continue Prescription
+            </button>
+          )}
+          {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED" || appt.status === "IN_PROGRESS") && transferToBilling && (
+            <button onClick={handleCompleteAndBill} disabled={saving}
+              style={{ padding: "11px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 4px 14px rgba(245,158,11,.3)" }}>
+              {saving ? <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> : <CheckCircle2 size={15} />}
+              Complete & Bill
             </button>
           )}
           {appt.status === "COMPLETED" && (
@@ -566,15 +645,15 @@ function DoctorDashboardContent() {
   }, [selectedDate, doctor, tab, fetchAppointments]);
 
   const handleStartPrescription = (appointmentId: string) => {
-    router.push(`/doctor/prescription/${appointmentId}`);
+    router.push(`/doctor/dashboard/prescription/${appointmentId}`);
   };
 
   const handleViewPrescription = (appointmentId: string) => {
-    router.push(`/doctor/prescription/${appointmentId}?mode=view`);
+    router.push(`/doctor/dashboard/prescription/${appointmentId}?mode=view`);
   };
 
   const handleEditPrescription = (appointmentId: string) => {
-    router.push(`/doctor/prescription/${appointmentId}?edit=1`);
+    router.push(`/doctor/dashboard/prescription/${appointmentId}?edit=1`);
   };
 
   const updateAppointmentStatus = async (appointmentId: string, status: string) => {

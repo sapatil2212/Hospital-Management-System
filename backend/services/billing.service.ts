@@ -135,8 +135,17 @@ export class BillingServiceError extends Error {
 
 // ── Sequential bill number ──────────────────────────────────────────────────
 async function generateBillNo(hospitalId: string): Promise<string> {
-  const count = await (prisma as any).bill.count({ where: { hospitalId } });
-  return `BILL-${String(count + 1).padStart(4, "0")}`;
+  const last = await (prisma as any).bill.findFirst({
+    where: { hospitalId },
+    orderBy: { billNo: "desc" },
+    select: { billNo: true },
+  });
+  let next = 1;
+  if (last?.billNo) {
+    const m = last.billNo.match(/(\d+)$/);
+    if (m) next = parseInt(m[1], 10) + 1;
+  }
+  return `BILL-${String(next).padStart(4, "0")}`;
 }
 
 // ── Log revenue automatically ───────────────────────────────────────────────

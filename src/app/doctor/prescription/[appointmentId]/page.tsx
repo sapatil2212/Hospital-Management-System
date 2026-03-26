@@ -8,6 +8,7 @@ import {
   Heart, Thermometer, Weight, Eye, X, History, Brain, Stethoscope, Pencil,
 } from "lucide-react";
 import PatientProfilePanel from "@/components/PatientProfilePanel";
+import VoicePrescriptionRecorder from "@/components/VoicePrescriptionRecorder";
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -86,6 +87,7 @@ export default function PrescriptionPage() {
   const [editMode, setEditMode] = useState(false);
   const [histLoaded, setHistLoaded] = useState(false);
   const [subDeptsLoaded, setSubDeptsLoaded] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const tog = (s: string) => setSections(p => ({ ...p, [s]: !p[s] }));
   const saveTimer = useRef<any>(null);
 
@@ -244,11 +246,40 @@ export default function PrescriptionPage() {
     setEmailSending(false);
   };
 
+  const handleVoiceTranscription = useCallback((result: any) => {
+    const aiResult = result.aiResult;
+    
+    // Auto-populate all fields from voice transcription
+    if (aiResult.vitals && Object.keys(aiResult.vitals).length > 0) {
+      setVitals(prev => ({ ...prev, ...aiResult.vitals }));
+    }
+    if (aiResult.chiefComplaint) setComplaint(aiResult.chiefComplaint);
+    if (aiResult.diagnosis) setDiagnosis(aiResult.diagnosis);
+    if (aiResult.icdCodes?.length > 0) setIcdCodes(aiResult.icdCodes);
+    if (aiResult.medications?.length > 0) setMeds(aiResult.medications);
+    if (aiResult.labTests?.length > 0) setTests(aiResult.labTests);
+    if (aiResult.advice) setAdvice(aiResult.advice);
+    if (aiResult.followUpDate) setFuDate(aiResult.followUpDate);
+    if (aiResult.followUpNotes) setFuNotes(aiResult.followUpNotes);
+    
+    // Auto-save after voice transcription
+    setTimeout(() => {
+      if (rx?.id) {
+        api(`/api/prescriptions/${rx.id}`, "PUT", payload()).then(() => {
+          flash("Voice prescription auto-saved!", "s");
+        });
+      }
+    }, 500);
+    
+    setShowVoiceRecorder(false);
+    flash(`Prescription generated in ${(aiResult.metadata?.processingTime / 1000).toFixed(1)}s!`, "s");
+  }, [rx?.id]);
+
   const flash = (t: string, c: string) => { setMsg({ t, c }); setTimeout(() => setMsg({ t: "", c: "" }), 4000); };
   const accent = getDeptAccent(doctor?.department?.name);
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ minHeight: 400, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif" }}>
       <Loader2 size={24} style={{ animation: "spin .7s linear infinite", color: "#10b981" }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <span style={{ marginLeft: 10, color: "#64748b" }}>Loading prescription...</span>
@@ -274,7 +305,7 @@ export default function PrescriptionPage() {
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       `}</style>
-      <div style={{ minHeight: "100vh", background: "#f0f9ff", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ minHeight: 400, fontFamily: "'Inter', sans-serif" }}>
       {selectedPatientId ? (
         <div style={{ padding: 24 }}>
           <PatientProfilePanel 
@@ -287,7 +318,7 @@ export default function PrescriptionPage() {
           {/* Topbar */}
           <div className="noprint" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 3px rgba(0,0,0,.05)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={() => router.push("/doctor/dashboard")} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><ArrowLeft size={13} /> Back</button>
+          <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><ArrowLeft size={13} /> Back</button>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 28, height: 28, borderRadius: 7, background: `linear-gradient(135deg,${accent},#0ea5e9)`, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={14} color="#fff" /></div>
             <div><div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>Prescription {rx?.prescriptionNo || ""}</div><div style={{ fontSize: 10, color: "#94a3b8" }}>{patient?.name} · {patient?.patientId}</div></div>
@@ -360,12 +391,33 @@ export default function PrescriptionPage() {
             <div style={{ display: "flex", gap: 8 }}>
               <textarea value={complaint} onChange={e => setComplaint(e.target.value)} placeholder="Patient's chief complaint, symptoms, duration..." rows={3} disabled={locked}
                 style={{ flex: 1, padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#334155", outline: "none", resize: "vertical", background: locked ? "#f8fafc" : "#fff" }} />
-              {!locked && <button onClick={aiAssist} disabled={aiLoading}
-                style={{ padding: "10px 14px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 70, boxShadow: "0 2px 8px rgba(139,92,246,.3)" }}>
-                {aiLoading ? <Loader2 size={15} style={{ animation: "spin .7s linear infinite" }} /> : <Sparkles size={15} />}<span style={{ fontSize: 9 }}>AI Assist</span>
-              </button>}
+              {!locked && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <button onClick={aiAssist} disabled={aiLoading}
+                    style={{ padding: "10px 14px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 70, boxShadow: "0 2px 8px rgba(139,92,246,.3)" }}>
+                    {aiLoading ? <Loader2 size={15} style={{ animation: "spin .7s linear infinite" }} /> : <Sparkles size={15} />}<span style={{ fontSize: 9 }}>AI Assist</span>
+                  </button>
+                  <button onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
+                    style={{ padding: "10px 14px", borderRadius: 9, border: "none", background: showVoiceRecorder ? "linear-gradient(135deg,#ef4444,#dc2626)" : "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 70, boxShadow: showVoiceRecorder ? "0 2px 8px rgba(239,68,68,.3)" : "0 2px 8px rgba(16,185,129,.3)" }}>
+                    <Sparkles size={15} /><span style={{ fontSize: 9 }}>{showVoiceRecorder ? "Close" : "Voice Rx"}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </SectionCard>
+
+          {/* Voice Prescription Recorder */}
+          {showVoiceRecorder && !locked && rx?.id && (
+            <div style={{ marginBottom: 14 }}>
+              <VoicePrescriptionRecorder
+                prescriptionId={rx.id}
+                patientName={patient?.name || "Patient"}
+                doctorName={doctor?.name || "Doctor"}
+                onTranscriptionComplete={handleVoiceTranscription}
+                accent={accent}
+              />
+            </div>
+          )}
 
           {/* Diagnosis */}
           <SectionCard title="Diagnosis" icon={<FileText size={14} />} accent="#10b981" expanded={sections.diag} onToggle={() => tog("diag")}>

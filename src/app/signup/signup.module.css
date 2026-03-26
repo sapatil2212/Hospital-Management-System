@@ -74,4 +74,8 @@
   .brandTitle { font-size: var(--font-size-2xl); }
   .formRow { grid-template-columns: 1fr; }
 }
+@media (max-width: 768px) {
+  .brandSide { display: none; }
+  .formSide { min-height: 100vh; }
+}
 @media (max-width: 640px) { .formSide { padding: var(--space-4); } }

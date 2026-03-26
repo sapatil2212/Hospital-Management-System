@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
-import BillingModule from "@/components/BillingModule";
+import BillingQueue from "@/components/BillingQueue";
 import IPDPanel from "@/components/IPDPanel";
 import ReportsPanel from "@/components/ReportsPanel";
 
@@ -2322,7 +2322,7 @@ function DashboardContent() {
       )}
 
       {tab === "billing" && (
-        <BillingModule />
+        <BillingQueue />
       )}
 
       {tab === "ipd" && (

@@ -52,32 +52,41 @@ export async function createOrGetPrescription(hospitalId: string, input: CreateP
 
   const prescriptionNo = await generatePrescriptionNo(hospitalId);
 
-  const prescription = await createPrescriptionRepo({
-    hospitalId,
-    prescriptionNo,
-    appointmentId: input.appointmentId,
-    patientId: appointment.patientId,
-    doctorId,
-    vitals: input.vitals || null,
-    chiefComplaint: input.chiefComplaint || null,
-    diagnosis: input.diagnosis || null,
-    icdCodes: input.icdCodes || null,
-    medications: input.medications || null,
-    labTests: input.labTests || null,
-    referrals: input.referrals || null,
-    advice: input.advice || null,
-    followUpDate: input.followUpDate ? new Date(input.followUpDate) : null,
-    followUpNotes: input.followUpNotes || null,
-    consultationFee: input.consultationFee ?? appointment.consultationFee ?? null,
-    doctorNotes: input.doctorNotes || null,
-    status: "DRAFT",
-  });
+  let prescription;
+  try {
+    prescription = await createPrescriptionRepo({
+      hospitalId,
+      prescriptionNo,
+      appointmentId: input.appointmentId,
+      patientId: appointment.patientId,
+      doctorId,
+      vitals: input.vitals || null,
+      chiefComplaint: input.chiefComplaint || null,
+      diagnosis: input.diagnosis || null,
+      icdCodes: input.icdCodes || null,
+      medications: input.medications || null,
+      labTests: input.labTests || null,
+      referrals: input.referrals || null,
+      advice: input.advice || null,
+      followUpDate: input.followUpDate ? new Date(input.followUpDate) : null,
+      followUpNotes: input.followUpNotes || null,
+      consultationFee: input.consultationFee ?? appointment.consultationFee ?? null,
+      doctorNotes: input.doctorNotes || null,
+      status: "DRAFT",
+    });
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      const race = await findPrescriptionByAppointmentId(input.appointmentId, hospitalId);
+      if (race) return { prescription: race, isNew: false };
+    }
+    throw err;
+  }
 
-  // Update appointment to IN_PROGRESS
+  // Update appointment to CONFIRMED (IN_CONSULTATION)
   await px.appointment.update({
     where: { id: input.appointmentId },
-    data: { status: "IN_PROGRESS" },
-  });
+    data: { status: "CONFIRMED" },
+  }).catch(() => {}); // Non-blocking — don't fail prescription creation if status update fails
 
   return { prescription, isNew: true };
 }
@@ -185,10 +194,13 @@ export async function completePrescription(id: string, hospitalId: string, input
   const finalFee = input.consultationFee ?? existing.consultationFee ?? undefined;
 
   // Update appointment status to COMPLETED with the consultation fee
+  // Always set billingTransferred=true so patient instantly appears in billing queue
   await px.appointment.update({
     where: { id: existing.appointmentId },
     data: {
       status: "COMPLETED",
+      billingTransferred: true,
+      billingNote: "Auto-transferred on prescription completion",
       notes: existing.chiefComplaint || input.chiefComplaint || undefined,
       ...(finalFee !== undefined ? { consultationFee: finalFee } : {}),
       // Also set sub-department referral on appointment if referrals exist
@@ -204,10 +216,44 @@ export async function completePrescription(id: string, hospitalId: string, input
 
   // Generate bill from appointment automatically
   // This ensures OPD consultation fee is reflected instantly in billing
-  // Awaited so the bill is created before returning
   try {
     await generateBillFromAppointment(existing.appointmentId, hospitalId);
-  } catch { /* non-blocking — billing failure should not block prescription */ }
+  } catch (billErr: any) {
+    console.error("[completePrescription] Bill generation failed:", billErr?.message);
+  }
+
+  // Create FollowUp record if follow-up date is set
+  const followUpDate = input.followUpDate ? new Date(input.followUpDate) : existing.followUpDate;
+  if (followUpDate) {
+    try {
+      // Upsert: avoid duplicates if prescription is completed again (edit mode)
+      const existingFU = await px.followUp.findFirst({
+        where: { appointmentId: existing.appointmentId, hospitalId },
+      });
+      if (existingFU) {
+        await px.followUp.update({
+          where: { id: existingFU.id },
+          data: {
+            followUpDate,
+            reason: input.followUpNotes || existing.followUpNotes || existing.chiefComplaint || null,
+            notes: existing.diagnosis || null,
+          },
+        });
+      } else {
+        await px.followUp.create({
+          data: {
+            hospitalId,
+            patientId: existing.patientId,
+            appointmentId: existing.appointmentId,
+            followUpDate,
+            reason: input.followUpNotes || existing.followUpNotes || existing.chiefComplaint || null,
+            notes: existing.diagnosis || null,
+            status: "PENDING",
+          },
+        });
+      }
+    } catch { /* non-blocking — follow-up creation failure should not block prescription */ }
+  }
 
   return updatedRx;
 }
