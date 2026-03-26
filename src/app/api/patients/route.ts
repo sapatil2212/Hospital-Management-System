@@ -10,8 +10,9 @@ import {
 } from "../../../../backend/services/patient.service";
 import { createPatientSchema, queryPatientSchema } from "../../../../backend/validations/patient.validation";
 import prisma from "../../../../backend/config/db";
+import { notifyPatientRegistered } from "../../../../backend/services/notification.service";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/patients — List patients or quick search
@@ -77,6 +78,13 @@ export async function POST(req: NextRequest) {
     const hospitalName = hospital?.name || "Hospital";
 
     const { patient, isNew } = await registerPatient(auth.hospitalId, hospitalName, result.data);
+    if (isNew) {
+      notifyPatientRegistered(auth.hospitalId, {
+        patientName: patient.name,
+        patientId:   patient.patientId,
+        phone:       patient.phone || undefined,
+      }).catch(() => {});
+    }
     return successResponse(
       { patient, isNew },
       isNew ? "Patient registered successfully" : "Existing patient found",

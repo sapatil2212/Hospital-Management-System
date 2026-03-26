@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu, X, Phone, LogIn, ChevronDown,
   Stethoscope, SmilePlus, Sparkles, Ribbon, HeartPulse, PhoneCall,
+  Scissors, Apple, Gem, Plane,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,11 +13,20 @@ import { usePathname } from "next/navigation";
 import { useAppointment } from "./AppointmentProvider";
 import styles from "./Navbar.module.css";
 
-const treatments = [
-  { label: "Skin Treatments", href: "/treatments/skin", icon: <Sparkles size={18} /> },
-  { label: "Hair Treatments", href: "/treatments/hair", icon: <Ribbon size={18} /> },
-  { label: "Dental Care", href: "/treatments/dental", icon: <SmilePlus size={18} /> },
-  { label: "Head & Neck Oncology", href: "/treatments/oncology", icon: <HeartPulse size={18} /> },
+const treatmentsLeft = [
+  { label: "Dental", href: "/treatments/dental", icon: <SmilePlus size={18} /> },
+  { label: "Skin", href: "/treatments/skin", icon: <Sparkles size={18} /> },
+  { label: "Hair", href: "/treatments/hair", icon: <Ribbon size={18} /> },
+  { label: "HNF Cancer", href: "/treatments/oncology", icon: <HeartPulse size={18} /> },
+  { label: "Facial Trauma", href: "/treatments/general-opd", icon: <Stethoscope size={18} /> },
+];
+
+const treatmentsRight = [
+  { label: "Body Shaping", href: "/treatments", icon: <Scissors size={18} /> },
+  { label: "Nutrition", href: "/treatments", icon: <Apple size={18} /> },
+  { label: "Sexual Health", href: "/treatments", icon: <HeartPulse size={18} /> },
+  { label: "Premium Aesthetic", href: "/treatments", icon: <Gem size={18} /> },
+  { label: "Dental and Medical Tourism", href: "/treatments", icon: <Plane size={18} /> },
 ];
 
 const navLinks = [
@@ -140,12 +150,9 @@ export default function Navbar() {
                         transition={{ duration: 0.2, ease: "easeOut" }}
                       >
                         <div className={styles.dropdownInner}>
-                          {/* Links Column */}
+                          {/* Left Column */}
                           <div className={styles.dropdownLinks}>
-                            <div className={styles.dropdownHeader}>
-                              <span>Our Treatments</span>
-                            </div>
-                            {treatments.map((item, i) => (
+                            {treatmentsLeft.map((item, i) => (
                               <motion.div
                                 key={item.label}
                                 initial={{ opacity: 0, x: -10 }}
@@ -176,6 +183,32 @@ export default function Navbar() {
                             </Link>
                           </div>
 
+                          {/* Right Column */}
+                          <div className={styles.dropdownLinks}>
+                            {treatmentsRight.map((item, i) => (
+                              <motion.div
+                                key={item.label}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                              >
+                                <Link
+                                  href={item.href}
+                                  className={`${styles.dropdownItem} ${pathname === item.href ? styles.dropdownItemActive : ""
+                                    }`}
+                                  onClick={() => setIsDropdownOpen(false)}
+                                >
+                                  <span className={styles.dropdownItemIcon}>
+                                    {item.icon}
+                                  </span>
+                                  <span className={styles.dropdownItemLabel}>
+                                    {item.label}
+                                  </span>
+                                </Link>
+                              </motion.div>
+                            ))}
+                          </div>
+
                           {/* Image Column */}
                           <motion.div
                             className={styles.dropdownImage}
@@ -187,13 +220,10 @@ export default function Navbar() {
                               src="/images/treatment-dropdown.png"
                               alt="Medical consultation"
                               width={320}
-                              height={280}
+                              height={150}
                               className={styles.dropdownImg}
                             />
-                            <div className={styles.dropdownImageOverlay}>
-                              <span>Expert Care</span>
-                              <p>Trusted by 30M+ patients</p>
-                            </div>
+
                           </motion.div>
                         </div>
                       </motion.div>
@@ -277,7 +307,7 @@ export default function Navbar() {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                         >
-                          {treatments.map((t) => (
+                          {[...treatmentsLeft, ...treatmentsRight].map((t) => (
                             <Link
                               key={t.label}
                               href={t.href}
@@ -313,28 +343,30 @@ export default function Navbar() {
                   </motion.div>
                 )
               )}
+              <div className={styles.mobileActions}>
+                <a
+                  href="tel:+919059053938"
+                  className={`${styles.navBtn} ${styles.navEmergency} ${styles.mobileCta}`}
+                  onClick={() => setIsMobileOpen(false)}
+                >
+                  <PhoneCall size={14} />
+                  Emergency
+                </a>
+                <button
+                  className={`${styles.navBtn} ${styles.navCta} ${styles.mobileCta}`}
+                  onClick={() => { setIsMobileOpen(false); openAppointment(); }}
+                >
+                  Book Appointment
+                </button>
+              </div>
               <Link
                 href="/login"
-                className={`${styles.navBtn} ${styles.navLogin} ${styles.mobileCta}`}
+                className={styles.mobileLoginLink}
                 onClick={() => setIsMobileOpen(false)}
               >
-                <LogIn size={15} />
+                <LogIn size={14} />
                 Login
               </Link>
-              <a
-                href="tel:+919059053938"
-                className={`${styles.navBtn} ${styles.navEmergency} ${styles.mobileCta}`}
-                onClick={() => setIsMobileOpen(false)}
-              >
-                <PhoneCall size={15} />
-                Emergency
-              </a>
-              <button
-                className={`${styles.navBtn} ${styles.navCta} ${styles.mobileCta}`}
-                onClick={() => { setIsMobileOpen(false); openAppointment(); }}
-              >
-                Book Appointment
-              </button>
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Department Type Enum
-export const DepartmentTypeEnum = z.enum(["OPD", "IPD", "DIAGNOSTIC", "SUPPORT"]);
+export const DepartmentTypeEnum = z.enum(["OPD", "IPD", "DIAGNOSTIC", "SUPPORT", "CUSTOM"]);
 export type DepartmentType = z.infer<typeof DepartmentTypeEnum>;
 
 // Create Department Schema
@@ -14,6 +14,8 @@ export const createDepartmentSchema = z.object({
   allowAppointments: z.boolean().default(true),
   isIPD: z.boolean().default(false),
   hodDoctorId: z.string().uuid("Invalid doctor ID").optional().nullable(),
+  hodUserId: z.string().uuid("Invalid user ID").optional().nullable(),
+  customTypeName: z.string().max(100).optional().nullable(),
   location: z.string().max(200).optional().nullable(),
   billingCode: z.string().max(20).optional().nullable(),
   isActive: z.boolean().default(true),
@@ -28,7 +30,7 @@ export type UpdateDepartmentInput = z.infer<typeof updateDepartmentSchema>;
 // Query Department Schema for GET requests
 export const queryDepartmentSchema = z.object({
   search: z.string().optional(),
-  type: DepartmentTypeEnum.optional(),
+  type: DepartmentTypeEnum.optional() as z.ZodOptional<typeof DepartmentTypeEnum>,
   isActive: z.enum(["true", "false"]).optional().transform(v => v === "true" ? true : v === "false" ? false : undefined),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),

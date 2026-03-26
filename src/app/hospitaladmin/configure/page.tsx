@@ -2,9 +2,10 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Settings, Building2, Stethoscope, Users, BedDouble, CreditCard, Package,
+  Settings, Building2, Stethoscope, Users, BedDouble, CreditCard, Package, Activity, BarChart2, Shield,
   Plus, Pencil, Trash2, Search, X, ChevronRight, Check, AlertTriangle,
-  LogOut, Bell, HelpCircle, FlaskConical, LayoutDashboard, Loader2, Layers
+  LogOut, Bell, HelpCircle, FlaskConical, LayoutDashboard, Loader2, Layers,
+  MessageSquare, CalendarDays, UserRound, ClipboardList, IndianRupee, Download
 } from "lucide-react";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import DoctorPanel from "@/components/DoctorPanel";
@@ -12,19 +13,24 @@ import LeaveModal from "@/components/LeaveModal";
 import StaffPanel from "@/components/StaffPanel";
 import WardBedPanel from "@/components/WardBedPanel";
 import SubDepartmentPanel from "@/components/SubDepartmentPanel";
+import ServicePanel from "@/components/ServicePanel";
+import TreatmentPlanPanel from "@/components/TreatmentPlanPanel";
+import DynamicDashboard from "@/components/DynamicDashboard";
+import PermissionPanel from "@/components/PermissionPanel";
 
-type Tab = "settings"|"departments"|"subdepts"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory";
+type Tab = "overview"|"settings"|"departments"|"subdepts"|"services"|"treatments"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory"|"permissions";
 
 const TABS:{id:Tab;label:string;icon:any}[] = [
+  {id:"overview",label:"Overview",icon:BarChart2},
   {id:"settings",label:"General Settings",icon:Settings},
   {id:"departments",label:"Departments",icon:Building2},
   {id:"subdepts",label:"Sub-Depts / Procedures",icon:Layers},
-  {id:"clinical",label:"Clinical Units",icon:FlaskConical},
+  {id:"services",label:"Services & Packages",icon:Package},
+  {id:"treatments",label:"Treatment Plans",icon:Activity},
   {id:"doctors",label:"Doctors Setup",icon:Stethoscope},
   {id:"staff",label:"Staff Setup",icon:Users},
   {id:"wards",label:"Ward & Bed Setup",icon:BedDouble},
-  {id:"billing",label:"Billing & Charges",icon:CreditCard},
-  {id:"inventory",label:"Inventory Setup",icon:Package},
+  {id:"permissions",label:"Permissions",icon:Shield},
 ];
 
 const api = async (url:string,method="GET",body?:any) => {
@@ -284,13 +290,34 @@ function ConfigureContent(){
   const searchParams=useSearchParams();
   const [user,setUser]=useState<any>(null);
   const [loading,setLoading]=useState(true);
-  const initialTab=(searchParams.get("tab") as Tab)||"settings";
-  const [tab,setTabState]=useState<Tab>(TABS.some(t=>t.id===initialTab)?initialTab:"settings");
+  const initialTab=(searchParams.get("tab") as Tab)||"overview";
+  const [tab,setTabState]=useState<Tab>(TABS.some(t=>t.id===initialTab)?initialTab:"overview");
   const setTab=(t:Tab)=>{setTabState(t);router.replace(`?tab=${t}`,{scroll:false});};
 
   // Doctor modals state (must be before any conditional returns)
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  // Inventory low-stock state
+  const [lowStockCount, setLowStockCount] = useState<number | null>(null);
+  const [sendingStockAlert, setSendingStockAlert] = useState(false);
+  const [stockAlertMsg, setStockAlertMsg] = useState<string | null>(null);
+
+  const sendStockAlerts = async () => {
+    setSendingStockAlert(true);
+    setStockAlertMsg(null);
+    const res = await api("/api/inventory/low-stock", "POST");
+    setSendingStockAlert(false);
+    if (res.success) setStockAlertMsg(`✓ ${res.data?.fired || 0} alert(s) sent`);
+    else setStockAlertMsg("Failed to send alerts");
+    setTimeout(() => setStockAlertMsg(null), 5000);
+  };
+
+  const checkLowStock = useCallback(async () => {
+    const res = await api("/api/inventory/low-stock");
+    if (res.success) setLowStockCount(res.data?.count ?? 0);
+  }, []);
+
+  useEffect(() => { if (tab === "inventory") checkLowStock(); }, [tab, checkLowStock]);
 
   useEffect(()=>{
     api("/api/auth/me").then(d=>{
@@ -304,6 +331,18 @@ function ConfigureContent(){
   },[router]);
 
   const logout=async()=>{await api("/api/auth/logout","POST");router.push("/login");};
+
+  const navItems = [
+    { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={16} />, route: "/hospitaladmin/dashboard" },
+    { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} />, route: "/hospitaladmin/appointments" },
+    { id: "staff", label: "Staff", icon: <Users size={16} />, route: "/hospitaladmin/staff" },
+    { id: "doctors", label: "Doctors", icon: <Stethoscope size={16} />, route: "/hospitaladmin/doctors" },
+    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/patients" },
+    { id: "inventory", label: "Inventory", icon: <ClipboardList size={16} />, route: "/hospitaladmin/dashboard?tab=inventory" },
+    { id: "billing", label: "Billing", icon: <CreditCard size={16} />, route: "/hospitaladmin/billing" },
+    { id: "finance", label: "Finance", icon: <IndianRupee size={16} />, route: "/hospitaladmin/finance" },
+    { id: "settings", label: "Settings", icon: <Settings size={16} />, route: "/hospitaladmin/configure" },
+  ];
   const initials=(n:string)=>n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();
 
   const openLeaveModal = (doctor: any) => {
@@ -336,25 +375,11 @@ function ConfigureContent(){
       input,select,button,textarea{font-family:'Inter',sans-serif}
       @keyframes spin{to{transform:rotate(360deg)}}
       .cfg-spin{animation:spin .7s linear infinite}
-      .cfg-wrap{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
-      .cfg-sb{width:240px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,.04)}
-      .cfg-sb-logo{padding:20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-      .cfg-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3)}
-      .cfg-sb-nav{flex:1;padding:12px;overflow-y:auto}
-      .cfg-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
-      .cfg-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:left;position:relative;margin-bottom:2px}
-      .cfg-nb:hover{background:#f8fafc;color:#334155}
-      .cfg-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
-      .cfg-nb.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:#0E898F;border-radius:4px}
-      .cfg-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
-      .cfg-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-      .cfg-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-      .cfg-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
-      .cfg-main{margin-left:240px;flex:1;min-height:100vh}
-      .cfg-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-      .cfg-topbar-title{font-size:18px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:10px}
-      .cfg-topbar-right{display:flex;align-items:center;gap:12px}
-      .cfg-body{padding:24px}
+      .cfg-wrap{display:contents}
+      .cfg-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:#fff;border-bottom:1px solid #e2e8f0;margin-bottom:20px;max-width:100%}
+      .cfg-tab{padding:10px 16px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:8px;flex-shrink:0}
+      .cfg-tab:hover{background:#f8fafc;color:#334155}
+      .cfg-tab.on{background:#E6F4F4;color:#0A6B70}
       .cfg-onboard{background:#fff;border:1px solid #fde68a;border-radius:16px;padding:22px;margin-bottom:22px;box-shadow:0 1px 4px rgba(234,179,8,.1)}
       .cfg-onboard-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
       .cfg-progress-bar{height:8px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:8px}
@@ -399,48 +424,27 @@ function ConfigureContent(){
       .cfg-empty{text-align:center;padding:60px 20px;color:#94a3b8;font-size:14px;background:#fff;border-radius:14px;border:1px solid #e2e8f0}
     `}</style>
 
-    <div className="cfg-wrap">
-      <aside className="cfg-sb">
-        <div className="cfg-sb-logo">
-          <div className="cfg-logo-ic"><Stethoscope size={18}/></div>
-          <div><div style={{fontSize:15,fontWeight:800,color:"#1e293b"}}>MediCare+</div><div style={{fontSize:10,color:"#94a3b8"}}>Hospital Setup</div></div>
-        </div>
-        <nav className="cfg-sb-nav">
-          <div className="cfg-nav-sec">Configuration</div>
+    <>
+
+        <div className="cfg-tabs">
           {TABS.map(t=>{const Icon=t.icon;return(
-            <button key={t.id} className={`cfg-nb${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>
-              <Icon size={15} style={{flexShrink:0}}/>{t.label}
+            <button key={t.id} className={`cfg-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>
+              <Icon size={16}/>{t.label}
             </button>
           );})}
-          <div className="cfg-nav-sec">Navigation</div>
-          <button className="cfg-nb" onClick={()=>router.push("/hospitaladmin/dashboard")}><LayoutDashboard size={15}/>Back to Dashboard</button>
-          <button className="cfg-nb"><HelpCircle size={15}/>Support</button>
-        </nav>
-        <div className="cfg-sb-foot">
-          <div className="cfg-user">
-            <div className="cfg-av">{user?.name?initials(user.name):"HA"}</div>
-            <div style={{overflow:"hidden"}}><div style={{fontSize:12,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{user?.name||"Admin"}</div><div style={{fontSize:10,color:"#0E898F",fontWeight:500}}>Hospital Admin</div></div>
-          </div>
-          <button className="cfg-logout" onClick={logout}><LogOut size={13}/>Log Out</button>
         </div>
-      </aside>
 
-      <main className="cfg-main">
-        <header className="cfg-topbar">
-          <div className="cfg-topbar-title"><Settings size={20} color="#0E898F"/>Configure Hospital</div>
-          <div className="cfg-topbar-right">
-            <div style={{width:36,height:36,borderRadius:10,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}><Bell size={16} color="#64748b"/><span style={{position:"absolute",top:7,right:7,width:7,height:7,borderRadius:"50%",background:"#ef4444",border:"1.5px solid #fff"}}/></div>
-            <div className="cfg-av">{user?.name?initials(user.name):"HA"}</div>
-          </div>
-        </header>
-
-        <div className="cfg-body">
+        <div className="hd-center">
           <div style={{fontSize:22,fontWeight:800,color:"#1e293b",marginBottom:4}}>{TABS.find(t=>t.id===tab)?.label}</div>
           <div style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>Manage your hospital {tab} configuration</div>
 
+          {tab==="overview"&&<DynamicDashboard/>}
           {tab==="settings"&&<SettingsPanel hospitalId={user?.hospitalId||""}/>}
           {tab==="departments"&&<DepartmentPanel/>}
           {tab==="subdepts"&&<SubDepartmentPanel/>}
+          {tab==="services"&&<ServicePanel/>}
+          {tab==="treatments"&&<TreatmentPlanPanel/>}
+          {tab==="permissions"&&<PermissionPanel/>}
           {tab==="clinical"&&<CrudPanel endpoint="/api/config/departments?sub=true" columns={clinicalColumns} formFields={clinicalFields} entityName="Clinical Unit"/>}
           {tab==="doctors"&&<DoctorPanel onOpenLeave={openLeaveModal}/>}
           
@@ -457,10 +461,32 @@ function ConfigureContent(){
             <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>Define standard charges that will auto-populate bills</div>
             <CrudPanel endpoint="/api/config/pricing" columns={billingColumns} formFields={billingFields} entityName="Charge"/>
           </>)}
-          {tab==="inventory"&&<CrudPanel endpoint="/api/config/inventory" columns={invColumns} formFields={invFields} entityName="Inventory Item"/>}
+          {tab==="inventory"&&(<>
+            {lowStockCount !== null && lowStockCount > 0 && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <AlertTriangle size={16} color="#d97706"/>
+                  <span style={{fontSize:13,fontWeight:700,color:"#92400e"}}>{lowStockCount} item{lowStockCount>1?"s":""} at or below reorder level</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  {stockAlertMsg && <span style={{fontSize:12,color:stockAlertMsg.startsWith("✓")?"#16a34a":"#ef4444",fontWeight:600}}>{stockAlertMsg}</span>}
+                  <button onClick={sendStockAlerts} disabled={sendingStockAlert} className="cfg-btn-primary" style={{padding:"7px 14px",fontSize:12}}>
+                    {sendingStockAlert?<Loader2 size={12} className="cfg-spin"/>:<Bell size={12}/>}
+                    {sendingStockAlert?"Sending...":"Send Stock Alerts"}
+                  </button>
+                </div>
+              </div>
+            )}
+            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+              <a href="/api/export/inventory" download title="Export inventory as CSV"
+                style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,textDecoration:"none"}}>
+                <Download size={13}/>Export CSV
+              </a>
+            </div>
+            <CrudPanel endpoint="/api/config/inventory" columns={invColumns} formFields={invFields} entityName="Inventory Item"/>
+          </>)}
         </div>
-      </main>
-    </div>
+    </>
   </>);
 }
 

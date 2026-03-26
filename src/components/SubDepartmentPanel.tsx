@@ -6,7 +6,7 @@ import {
   Activity, FlaskConical, Layers, Filter, Heart, Microscope,
   Stethoscope, Scissors, Receipt, Pill, Scan, TestTube2,
   Smile, Sparkles, Wind, Building2, Copy, RefreshCw, ExternalLink,
-  Lock, ShieldCheck, UserPlus, ChevronDown
+  Lock, ShieldCheck, UserPlus, ChevronDown, Send, Users
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,6 +38,8 @@ interface SubDept {
   isActive: boolean;
   procedures?: Procedure[];
   _count?: { procedures: number };
+  accessFeatures?: string | null;
+  customName?: string | null;
 }
 
 interface Procedure {
@@ -68,6 +70,7 @@ const SUB_DEPT_TYPES = [
   { value: "RADIOLOGY",   label: "Radiology",         Icon: Scan,        color: "#6366f1" },
   { value: "LABORATORY",  label: "Laboratory",        Icon: TestTube2,   color: "#14b8a6" },
   { value: "PROCEDURE",   label: "Procedure Room",    Icon: Stethoscope, color: "#84cc16" },
+  { value: "RECEPTION",   label: "Reception",         Icon: Users,       color: "#3b82f6" },
   { value: "OTHER",       label: "Other",             Icon: Layers,      color: "#94a3b8" },
 ];
 
@@ -84,6 +87,27 @@ const PROCEDURE_TYPES = [
 const PROC_TYPE_COLORS: Record<string, string> = {
   DIAGNOSTIC: "blue", TREATMENT: "green", CONSULTATION: "purple",
   SURGERY: "red", THERAPY: "orange", MEDICATION: "teal", OTHER: "gray",
+};
+
+const PREDEFINED_ACCESS: Record<string, string[]> = {
+  DENTAL:      ["appointments", "procedures", "patients"],
+  DERMATOLOGY: ["appointments", "procedures", "patients"],
+  HAIR:        ["appointments", "procedures", "patients"],
+  ONCOLOGY:    ["appointments", "procedures", "patients"],
+  CARDIOLOGY:  ["appointments", "procedures", "patients"],
+  RECEPTION:   ["appointments", "billing", "patients", "inventory", "doctors"],
+  PHARMACY:    ["procedures", "inventory", "patients"],
+  BILLING:     ["billing", "finance", "patients"],
+  PATHOLOGY:   ["procedures", "patients", "reports"],
+  RADIOLOGY:   ["procedures", "patients", "reports"],
+  LABORATORY:  ["procedures", "patients", "reports"],
+  PROCEDURE:   ["procedures", "patients", "appointments"],
+  OTHER:       ["appointments", "procedures", "patients", "billing", "doctors", "inventory", "reports"],
+};
+const FEATURE_LABELS: Record<string, string> = {
+  billing: "Billing", finance: "Finance", appointments: "Appointments",
+  doctors: "Doctors Management", patients: "Patient Management",
+  procedures: "Procedures", inventory: "Inventory", reports: "Reports",
 };
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -155,6 +179,7 @@ export default function SubDepartmentPanel() {
   const [form, setForm] = useState<any>({
     name: "", code: "", type: "DENTAL", description: "", color: "", flow: "",
     departmentId: "", hodName: "", hodEmail: "", hodPhone: "", loginEmail: "", isActive: true,
+    accessFeatures: [], customName: "",
   });
 
   // Procedures modal (view/manage procedures for a sub-dept)
@@ -174,6 +199,20 @@ export default function SubDepartmentPanel() {
 
   // Credentials
   const [sendingCreds, setSendingCreds] = useState<string | null>(null);
+  const [bulkSending, setBulkSending] = useState(false);
+
+  const handleBulkSend = async () => {
+    if (!confirm("Send credentials to all sub-departments that haven't received them yet?")) return;
+    setBulkSending(true);
+    try {
+      const res = await api("/api/config/subdepartments/send-credentials-bulk", "POST");
+      if (res.success) { addToast("success", res.message || "Bulk credentials sent"); load(); }
+      else addToast("error", res.message || "Bulk send failed");
+    } catch {
+      addToast("error", "Failed to send bulk credentials");
+    }
+    setBulkSending(false);
+  };
 
   // HOD search
   const [hodSearch, setHodSearch] = useState("");
@@ -286,7 +325,7 @@ export default function SubDepartmentPanel() {
     const defaultType = "DENTAL";
     const typeInfo = getTypeInfo(defaultType);
     const pw = generatePassword("Dental");
-    setForm({ name: "", code: "", type: defaultType, description: "", color: typeInfo.color, flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true });
+    setForm({ name: "", code: "", type: defaultType, description: "", color: typeInfo.color, flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true, accessFeatures: [], customName: "" });
     setHodSearch(""); setHodResults([]); setHodDropdownOpen(false);
     setModal(true);
   };
@@ -294,6 +333,10 @@ export default function SubDepartmentPanel() {
   const openEdit = (item: SubDept) => {
     setEditItem(item);
     const pw = generatePassword(item.hodName || item.name);
+    let parsedFeatures: string[] = [];
+    try {
+      parsedFeatures = item.accessFeatures ? JSON.parse(item.accessFeatures) : [];
+    } catch { parsedFeatures = []; }
     setForm({
       name: item.name,
       code: item.code || "",
@@ -309,6 +352,8 @@ export default function SubDepartmentPanel() {
       loginEmail: item.loginEmail || "",
       loginPassword: pw,
       isActive: item.isActive,
+      accessFeatures: parsedFeatures,
+      customName: item.customName || "",
     });
     setHodSearch(item.hodName || "");
     setHodResults([]); setHodDropdownOpen(false);
@@ -319,7 +364,7 @@ export default function SubDepartmentPanel() {
     e.preventDefault();
     setSaving(true);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { loginPassword, hodStaffId, consultationFee, ...rest } = form;
+    const { loginPassword, hodStaffId, consultationFee, accessFeatures, ...rest } = form;
     const payload = {
       ...rest,
       color: form.color || undefined,
@@ -329,6 +374,8 @@ export default function SubDepartmentPanel() {
       hodEmail: form.hodEmail || null,
       hodPhone: form.hodPhone || null,
       loginEmail: form.loginEmail || null,
+      accessFeatures: JSON.stringify(PREDEFINED_ACCESS[form.type] || []),
+      customName: form.type === "OTHER" ? form.customName || null : null,
     };
     let res;
     if (editItem) res = await api(`/api/config/subdepartments/${editItem.id}`, "PUT", payload);
@@ -549,6 +596,15 @@ export default function SubDepartmentPanel() {
           <button className={`sd-filter-btn ${showFilters ? "active" : ""}`} onClick={() => setShowFilters(!showFilters)}>
             <Filter size={13} />Filters
           </button>
+          <button
+            onClick={handleBulkSend}
+            disabled={bulkSending}
+            title="Send credentials to all sub-departments who haven't received them"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9, border: "1px solid #dbeafe", background: bulkSending ? "#f1f5f9" : "#eff6ff", color: bulkSending ? "#94a3b8" : "#2563eb", fontSize: 13, fontWeight: 600, cursor: bulkSending ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+          >
+            {bulkSending ? <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} /> : <Send size={13} />}
+            Send All
+          </button>
           <button className="sd-btn-primary" onClick={openAdd}><Plus size={14} />Add Sub-Department</button>
         </div>
       </div>
@@ -716,12 +772,32 @@ export default function SubDepartmentPanel() {
                       <label className="sd-lbl">Patient Flow</label>
                       <input className="sd-input" placeholder="e.g., OPD → Procedure → Billing → Follow-up" value={form.flow} onChange={e => setForm((f: any) => ({ ...f, flow: e.target.value }))} />
                     </div>
+                    {form.type === "OTHER" && (
+                      <div className="sd-field full">
+                        <label className="sd-lbl">Custom Department Name *</label>
+                        <input className="sd-input" placeholder="Enter custom department name" value={form.customName} onChange={e => setForm((f: any) => ({ ...f, customName: e.target.value }))} required />
+                      </div>
+                    )}
                     <div className="sd-field full">
                       <div className="sd-toggle-wrap">
                         <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Active</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Accept patients and appointments</div></div>
                         <button type="button" className={`sd-toggle ${form.isActive ? "on" : ""}`} onClick={() => setForm((f: any) => ({ ...f, isActive: !f.isActive }))}><span className="sd-toggle-thumb" /></button>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Predefined Access */}
+                <div className="sd-section">
+                  <div className="sd-section-title"><ShieldCheck size={14} />Dashboard Access (Auto-assigned)</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>These features are automatically assigned based on the department type</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {(PREDEFINED_ACCESS[form.type] || []).map((f: string) => (
+                      <span key={f} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 8 }}>
+                        <Check size={12} color="#16a34a" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>{FEATURE_LABELS[f] || f}</span>
+                      </span>
+                    ))}
                   </div>
                 </div>
 

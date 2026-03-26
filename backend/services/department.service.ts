@@ -68,6 +68,8 @@ export const createDepartment = async (
     allowAppointments: input.allowAppointments ?? true,
     isIPD: input.isIPD ?? false,
     hodDoctorId: input.hodDoctorId || null,
+    hodUserId: (input as any).hodUserId || null,
+    customTypeName: (input as any).customTypeName || null,
     location: input.location || null,
     billingCode: input.billingCode || null,
     isActive: input.isActive ?? true,
@@ -150,6 +152,8 @@ export const updateDepartment = async (
   if (input.allowAppointments !== undefined) updateData.allowAppointments = input.allowAppointments;
   if (input.isIPD !== undefined) updateData.isIPD = input.isIPD;
   if (input.hodDoctorId !== undefined) updateData.hodDoctorId = input.hodDoctorId;
+  if ((input as any).hodUserId !== undefined) updateData.hodUserId = (input as any).hodUserId;
+  if ((input as any).customTypeName !== undefined) updateData.customTypeName = (input as any).customTypeName;
   if (input.location !== undefined) updateData.location = input.location;
   if (input.billingCode !== undefined) updateData.billingCode = input.billingCode;
   if (input.isActive !== undefined) updateData.isActive = input.isActive;

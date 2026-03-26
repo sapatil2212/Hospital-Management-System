@@ -4,7 +4,7 @@ import {
   Search, Plus, X, Loader2, Calendar, Clock, User, Stethoscope,
   Building2, CheckCircle, XCircle, AlertCircle, RefreshCw, Hash,
   Phone, Mail, ChevronRight, Eye, ClipboardList, CalendarCheck,
-  Edit, Trash2, FileText, AlertTriangle,
+  Edit, Trash2, FileText, AlertTriangle, Download, Bell,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -720,6 +720,8 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
+  const [reminderSending, setReminderSending] = useState<Set<string>>(new Set());
+  const [reminderMsg, setReminderMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -784,6 +786,10 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
           <RefreshCw size={12} />Clear
         </button>
+        <a href={`/api/export/appointments${dateFilter ? `?dateFrom=${dateFilter}&dateTo=${dateFilter}` : ""}${statusFilter ? `${dateFilter ? "&" : "?"}status=${statusFilter}` : ""}`}
+          download style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", fontSize: 12, color: "#059669", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
+          <Download size={12} />Export CSV
+        </a>
       </div>
 
       {loading ? (
@@ -869,6 +875,24 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                             <CalendarCheck size={13} />
                           </button>
                         )}
+                        {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && appt.patient?.email && (
+                          <button
+                            disabled={reminderSending.has(appt.id)}
+                            title="Send Reminder Email"
+                            onClick={async () => {
+                              setReminderSending(s => new Set(s).add(appt.id));
+                              try {
+                                const d = await api("/api/appointments/remind", "POST", { appointmentId: appt.id });
+                                setReminderMsg({ id: appt.id, ok: d.success, text: d.success ? "Reminder sent!" : (d.message || "Failed") });
+                                setTimeout(() => setReminderMsg(null), 3000);
+                              } finally {
+                                setReminderSending(s => { const n = new Set(s); n.delete(appt.id); return n; });
+                              }
+                            }}
+                            style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: reminderSending.has(appt.id) ? "#f1f5f9" : "#fffbeb", color: reminderSending.has(appt.id) ? "#94a3b8" : "#d97706", cursor: reminderSending.has(appt.id) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {reminderSending.has(appt.id) ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Bell size={13} />}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -893,6 +917,13 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {reminderMsg && (
+        <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 500, background: reminderMsg.ok ? "#f0fdf4" : "#fff5f5", border: `1px solid ${reminderMsg.ok ? "#bbf7d0" : "#fecaca"}`, borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 24px rgba(0,0,0,.12)", fontSize: 13, fontWeight: 600, color: reminderMsg.ok ? "#16a34a" : "#ef4444" }}>
+          {reminderMsg.ok ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+          {reminderMsg.text}
         </div>
       )}
 

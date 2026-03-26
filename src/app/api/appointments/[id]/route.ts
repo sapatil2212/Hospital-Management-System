@@ -8,6 +8,7 @@ import {
   AppointmentServiceError,
 } from "../../../../../backend/services/appointment.service";
 import { updateAppointmentSchema } from "../../../../../backend/validations/appointment.validation";
+import { notifyAppointmentStatusChanged } from "../../../../../backend/services/notification.service";
 
 const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
 
@@ -36,6 +37,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
 
     const appt = await updateAppointment(params.id, auth.hospitalId, result.data);
+    if (result.data.status) {
+      notifyAppointmentStatusChanged(auth.hospitalId, {
+        patientName: (appt as any).patient?.name || "Patient",
+        status: result.data.status,
+        doctorName: (appt as any).doctor?.name,
+      }).catch(() => {});
+    }
     return successResponse(appt, "Appointment updated");
   } catch (e: any) {
     if (e instanceof AppointmentServiceError) return errorResponse(e.message, e.status, { code: e.code });

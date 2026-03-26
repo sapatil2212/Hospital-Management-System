@@ -11,6 +11,7 @@ import {
   createFollowUpSchema,
   queryFollowUpSchema,
 } from "../../../../backend/validations/followup.validation";
+import { notifyFollowUpScheduled } from "../../../../backend/services/notification.service";
 
 const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
 
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest) {
     }
 
     const followUp = await scheduleFollowUp(auth.hospitalId, result.data);
+    notifyFollowUpScheduled(auth.hospitalId, {
+      patientName: (followUp as any).patient?.name || "Patient",
+      followUpDate: new Date((followUp as any).followUpDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    }).catch(() => {});
     return successResponse(followUp, "Follow-up scheduled successfully", 201);
   } catch (e: any) {
     if (e instanceof FollowUpServiceError) {

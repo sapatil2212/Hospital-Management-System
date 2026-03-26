@@ -33,5 +33,6 @@ export async function GET(req: NextRequest) {
     role: dbUser.role,
     hospitalId: dbUser.hospitalId,
     hospital: dbUser.hospital,
+    profilePhoto: dbUser.profilePhoto ?? null,
   }, "Current user");
 }

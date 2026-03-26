@@ -313,6 +313,49 @@ export const sendFinanceCredentials = async (
   });
 };
 
+export const sendAppointmentReminder = async (opts: {
+  to: string;
+  patientName: string;
+  patientId: string;
+  doctorName: string;
+  departmentName: string;
+  appointmentDate: string;
+  timeSlot: string;
+  tokenNumber?: number | null;
+  type: string;
+  hospitalName: string;
+}) => {
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: `Appointment Reminder – ${opts.hospitalName}`,
+    html: `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#0E898F,#065f7a);padding:32px 24px;text-align:center;">
+          <h1 style="color:#fff;font-size:22px;margin:0;">🏥 ${opts.hospitalName}</h1>
+          <p style="color:#B3E0E0;margin:8px 0 0;font-size:14px;">Appointment Reminder</p>
+        </div>
+        <div style="padding:32px 24px;">
+          <h2 style="color:#1e293b;font-size:18px;margin:0 0 8px;">Hi, ${opts.patientName}!</h2>
+          <p style="color:#64748b;font-size:14px;line-height:1.6;">This is a friendly reminder about your upcoming appointment:</p>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin:24px 0;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;width:140px;">Patient ID</td><td style="font-size:13px;color:#1e293b;font-family:monospace;font-weight:700;">${opts.patientId}</td></tr>
+              <tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Doctor</td><td style="font-size:13px;color:#1e293b;font-weight:600;">${opts.doctorName}</td></tr>
+              <tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Department</td><td style="font-size:13px;color:#1e293b;">${opts.departmentName}</td></tr>
+              <tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Date</td><td style="font-size:14px;color:#0E898F;font-weight:800;">${opts.appointmentDate}</td></tr>
+              <tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Time</td><td style="font-size:14px;color:#0E898F;font-weight:800;">${opts.timeSlot}</td></tr>
+              <tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Type</td><td style="font-size:13px;color:#1e293b;">${opts.type}</td></tr>
+              ${opts.tokenNumber ? `<tr><td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Token No.</td><td style="font-size:22px;font-weight:800;color:#0E898F;">#${opts.tokenNumber}</td></tr>` : ""}
+            </table>
+          </div>
+          <p style="color:#94a3b8;font-size:12px;margin-top:24px;">Please arrive 15 minutes before your scheduled time. Carry a valid photo ID and any previous medical records.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
 export const sendStaffCredentials = async (opts: {
   to: string;
   name: string;

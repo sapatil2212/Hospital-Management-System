@@ -1,14 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   User, LogOut, Key, Shield, Briefcase, Building2,
   Phone, Mail, Calendar, CheckCircle, Clock, AlertTriangle,
-  ChevronRight, CalendarDays, Users, ChevronDown, Settings
+  ChevronRight, CalendarDays, Users, ChevronDown, Settings, CreditCard, RefreshCw,
+  Search, X
 } from "lucide-react";
 import AppointmentPanel from "@/components/AppointmentPanel";
 import FollowUpDashboard from "@/components/FollowUpDashboard";
 import PatientProfilePanel from "@/components/PatientProfilePanel";
+import NotificationBell from "@/components/NotificationBell";
+import BillingModule from "@/components/BillingModule";
 
 interface StaffProfile {
   id: string;
@@ -59,13 +62,14 @@ const api = async (url: string, method = "GET", body?: any) => {
   return r.json();
 };
 
-type Tab = "overview" | "appointments" | "followups" | "patients";
+type Tab = "overview" | "appointments" | "followups" | "patients" | "billing";
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "overview", label: "Overview", icon: <User size={16} /> },
   { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} /> },
   { id: "followups", label: "Follow-ups", icon: <Clock size={16} /> },
   { id: "patients", label: "Patients", icon: <Users size={16} /> },
+  { id: "billing", label: "Billing", icon: <CreditCard size={16} /> },
 ];
 
 export default function StaffDashboard() {
@@ -77,7 +81,10 @@ export default function StaffDashboard() {
   const [patients, setPatients] = useState<any[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [patientSearch, setPatientSearch] = useState("");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [liveStats, setLiveStats] = useState<{ todayAppts: number; pendingFollowUps: number; overdueFollowUps: number; totalPatients: number } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -105,14 +112,40 @@ export default function StaffDashboard() {
     }).catch(() => router.push("/staff/login"));
   }, [router]);
 
+  const fetchLiveStats = useCallback(async () => {
+    setStatsLoading(true);
+    const today = new Date().toISOString().slice(0, 10);
+    const [apptRes, fuRes, ptRes] = await Promise.all([
+      api(`/api/appointments?stats=true&date=${today}`),
+      api(`/api/followups?stats=true`),
+      api(`/api/patients?stats=true`),
+    ]);
+    setLiveStats({
+      todayAppts:       apptRes?.data?.today   ?? 0,
+      pendingFollowUps: fuRes?.data?.pending   ?? 0,
+      overdueFollowUps: fuRes?.data?.overdue   ?? 0,
+      totalPatients:    ptRes?.data?.total     ?? 0,
+    });
+    setStatsLoading(false);
+  }, []);
+
+  useEffect(() => { if (!loading) fetchLiveStats(); }, [loading, fetchLiveStats]);
+
   useEffect(() => {
     if (tab === "patients") {
       setPatientsLoading(true);
-      api("/api/patients?limit=50&sortBy=name&sortOrder=asc").then(d => {
+      setPatientSearch("");
+      api("/api/patients?limit=200&sortBy=name&sortOrder=asc").then(d => {
         if (d.success) setPatients(d.data?.data || []);
       }).finally(() => setPatientsLoading(false));
     }
   }, [tab]);
+
+  const filteredPatients = patients.filter(p => {
+    if (!patientSearch) return true;
+    const q = patientSearch.toLowerCase();
+    return (p.name||'').toLowerCase().includes(q) || (p.patientId||'').toLowerCase().includes(q) || (p.phone||'').includes(q) || (p.email||'').toLowerCase().includes(q);
+  });
 
   const handleLogout = async () => {
     await api("/api/auth/logout", "POST");
@@ -185,6 +218,7 @@ export default function StaffDashboard() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <NotificationBell accentColor={roleColors.accent} bgColor="#f8fafc" borderColor="#e2e8f0" />
           <div
             style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "4px 8px", borderRadius: 10, transition: "background 0.15s" }}
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
@@ -332,26 +366,70 @@ export default function StaffDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 12, color: "#64748b" }}>{currentTime.toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" })}</div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
+                    <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#64748b" }}>{currentTime.toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" })}</div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
+                      </div>
+                      <button onClick={fetchLiveStats} disabled={statsLoading} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", fontSize: 11, color: "#64748b", cursor: "pointer", fontWeight: 600 }}>
+                        <RefreshCw size={11} style={statsLoading ? { animation: "spin .7s linear infinite" } : undefined} />Refresh Stats
+                      </button>
                     </div>
                   </div>
 
-                  {/* Stat Cards */}
+                  {/* Overdue follow-up alert */}
+                  {liveStats && liveStats.overdueFollowUps > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "10px 16px", marginBottom: 16 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <AlertTriangle size={15} color="#d97706" />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>{liveStats.overdueFollowUps} overdue follow-up{liveStats.overdueFollowUps > 1 ? "s" : ""} need attention</span>
+                      </div>
+                      <button onClick={() => setTab("followups")} style={{ fontSize: 12, fontWeight: 700, color: "#d97706", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                        View Follow-ups <ChevronRight size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Live Stat Cards */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
                     {[
-                      { label: "Status", value: profile.isActive ? "Active" : "Inactive", icon: <CheckCircle size={18} color={profile.isActive ? "#10b981" : "#ef4444"} />, bg: profile.isActive ? "#f0fdf4" : "#fff5f5", textColor: profile.isActive ? "#15803d" : "#dc2626" },
-                      { label: "Role", value: ROLE_LABELS[profile.role] || profile.role, icon: <Shield size={18} color={roleColors.accent} />, bg: roleColors.bg, textColor: roleColors.text },
-                      { label: "Department", value: profile.department?.name || "Not Assigned", icon: <Building2 size={18} color="#0E898F" />, bg: "#E6F4F4", textColor: "#07595D" },
-                      { label: "Tenure", value: monthsWorked < 1 ? "< 1 month" : `${monthsWorked}mo`, icon: <Calendar size={18} color="#8b5cf6" />, bg: "#f5f3ff", textColor: "#6d28d9" },
+                      {
+                        label: "Today's Appts",
+                        value: statsLoading ? "…" : String(liveStats?.todayAppts ?? 0),
+                        icon: <CalendarDays size={18} color="#0E898F" />,
+                        bg: "#E6F4F4", textColor: "#07595D",
+                        sub: "Scheduled today",
+                      },
+                      {
+                        label: "Pending Follow-ups",
+                        value: statsLoading ? "…" : String(liveStats?.pendingFollowUps ?? 0),
+                        icon: <Clock size={18} color={liveStats && liveStats.pendingFollowUps > 0 ? "#f59e0b" : "#10b981"} />,
+                        bg: liveStats && liveStats.pendingFollowUps > 0 ? "#fffbeb" : "#f0fdf4",
+                        textColor: liveStats && liveStats.pendingFollowUps > 0 ? "#92400e" : "#15803d",
+                        sub: liveStats && liveStats.overdueFollowUps > 0 ? `${liveStats.overdueFollowUps} overdue` : "All on track",
+                      },
+                      {
+                        label: "Total Patients",
+                        value: statsLoading ? "…" : String(liveStats?.totalPatients ?? 0),
+                        icon: <Users size={18} color="#8b5cf6" />,
+                        bg: "#f5f3ff", textColor: "#6d28d9",
+                        sub: "Registered",
+                      },
+                      {
+                        label: "Tenure",
+                        value: monthsWorked < 1 ? "< 1 mo" : `${monthsWorked} mo`,
+                        icon: <Calendar size={18} color={roleColors.accent} />,
+                        bg: roleColors.bg, textColor: roleColors.text,
+                        sub: joinDate.toLocaleDateString("en-IN", { month: "short", year: "numeric" }),
+                      },
                     ].map(s => (
                       <div key={s.label} className="sd-stat-card" style={{ background: s.bg }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "#94a3b8" }}>{s.label}</div>
                           {s.icon}
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: s.textColor }}>{s.value}</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: s.textColor, lineHeight: 1 }}>{s.value}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{s.sub}</div>
                       </div>
                     ))}
                   </div>
@@ -444,10 +522,20 @@ export default function StaffDashboard() {
               {tab === "patients" && (
                 <div style={{ animation: "fadeIn .25s ease" }}>
                   <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-                    <div style={{ padding: "18px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ padding: "18px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                       <div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Patients</div>
-                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>All registered patients</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{patients.length} registered</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", minWidth: 240 }}>
+                        <Search size={13} color="#94a3b8" />
+                        <input
+                          value={patientSearch}
+                          onChange={e => setPatientSearch(e.target.value)}
+                          placeholder="Search by name, ID, phone..."
+                          style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", width: "100%", fontFamily: "'Inter',sans-serif" }}
+                        />
+                        {patientSearch && <button onClick={() => setPatientSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 0 }}><X size={12} /></button>}
                       </div>
                     </div>
                     {patientsLoading ? (
@@ -457,12 +545,18 @@ export default function StaffDashboard() {
                       </div>
                     ) : patients.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "60px 20px", color: "#94a3b8", fontSize: 14 }}>No patients found.</div>
+                    ) : filteredPatients.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
+                        <Search size={28} style={{ marginBottom: 10, opacity: .4 }} />
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>No patients match &ldquo;{patientSearch}&rdquo;</div>
+                        <button onClick={() => setPatientSearch("")} style={{ marginTop: 10, fontSize: 12, color: "#0E898F", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Clear search</button>
+                      </div>
                     ) : (
                       <>
                         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12, padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em" }}>
                           <span>Patient</span><span>Gender</span><span>Blood Group</span><span>Actions</span>
                         </div>
-                        {patients.map(p => (
+                        {filteredPatients.map(p => (
                           <div key={p.id} className="sd-pt-row">
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                               <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#e0e7ff,#c7d2fe)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3730a3", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
@@ -492,6 +586,13 @@ export default function StaffDashboard() {
                       </>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* ── BILLING TAB ── */}
+              {tab === "billing" && (
+                <div style={{ animation: "fadeIn .25s ease" }}>
+                  <BillingModule />
                 </div>
               )}
             </>)}

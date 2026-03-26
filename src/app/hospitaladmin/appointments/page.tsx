@@ -2,9 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarCheck, Users, ClipboardList, RefreshCw,
-  LogOut, Bell, Stethoscope, LayoutDashboard, Settings,
-  Loader2, ChevronRight, ArrowLeft, Trash2, AlertTriangle,
+  CalendarCheck, Users, RefreshCw, Loader2, ChevronRight, Trash2, AlertTriangle, Download,
 } from "lucide-react";
 import AppointmentPanel from "@/components/AppointmentPanel";
 import FollowUpDashboard from "@/components/FollowUpDashboard";
@@ -19,149 +17,48 @@ const api = async (url: string, method = "GET", body?: any) => {
 
 type Tab = "appointments" | "followups" | "patients";
 
+const TABS = [
+  { id: "appointments" as Tab, label: "Appointments", icon: CalendarCheck },
+  { id: "followups"    as Tab, label: "Follow-ups",   icon: RefreshCw },
+  { id: "patients"     as Tab, label: "Patients",     icon: Users },
+];
+
 export default function AppointmentsPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("appointments");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
-  useEffect(() => {
-    api("/api/auth/me").then(d => {
-      if (!d.success) { router.push("/login"); return; }
-      if (d.data.role === "DOCTOR") { router.push("/doctor/dashboard"); return; }
-      if (d.data.role === "STAFF" || d.data.role === "RECEPTIONIST") { router.push("/staff/dashboard"); return; }
-      if (d.data.role !== "HOSPITAL_ADMIN") { router.push("/login"); return; }
-      setUser(d.data);
-      setLoading(false);
-    }).catch(() => router.push("/login"));
-  }, [router]);
-
-  const logout = async () => { await api("/api/auth/logout", "POST"); router.push("/login"); };
-  const initials = (n: string) => n.split(" ").map((x: string) => x[0]).join("").slice(0, 2).toUpperCase();
-
-  if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 12, color: "#64748b" }}>
-      <Loader2 size={24} style={{ animation: "spin .7s linear infinite" }} />Loading...
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
-
-  const TABS = [
-    { id: "appointments" as Tab, label: "Appointments", icon: CalendarCheck },
-    { id: "followups" as Tab, label: "Follow-ups", icon: RefreshCw },
-    { id: "patients" as Tab, label: "Patients", icon: Users },
-  ];
-
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
-        input,select,button,textarea{font-family:'Inter',sans-serif}
-        @keyframes spin{to{transform:rotate(360deg)}}
-      `}</style>
-
-      <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter',sans-serif", background: "#f0f4f8" }}>
-        {/* Sidebar */}
-        <aside style={{ width: 240, background: "#fff", borderRight: "1px solid #e2e8f0", display: "flex", flexDirection: "column", position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 50, boxShadow: "2px 0 8px rgba(0,0,0,.04)" }}>
-          <div style={{ padding: "20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 4px 12px rgba(59,130,246,.3)" }}>
-              <CalendarCheck size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>MediCare+</div>
-              <div style={{ fontSize: 10, color: "#94a3b8" }}>Appointments</div>
-            </div>
-          </div>
-
-          <nav style={{ flex: 1, padding: 12, overflowY: "auto" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#94a3b8", padding: "0 8px", margin: "14px 0 6px" }}>Modules</div>
-            {TABS.map(t => {
-              const Icon = t.icon;
-              return (
-                <button key={t.id} onClick={() => setTab(t.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: tab === t.id ? "#E6F4F4" : "none", color: tab === t.id ? "#0A6B70" : "#64748b", fontSize: 13, fontWeight: tab === t.id ? 600 : 500, cursor: "pointer", textAlign: "left", marginBottom: 2, position: "relative" }}>
-                  {tab === t.id && <span style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: 20, background: "#0E898F", borderRadius: 4 }} />}
-                  <Icon size={15} style={{ flexShrink: 0 }} />{t.label}
-                </button>
-              );
-            })}
-
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#94a3b8", padding: "0 8px", margin: "14px 0 6px" }}>Navigation</div>
-            <button onClick={() => router.push("/hospitaladmin/dashboard")}
-              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: "none", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 2 }}>
-              <LayoutDashboard size={15} />Dashboard
+    <div style={{ padding: 24 }}>
+      {/* Sub-tabs */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 24, background: "#fff", borderRadius: 12, padding: 6, border: "1px solid #e2e8f0", width: "fit-content", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => { setTab(t.id); setSelectedPatientId(null); }}
+              style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 8, border: "none", background: active ? "#0E898F" : "transparent", color: active ? "#fff" : "#64748b", fontSize: 13, fontWeight: active ? 700 : 500, cursor: "pointer", transition: "all .15s" }}>
+              <Icon size={14} />{t.label}
             </button>
-            <button onClick={() => router.push("/hospitaladmin/configure")}
-              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", borderRadius: 10, border: "none", background: "none", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
-              <Settings size={15} />Configure
-            </button>
-          </nav>
-
-          <div style={{ padding: "14px 16px 18px", borderTop: "1px solid #f1f5f9" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                {user?.name ? initials(user.name) : "HA"}
-              </div>
-              <div style={{ overflow: "hidden" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name || "Admin"}</div>
-                <div style={{ fontSize: 10, color: "#0E898F", fontWeight: 500 }}>Hospital Admin</div>
-              </div>
-            </div>
-            <button onClick={logout} style={{ width: "100%", padding: 8, borderRadius: 9, background: "#fff5f5", border: "1px solid #fee2e2", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <LogOut size={13} />Log Out
-            </button>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <main style={{ marginLeft: 240, flex: 1, minHeight: "100vh" }}>
-          <header style={{ height: 64, background: "#fff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 40, boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
-                <ArrowLeft size={14} />
-              </button>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
-                {TABS.find(t => t.id === tab)?.icon && (() => { const Icon = TABS.find(t => t.id === tab)!.icon; return <Icon size={20} color="#0E898F" />; })()}
-                {TABS.find(t => t.id === tab)?.label}
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
-                <Bell size={16} color="#64748b" />
-                <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: "#ef4444", border: "1.5px solid #fff" }} />
-              </div>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
-                {user?.name ? initials(user.name) : "HA"}
-              </div>
-            </div>
-          </header>
-
-          <div style={{ padding: 24 }}>
-            {selectedPatientId ? (
-              <PatientProfilePanel 
-                patientId={selectedPatientId} 
-                onBack={() => setSelectedPatientId(null)} 
-              />
-            ) : (
-              <>
-                <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
-                  {tab === "appointments" && "Book, view, and manage all patient appointments"}
-                  {tab === "followups" && "Track and manage patient follow-up schedules"}
-                  {tab === "patients" && "Search and view all registered patients"}
-                </div>
-
-                {tab === "appointments" && <AppointmentPanel onViewPatient={setSelectedPatientId} />}
-                {tab === "followups" && <FollowUpDashboard onViewPatient={setSelectedPatientId} />}
-                {tab === "patients" && <PatientsListPanel onSelectPatient={setSelectedPatientId} />}
-              </>
-            )}
-          </div>
-        </main>
+          );
+        })}
       </div>
-    </>
+
+      {selectedPatientId ? (
+        <PatientProfilePanel patientId={selectedPatientId} onBack={() => setSelectedPatientId(null)} />
+      ) : (
+        <>
+          <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+            {tab === "appointments" && "Book, view, and manage all patient appointments"}
+            {tab === "followups"    && "Track and manage patient follow-up schedules"}
+            {tab === "patients"     && "Search and view all registered patients"}
+          </div>
+
+          {tab === "appointments" && <AppointmentPanel onViewPatient={setSelectedPatientId} />}
+          {tab === "followups"    && <FollowUpDashboard onViewPatient={setSelectedPatientId} />}
+          {tab === "patients"     && <PatientsListPanel onSelectPatient={setSelectedPatientId} />}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -210,6 +107,10 @@ function PatientsListPanel({ onSelectPatient }: { onSelectPatient: (id: string) 
             value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         </div>
         <div style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>{pagination.total} patients</div>
+        <a href={`/api/export/patients${search ? `?search=${encodeURIComponent(search)}` : ""}`}
+          download style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", fontSize: 12, color: "#059669", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, textDecoration: "none", marginLeft: "auto" }}>
+          <Download size={12} />Export CSV
+        </a>
       </div>
 
       {loading ? (

@@ -5,13 +5,102 @@ import { motion, useInView } from "framer-motion";
 import {
   HeartPulse,
   ArrowRight,
-  ChevronRight,
+  SmilePlus,
+  Sparkles,
+  Ribbon,
+  Stethoscope,
+  Scissors,
+  Apple,
+  Gem,
+  Plane,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./Services.module.css";
-import { treatments } from "@/app/treatments/treatmentData";
 import { useAppointment } from "./AppointmentProvider";
+
+const servicesList = [
+  {
+    label: "Dental",
+    href: "/treatments/dental",
+    icon: SmilePlus,
+    image: "/images/Quick-Treatments/Dental.png",
+    description: "Advanced dental care with modern technology for healthy, confident smiles.",
+    features: ["Teeth Cleaning", "Root Canal", "Dental Implants"],
+  },
+  {
+    label: "Skin",
+    href: "/treatments/skin",
+    icon: Sparkles,
+    image: "/images/Quick-Treatments/Skin.png",
+    description: "Expert dermatology treatments for glowing, clear, and healthy skin.",
+    features: ["Acne Treatment", "Laser Therapy", "Anti-aging"],
+  },
+  {
+    label: "Hair",
+    href: "/treatments/hair",
+    icon: Ribbon,
+    image: "/images/Quick-Treatments/Hair.png",
+    description: "Advanced hair restoration and PRP treatments for natural hair regrowth.",
+    features: ["PRP Therapy", "Hair Transplant", "GFC Treatment"],
+  },
+  {
+    label: "HNF Cancer",
+    href: "/treatments/oncology",
+    icon: HeartPulse,
+    image: "/images/Quick-Treatments/Hnfcancer.png",
+    description: "Comprehensive cancer care with early detection and advanced treatments.",
+    features: ["Early Screening", "Chemotherapy", "Immunotherapy"],
+  },
+  {
+    label: "Facial Trauma",
+    href: "/treatments/general-opd",
+    icon: Stethoscope,
+    image: "/images/Quick-Treatments/Trauma.png",
+    description: "Expert trauma care for facial injuries and emergency treatments.",
+    features: ["Emergency Care", "Fracture Repair", "Reconstruction"],
+  },
+  {
+    label: "Body Shaping",
+    href: "/treatments",
+    icon: Scissors,
+    image: "/images/Quick-Treatments/BodyShaping.png",
+    description: "Non-invasive body contouring and aesthetic shaping procedures.",
+    features: ["Liposuction", "Tummy Tuck", "Body Contouring"],
+  },
+  {
+    label: "Nutrition",
+    href: "/treatments",
+    icon: Apple,
+    image: "/images/Quick-Treatments/Nutrition.png",
+    description: "Personalized nutrition plans and dietary counseling for optimal health.",
+    features: ["Diet Plans", "Weight Management", "Nutritional Counseling"],
+  },
+  {
+    label: "Sexual Health",
+    href: "/treatments",
+    icon: HeartPulse,
+    image: "/images/Quick-Treatments/Sexualhealth.png",
+    description: "Confidential sexual health services and treatments.",
+    features: ["Consultation", "Treatment", "Counseling"],
+  },
+  {
+    label: "Premium Aesthetic",
+    href: "/treatments",
+    icon: Gem,
+    image: "/images/Quick-Treatments/Premiumaesthetic.png",
+    description: "Luxury aesthetic treatments for premium beauty care.",
+    features: ["Facial Rejuvenation", "Skin Tightening", "Luxury Care"],
+  },
+  {
+    label: "Dental and Medical Tourism",
+    href: "/treatments",
+    icon: Plane,
+    image: "/images/Quick-Treatments/Medicaltourism.png",
+    description: "World-class healthcare services for international patients.",
+    features: ["Travel Assistance", "Accommodation", "Treatment Packages"],
+  },
+];
 
 export default function Services() {
   const ref = useRef(null);
@@ -42,11 +131,11 @@ export default function Services() {
           </p>
         </motion.div>
 
-        {/* Horizontal Cards List */}
-        <div className={styles.list}>
-          {treatments.map((treatment, i) => (
+        {/* Cards Grid - Show only 4 */}
+        <div className={styles.grid}>
+          {servicesList.slice(0, 4).map((service, i) => (
             <motion.div
-              key={treatment.slug}
+              key={service.label}
               className={styles.card}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -54,21 +143,21 @@ export default function Services() {
             >
               <div className={styles.cardImage}>
                 <Image
-                  src={treatment.image}
-                  alt={treatment.label}
+                  src={service.image}
+                  alt={service.label}
                   fill
                   className={styles.image}
                 />
               </div>
               
               <div className={styles.cardContent}>
-                <h3 className={styles.cardTitle}>{treatment.label}</h3>
-                <p className={styles.cardDesc}>{treatment.heroDesc}</p>
+                <h3 className={styles.cardTitle}>{service.label}</h3>
+                <p className={styles.cardDesc}>{service.description}</p>
                 
                 <div className={styles.benefitsSection}>
                   <h4 className={styles.benefitsLabel}>Key Benefits:</h4>
                   <div className={styles.benefitsGrid}>
-                    {treatment.features.slice(0, 3).map((feature, idx) => (
+                    {service.features.map((feature, idx) => (
                       <span key={idx} className={styles.benefitBadge}>
                         {feature}
                       </span>
@@ -78,7 +167,7 @@ export default function Services() {
 
                 <div className={styles.cardActions}>
                   <Link 
-                    href={`/treatments/${treatment.slug}`}
+                    href={service.href}
                     className={styles.viewMoreBtn}
                   >
                     View More <ArrowRight size={14} />
@@ -94,6 +183,18 @@ export default function Services() {
             </motion.div>
           ))}
         </div>
+
+        {/* View All Button */}
+        <motion.div
+          className={styles.viewAllContainer}
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <Link href="/treatments" className={styles.viewAllBtn}>
+            View All Treatments <ArrowRight size={16} />
+          </Link>
+        </motion.div>
       </div>
     </section>
   );

@@ -49,6 +49,17 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error: any) {
-    return errorResponse(error.message || "Login failed", 500);
+    const msg = String(error?.message || "");
+    const code = String(error?.code || "");
+    const isDbDown =
+      code === "P1001" ||
+      msg.includes("Can't reach database server") ||
+      msg.includes("Can't reach database") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT");
+    if (isDbDown) {
+      return errorResponse("Unable to connect. Please check your internet connection and try again.", 503);
+    }
+    return errorResponse(msg || "Login failed", 500);
   }
 }

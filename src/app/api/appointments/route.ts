@@ -12,8 +12,9 @@ import {
   queryAppointmentSchema,
 } from "../../../../backend/validations/appointment.validation";
 import prisma from "../../../../backend/config/db";
+import { notifyAppointmentBooked } from "../../../../backend/services/notification.service";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,13 @@ export async function POST(req: NextRequest) {
       hospital?.name || "Hospital",
       result.data
     );
+    // fire-and-forget notification
+    notifyAppointmentBooked(auth.hospitalId, {
+      patientName: (appointment as any).patient?.name || "Patient",
+      doctorName:  (appointment as any).doctor?.name  || "Doctor",
+      date: new Date((appointment as any).appointmentDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+      time: (appointment as any).timeSlot || "",
+    }).catch(() => {});
     return successResponse(appointment, "Appointment booked successfully", 201);
   } catch (e: any) {
     if (e instanceof AppointmentServiceError) {

@@ -1,26 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   CalendarDays, Stethoscope, LogOut, Search,
   Bell, HelpCircle, UserRound, FileText,
-  ChevronDown, Settings, User
+  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock
 } from "lucide-react";
 import { DoctorDashboardProvider, useDoctorDashboard } from "./DoctorDashboardContext";
+import NotificationBell from "@/components/NotificationBell";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { doctor, loading, logout, accent, doctorName, deptName, initials } = useDoctorDashboard();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const isProfilePage = pathname === "/doctor/dashboard/profile";
+  const currentTab = searchParams.get("tab") || "schedule";
 
   const navItems = [
     { id: "schedule", path: "/doctor/dashboard", label: "Today's Schedule", icon: <CalendarDays size={16} /> },
     { id: "patients", path: "/doctor/dashboard?tab=patients", label: "My Patients", icon: <UserRound size={16} /> },
     { id: "prescription-settings", path: "/doctor/dashboard?tab=prescription-settings", label: "Prescription Setting", icon: <FileText size={16} /> },
+    { id: "treatment-plans", path: "/doctor/dashboard?tab=treatment-plans", label: "Treatment Plans", icon: <Activity size={16} /> },
+    { id: "attendance", path: "/doctor/dashboard?tab=attendance", label: "My Attendance", icon: <ClipboardCheck size={16} /> },
+    { id: "schedule-mgmt", path: "/doctor/dashboard?tab=schedule-mgmt", label: "Schedule Setup", icon: <Clock size={16} /> },
   ];
 
   if (loading) {
@@ -91,10 +97,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <nav className="doc-nav">
             <div className="doc-nav-sec">My Work</div>
             {navItems.map(n => {
-              const isActive = !isProfilePage && (
-                (n.id === "schedule" && pathname === "/doctor/dashboard" && !window.location.search) ||
-                window.location.search.includes(`tab=${n.id}`)
-              );
+              const isActive = !isProfilePage && currentTab === n.id;
               return (
                 <button
                   key={n.id}
@@ -138,7 +141,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <header className="doc-topbar">
             <div className="doc-search-wrap"><Search size={14} color="#94a3b8" /><input className="doc-search" placeholder="Search patients, prescriptions..." /></div>
             <div className="doc-tb-right">
-              <div className="doc-notif"><Bell size={16} color="#64748b" /><span className="doc-notif-dot" /></div>
+              <NotificationBell accentColor={accent} bgColor="#f0fdf4" borderColor="#d1fae5" />
               <div className="doc-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative", cursor: "pointer" }}>
                 {doctor?.profileImage
                   ? <img src={doctor.profileImage} alt={doctorName} style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />
@@ -240,7 +243,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DoctorDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <DoctorDashboardProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <Suspense fallback={
+        <div style={{ minHeight: "100vh", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#64748b", fontSize: 14, gap: 14 }}>
+          <div style={{ width: 32, height: 32, border: "3px solid #bbf7d0", borderTop: "3px solid #10b981", borderRadius: "50%", animation: "sp .8s linear infinite" }} />
+          <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>Loading...
+        </div>
+      }>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </Suspense>
     </DoctorDashboardProvider>
   );
 }

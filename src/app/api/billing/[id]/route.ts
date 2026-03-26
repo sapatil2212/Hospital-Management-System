@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { getBillById, updateBill, recordPayment, deleteBill, BillingServiceError } from "../../../../../backend/services/billing.service";
+import { notifyPaymentReceived } from "../../../../../backend/services/notification.service";
 
 const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST"];
 export const dynamic = "force-dynamic";
@@ -41,6 +42,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const body = await req.json();
     if (!body.amount) return errorResponse("amount is required", 400);
     const payment = await recordPayment(params.id, auth.hospitalId, body);
+    notifyPaymentReceived(auth.hospitalId, {
+      patientName: (payment as any).bill?.patient?.name || "Patient",
+      amount: body.amount,
+      method: body.method || "CASH",
+    }).catch(() => {});
     return successResponse(payment, "Payment recorded");
   } catch (e: any) {
     if (e instanceof BillingServiceError) return errorResponse(e.message, e.status);

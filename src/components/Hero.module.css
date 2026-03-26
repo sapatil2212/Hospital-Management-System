@@ -329,17 +329,43 @@
 }
 
 @media (max-width: 768px) {
+  .badge {
+    font-size: 11px;
+    padding: var(--space-1) var(--space-3);
+    gap: var(--space-1);
+  }
+
+  .badge svg {
+    width: 12px;
+    height: 12px;
+  }
+
   .headline {
-    font-size: 2rem;
+    font-size: 1.75rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .subtext {
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
   }
 
   .ctaGroup {
-    flex-direction: column;
-    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    gap: var(--space-2);
   }
 
   .ctaGroup .btn {
-    width: 100%;
+    flex: 1;
+    max-width: 160px;
+    padding: var(--space-2) var(--space-3);
+    font-size: 12px;
+  }
+
+  .ctaGroup .btn svg {
+    width: 14px;
+    height: 14px;
   }
 
   .imageBg {

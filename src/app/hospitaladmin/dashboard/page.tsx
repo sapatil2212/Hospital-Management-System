@@ -10,6 +10,11 @@ import {
   User, ChevronDown, Camera, Save, Mail, CheckCircle, AlertCircle, Key, Shield, Eye
 } from "lucide-react";
 
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
+import BillingModule from "@/components/BillingModule";
+import IPDPanel from "@/components/IPDPanel";
+import ReportsPanel from "@/components/ReportsPanel";
+
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
@@ -1763,7 +1768,7 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
   );
 }
 
-type NavTab = "overview" | "appointments" | "staff" | "patients" | "inventory" | "billing" | "finance" | "settings" | "profile";
+type NavTab = "overview" | "appointments" | "staff" | "doctors" | "patients" | "inventory" | "billing" | "ipd" | "reports" | "finance" | "settings" | "profile";
 
 export default function HospitalAdminDashboard() {
   return (
@@ -1787,6 +1792,17 @@ function DashboardContent() {
   const [apptStats, setApptStats] = useState<any>(null);
   const [patientStats, setPatientStats] = useState<any>(null);
   const [patientEditId, setPatientEditId] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+
+  const fetchDashboard = async () => {
+    setDashboardLoading(true);
+    try {
+      const d = await fetch("/api/dashboard/overview", { credentials: "include" }).then(r => r.json());
+      if (d.success) setDashboardData(d.data);
+    } catch {}
+    setDashboardLoading(false);
+  };
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   // Profile states
   const [profileFormData, setProfileFormData] = useState({ name: "", email: "", phone: "" });
@@ -1797,10 +1813,11 @@ function DashboardContent() {
 
   useEffect(() => {
     const t = searchParams.get("tab") as NavTab;
-    if (t && ["overview", "appointments", "staff", "patients", "inventory", "billing", "settings", "profile"].includes(t)) {
+    if (t === "finance") { router.push("/hospitaladmin/finance"); return; }
+    if (t && ["overview", "appointments", "staff", "doctors", "patients", "inventory", "billing", "ipd", "settings", "profile"].includes(t)) {
       setTab(t);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
@@ -1810,7 +1827,7 @@ function DashboardContent() {
         if (d.data.role === "DOCTOR") { router.push("/doctor/dashboard"); return; }
         if (d.data.role === "STAFF" || d.data.role === "RECEPTIONIST") { router.push("/staff/dashboard"); return; }
         if (d.data.role !== "HOSPITAL_ADMIN") { router.push("/login"); return; }
-        setUser(d.data); setProfileFormData({ name: d.data.name || "", email: d.data.email || "", phone: "" }); setLoading(false);
+        setUser(d.data); setProfileFormData({ name: d.data.name || "", email: d.data.email || "", phone: "" }); if (d.data.profilePhoto) setProfilePhoto(d.data.profilePhoto); setLoading(false);
       })
       .catch(() => router.push("/login"));
   }, [router]);
@@ -1819,6 +1836,9 @@ function DashboardContent() {
     if (!loading) {
       fetch("/api/appointments?stats=true", { credentials: "include" }).then(r => r.json()).then(d => { if (d.success) setApptStats(d.data); });
       fetch("/api/patients?stats=true", { credentials: "include" }).then(r => r.json()).then(d => { if (d.success) setPatientStats(d.data); });
+      fetchDashboard();
+      const interval = setInterval(fetchDashboard, 60000);
+      return () => clearInterval(interval);
     }
   }, [loading]);
 
@@ -1871,151 +1891,25 @@ function DashboardContent() {
   };
 
   const initials = (n: string) => n.split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase();
-  const maxBar = Math.max(...barData.map(b => b.val));
 
-  if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize: 14 }}>
-      <div style={{ width: 32, height: 32, border: "3px solid #B3E0E0", borderTop: "3px solid #0E898F", borderRadius: "50%", animation: "sp 0.8s linear infinite" }} />
-      <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
-      Loading dashboard...
-    </div>
-  );
 
-  const navItems: { id: NavTab; label: string; icon: React.ReactNode; route?: string }[] = [
-    { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={16} /> },
-    { id: "appointments", label: "Appointments", icon: <CalendarDays size={16} />, route: "/hospitaladmin/appointments" },
-    { id: "staff", label: "Staff", icon: <Users size={16} /> },
-    { id: "patients", label: "Patients", icon: <UserRound size={16} />, route: "/hospitaladmin/patients" },
-    { id: "inventory", label: "Inventory", icon: <ClipboardList size={16} /> },
-    { id: "billing", label: "Billing", icon: <CreditCard size={16} />, route: "/hospitaladmin/billing" },
-    { id: "finance", label: "Finance", icon: <IndianRupee size={16} />, route: "/hospitaladmin/finance" },
-    { id: "settings", label: "Settings", icon: <Settings size={16} /> },
-  ];
-
-  const todayAppts = apptStats?.today ?? mockAppointments.length;
-  const totalPatients = patientStats?.total ?? 412;
-  const newPatientsToday = patientStats?.newToday ?? 0;
-  const completedAppts = apptStats?.completed ?? 0;
+  const todayAppts = dashboardData?.appointments?.today ?? apptStats?.today ?? 0;
+  const totalPatients = dashboardData?.patients?.total ?? patientStats?.total ?? 0;
+  const newPatientsToday = dashboardData?.patients?.newToday ?? patientStats?.newToday ?? 0;
+  const completedAppts = dashboardData?.appointments?.completed ?? apptStats?.completed ?? 0;
+  const totalStaffCount = (dashboardData?.staff?.total ?? 0) + (dashboardData?.staff?.doctors ?? 0);
+  const revenueToday = dashboardData?.finance?.revenueToday ?? 0;
+  const revenueMonth = dashboardData?.finance?.revenueMonth ?? 0;
 
   const stats = [
-    { label: "Total Staff", val: mockStaff.length, sub: `${mockStaff.filter(s => s.role === "DOCTOR").length} doctors`, icon: <Users size={20} color="#fff" />, bg: "#E6F4F4", iconBg: "#0E898F" },
-    { label: "Total Patients", val: totalPatients, sub: newPatientsToday > 0 ? `+${newPatientsToday} new today` : "lifetime records", icon: <UserRound size={20} color="#fff" />, bg: "#f0fdf4", iconBg: "#10b981" },
-    { label: "Today Appointments", val: todayAppts, sub: `${completedAppts} completed`, icon: <CalendarDays size={20} color="#fff" />, bg: "#fdf4ff", iconBg: "#a855f7" },
-    { label: "Available Beds", val: 14, sub: "2 ICU, 12 general", icon: <Bed size={20} color="#fff" />, bg: "#fff7ed", iconBg: "#f59e0b" },
+    { label: "Staff & Doctors", val: dashboardData ? totalStaffCount : "—", sub: `${dashboardData?.staff?.activeDoctors ?? 0} active doctors`, icon: <Users size={20} color="#fff" />, bg: "#E6F4F4", iconBg: "#0E898F" },
+    { label: "Total Patients", val: dashboardData ? totalPatients : "—", sub: newPatientsToday > 0 ? `+${newPatientsToday} new today` : `+${dashboardData?.patients?.newThisMonth ?? 0} this month`, icon: <UserRound size={20} color="#fff" />, bg: "#f0fdf4", iconBg: "#10b981" },
+    { label: "Today Appointments", val: dashboardData ? todayAppts : "—", sub: `${completedAppts} completed`, icon: <CalendarDays size={20} color="#fff" />, bg: "#fdf4ff", iconBg: "#a855f7" },
+    { label: "Revenue Today", val: dashboardData ? `₹${revenueToday >= 1000 ? (revenueToday / 1000).toFixed(1) + "K" : revenueToday}` : "—", sub: `₹${revenueMonth >= 1000 ? (revenueMonth / 1000).toFixed(1) + "K" : revenueMonth} this month`, icon: <IndianRupee size={20} color="#fff" />, bg: "#fff7ed", iconBg: "#f59e0b" },
   ];
 
   return (
     <>
-      <style suppressHydrationWarning>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
-        input,select,button{font-family:'Inter',sans-serif}
-        .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
-        .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
-        .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
-        .hd-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
-        .hd-logo-sub{font-size:10px;color:#94a3b8}
-        .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
-        .hd-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
-        .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
-        .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;left:0}
-        .hd-nb.on .hd-nb-dot{display:block}
-        .hd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
-        .hd-user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-        .hd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
-        .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
-        .hd-logout:hover{background:#fee2e2}
-        .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-        .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
-        .hd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
-        .hd-search-wrap:focus-within{border-color:#80CCCC}
-        .hd-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
-        .hd-search::placeholder{color:#94a3b8}
-        .hd-topbar-right{display:flex;align-items:center;gap:12px}
-        .hd-notif{width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .15s}
-        .hd-notif:hover{background:#E6F4F4}
-        .hd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #fff}
-        .hd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
-        .hd-profile-name{font-size:11px;font-weight:600;color:#1e293b}
-        .hd-profile-role{font-size:9px;color:#64748b}
-        .hd-body{display:grid;grid-template-columns:1fr 260px;flex:1;min-height:0}
-        .hd-center{padding:32px 20px;overflow-y:auto}
-        .hd-right{background:#fff;border-left:1px solid #e2e8f0;padding:32px 18px;overflow-y:auto}
-        .hd-pg-title{font-size:18px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
-        .hd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-        @media(max-width:1100px){.hd-stats{grid-template-columns:repeat(2,1fr)}}
-        .hd-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .2s,box-shadow .2s;cursor:default}
-        .hd-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
-        .hd-sc-icon{width:40px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .hd-sc-lbl{font-size:10px;font-weight:500;color:#94a3b8;margin-bottom:2px}
-        .hd-sc-val{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
-        .hd-sc-sub{font-size:9px;color:#94a3b8;margin-top:3px}
-        .hd-mid{display:grid;grid-template-columns:1fr 220px;gap:14px;margin-bottom:18px}
-        .hd-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow:hidden}
-        .hd-card-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
-        .hd-card-title{font-size:13px;font-weight:700;color:#1e293b}
-        .hd-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}
-        .hd-card-body{padding:16px 18px}
-        .hd-card-icon-btn{width:28px;height:28px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;transition:background .15s}
-        .hd-card-icon-btn:hover{background:#E6F4F4;color:#0E898F}
-        .hd-chart{display:flex;align-items:flex-end;gap:10px;height:140px}
-        .hd-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
-        .hd-bar{width:100%;border-radius:6px 6px 0 0;transition:opacity .2s;cursor:pointer;min-width:18px}
-        .hd-bar:hover{opacity:.8}
-        .hd-bar-lbl{font-size:9px;color:#94a3b8;font-weight:500}
-        .hd-report-item{padding:10px;border-radius:10px;margin-bottom:8px;cursor:pointer}
-        .hd-ri-msg{font-size:11px;font-weight:500;color:#334155;line-height:1.4}
-        .hd-ri-time{font-size:9px;color:#94a3b8;margin-top:4px}
-        .hd-tbl-wrap{overflow-x:auto}
-        .hd-tbl{width:100%;border-collapse:collapse;min-width:500px}
-        .hd-tbl th{text-align:left;font-size:10px;font-weight:600;color:#94a3b8;padding:10px 12px;border-bottom:2px solid #f1f5f9;white-space:nowrap}
-        .hd-tbl td{padding:14px 12px;font-size:11px;color:#475569;border-bottom:1px solid #f8fafc}
-        .hd-tbl tr:last-child td{border-bottom:none}
-        .hd-tbl tbody tr:hover td{background:#fafbfc}
-        .hd-td-name{font-weight:600;color:#1e293b}
-        .hd-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700;white-space:nowrap}
-        .hd-right-sec{margin-bottom:22px}
-        .hd-right-title{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:12px}
-        .hd-appt-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;cursor:pointer;transition:all .15s;background:#fff}
-        .hd-appt-item.active{background:#0E898F;border-color:#0E898F}
-        .hd-appt-item.active .hd-appt-name{color:#fff}
-        .hd-appt-item.active .hd-appt-doc{color:rgba(255,255,255,0.75)}
-        .hd-appt-item.active .hd-appt-time{color:rgba(255,255,255,0.7)}
-        .hd-appt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#E6F4F4}
-        .hd-appt-item.active .hd-appt-ic{background:rgba(255,255,255,0.18)}
-        .hd-appt-name{font-size:12px;font-weight:700;color:#1e293b;flex:1}
-        .hd-appt-doc{font-size:10px;color:#64748b;margin-top:1px}
-        .hd-appt-time{font-size:9px;color:#94a3b8;white-space:nowrap}
-        .hd-btn-primary{padding:8px 16px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
-        .hd-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
-        .hd-filter-btn{padding:6px 14px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px}
-        .hd-modal-bg{position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-        .hd-modal{background:#fff;border-radius:18px;padding:32px 28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
-        .hd-modal-title{font-size:16px;font-weight:800;color:#1e293b;margin-bottom:4px}
-        .hd-modal-sub{font-size:12px;color:#64748b;margin-bottom:20px}
-        .hd-mf{margin-bottom:13px}
-        .hd-ml{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:5px}
-        .hd-mi{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:11px;color:#1e293b;outline:none;transition:border-color .2s}
-        .hd-mi:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,0.25)}
-        .hd-mi::placeholder{color:#cbd5e1}
-        .hd-ma{display:flex;gap:10px;margin-top:18px}
-        .hd-mcancel{flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:600;cursor:pointer}
-        .hd-mcancel:hover{background:#f8fafc}
-        .hd-msubmit{flex:2;padding:10px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
-        .hd-msubmit:disabled{opacity:.55;cursor:not-allowed}
-        .hd-spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
-        @keyframes sp{to{transform:rotate(360deg)}}
-        .hd-msg-ok{font-size:11px;color:#10b981;margin-top:8px;text-align:center;font-weight:600}
-        .hd-msg-err{font-size:11px;color:#ef4444;margin-top:8px;text-align:center}
-        .mb16{margin-bottom:16px}
-      `}</style>
 
       {showAddStaff && (
         <div className="hd-modal-bg" onClick={e => { if (e.target === e.currentTarget) setShowAddStaff(false) }}>
@@ -2048,154 +1942,25 @@ function DashboardContent() {
         </div>
       )}
 
-      <div className="hd">
-        <aside className="hd-sb">
-          <div className="hd-sb-logo">
-            <div className="hd-logo-ic"><Stethoscope size={18} color="white" /></div>
-            <div><div className="hd-logo-tx">MediCare+</div><div className="hd-logo-sub">Hospital Admin</div></div>
-          </div>
-          <nav className="hd-nav">
-            <div className="hd-nav-sec">General</div>
-            {navItems.slice(0, 7).map(n => (
-              <button key={n.id} className={`hd-nb${tab === n.id ? " on" : ""}`} onClick={() => n.route ? router.push(n.route) : setTab(n.id)} style={{ position: "relative" }}>
-                {tab === n.id && <div className="hd-nb-dot" />}
-                <span style={{ color: tab === n.id ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
-                {n.label}
-              </button>
-            ))}
-            <div className="hd-nav-sec">System</div>
-            {navItems.slice(7).map(n => (
-              <button key={n.id} className={`hd-nb${tab === n.id ? " on" : ""}`} onClick={() => setTab(n.id)} style={{ position: "relative" }}>
-                {tab === n.id && <div className="hd-nb-dot" />}
-                <span style={{ color: tab === n.id ? "#0A6B70" : "#94a3b8", display: "flex" }}>{n.icon}</span>
-                {n.label}
-              </button>
-            ))}
-            <button className="hd-nb" onClick={() => router.push("/hospitaladmin/configure")}>
-              <span style={{ color: "#94a3b8", display: "flex" }}><Building2 size={16} /></span>
-              Configure Hospital
-            </button>
-            <button className="hd-nb">
-              <span style={{ color: "#94a3b8", display: "flex" }}><HelpCircle size={16} /></span>
-              Support
-            </button>
-          </nav>
-          <div className="hd-sb-foot">
-            <div className="hd-user-chip">
-              <div className="hd-av">{user?.name ? initials(user.name) : "HA"}</div>
-              <div style={{ overflow: "hidden" }}>
-                <div className="hd-uname">{user?.name || "Hospital Admin"}</div>
-                <div className="hd-urole">Hospital Admin</div>
-              </div>
-            </div>
-            <button className="hd-logout" onClick={logout}>
-              <LogOut size={13} /> Log Out
-            </button>
-          </div>
-        </aside>
+      {patientEditId && <PatientEditModal patientId={patientEditId} onClose={() => setPatientEditId(null)} onUpdate={() => setTab("patients")} />}
 
-        {patientEditId && <PatientEditModal patientId={patientEditId} onClose={() => setPatientEditId(null)} onUpdate={() => setTab("patients")} />}
-
-        <main className="hd-main">
-          <header className="hd-topbar">
-            <div className="hd-search-wrap">
-              <Search size={14} color="#94a3b8" />
-              <input className="hd-search" placeholder="What are you searching..." value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <div className="hd-topbar-right">
-              <div className="hd-notif"><Bell size={16} color="#64748b" /><span className="hd-notif-dot" /></div>
-              <div className="hd-notif"><MessageSquare size={16} color="#64748b" /></div>
-              <div className="hd-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative" }}>
-                <div className="hd-profile-av">{user?.name ? initials(user.name) : "HA"}</div>
-                <div><div className="hd-profile-name">{user?.name?.split(" ")[0] || "Admin"}</div><div className="hd-profile-role">Hosp. Admin</div></div>
-                <ChevronDown size={14} color="#64748b" style={{ marginLeft: 6 }} />
-
-                {/* Profile Dropdown */}
-                {profileDropdownOpen && (
-                  <>
-                    <div
-                      style={{ position: "fixed", inset: 0, zIndex: 60 }}
-                      onClick={() => setProfileDropdownOpen(false)}
-                    />
-                    <div style={{
-                      position: "absolute",
-                      top: "calc(100% + 8px)",
-                      right: 0,
-                      width: 220,
-                      background: "#fff",
-                      borderRadius: 12,
-                      border: "1px solid #e2e8f0",
-                      boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
-                      zIndex: 70,
-                      overflow: "hidden",
-                    }}>
-                      <div style={{ padding: 16, borderBottom: "1px solid #f1f5f9" }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{user?.name}</div>
-                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{user?.email}</div>
-                      </div>
-                      <div style={{ padding: 8 }}>
-                        <button
-                          onClick={() => { setProfileDropdownOpen(false); router.push("/hospitaladmin/profile"); }}
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            borderRadius: 8,
-                            border: "none",
-                            background: "transparent",
-                            color: "#475569",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                            transition: "all 0.15s",
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                        >
-                          <User size={16} color="#64748b" />
-                          Account Settings
-                        </button>
-                        <button
-                          onClick={() => { setProfileDropdownOpen(false); logout(); }}
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            borderRadius: 8,
-                            border: "none",
-                            background: "transparent",
-                            color: "#ef4444",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                            transition: "all 0.15s",
-                            marginTop: 4,
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                        >
-                          <LogOut size={16} color="#ef4444" />
-                          Log Out
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </header>
-
-          <div className="hd-body" style={tab === "inventory" ? { gridTemplateColumns: "1fr" } : undefined}>
+      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "reports") ? { gridTemplateColumns: "1fr" } : undefined}>
     <div className="hd-center">
       {tab === "overview" && (<>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-          <div className="hd-pg-title" style={{ marginBottom: 0 }}>Dashboard</div>
-          <button className="hd-filter-btn"><Filter size={12} />This Week<ChevronRight size={12} /></button>
+          <div>
+            <div className="hd-pg-title" style={{ marginBottom: 2 }}>Dashboard</div>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>
+              {dashboardData ? `Last updated ${new Date(dashboardData.generatedAt).toLocaleTimeString()}` : "Loading real-time data..."}
+            </div>
+          </div>
+          <button className="hd-filter-btn" onClick={fetchDashboard} disabled={dashboardLoading}>
+            <RefreshCw size={12} style={{ animation: dashboardLoading ? "sp 1s linear infinite" : "none" }} />
+            {dashboardLoading ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
+
+        {/* Stats Cards */}
         <div className="hd-stats">
           {stats.map((s, i) => (
             <div key={i} className="hd-sc" style={{ background: s.bg }}>
@@ -2208,79 +1973,244 @@ function DashboardContent() {
             </div>
           ))}
         </div>
-        <div className="hd-mid">
+
+        {/* Today's activity breakdown */}
+        {dashboardData && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, marginBottom: 18 }}>
+            {[
+              { label: "Scheduled", val: dashboardData.appointments?.scheduled ?? 0, color: "#3b82f6", bg: "#eff6ff" },
+              { label: "Confirmed", val: dashboardData.appointments?.pending ?? 0, color: "#8b5cf6", bg: "#f5f3ff" },
+              { label: "Completed", val: dashboardData.appointments?.completed ?? 0, color: "#10b981", bg: "#f0fdf4" },
+              { label: "Cancelled", val: dashboardData.appointments?.cancelled ?? 0, color: "#ef4444", bg: "#fff5f5" },
+              { label: "Pending Bills", val: dashboardData.finance?.pendingBills ?? 0, color: "#f59e0b", bg: "#fffbeb" },
+              { label: "Active Plans", val: dashboardData.treatmentPlans?.active ?? 0, color: "#0E898F", bg: "#E6F4F4" },
+              { label: "Plans Done", val: dashboardData.treatmentPlans?.completed ?? 0, color: "#059669", bg: "#f0fdf4" },
+            ].map((item, i) => (
+              <div key={i} style={{ background: item.bg, borderRadius: 12, padding: "12px 16px", border: `1px solid ${item.color}22` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: item.color, lineHeight: 1 }}>{item.val}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Charts row */}
+        <div className="hd-mid" style={{ marginBottom: 18 }}>
+          {/* Monthly Trend Chart */}
           <div className="hd-card">
             <div className="hd-card-head">
-              <div><div className="hd-card-title">Patient Activity</div><div className="hd-card-sub">Monthly OPD visits</div></div>
-              <div className="hd-card-icon-btn"><BarChart2 size={14} /></div>
-            </div>
-            <div className="hd-card-body">
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 0 }}>
-                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: 140, paddingRight: 8, alignItems: "flex-end" }}>
-                  {[500, 400, 300, 200, 100, 0].map(v => <span key={v} style={{ fontSize: 9, color: "#cbd5e1", lineHeight: 1 }}>{v}</span>)}
+              <div>
+                <div className="hd-card-title">Monthly Activity Trends</div>
+                <div className="hd-card-sub">Appointments & new patients — last 9 months</div>
+              </div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: "#0E898F" }} />
+                  <span style={{ fontSize: 10, color: "#64748b" }}>Appointments</span>
                 </div>
-                <div className="hd-chart" style={{ flex: 1 }}>
-                  {barData.map((b, i) => (
-                    <div key={i} className="hd-bar-wrap">
-                      <div className="hd-bar" style={{ height: `${(b.val / maxBar) * 130}px`, background: i === 2 || i === 6 ? "linear-gradient(180deg,#0E898F,#14A3A8)" : "linear-gradient(180deg,#B3E0E0,#B3E0E0)" }} />
-                      <span className="hd-bar-lbl">{b.month}</span>
-                    </div>
-                  ))}
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: "#10b981" }} />
+                  <span style={{ fontSize: 10, color: "#64748b" }}>New Patients</span>
                 </div>
               </div>
             </div>
+            <div className="hd-card-body" style={{ paddingTop: 8 }}>
+              {dashboardLoading && !dashboardData ? (
+                <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>
+                  <Loader2 size={18} className="hd-spin" style={{ marginRight: 8, borderColor: "#0E898F" }} /> Loading chart...
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={160}>
+                  <AreaChart data={dashboardData?.monthlyTrends ?? []} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="apptGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0E898F" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="#0E898F" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
+                      labelStyle={{ fontWeight: 700, color: "#1e293b" }}
+                    />
+                    <Area type="monotone" dataKey="appointments" stroke="#0E898F" strokeWidth={2} fill="url(#apptGrad)" name="Appointments" dot={{ r: 3, fill: "#0E898F", strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                    <Area type="monotone" dataKey="patients" stroke="#10b981" strokeWidth={2} fill="url(#patGrad)" name="New Patients" dot={{ r: 3, fill: "#10b981", strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
+
+          {/* Live Alerts / Inventory Status */}
           <div className="hd-card">
             <div className="hd-card-head">
-              <div className="hd-card-title">Reports</div>
+              <div className="hd-card-title">Live Alerts</div>
               <div className="hd-card-icon-btn"><Activity size={14} /></div>
             </div>
             <div className="hd-card-body" style={{ padding: "12px 14px" }}>
-              {[{ icon: <Activity size={14} />, msg: "Ventilator unit requires inspection in ICU", time: "5 minutes ago", highlight: true },
-              { icon: <Settings size={14} />, msg: "Breakdown in elevator on 2nd floor", time: "18 minutes ago", highlight: false },
-              { icon: <AlertTriangle size={14} />, msg: "Damage reported at the main entrance door", time: "2 hours ago", highlight: false }
-              ].map((r: any, i: number) => (
-                <div key={i} className="hd-report-item" style={{ background: r.highlight ? "linear-gradient(135deg,#0E898F,#07595D)" : "#f8fafc", border: r.highlight ? "none" : "1px solid #f1f5f9", marginBottom: 8 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span style={{ marginTop: 1, color: r.highlight ? "#fff" : "#0E898F", display: "flex", flexShrink: 0 }}>{r.icon}</span>
-                    <div>
-                      <div className="hd-ri-msg" style={{ color: r.highlight ? "#fff" : "#334155" }}>{r.msg}</div>
-                      <div className="hd-ri-time" style={{ color: r.highlight ? "rgba(255,255,255,0.65)" : "#94a3b8" }}>{r.time}</div>
+              {dashboardLoading && !dashboardData ? (
+                <div style={{ textAlign: "center", padding: 20, color: "#94a3b8", fontSize: 12 }}>Loading...</div>
+              ) : (
+                <>
+                  {(dashboardData?.inventory?.lowStockCount ?? 0) > 0 && (
+                    <div className="hd-report-item" style={{ background: "linear-gradient(135deg,#ef4444,#dc2626)", border: "none", marginBottom: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <span style={{ marginTop: 1, color: "#fff", display: "flex", flexShrink: 0 }}><AlertTriangle size={14} /></span>
+                        <div>
+                          <div className="hd-ri-msg" style={{ color: "#fff" }}>{dashboardData.inventory.lowStockCount} inventory items below minimum stock level</div>
+                          <div className="hd-ri-time" style={{ color: "rgba(255,255,255,0.7)" }}>Go to Inventory → Check stock</div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  )}
+                  {(dashboardData?.inventory?.expiringSoonCount ?? 0) > 0 && (
+                    <div className="hd-report-item" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", border: "none", marginBottom: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <span style={{ marginTop: 1, color: "#fff", display: "flex", flexShrink: 0 }}><Clock size={14} /></span>
+                        <div>
+                          <div className="hd-ri-msg" style={{ color: "#fff" }}>{dashboardData.inventory.expiringSoonCount} batches expiring within 30 days</div>
+                          <div className="hd-ri-time" style={{ color: "rgba(255,255,255,0.7)" }}>Review expiring inventory</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {(dashboardData?.finance?.pendingBills ?? 0) > 0 && (
+                    <div className="hd-report-item" style={{ background: "#fffbeb", border: "1px solid #fde68a", marginBottom: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <span style={{ marginTop: 1, color: "#f59e0b", display: "flex", flexShrink: 0 }}><IndianRupee size={14} /></span>
+                        <div>
+                          <div className="hd-ri-msg">{dashboardData.finance.pendingBills} bills pending collection</div>
+                          <div className="hd-ri-time" style={{ color: "#94a3b8" }}>Go to Billing → Pending queue</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {(dashboardData?.followUps?.pending ?? 0) > 0 && (
+                    <div className="hd-report-item" style={{ background: "#f5f3ff", border: "1px solid #ddd6fe", marginBottom: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <span style={{ marginTop: 1, color: "#8b5cf6", display: "flex", flexShrink: 0 }}><CalendarCheck size={14} /></span>
+                        <div>
+                          <div className="hd-ri-msg">{dashboardData.followUps.pending} follow-ups scheduled for today</div>
+                          <div className="hd-ri-time" style={{ color: "#94a3b8" }}>Review patient follow-ups</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {dashboardData && (dashboardData.inventory.lowStockCount === 0) && (dashboardData.finance.pendingBills === 0) && (dashboardData.followUps.pending === 0) && (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8" }}>
+                      <CheckCircle size={24} style={{ margin: "0 auto 8px", opacity: .4, display: "block" }} />
+                      <div style={{ fontSize: 12 }}>All systems normal</div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Recent Patients Table */}
         <div className="hd-card mb16">
           <div className="hd-card-head">
-            <div><div className="hd-card-title">Latest Patient Data</div><div className="hd-card-sub">{mockPatients.length} recent records</div></div>
-            <button className="hd-card-icon-btn" onClick={() => setTab("patients")}><ChevronRight size={14} /></button>
+            <div>
+              <div className="hd-card-title">Recently Registered Patients</div>
+              <div className="hd-card-sub">{dashboardData ? `${dashboardData.patients.total} total · ${dashboardData.patients.newToday} registered today` : "Loading..."}</div>
+            </div>
+            <button className="hd-card-icon-btn" onClick={() => router.push("/hospitaladmin/patients")} title="View all"><ChevronRight size={14} /></button>
           </div>
           <div className="hd-tbl-wrap">
-            <table className="hd-tbl">
-              <thead><tr><th>No</th><th>Date In</th><th>Name</th><th>Age</th><th>Blood</th><th>Gender</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>
-                {mockPatients.map((p, i) => (
-                  <tr key={p.id}>
-                    <td style={{ color: "#94a3b8", fontSize: 12 }}>0{i + 1}</td>
-                    <td style={{ fontSize: 12 }}>{p.date}</td>
-                    <td className="hd-td-name">{p.name}</td>
-                    <td>{p.age}</td>
-                    <td><span style={{ color: "#ef4444", fontWeight: 700 }}>{p.blood}</span></td>
-                    <td>{p.gender}</td>
-                    <td><span className="hd-badge" style={p.status === "IPD" ? { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" } : p.status === "Discharged" ? { background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" } : { background: "#fefce8", color: "#ca8a04", border: "1px solid #fde68a" }}>{p.status}</span></td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }}><Pencil size={12} /></button>
-                        <button className="hd-card-icon-btn" style={{ background: "#fff5f5", color: "#ef4444", border: "none" }}><Trash2 size={12} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {dashboardLoading && !dashboardData ? (
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8" }}>
+                <Loader2 size={20} className="hd-spin" style={{ margin: "0 auto 8px", borderColor: "#0E898F" }} />
+                <div style={{ fontSize: 12 }}>Loading patient data...</div>
+              </div>
+            ) : (dashboardData?.recentPatients?.length ?? 0) === 0 ? (
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>No patients registered yet</div>
+            ) : (
+              <table className="hd-tbl">
+                <thead>
+                  <tr><th>ID</th><th>Registered</th><th>Name</th><th>Contact</th><th>Blood</th><th>Gender</th><th>Visits</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {(dashboardData?.recentPatients ?? []).map((p: any, i: number) => {
+                    const age = p.dateOfBirth ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / 31557600000) : null;
+                    const regDate = new Date(p.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+                    return (
+                      <tr key={p.id}>
+                        <td><span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "2px 6px", borderRadius: 5 }}>{p.patientId}</span></td>
+                        <td style={{ fontSize: 12, color: "#64748b" }}>{regDate}</td>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0).toUpperCase()}</div>
+                            <span className="hd-td-name">{p.name}</span>
+                          </div>
+                        </td>
+                        <td style={{ fontSize: 11, color: "#64748b" }}>{p.phone}</td>
+                        <td><span style={{ color: "#ef4444", fontWeight: 700, fontSize: 12 }}>{p.bloodGroup || "—"}</span></td>
+                        <td><span className="hd-badge" style={{ background: "#f1f5f9", color: "#64748b" }}>{p.gender ? p.gender.charAt(0) + p.gender.slice(1).toLowerCase() : "—"}{age !== null ? ` · ${age}y` : ""}</span></td>
+                        <td><span style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments ?? 0}</span></td>
+                        <td>
+                          <div style={{ display: "flex", gap: 5 }}>
+                            <button className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => router.push(`/hospitaladmin/appointments?patientId=${p.id}`)}><ChevronRight size={12} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Access — Configure & Treatment Plans */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
+          <div className="hd-card" style={{ cursor: "pointer" }} onClick={() => router.push("/hospitaladmin/configure?tab=overview")}>
+            <div className="hd-card-head">
+              <div>
+                <div className="hd-card-title" style={{ display: "flex", alignItems: "center", gap: 7 }}><BarChart2 size={15} color="#0E898F" />Services & Treatment Dashboard</div>
+                <div className="hd-card-sub">Service packages, treatment plan stats, session completion</div>
+              </div>
+              <ChevronRight size={16} color="#94a3b8" />
+            </div>
+            <div style={{ display: "flex", gap: 10, padding: "0 16px 14px" }}>
+              {[
+                { label: "Service Packages", path: "services", color: "#0369a1", bg: "#e0f2fe" },
+                { label: "Treatment Plans", path: "treatments", color: "#16a34a", bg: "#f0fdf4" },
+                { label: "Permissions", path: "permissions", color: "#9333ea", bg: "#fdf4ff" },
+              ].map(item => (
+                <button key={item.label} onClick={e => { e.stopPropagation(); router.push(`/hospitaladmin/configure?tab=${item.path}`); }}
+                  style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="hd-card" style={{ cursor: "pointer" }} onClick={() => router.push("/hospitaladmin/configure?tab=departments")}>
+            <div className="hd-card-head">
+              <div>
+                <div className="hd-card-title" style={{ display: "flex", alignItems: "center", gap: 7 }}><Building2 size={15} color="#0E898F" />Departments & Sub-Depts</div>
+                <div className="hd-card-sub">Manage departments, sub-departments and procedures</div>
+              </div>
+              <ChevronRight size={16} color="#94a3b8" />
+            </div>
+            <div style={{ display: "flex", gap: 10, padding: "0 16px 14px" }}>
+              {[
+                { label: "Departments", path: "departments", color: "#0369a1", bg: "#e0f2fe" },
+                { label: "Sub-Depts", path: "subdepts", color: "#0f766e", bg: "#f0fdfa" },
+                { label: "Staff", path: "staff", color: "#475569", bg: "#f1f5f9" },
+              ].map(item => (
+                <button key={item.label} onClick={e => { e.stopPropagation(); router.push(`/hospitaladmin/configure?tab=${item.path}`); }}
+                  style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </>)}
@@ -2314,31 +2244,71 @@ function DashboardContent() {
       )}
 
       {tab === "staff" && (
-        <div className="hd-card mb16">
-          <div className="hd-card-head">
-            <div><div className="hd-card-title">Staff Registry</div><div className="hd-card-sub">{mockStaff.length} members</div></div>
-            <button className="hd-btn-primary" onClick={() => { setShowAddStaff(true); setCreateMsg(""); }}><Plus size={14} />Add Staff</button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 16, padding: "24px 28px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: "flex", alignItems: "center", gap: 10 }}><Users size={22} />Staff & Doctors</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)" }}>
+                {dashboardData ? `${dashboardData.staff.total} staff · ${dashboardData.staff.doctors} doctors · ${dashboardData.staff.activeDoctors} active` : "Loading..."}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => router.push("/hospitaladmin/configure?tab=staff")}
+                style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Manage Staff
+              </button>
+              <button onClick={() => router.push("/hospitaladmin/configure?tab=doctors")}
+                style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Manage Doctors
+              </button>
+            </div>
           </div>
-          <div className="hd-tbl-wrap">
-            <table className="hd-tbl">
-              <thead><tr><th>Name</th><th>Role</th><th>Dept</th><th>Patients</th><th>Status</th></tr></thead>
-              <tbody>
-                {mockStaff.map(s => (
-                  <tr key={s.id}>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(s.name)}</div>
-                        <span className="hd-td-name">{s.name}</span>
-                      </div>
-                    </td>
-                    <td><span className="hd-badge" style={{ background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" }}>{s.role.replace("_", " ")}</span></td>
-                    <td>{s.dept}</td>
-                    <td>{s.patients || "—"}</td>
-                    <td><span className="hd-badge" style={s.status === "active" ? { background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" } : { background: "#fff5f5", color: "#ef4444", border: "1px solid #fecaca" }}>{s.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+            {[
+              { label: "Total Staff", val: dashboardData?.staff?.total ?? "—", icon: <Users size={18} />, color: "#0E898F", bg: "#E6F4F4" },
+              { label: "Active Staff", val: dashboardData?.staff?.active ?? "—", icon: <CheckCircle2 size={18} />, color: "#10b981", bg: "#f0fdf4" },
+              { label: "Total Doctors", val: dashboardData?.staff?.doctors ?? "—", icon: <Stethoscope size={18} />, color: "#8b5cf6", bg: "#f5f3ff" },
+              { label: "Active Doctors", val: dashboardData?.staff?.activeDoctors ?? "—", icon: <Activity size={18} />, color: "#f59e0b", bg: "#fffbeb" },
+            ].map((item, i) => (
+              <div key={i} style={{ background: item.bg, borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0" }}>
+                <div style={{ color: item.color, marginBottom: 8 }}>{item.icon}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", lineHeight: 1, marginBottom: 4 }}>{item.val}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8" }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="hd-card mb16">
+            <div className="hd-card-head">
+              <div><div className="hd-card-title">Doctors on Duty Today</div><div className="hd-card-sub">{dashboardData?.doctorsOnDuty?.length ?? 0} doctors with appointments</div></div>
+              <button className="hd-btn-primary" onClick={() => { setShowAddStaff(true); setCreateMsg(""); }}><Plus size={14} />Add User</button>
+            </div>
+            <div className="hd-tbl-wrap">
+              {(dashboardData?.doctorsOnDuty?.length ?? 0) === 0 ? (
+                <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                  <Stethoscope size={28} style={{ margin: "0 auto 10px", display: "block", opacity: .3 }} />
+                  No doctors have appointments scheduled today
+                </div>
+              ) : (
+                <table className="hd-tbl">
+                  <thead><tr><th>Doctor</th><th>Specialization / Dept</th><th>First Slot</th><th>Appointments</th></tr></thead>
+                  <tbody>
+                    {(dashboardData?.doctorsOnDuty ?? []).map((d: any) => (
+                      <tr key={d.id}>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(d.name)}</div>
+                            <span className="hd-td-name">{d.name}</span>
+                          </div>
+                        </td>
+                        <td><span className="hd-badge" style={{ background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" }}>{d.department || d.specialization}</span></td>
+                        <td style={{ fontSize: 12, color: "#64748b" }}>{d.firstSlot}{d.lastSlot !== d.firstSlot ? ` – ${d.lastSlot}` : ""}</td>
+                        <td><span style={{ fontWeight: 700, color: "#0E898F" }}>{d.appointmentCount}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -2349,6 +2319,18 @@ function DashboardContent() {
 
       {tab === "inventory" && (
         <InventoryPanel />
+      )}
+
+      {tab === "billing" && (
+        <BillingModule />
+      )}
+
+      {tab === "ipd" && (
+        <IPDPanel />
+      )}
+
+      {tab === "reports" && (
+        <div style={{ padding: "4px 0" }}><ReportsPanel /></div>
       )}
 
       {tab === "settings" && (
@@ -2368,7 +2350,7 @@ function DashboardContent() {
       )}
     </div>
 
-    {tab !== "inventory" && (
+    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && (
       <div className="hd-right">
         <div className="hd-right-sec">
           <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>
@@ -2376,28 +2358,58 @@ function DashboardContent() {
         </div>
         <div className="hd-right-sec" style={{ marginTop: 22 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div className="hd-right-title">Doctors on Duty</div>
-            <div className="hd-card-icon-btn" style={{ cursor: "pointer" }}><BarChart2 size={12} /></div>
+            <div className="hd-right-title">Doctors on Duty Today</div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#0E898F", background: "#E6F4F4", padding: "2px 8px", borderRadius: 20 }}>
+              {dashboardData?.doctorsOnDuty?.length ?? 0}
+            </span>
           </div>
-          {doctorAppts.map((d, i) => (
-            <div key={i} className={`hd-appt-item${d.active ? " active" : ""}`}>
-              <div className="hd-appt-ic">
-                <Stethoscope size={17} color={d.active ? "#fff" : "#0E898F"} />
-              </div>
-              <div style={{ flex: 1, overflow: "hidden" }}>
-                <div className="hd-appt-name">{d.name}</div>
-                <div className="hd-appt-doc">{d.doctor}</div>
-                <div className="hd-appt-time">{d.time}</div>
-              </div>
-              <ChevronRight size={14} color={d.active ? "rgba(255,255,255,0.7)" : "#94a3b8"} />
+          {dashboardLoading && !dashboardData ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 12 }}>
+              <Loader2 size={16} className="hd-spin" style={{ margin: "0 auto 6px", borderColor: "#0E898F" }} />
+              Loading...
             </div>
-          ))}
+          ) : (dashboardData?.doctorsOnDuty?.length ?? 0) === 0 ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 12 }}>
+              <Stethoscope size={22} style={{ margin: "0 auto 6px", display: "block", opacity: .3 }} />
+              No appointments today
+            </div>
+          ) : (
+            (dashboardData?.doctorsOnDuty ?? []).map((d: any, i: number) => (
+              <div key={d.id} className="hd-appt-item" style={{ marginBottom: 8 }}>
+                <div className="hd-appt-ic">
+                  <Stethoscope size={17} color="#0E898F" />
+                </div>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <div className="hd-appt-name">{d.name}</div>
+                  <div className="hd-appt-doc">{d.department || d.specialization}</div>
+                  <div className="hd-appt-time">{d.appointmentCount} appt{d.appointmentCount !== 1 ? "s" : ""} · {d.firstSlot}{d.lastSlot !== d.firstSlot ? ` – ${d.lastSlot}` : ""}</div>
+                </div>
+                <ChevronRight size={14} color="#94a3b8" />
+              </div>
+            ))
+          )}
         </div>
+
+        {/* Quick stats for right panel */}
+        {dashboardData && (
+          <div className="hd-right-sec" style={{ marginTop: 22 }}>
+            <div className="hd-right-title" style={{ marginBottom: 10 }}>Today's Summary</div>
+            {[
+              { label: "Follow-ups", val: dashboardData.followUps?.today ?? 0, color: "#8b5cf6" },
+              { label: "New Patients", val: dashboardData.patients?.newToday ?? 0, color: "#10b981" },
+              { label: "Revenue", val: `₹${(dashboardData.finance?.revenueToday ?? 0) >= 1000 ? ((dashboardData.finance.revenueToday) / 1000).toFixed(1) + "K" : dashboardData.finance?.revenueToday ?? 0}`, color: "#f59e0b" },
+              { label: "Low Stock", val: dashboardData.inventory?.lowStockCount ?? 0, color: (dashboardData.inventory?.lowStockCount ?? 0) > 0 ? "#ef4444" : "#10b981" },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 9, background: "#f8fafc", border: "1px solid #f1f5f9", marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>{item.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: item.color }}>{item.val}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     )}
   </div>
-        </main >
-      </div >
     </>
   );
 }

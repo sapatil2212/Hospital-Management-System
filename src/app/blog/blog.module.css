@@ -20,6 +20,10 @@
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); }
 .card { background: var(--white); border-radius: var(--radius-2xl); overflow: hidden; box-shadow: var(--shadow-lg); transition: all var(--transition-base); cursor: pointer; }
 .card:hover .cardImage { transform: scale(1.05); }
+
+.cardLink { display: block; text-decoration: none; color: inherit; }
+
+.categoryBadge { position: absolute; top: var(--space-3); left: var(--space-3); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; display: flex; align-items: center; gap: var(--space-1); }
 .imageWrapper { position: relative; overflow: hidden; height: 200px; }
 .cardImage { width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow); }
 .category { position: absolute; top: var(--space-3); left: var(--space-3); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; }

@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Star,
   Calendar,
-  Search,
   HeartPulse,
   Users,
-  LogIn,
+  Phone,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -131,8 +130,15 @@ export default function Hero() {
               className={`btn btn-primary btn-sm ${styles.ctaPrimary}`}
             >
               <Calendar size={16} />
-              Schedule Appointment
+              Book Appointment
             </button>
+            <Link
+              href="/contact"
+              className={`btn btn-secondary btn-sm ${styles.ctaSecondary}`}
+            >
+              <Phone size={16} />
+              Contact Us
+            </Link>
           </motion.div>
 
           {/* Progress Dots */}

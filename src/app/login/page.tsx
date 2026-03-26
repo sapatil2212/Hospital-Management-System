@@ -46,6 +46,10 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setApiError("No internet connection. Please connect to the internet and try again.");
+      return;
+    }
     setLoading(true); setApiError("");
     try {
       const res = await fetch("/api/auth/login", {
@@ -65,9 +69,13 @@ export default function LoginPage() {
           else router.push("/hospitaladmin/dashboard");
         }, 800);
       } else {
-        setApiError(data.message || "Invalid email or password.");
+        if (res.status === 503) {
+          setApiError("No internet connection. Please connect to the internet and try again.");
+        } else {
+          setApiError(data.message || "Invalid email or password.");
+        }
       }
-    } catch { setApiError("Network error. Please check your connection."); }
+    } catch { setApiError("No internet connection. Please connect to the internet and try again."); }
     finally { setLoading(false); }
   };
 

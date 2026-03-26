@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Plus, Pencil, Trash2, Search, X, Loader2, Check, AlertTriangle,
-  ChevronLeft, ChevronRight, User, Filter, Send, Shield, ArrowLeft
+  ChevronLeft, ChevronRight, User, Filter, Send, Shield, ArrowLeft, Download
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -439,6 +439,21 @@ export default function StaffPanel() {
   const [sendingCreds, setSendingCreds] = useState<string | null>(null);
   const [resendingCreds, setResendingCreds] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 });
+  const [bulkSending, setBulkSending] = useState(false);
+
+  const handleBulkSendCredentials = async () => {
+    if (!confirm("Send credentials to all staff who haven't received them yet?")) return;
+    setBulkSending(true);
+    try {
+      const res = await fetch("/api/config/staff/send-credentials-bulk", { method: "POST", credentials: "include" });
+      const data = await res.json();
+      if (data.success) { addToast("success", data.message || "Bulk credentials sent"); load(); }
+      else addToast("error", data.message || "Bulk send failed");
+    } catch {
+      addToast("error", "Failed to send bulk credentials");
+    }
+    setBulkSending(false);
+  };
 
   const addToast = useCallback((type: Toast["type"], message: string) => {
     const id = Date.now();
@@ -544,6 +559,23 @@ export default function StaffPanel() {
         <div className="sp-toolbar-right">
           <button className={`sp-filter-btn${showFilters ? " active" : ""}`} onClick={() => setShowFilters(s => !s)}>
             <Filter size={14} /> Filters {(filterRole || filterDept || filterStatus) ? `(${[filterRole, filterDept, filterStatus].filter(Boolean).length})` : ""}
+          </button>
+          <a
+            href={(() => { const p = new URLSearchParams(); if (search) p.set("search", search); if (filterRole) p.set("role", filterRole); if (filterStatus) p.set("isActive", filterStatus); const qs = p.toString(); return `/api/export/staff${qs ? `?${qs}` : ""}`; })()}
+            download
+            title="Export CSV"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+          >
+            <Download size={14} />Export CSV
+          </a>
+          <button
+            onClick={handleBulkSendCredentials}
+            disabled={bulkSending}
+            title="Send credentials to all staff who haven't received them"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #dbeafe", background: bulkSending ? "#f1f5f9" : "#eff6ff", color: bulkSending ? "#94a3b8" : "#2563eb", fontSize: 13, fontWeight: 600, cursor: bulkSending ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+          >
+            {bulkSending ? <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} /> : <Send size={13} />}
+            Send All
           </button>
           <button className="sp-btn-primary" onClick={() => setView("add")}>
             <Plus size={14} /> Add Staff

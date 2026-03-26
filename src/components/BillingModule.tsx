@@ -178,6 +178,8 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
     setDeleting(false);
   };
 
+  const exportUrl = `/api/export/billing${[statusFilter && `status=${statusFilter}`, dateFrom && `dateFrom=${dateFrom}`, dateTo && `dateTo=${dateTo}`].filter(Boolean).join("&") ? `?${[statusFilter && `status=${statusFilter}`, dateFrom && `dateFrom=${dateFrom}`, dateTo && `dateTo=${dateTo}`].filter(Boolean).join("&")}` : ""}`;
+
   return (
     <div>
       <div className="bm-page-header">
@@ -226,6 +228,14 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
         <input type="date" className="bm-select" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} title="Date From"/>
         <input type="date" className="bm-select" value={dateTo}   onChange={e=>setDateTo(e.target.value)}   title="Date To"/>
         <button className="bm-icon-btn" onClick={onRefresh} title="Refresh"><RefreshCw size={14}/></button>
+        <a
+          href={exportUrl}
+          download
+          title="Export CSV"
+          style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",fontSize:12,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap"}}
+        >
+          <Download size={13}/>Export CSV
+        </a>
       </div>
 
       {/* Table */}

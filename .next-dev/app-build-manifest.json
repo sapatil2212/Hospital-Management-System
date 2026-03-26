@@ -1,37 +1,20 @@
 {
   "pages": {
-    "/doctor/dashboard/profile/page": [
+    "/hospitaladmin/configure/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/doctor/dashboard/profile/page.js"
+      "static/chunks/app/hospitaladmin/configure/page.js"
     ],
-    "/doctor/dashboard/layout": [
+    "/hospitaladmin/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/doctor/dashboard/layout.js"
+      "static/chunks/app/hospitaladmin/layout.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
-    ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/page.css",
-      "static/chunks/app/page.js"
-    ],
-    "/treatments/skin/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/treatments/skin/page.css",
-      "static/chunks/app/treatments/skin/page.js"
-    ],
-    "/_not-found/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

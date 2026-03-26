@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   CalendarCheck, Clock, CheckCircle, AlertCircle, Loader2,
   Search, Filter, User, Phone, Stethoscope, X, RefreshCw,
-  ChevronLeft, ChevronRight, Calendar,
+  ChevronLeft, ChevronRight, Calendar, Bell,
 } from "lucide-react";
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -54,8 +54,8 @@ function StatsBar({ stats }: { stats: any }) {
 
 // ─── Follow-Up Card ───
 function FollowUpCard({
-  fu, onStatusChange, onViewPatient,
-}: { fu: FollowUp; onStatusChange: (id: string, status: string) => void; onViewPatient: (id: string) => void }) {
+  fu, onStatusChange, onViewPatient, onRemind, reminding,
+}: { fu: FollowUp; onStatusChange: (id: string, status: string) => void; onViewPatient: (id: string) => void; onRemind?: (id: string) => void; reminding?: boolean }) {
   const sc = STATUS_CFG[fu.status] || STATUS_CFG.PENDING;
   const fuDate = new Date(fu.followUpDate);
   const now = new Date();
@@ -134,6 +134,12 @@ function FollowUpCard({
                 style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                 <CheckCircle size={11} />Done
               </button>
+              {onRemind && (
+                <button onClick={() => onRemind(fu.id)} disabled={reminding} title="Send Reminder Notification"
+                  style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: reminding ? "#f1f5f9" : "#fffbeb", color: reminding ? "#94a3b8" : "#d97706", fontSize: 11, cursor: reminding ? "not-allowed" : "pointer", display: "flex", alignItems: "center" }}>
+                  {reminding ? <Loader2 size={11} style={{ animation: "spin .7s linear infinite" }} /> : <Bell size={11} />}
+                </button>
+              )}
               <button onClick={() => onStatusChange(fu.id, "CANCELLED")}
                 style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: "#fff5f5", color: "#dc2626", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center" }}>
                 <X size={11} />
@@ -169,6 +175,9 @@ export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (
   const [activeFilter, setActiveFilter] = useState<"upcoming" | "today" | "all" | "overdue">("upcoming");
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [sendingReminders, setSendingReminders] = useState(false);
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
+  const [rowReminding, setRowReminding] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -204,6 +213,24 @@ export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (
   const handleStatusChange = async (id: string, status: string) => {
     await api(`/api/followups/${id}`, "PUT", { status });
     load();
+  };
+
+  const handleRowRemind = async (id: string) => {
+    setRowReminding(s => new Set(s).add(id));
+    const res = await api("/api/followups/reminders", "POST", { followUpId: id });
+    setRowReminding(s => { const n = new Set(s); n.delete(id); return n; });
+    if (res.success) { setReminderMsg("✓ Reminder sent"); setTimeout(() => setReminderMsg(null), 3000); }
+    else { setReminderMsg("Failed to send reminder"); setTimeout(() => setReminderMsg(null), 3000); }
+  };
+
+  const handleSendReminders = async () => {
+    setSendingReminders(true);
+    setReminderMsg(null);
+    const res = await api("/api/followups/reminders", "POST", { type: "both" });
+    setSendingReminders(false);
+    if (res.success) setReminderMsg(`✓ ${res.data?.fired || 0} reminder(s) sent`);
+    else setReminderMsg("Failed to send reminders");
+    setTimeout(() => setReminderMsg(null), 4000);
   };
 
   const FILTER_TABS = [
@@ -245,8 +272,18 @@ export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (
             style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
             <RefreshCw size={12} />Refresh
           </button>
+          <button onClick={handleSendReminders} disabled={sendingReminders}
+            style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #fde68a", background: sendingReminders ? "#fffbeb" : "#fffbeb", fontSize: 12, color: "#d97706", fontWeight: 700, cursor: sendingReminders ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 5, opacity: sendingReminders ? .6 : 1 }}>
+            {sendingReminders ? <Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} /> : <Bell size={12} />}
+            {sendingReminders ? "Sending..." : "Send Reminders"}
+          </button>
         </div>
       </div>
+      {reminderMsg && (
+        <div style={{ marginBottom: 12, padding: "8px 14px", borderRadius: 9, background: reminderMsg.startsWith("✓") ? "#f0fdf4" : "#fff5f5", color: reminderMsg.startsWith("✓") ? "#16a34a" : "#dc2626", fontSize: 12, fontWeight: 600, border: `1px solid ${reminderMsg.startsWith("✓") ? "#bbf7d0" : "#fecaca"}` }}>
+          {reminderMsg}
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -269,6 +306,8 @@ export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (
               fu={fu} 
               onStatusChange={handleStatusChange} 
               onViewPatient={(id) => onViewPatient?.(id)}
+              onRemind={handleRowRemind}
+              reminding={rowReminding.has(fu.id)}
             />
           ))}
         </div>

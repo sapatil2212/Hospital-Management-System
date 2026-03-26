@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, ArrowRight, Calendar, User, Search, Tag } from "lucide-react";
+import { BookOpen, ArrowRight, Calendar, User, Search, Tag, Clock, TrendingUp } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "./blog.module.css";
@@ -11,12 +12,12 @@ import styles from "./blog.module.css";
 const categories = ["All", "Technology", "Patient Care", "Wellness", "Research"];
 
 const posts = [
-  { image: "/images/blog-medtech.png", category: "Technology", date: "Mar 15, 2026", author: "Dr. Sarah Chen", title: "The Future of AI in Healthcare Diagnostics", excerpt: "Discover how artificial intelligence is revolutionizing the way doctors diagnose and treat complex medical conditions.", color: "#0E898F", bgColor: "#E6F4F4" },
-  { image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 12, 2026", author: "Dr. James Wilson", title: "Why Regular Health Checkups Save Lives", excerpt: "Learn about the importance of preventive healthcare and routine checkups for early detection.", color: "#10B981", bgColor: "#D1FAE5" },
-  { image: "/images/blog-wellness.png", category: "Wellness", date: "Mar 10, 2026", author: "Dr. Emily Park", title: "5 Simple Habits for Better Heart Health", excerpt: "Small lifestyle changes can make a big difference. Here are five evidence-based habits for a healthier heart.", color: "#8B5CF6", bgColor: "#EDE9FE" },
-  { image: "/images/about-team.png", category: "Research", date: "Mar 8, 2026", author: "Dr. Michael Rivera", title: "Breakthroughs in Gene Therapy for Rare Diseases", excerpt: "New advances in gene therapy are opening doors for treating previously untreatable genetic conditions.", color: "#F97316", bgColor: "#FFF7ED" },
-  { image: "/images/blog-medtech.png", category: "Technology", date: "Mar 5, 2026", author: "Dr. Sarah Chen", title: "Telemedicine: The New Normal in Healthcare", excerpt: "How virtual consultations are making healthcare more accessible and convenient for millions.", color: "#0E898F", bgColor: "#E6F4F4" },
-  { image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 3, 2026", author: "Dr. James Wilson", title: "Understanding Mental Health in the Workplace", excerpt: "A comprehensive guide to recognizing and addressing mental health challenges in professional settings.", color: "#10B981", bgColor: "#D1FAE5" },
+  { slug: "ai-healthcare-diagnostics", image: "/images/blog-medtech.png", category: "Technology", date: "Mar 15, 2026", author: "Dr. Sarah Chen", readTime: "8 min read", title: "The Future of AI in Healthcare Diagnostics", excerpt: "Discover how artificial intelligence is revolutionizing the way doctors diagnose and treat complex medical conditions.", color: "#0E898F", bgColor: "#E6F4F4" },
+  { slug: "regular-health-checkups", image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 12, 2026", author: "Dr. James Wilson", readTime: "6 min read", title: "Why Regular Health Checkups Save Lives", excerpt: "Learn about the importance of preventive healthcare and routine checkups for early detection.", color: "#10B981", bgColor: "#D1FAE5" },
+  { slug: "heart-health-habits", image: "/images/blog-wellness.png", category: "Wellness", date: "Mar 10, 2026", author: "Dr. Emily Park", readTime: "5 min read", title: "5 Simple Habits for Better Heart Health", excerpt: "Small lifestyle changes can make a big difference. Here are five evidence-based habits for a healthier heart.", color: "#8B5CF6", bgColor: "#EDE9FE" },
+  { slug: "gene-therapy-breakthroughs", image: "/images/about-team.png", category: "Research", date: "Mar 8, 2026", author: "Dr. Michael Rivera", readTime: "10 min read", title: "Breakthroughs in Gene Therapy for Rare Diseases", excerpt: "New advances in gene therapy are opening doors for treating previously untreatable genetic conditions.", color: "#F97316", bgColor: "#FFF7ED" },
+  { slug: "telemedicine-new-normal", image: "/images/blog-medtech.png", category: "Technology", date: "Mar 5, 2026", author: "Dr. Sarah Chen", readTime: "7 min read", title: "Telemedicine: The New Normal in Healthcare", excerpt: "How virtual consultations are making healthcare more accessible and convenient for millions.", color: "#0E898F", bgColor: "#E6F4F4" },
+  { slug: "mental-health-workplace", image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 3, 2026", author: "Dr. James Wilson", readTime: "8 min read", title: "Understanding Mental Health in the Workplace", excerpt: "A comprehensive guide to recognizing and addressing mental health challenges in professional settings.", color: "#10B981", bgColor: "#D1FAE5" },
 ];
 
 export default function BlogPage() {
@@ -66,7 +67,7 @@ export default function BlogPage() {
               <AnimatePresence mode="popLayout">
                 {filtered.map((post, i) => (
                   <motion.article
-                    key={post.title}
+                    key={post.slug}
                     className={styles.card}
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -75,19 +76,24 @@ export default function BlogPage() {
                     transition={{ duration: 0.3, delay: i * 0.05 }}
                     whileHover={{ y: -6 }}
                   >
-                    <div className={styles.imageWrapper}>
-                      <Image src={post.image} alt={post.title} width={400} height={220} className={styles.cardImage} />
-                      <span className={styles.category} style={{ color: post.color, background: post.bgColor }}>{post.category}</span>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <div className={styles.meta}>
-                        <span className={styles.metaItem}><Calendar size={14} />{post.date}</span>
-                        <span className={styles.metaItem}><User size={14} />{post.author}</span>
+                    <Link href={`/blog/${post.slug}`} className={styles.cardLink}>
+                      <div className={styles.imageWrapper}>
+                        <Image src={post.image} alt={post.title} width={400} height={220} className={styles.cardImage} />
+                        <span className={styles.categoryBadge} style={{ color: post.color, background: post.bgColor }}>
+                          <TrendingUp size={12} />
+                          {post.category}
+                        </span>
                       </div>
-                      <h3 className={styles.cardTitle}>{post.title}</h3>
-                      <p className={styles.cardExcerpt}>{post.excerpt}</p>
-                      <a href="#" className={styles.readMore}>Read Article <ArrowRight size={16} /></a>
-                    </div>
+                      <div className={styles.cardBody}>
+                        <div className={styles.meta}>
+                          <span className={styles.metaItem}><Calendar size={14} />{post.date}</span>
+                          <span className={styles.metaItem}><Clock size={14} />{post.readTime}</span>
+                        </div>
+                        <h3 className={styles.cardTitle}>{post.title}</h3>
+                        <p className={styles.cardExcerpt}>{post.excerpt}</p>
+                        <span className={styles.readMore}>Read Article <ArrowRight size={16} /></span>
+                      </div>
+                    </Link>
                   </motion.article>
                 ))}
               </AnimatePresence>

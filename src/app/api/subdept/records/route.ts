@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "../../../../../backend/utils/res
 import { getSubDeptProfile, SubDeptServiceError } from "../../../../../backend/services/subdepartment.service";
 import prisma from "../../../../../backend/config/db";
 import { addProcedureChargeToBill } from "../../../../../backend/services/billing.service";
+import { notifyProcedureCompleted } from "../../../../../backend/services/notification.service";
 
 export const dynamic = "force-dynamic";
 
@@ -147,9 +148,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Event: procedure completed → auto-add charge to bill (fire and forget)
+    // Event: procedure completed → auto-add charge to bill + notify (fire and forget)
     if ((status || "COMPLETED") === "COMPLETED") {
       addProcedureChargeToBill(record.id, hospitalId).catch(() => {});
+      notifyProcedureCompleted(hospitalId, {
+        patientName:   record.patient.name,
+        procedureName: record.procedure.name,
+      }).catch(() => {});
     }
 
     return successResponse(record, "Procedure record saved", 201);

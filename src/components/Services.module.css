@@ -18,34 +18,62 @@
   background-clip: text;
 }
 
-.list {
+.grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-6);
   max-width: 1280px;
   margin: 0 auto;
 }
 
+.viewAllContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-10);
+}
+
+.viewAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+}
+
+.viewAllBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 .card {
   display: flex;
+  flex-direction: column;
   background: var(--white);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
   transition: all var(--transition-base);
   border: 1px solid var(--gray-100);
+  height: 100%;
 }
 
 .card:hover {
   box-shadow: var(--shadow-xl);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   border-color: rgba(26, 77, 68, 0.2);
 }
 
 .cardImage {
   position: relative;
-  width: 40%;
-  min-height: 200px;
+  width: 100%;
+  height: 160px;
 }
 
 .image {
@@ -53,8 +81,8 @@
 }
 
 .cardContent {
-  width: 60%;
-  padding: var(--space-5);
+  flex: 1;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
 }
@@ -153,24 +181,19 @@
 }
 
 @media (max-width: 1200px) {
-  .list {
-    grid-template-columns: 1fr;
-    max-width: 700px;
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .card {
-    flex-direction: column;
+  .grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 0 var(--space-4);
   }
 
   .cardImage {
-    width: 100%;
-    min-height: 180px;
-  }
-
-  .cardContent {
-    width: 100%;
-    padding: var(--space-4);
+    height: 200px;
   }
 }

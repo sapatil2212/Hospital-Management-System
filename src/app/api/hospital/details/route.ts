@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     if (authError) return authError;
 
     // Must be at least hospital admin or part of the hospital staff to view details
-    const roleCheck = roleMiddleware(user!, [Role.SUPER_ADMIN, Role.HOSPITAL_ADMIN, Role.DOCTOR, Role.RECEPTIONIST, Role.STAFF]);
+    const roleCheck = roleMiddleware(user!, [Role.SUPER_ADMIN, Role.HOSPITAL_ADMIN, Role.DOCTOR, Role.RECEPTIONIST, Role.STAFF, Role.SUB_DEPT_HEAD]);
     if (roleCheck.error) return roleCheck.error;
 
     if (!user!.hospitalId && user!.role !== Role.SUPER_ADMIN) {

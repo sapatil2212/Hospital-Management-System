@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, User, Phone, Mail, Calendar, Droplets, MapPin,
   Hash, Clock, CheckCircle, XCircle, AlertCircle, Loader2,
-  CalendarCheck, Plus, X, Stethoscope, FileText,
+  CalendarCheck, Plus, X, Stethoscope, FileText, Activity,
 } from "lucide-react";
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -110,9 +110,11 @@ export default function PatientProfilePage() {
   const router = useRouter();
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"appointments" | "followups">("appointments");
+  const [activeTab, setActiveTab] = useState<"appointments" | "followups" | "plans">("appointments");
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -122,7 +124,16 @@ export default function PatientProfilePage() {
     });
   };
 
+  const loadPlans = () => {
+    setPlansLoading(true);
+    api(`/api/treatment-plans?patientId=${id}`).then(d => {
+      if (d.success) setTreatmentPlans(d.data?.plans || []);
+      setPlansLoading(false);
+    });
+  };
+
   useEffect(() => { load(); }, [id, refreshKey]);
+  useEffect(() => { if (activeTab === "plans") loadPlans(); }, [activeTab, id]);
 
   const updateFollowUpStatus = async (fid: string, status: string) => {
     await api(`/api/followups/${fid}`, "PUT", { status });
@@ -203,10 +214,10 @@ export default function PatientProfilePage() {
           <div>
             {/* Tabs */}
             <div style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 12, padding: 4, border: "1px solid #e2e8f0", marginBottom: 16, width: "fit-content" }}>
-              {(["appointments", "followups"] as const).map(t => (
+              {(["appointments", "followups", "plans"] as const).map(t => (
                 <button key={t} onClick={() => setActiveTab(t)}
                   style={{ padding: "8px 18px", borderRadius: 9, border: "none", background: activeTab === t ? "#0ea5e9" : "none", color: activeTab === t ? "#fff" : "#64748b", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}>
-                  {t === "appointments" ? `Appointments (${patient._count?.appointments || 0})` : `Follow-ups (${patient._count?.followUps || 0})`}
+                  {t === "appointments" ? `Visits (${patient._count?.appointments || 0})` : t === "followups" ? `Follow-ups (${patient._count?.followUps || 0})` : "Treatment Plans"}
                 </button>
               ))}
             </div>
@@ -310,6 +321,57 @@ export default function PatientProfilePage() {
                           📋 {fu.notes}
                         </div>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeTab === "plans" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {plansLoading ? (
+                  <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} /> Loading plans...
+                  </div>
+                ) : treatmentPlans.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "48px 20px", background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", color: "#94a3b8", fontSize: 14 }}>
+                    No treatment plans yet. Doctors can assign service packages during consultations.
+                  </div>
+                ) : treatmentPlans.map((plan: any) => {
+                  const pct = plan.totalSessions > 0 ? (plan.completedSessions / plan.totalSessions) * 100 : 0;
+                  const STATUS_CFG: Record<string, [string, string, string]> = {
+                    ACTIVE:    ["#e0f2fe", "#0369a1", "#bae6fd"],
+                    COMPLETED: ["#f0fdf4", "#16a34a", "#bbf7d0"],
+                    ON_HOLD:   ["#fefce8", "#ca8a04", "#fef08a"],
+                    CANCELLED: ["#fff5f5", "#ef4444", "#fecaca"],
+                  };
+                  const sc = STATUS_CFG[plan.status] || STATUS_CFG.ACTIVE;
+                  return (
+                    <div key={plan.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Activity size={16} color="#3b82f6" />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>{plan.planName}</div>
+                            {plan.service && <div style={{ fontSize: 11, color: "#64748b" }}>{plan.service.name}</div>}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 10, padding: "3px 10px", borderRadius: 100, background: sc[0], color: sc[1], border: `1px solid ${sc[2]}`, fontWeight: 700 }}>
+                          {plan.status}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#64748b", marginBottom: 10 }}>
+                        <span>Sessions: <strong style={{ color: "#1e293b" }}>{plan.completedSessions}/{plan.totalSessions}</strong></span>
+                        <span>Cost: <strong style={{ color: "#1e293b" }}>₹{(plan.totalCost || 0).toLocaleString()}</strong></span>
+                        <span style={{ color: "#16a34a" }}>Paid: <strong>₹{(plan.paidAmount || 0).toLocaleString()}</strong></span>
+                        {plan.doctor && <span>Dr. <strong style={{ color: "#1e293b" }}>{plan.doctor.name}</strong></span>}
+                      </div>
+                      <div style={{ height: 6, background: "#f1f5f9", borderRadius: 100, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#0E898F,#10b981)", borderRadius: 100, transition: "width .3s" }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4, textAlign: "right" }}>{Math.round(pct)}% complete</div>
                     </div>
                   );
                 })}

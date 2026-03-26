@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Plus, Pencil, Trash2, Search, X, Loader2, Check, AlertTriangle,
   ChevronLeft, ChevronRight, User, DollarSign, Briefcase, Calendar,
-  Clock, Filter, Stethoscope, Upload, FileText, ArrowLeft, Send
+  Clock, Filter, Stethoscope, Upload, FileText, ArrowLeft, Send, Download
 } from "lucide-react";
 import ScheduleModal from "./ScheduleModal";
 
@@ -495,6 +495,25 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
   const [scheduleModal, setScheduleModal] = useState<{ open: boolean; doctor: Doctor | null; mode: "create" | "view" | "edit" }>({ open: false, doctor: null, mode: "create" });
   const [deletingSchedule, setDeletingSchedule] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [bulkSending, setBulkSending] = useState(false);
+
+  const handleBulkSendCredentials = async () => {
+    if (!confirm("Send credentials to all doctors who haven't received them yet?")) return;
+    setBulkSending(true);
+    try {
+      const res = await fetch("/api/config/doctors/send-credentials-bulk", { method: "POST", credentials: "include" });
+      const data = await res.json();
+      if (data.success) {
+        addToast("success", data.message || "Bulk credentials sent");
+        load();
+      } else {
+        addToast("error", data.message || "Bulk send failed");
+      }
+    } catch {
+      addToast("error", "Failed to send bulk credentials");
+    }
+    setBulkSending(false);
+  };
 
   const handleDeleteSchedule = async (doctor: Doctor) => {
     if (!confirm(`Delete the entire schedule for ${doctor.name}? This cannot be undone.`)) return;
@@ -718,6 +737,23 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
         <div className="dp-toolbar-right">
           <button className={`dp-filter-btn${showFilters ? " active" : ""}`} onClick={() => setShowFilters(!showFilters)}>
             <Filter size={14} /> Filters
+          </button>
+          <a
+            href={`/api/export/doctors${[search && `search=${encodeURIComponent(search)}`, filterDept && `departmentId=${filterDept}`, filterStatus && `isActive=${filterStatus}`].filter(Boolean).join("&") ? `?${[search && `search=${encodeURIComponent(search)}`, filterDept && `departmentId=${filterDept}`, filterStatus && `isActive=${filterStatus}`].filter(Boolean).join("&")}` : ""}`}
+            download
+            title="Export CSV"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+          >
+            <Download size={14} />Export CSV
+          </a>
+          <button
+            onClick={handleBulkSendCredentials}
+            disabled={bulkSending}
+            title="Send credentials to all doctors who haven't received them"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #dbeafe", background: bulkSending ? "#f1f5f9" : "#eff6ff", color: bulkSending ? "#94a3b8" : "#2563eb", fontSize: 13, fontWeight: 600, cursor: bulkSending ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+          >
+            {bulkSending ? <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} /> : <Send size={13} />}
+            Send All
           </button>
           <button className="dp-btn-primary" onClick={() => setView("add")}>
             <Plus size={14} /> Add Doctor

@@ -1,6 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
-  "/treatments/skin/page": "app/treatments/skin/page.js",
-  "/doctor/dashboard/profile/page": "app/doctor/dashboard/profile/page.js"
+  "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/api/config/dashboard-stats/route": "app/api/config/dashboard-stats/route.js",
+  "/api/config/departments/route": "app/api/config/departments/route.js",
+  "/api/user/list/route": "app/api/user/list/route.js",
+  "/api/config/subdepartments/route": "app/api/config/subdepartments/route.js",
+  "/hospitaladmin/configure/page": "app/hospitaladmin/configure/page.js"
 }

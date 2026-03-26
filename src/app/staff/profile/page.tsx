@@ -34,6 +34,7 @@ export default function StaffProfilePage() {
         if (!d.success || !["STAFF", "RECEPTIONIST"].includes(d.data.role)) { router.push("/login"); return; }
         setUser(d.data);
         setFormData({ name: d.data.name || "", email: d.data.email || "", phone: "" });
+        if (d.data.profilePhoto) setProfilePhoto(d.data.profilePhoto);
         setLoading(false);
       })
       .catch(() => router.push("/login"));

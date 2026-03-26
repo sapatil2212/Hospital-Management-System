@@ -22,8 +22,45 @@ export async function GET(req: NextRequest) {
       const data = await getAllAllocationsService(auth.hospitalId, status);
       return successResponse(data, "Allocations fetched");
     }
-    const data = await getBedStatusOverviewService(auth.hospitalId);
-    return successResponse(data, "Bed status overview fetched");
+    const raw = await getBedStatusOverviewService(auth.hospitalId);
+    const beds: any[] = raw.beds || [];
+
+    // Group beds by ward
+    const wardMap = new Map<string, any>();
+    for (const bed of beds) {
+      const w = bed.ward;
+      const wardKey = w?.id || "_no_ward";
+      if (!wardMap.has(wardKey)) {
+        wardMap.set(wardKey, {
+          id: wardKey,
+          name: w?.name || "Unknown Ward",
+          type: w?.type || "GENERAL",
+          totalBeds: 0, availableBeds: 0, occupiedBeds: 0, beds: [],
+        });
+      }
+      const ward = wardMap.get(wardKey)!;
+      const activeAllocation = bed.allocations?.[0] || null;
+      ward.beds.push({
+        id: bed.id,
+        bedNumber: bed.bedNumber,
+        status: bed.status,
+        type: bed.type,
+        activeAllocation,
+      });
+      ward.totalBeds++;
+      if (bed.status === "AVAILABLE") ward.availableBeds++;
+      if (bed.status === "OCCUPIED") ward.occupiedBeds++;
+    }
+
+    const summary = {
+      total: beds.length,
+      available: beds.filter(b => b.status === "AVAILABLE").length,
+      occupied: beds.filter(b => b.status === "OCCUPIED").length,
+      maintenance: beds.filter(b => b.status === "MAINTENANCE").length,
+      reserved: beds.filter(b => b.status === "RESERVED").length,
+    };
+
+    return successResponse({ wards: Array.from(wardMap.values()), summary }, "Bed status overview fetched");
   } catch (e: any) { return errorResponse(e.message, 500); }
 }
 

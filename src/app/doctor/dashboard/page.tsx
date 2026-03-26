@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarDays, ChevronRight, ChevronLeft,
-  UserRound, Loader2, PlayCircle, CheckCircle2, X, FileText, Clock, RefreshCw, Pencil
+  UserRound, Loader2, PlayCircle, CheckCircle2, X, FileText, Clock, RefreshCw, Pencil, Activity, ClipboardCheck
 } from "lucide-react";
 
 import PatientProfilePanel from "@/components/PatientProfilePanel";
@@ -41,10 +41,17 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
   const [subDeptId, setSubDeptId] = useState<string>(appt.subDepartmentId || "");
   const [subDeptNote, setSubDeptNote] = useState<string>(appt.subDeptNote || "");
   const [showReferral, setShowReferral] = useState(!!(appt.subDepartmentId));
+  const [services, setServices] = useState<any[]>([]);
+  const [showServicePlan, setShowServicePlan] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [planCreated, setPlanCreated] = useState(false);
 
   useEffect(() => {
     api("/api/config/subdepartments?limit=50").then(r => {
       if (r.success) setSubDepts(r.data?.data || r.data || []);
+    }).catch(() => {});
+    api("/api/config/services?isActive=true&limit=100").then(r => {
+      if (r.success) setServices(r.data?.services || r.data?.data || []);
     }).catch(() => {});
   }, []);
 
@@ -59,7 +66,21 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
       body.subDeptNote = null;
     }
     const d = await api(`/api/appointments/${appt.id}`, "PUT", body);
-    if (d.success) { onDone(); onClose(); }
+    if (d.success) {
+      if (status === "COMPLETED" && showServicePlan && selectedServiceId && appt.patient?.id && !planCreated) {
+        const svc = services.find((s: any) => s.id === selectedServiceId);
+        api("/api/treatment-plans", "POST", {
+          patientId: appt.patient.id,
+          serviceId: selectedServiceId,
+          doctorId: appt.doctorId,
+          departmentId: appt.departmentId,
+          planName: svc?.name || "Treatment Plan",
+          totalSessions: svc?.sessionCount || 1,
+          totalCost: svc?.price || 0,
+        }).then(() => setPlanCreated(true)).catch(() => {});
+      }
+      onDone(); onClose();
+    }
     else setMsg(d.message || "Failed to update");
     setSaving(false);
   };
@@ -146,6 +167,38 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
           )}
         </div>
 
+        <div style={{ marginBottom: 14, background: showServicePlan ? "#eff6ff" : "#f8fafc", borderRadius: 12, border: `1.5px solid ${showServicePlan ? "#bfdbfe" : "#e2e8f0"}`, overflow: "hidden" }}>
+          <button onClick={() => setShowServicePlan(v => !v)}
+            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "'Inter',sans-serif" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: showServicePlan ? "#3b82f6" : "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ChevronRight size={12} color={showServicePlan ? "#fff" : "#94a3b8"} style={{ transform: showServicePlan ? "rotate(90deg)" : "none", transition: "transform .2s" }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: showServicePlan ? "#1d4ed8" : "#64748b" }}>Assign Service Package (optional)</span>
+            </div>
+            {planCreated && <span style={{ fontSize: 10, background: "#dbeafe", color: "#1d4ed8", padding: "2px 8px", borderRadius: 100, fontWeight: 700 }}>Plan Created</span>}
+          </button>
+          {showServicePlan && (
+            <div style={{ padding: "0 14px 14px" }}>
+              <select value={selectedServiceId} onChange={e => setSelectedServiceId(e.target.value)}
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #bfdbfe", background: "#fff", fontSize: 13, color: "#334155", outline: "none", fontFamily: "'Inter',sans-serif" }}>
+                <option value="">— Select Package —</option>
+                {services.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name} · {s.sessionCount} sessions · ₹{s.price?.toLocaleString()}</option>
+                ))}
+              </select>
+              {selectedServiceId && (
+                <div style={{ fontSize: 11, color: "#1d4ed8", marginTop: 8, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                  ✓ Treatment plan will be auto-created when consultation is completed
+                </div>
+              )}
+              {services.length === 0 && (
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>No service packages configured yet. Add them in Configure → Services & Packages.</div>
+              )}
+            </div>
+          )}
+        </div>
+
         {msg && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 10, fontWeight: 600 }}>{msg}</div>}
 
         <div style={{ display: "flex", gap: 8 }}>
@@ -228,18 +281,156 @@ function MiniCalendar({ accent = "#10b981", selectedDate, onDateSelect }: { acce
   );
 }
 
-type Tab = "schedule"|"patients"|"prescription-settings";
+const SCHED_DURATIONS = [10,15,20,30,45,60];
+const SCHED_DAY_LABELS: Record<string,string> = { MONDAY:"Mon",TUESDAY:"Tue",WEDNESDAY:"Wed",THURSDAY:"Thu",FRIDAY:"Fri",SATURDAY:"Sat",SUNDAY:"Sun" };
+const ALL_SCHED_DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+
+function ScheduleMgmtTab({ accent, localSchedule, setLocalSchedule, scheduleLoading, scheduleSaving, setScheduleSaving, scheduleMsg, setScheduleMsg, fetchWeeklySchedule }: {
+  accent: string;
+  localSchedule: Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>;
+  setLocalSchedule: React.Dispatch<React.SetStateAction<Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>>>;
+  scheduleLoading: boolean;
+  scheduleSaving: boolean;
+  setScheduleSaving: (v: boolean) => void;
+  scheduleMsg: {type:"success"|"error";text:string}|null;
+  setScheduleMsg: (v: {type:"success"|"error";text:string}|null) => void;
+  fetchWeeklySchedule: () => void;
+}) {
+  const setDay = (day: string, field: string, val: any) =>
+    setLocalSchedule(p => ({ ...p, [day]: { ...p[day], [field]: val } }));
+
+  const applyTemplate = (activeDays: string[]) =>
+    setLocalSchedule(p => { const n={...p}; ALL_SCHED_DAYS.forEach(d => { n[d]={...n[d], isActive: activeDays.includes(d)}; }); return n; });
+
+  const slotsFor = (start: string, end: string, dur: number) => {
+    const [sh,sm] = start.split(":").map(Number);
+    const [eh,em] = end.split(":").map(Number);
+    const mins = (eh*60+em) - (sh*60+sm);
+    return mins > 0 ? Math.floor(mins/dur) : 0;
+  };
+
+  const saveAll = async () => {
+    setScheduleSaving(true);
+    setScheduleMsg(null);
+    const schedules = ALL_SCHED_DAYS.filter(d => localSchedule[d]?.isActive).map(d => ({
+      day: d, startTime: localSchedule[d].startTime, endTime: localSchedule[d].endTime,
+      slotDuration: localSchedule[d].slotDuration, isActive: true,
+    }));
+    const res = await fetch("/api/doctor/availability", { method:"POST", credentials:"include", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ schedules }) }).then(r=>r.json());
+    setScheduleSaving(false);
+    if (res.success) { setScheduleMsg({ type:"success", text:`Schedule saved — ${schedules.length} working day(s) configured` }); fetchWeeklySchedule(); }
+    else setScheduleMsg({ type:"error", text: res.message || "Failed to save schedule" });
+  };
+
+  return (
+    <div className="doc-card">
+      <div className="doc-card-head" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div className="doc-card-title">Schedule Setup</div>
+          <div className="doc-card-sub">Configure weekly availability and appointment slot durations</div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={fetchWeeklySchedule} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+            <RefreshCw size={11}/>Reload
+          </button>
+          <button onClick={saveAll} disabled={scheduleSaving}
+            style={{display:"flex",alignItems:"center",gap:6,padding:"8px 18px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:12,fontWeight:700,cursor:scheduleSaving?"not-allowed":"pointer",opacity:scheduleSaving?.7:1}}>
+            {scheduleSaving ? <><Loader2 size={12} style={{animation:"spin .7s linear infinite"}}/>Saving...</> : <>Save Schedule</>}
+          </button>
+        </div>
+      </div>
+
+      {scheduleMsg && (
+        <div style={{margin:"14px 18px 0",padding:"10px 14px",borderRadius:9,background:scheduleMsg.type==="success"?"#f0fdf4":"#fff5f5",color:scheduleMsg.type==="success"?"#16a34a":"#dc2626",fontSize:13,fontWeight:600,border:`1px solid ${scheduleMsg.type==="success"?"#bbf7d0":"#fecaca"}`}}>
+          {scheduleMsg.text}
+        </div>
+      )}
+
+      {scheduleLoading ? (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
+          <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading schedule...
+        </div>
+      ) : (
+        <div style={{padding:"16px 18px",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{display:"flex",gap:8,marginBottom:4,flexWrap:"wrap",alignItems:"center"}}>
+            <span style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>Quick set:</span>
+            {[
+              {label:"Mon–Fri", days:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"]},
+              {label:"Mon–Sat", days:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"]},
+              {label:"All Week", days:ALL_SCHED_DAYS},
+            ].map(tmpl=>(
+              <button key={tmpl.label} onClick={()=>applyTemplate(tmpl.days)}
+                style={{padding:"4px 11px",borderRadius:7,border:`1px solid ${accent}44`,background:`${accent}11`,color:accent,fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                {tmpl.label}
+              </button>
+            ))}
+            <button onClick={()=>applyTemplate([])}
+              style={{padding:"4px 11px",borderRadius:7,border:"1px solid #fecaca",background:"#fff5f5",color:"#dc2626",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+              Clear All
+            </button>
+          </div>
+
+          {ALL_SCHED_DAYS.map(day => {
+            const s = localSchedule[day] || {startTime:"09:00",endTime:"17:00",slotDuration:30,isActive:false};
+            const slots = slotsFor(s.startTime, s.endTime, s.slotDuration);
+            return (
+              <div key={day} style={{display:"grid",gridTemplateColumns:"80px 1fr",background:s.isActive?`${accent}08`:"#f8fafc",borderRadius:12,border:`1.5px solid ${s.isActive?accent+"33":"#e2e8f0"}`,overflow:"hidden",transition:"all .2s"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"14px 10px",borderRight:`1px solid ${s.isActive?accent+"22":"#e2e8f0"}`,background:s.isActive?`${accent}15`:"#f1f5f9",cursor:"pointer",userSelect:"none"}}
+                  onClick={()=>setDay(day,"isActive",!s.isActive)}>
+                  <div style={{width:36,height:20,borderRadius:100,background:s.isActive?accent:"#cbd5e1",position:"relative",transition:"background .2s",marginBottom:6}}>
+                    <div style={{position:"absolute",top:2,left:s.isActive?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+                  </div>
+                  <span style={{fontSize:11,fontWeight:700,color:s.isActive?accent:"#94a3b8"}}>{SCHED_DAY_LABELS[day]}</span>
+                </div>
+                <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:14,opacity:s.isActive?1:.45,transition:"opacity .2s",flexWrap:"wrap"}}>
+                  {[
+                    {label:"Start", field:"startTime", value:s.startTime, type:"time"},
+                    {label:"End",   field:"endTime",   value:s.endTime,   type:"time"},
+                  ].map(inp=>(
+                    <div key={inp.field} style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:11,color:"#64748b",fontWeight:600}}>{inp.label}</span>
+                      <input type={inp.type} value={inp.value} disabled={!s.isActive}
+                        onChange={e=>setDay(day,inp.field,e.target.value)}
+                        style={{padding:"5px 8px",borderRadius:7,border:"1px solid #d1fae5",fontSize:12,color:"#334155",background:"#fff",outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                  ))}
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{fontSize:11,color:"#64748b",fontWeight:600}}>Slot</span>
+                    <select value={s.slotDuration} disabled={!s.isActive} onChange={e=>setDay(day,"slotDuration",Number(e.target.value))}
+                      style={{padding:"5px 8px",borderRadius:7,border:"1px solid #d1fae5",fontSize:12,color:"#334155",background:"#fff",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
+                      {SCHED_DURATIONS.map(d=><option key={d} value={d}>{d} min</option>)}
+                    </select>
+                  </div>
+                  {s.isActive && (slots > 0
+                    ? <span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:100,background:`${accent}15`,color:accent}}>{slots} slots/day</span>
+                    : <span style={{fontSize:11,color:"#ef4444",fontWeight:600}}>⚠ Invalid range</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Tab = "schedule"|"patients"|"prescription-settings"|"treatment-plans"|"attendance"|"schedule-mgmt";
 
 const fmtDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const isSameDay = (a: Date, b: Date) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
 
-export default function DoctorDashboard() {
+function DoctorDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { doctor, accent, doctorName } = useDoctorDashboard();
   
-  const initialTab = (searchParams.get("tab") as Tab) || "schedule";
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [tab, setTab] = useState<Tab>("schedule");
+
+  useEffect(() => {
+    const urlTab = (searchParams.get("tab") as Tab) || "schedule";
+    setTab(urlTab);
+  }, [searchParams]);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loadingAppts, setLoadingAppts] = useState(false);
@@ -247,6 +438,27 @@ export default function DoctorDashboard() {
   const [allPatients, setAllPatients] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [activePlansCount, setActivePlansCount] = useState<number | null>(null);
+  const [myPlans, setMyPlans] = useState<any[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansFilter, setPlansFilter] = useState("");
+  const [attendance, setAttendance] = useState<any[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceMonth, setAttendanceMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+  });
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string,any>>({});
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleMsg, setScheduleMsg] = useState<{type:"success"|"error";text:string}|null>(null);
+  const SCHED_DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+  const initLocalSchedule = () => {
+    const init: Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}> = {};
+    SCHED_DAYS.forEach(d => { init[d] = { startTime:"09:00", endTime:"17:00", slotDuration:30, isActive:false }; });
+    return init;
+  };
+  const [localSchedule, setLocalSchedule] = useState<Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>>(initLocalSchedule);
 
   const isToday = isSameDay(selectedDate, new Date());
   const goDate = (offset: number) => setSelectedDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + offset); return d; });
@@ -280,16 +492,78 @@ export default function DoctorDashboard() {
   useEffect(() => {
     if (doctor) {
       fetch("/api/doctor/attendance", { method: "POST", credentials: "include" }).catch(() => {});
-      fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
-      fetchAllPatients(doctor.id, doctor.department?.id);
+      if (tab === "schedule") {
+        fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
+      }
+      if (tab === "schedule" || tab === "patients") {
+        fetchAllPatients(doctor.id, doctor.department?.id);
+      }
+      if (tab === "schedule" || tab === "treatment-plans") {
+        api(`/api/treatment-plans?doctorId=${doctor.id}&status=ACTIVE&limit=1`).then(r => {
+          if (r.success) setActivePlansCount(r.data?.total ?? r.data?.plans?.length ?? 0);
+        }).catch(() => {});
+      }
     }
-  }, [doctor, fetchAppointments, fetchAllPatients]);
+  }, [doctor, tab, fetchAppointments, fetchAllPatients]);
+
+  const fetchMyPlans = useCallback(async (doctorId: string, filter = "") => {
+    setPlansLoading(true);
+    const url = `/api/treatment-plans?doctorId=${doctorId}&limit=50${filter ? `&status=${filter}` : ""}`;
+    const d = await api(url);
+    if (d.success) setMyPlans(d.data?.plans || []);
+    setPlansLoading(false);
+  }, []);
 
   useEffect(() => {
-    if (doctor) {
+    if (doctor && tab === "treatment-plans") {
+      fetchMyPlans(doctor.id, plansFilter);
+    }
+  }, [tab, doctor, plansFilter, fetchMyPlans]);
+
+  const fetchAttendance = useCallback(async (month: string) => {
+    setAttendanceLoading(true);
+    const d = await api(`/api/doctor/attendance?month=${month}`);
+    if (d.success) setAttendance(d.data || []);
+    setAttendanceLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (doctor && tab === "attendance") {
+      fetchAttendance(attendanceMonth);
+    }
+  }, [tab, doctor, attendanceMonth, fetchAttendance]);
+
+  const fetchWeeklySchedule = useCallback(async () => {
+    setScheduleLoading(true);
+    const d = await api("/api/doctor/availability");
+    if (d.success) {
+      setWeeklySchedule(d.data || {});
+      const sdays = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+      setLocalSchedule(prev => {
+        const next = { ...prev };
+        sdays.forEach(day => {
+          const ex = (d.data || {})[day];
+          next[day] = ex
+            ? { startTime: ex.startTime||"09:00", endTime: ex.endTime||"17:00", slotDuration: ex.slotDuration||30, isActive: ex.isActive!==false }
+            : { startTime:"09:00", endTime:"17:00", slotDuration:30, isActive:false };
+        });
+        return next;
+      });
+    }
+    setScheduleLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (doctor && tab === "schedule-mgmt") {
+      fetchWeeklySchedule();
+    }
+  }, [tab, doctor, fetchWeeklySchedule]);
+
+  useEffect(() => {
+    if (doctor && tab === "schedule") {
       fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
     }
-  }, [selectedDate, doctor, fetchAppointments]);
+  }, [selectedDate, doctor, tab, fetchAppointments]);
 
   const handleStartPrescription = (appointmentId: string) => {
     router.push(`/doctor/prescription/${appointmentId}`);
@@ -331,7 +605,7 @@ export default function DoctorDashboard() {
         />
       )}
       <style>{`
-        .doc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+        .doc-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
         .doc-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #d1fae5;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(16,185,129,0.06);transition:transform .2s,box-shadow .2s}
         .doc-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
         .doc-sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -374,6 +648,7 @@ export default function DoctorDashboard() {
                   {icon:<CheckCircle2 size={20} color="#fff"/>, label:"Completed", val:todayDone, sub:isToday?"today so far":"on this day", bg:"#f0fdf4", iconBg:"#10b981"},
                   {icon:<Clock size={20} color="#fff"/>, label:"Remaining", val:todayRemaining, sub:"scheduled / confirmed", bg:"#fff7ed", iconBg:"#f59e0b"},
                   {icon:<UserRound size={20} color="#fff"/>, label:"Total Patients", val:allPatients.length, sub:"all time", bg:"#fdf4ff", iconBg:"#a855f7"},
+                  {icon:<Activity size={20} color="#fff"/>, label:"Active Plans", val:activePlansCount??"—", sub:"treatment plans", bg:"#f0fdf4", iconBg:"#059669"},
                 ].map((s,i)=>(
                   <div key={i} className="doc-sc" style={{background:s.bg}}>
                     <div className="doc-sc-icon" style={{background:s.iconBg}}>{s.icon}</div>
@@ -530,8 +805,178 @@ export default function DoctorDashboard() {
               )}
 
               {tab==="prescription-settings" && <PrescriptionSettingsPanel />}
+
+              {tab==="treatment-plans" && (
+                <div className="doc-card">
+                  <div className="doc-card-head">
+                    <div>
+                      <div className="doc-card-title">My Treatment Plans</div>
+                      <div className="doc-card-sub">{activePlansCount ?? "—"} active · {myPlans.length} shown</div>
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      {["",("ACTIVE"),("COMPLETED"),("ON_HOLD"),("CANCELLED")].map(f=>(
+                        <button key={f} onClick={()=>setPlansFilter(f)}
+                          style={{padding:"5px 12px",borderRadius:8,border:"none",fontSize:11,fontWeight:700,cursor:"pointer",
+                            background:plansFilter===f?accent+"22":"#f8fafc",color:plansFilter===f?accent:"#64748b"}}>
+                          {f||"All"}
+                        </button>
+                      ))}
+                      <button onClick={()=>doctor&&fetchMyPlans(doctor.id,plansFilter)}
+                        style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                        <RefreshCw size={11}/>Refresh
+                      </button>
+                    </div>
+                  </div>
+                  {plansLoading ? (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
+                      <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading treatment plans...
+                    </div>
+                  ) : myPlans.length === 0 ? (
+                    <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
+                      <Activity size={32} style={{marginBottom:10,opacity:.4}}/>
+                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No treatment plans found</div>
+                    </div>
+                  ) : (
+                    <div style={{padding:"0 0 4px"}}>
+                      {myPlans.map((plan:any)=>{
+                        const pct = plan.totalSessions>0?Math.round((plan.completedSessions/plan.totalSessions)*100):0;
+                        const STATUS_SC:any={ACTIVE:{bg:"#E6F4F4",c:"#0A6B70"},COMPLETED:{bg:"#f0fdf4",c:"#16a34a"},CANCELLED:{bg:"#fff5f5",c:"#ef4444"},ON_HOLD:{bg:"#fefce8",c:"#ca8a04"}};
+                        const sc=STATUS_SC[plan.status]||{bg:"#f8fafc",c:"#64748b"};
+                        const bal=(plan.totalCost||0)-(plan.paidAmount||0);
+                        return (
+                          <div key={plan.id} style={{padding:"14px 18px",borderBottom:"1px solid #f0fdf4"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                              <div>
+                                <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{plan.planName}</div>
+                                <div style={{fontSize:12,color:"#64748b",marginTop:2}}>
+                                  {plan.patient?.name} · {plan.service?.name||""}
+                                </div>
+                              </div>
+                              <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+                                <span style={{...sc,padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,border:`1px solid ${sc.c}33`}}>{plan.status}</span>
+                                {bal>0&&<span style={{fontSize:11,color:"#ef4444",fontWeight:600}}>₹{bal.toLocaleString()} due</span>}
+                              </div>
+                            </div>
+                            <div style={{height:5,background:"#e2e8f0",borderRadius:100,overflow:"hidden",marginBottom:6}}>
+                              <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${accent},#10b981)`,borderRadius:100}}/>
+                            </div>
+                            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#94a3b8"}}>
+                              <span>{plan.completedSessions}/{plan.totalSessions} sessions ({pct}%)</span>
+                              <span>₹{(plan.paidAmount||0).toLocaleString()} paid of ₹{(plan.totalCost||0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
+
+          {tab === "attendance" && (
+            <div className="doc-card">
+              <div className="doc-card-head" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div className="doc-card-title">My Attendance</div>
+                  <div className="doc-card-sub">Monthly login &amp; punctuality records</div>
+                </div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  <input
+                    type="month"
+                    value={attendanceMonth}
+                    onChange={e=>setAttendanceMonth(e.target.value)}
+                    style={{padding:"6px 10px",borderRadius:8,border:"1px solid #d1fae5",fontSize:12,color:"#334155",outline:"none",background:"#f0fdf4",fontFamily:"inherit"}}
+                  />
+                  <button onClick={()=>fetchAttendance(attendanceMonth)}
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                    <RefreshCw size={11}/>Refresh
+                  </button>
+                </div>
+              </div>
+
+              {(() => {
+                const statusCfg: Record<string,{bg:string;c:string;label:string}> = {
+                  PRESENT:  {bg:"#f0fdf4",c:"#16a34a",label:"Present"},
+                  LATE:     {bg:"#fefce8",c:"#ca8a04",label:"Late"},
+                  HALF_DAY: {bg:"#fff7ed",c:"#ea580c",label:"Half Day"},
+                  ABSENT:   {bg:"#fff5f5",c:"#dc2626",label:"Absent"},
+                };
+                const presentCount = attendance.filter(a=>a.status==="PRESENT").length;
+                const lateCount    = attendance.filter(a=>a.status==="LATE").length;
+                const halfCount    = attendance.filter(a=>a.status==="HALF_DAY").length;
+                return (
+                  <>
+                    {/* Summary chips */}
+                    <div style={{display:"flex",gap:10,padding:"14px 18px",borderBottom:"1px solid #f0fdf4"}}>
+                      {[{label:"Present",val:presentCount,bg:"#f0fdf4",c:"#16a34a"},{label:"Late",val:lateCount,bg:"#fefce8",c:"#ca8a04"},{label:"Half Day",val:halfCount,bg:"#fff7ed",c:"#ea580c"},{label:"Total",val:attendance.length,bg:"#f8fafc",c:"#475569"}].map((s,i)=>(
+                        <div key={i} style={{flex:1,background:s.bg,borderRadius:10,padding:"10px 14px",textAlign:"center",border:`1px solid ${s.c}22`}}>
+                          <div style={{fontSize:10,fontWeight:600,color:s.c,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>{s.label}</div>
+                          <div style={{fontSize:22,fontWeight:800,color:s.c}}>{s.val}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {attendanceLoading ? (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
+                        <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading attendance...
+                      </div>
+                    ) : attendance.length === 0 ? (
+                      <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
+                        <ClipboardCheck size={32} style={{marginBottom:10,opacity:.3,display:"block",margin:"0 auto 10px"}}/>
+                        <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No attendance records for this month</div>
+                        <div style={{fontSize:12,marginTop:4}}>Records appear automatically on login</div>
+                      </div>
+                    ) : (
+                      <div style={{overflowX:"auto"}}>
+                        <table style={{width:"100%",borderCollapse:"collapse"}}>
+                          <thead>
+                            <tr style={{background:"#f8fafc",borderBottom:"2px solid #e2e8f0"}}>
+                              {["Date","Day","Status","Login Time","Notes"].map(h=>(
+                                <th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",whiteSpace:"nowrap"}}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {attendance.map((rec:any)=>{
+                              const sc = statusCfg[rec.status] || statusCfg.PRESENT;
+                              const d = new Date(rec.date);
+                              const dayName = d.toLocaleDateString("en-IN",{weekday:"short"});
+                              const dateStr = d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+                              const loginTime = rec.loginTime ? new Date(rec.loginTime).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}) : "—";
+                              return (
+                                <tr key={rec.id} style={{borderBottom:"1px solid #f1f5f9"}}>
+                                  <td style={{padding:"12px 14px",fontSize:13,fontWeight:600,color:"#1e293b"}}>{dateStr}</td>
+                                  <td style={{padding:"12px 14px",fontSize:12,color:"#64748b"}}>{dayName}</td>
+                                  <td style={{padding:"12px 14px"}}>
+                                    <span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:sc.bg,color:sc.c,border:`1px solid ${sc.c}33`}}>{sc.label}</span>
+                                  </td>
+                                  <td style={{padding:"12px 14px",fontSize:12,color:"#64748b"}}>{loginTime}</td>
+                                  <td style={{padding:"12px 14px",fontSize:11,color:"#94a3b8"}}>{rec.notes||"—"}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {tab === "schedule-mgmt" && <ScheduleMgmtTab
+            accent={accent}
+            localSchedule={localSchedule}
+            setLocalSchedule={setLocalSchedule}
+            scheduleLoading={scheduleLoading}
+            scheduleSaving={scheduleSaving}
+            setScheduleSaving={setScheduleSaving}
+            scheduleMsg={scheduleMsg}
+            setScheduleMsg={setScheduleMsg}
+            fetchWeeklySchedule={fetchWeeklySchedule}
+          />}
         </div>
 
         {/* Right Sidebar */}
@@ -578,5 +1023,18 @@ export default function DoctorDashboard() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function DoctorDashboard() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#64748b", fontSize: 14, gap: 14 }}>
+        <Loader2 size={24} style={{ animation: "spin .7s linear infinite" }} />
+        Loading dashboard...
+      </div>
+    }>
+      <DoctorDashboardContent />
+    </Suspense>
   );
 }

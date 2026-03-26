@@ -5,7 +5,7 @@ export const createSubDepartmentSchema = z.object({
   code: z.string().optional(),
   type: z.enum([
     "PHARMACY", "PATHOLOGY", "RADIOLOGY", "PROCEDURE", "LABORATORY",
-    "DENTAL", "DERMATOLOGY", "HAIR", "ONCOLOGY", "CARDIOLOGY", "BILLING", "OTHER",
+    "DENTAL", "DERMATOLOGY", "HAIR", "ONCOLOGY", "CARDIOLOGY", "BILLING", "RECEPTION", "OTHER",
   ]),
   description: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
@@ -17,6 +17,8 @@ export const createSubDepartmentSchema = z.object({
   hodPhone: z.string().optional().nullable(),
   loginEmail: z.string().email().optional().nullable(),
   isActive: z.boolean().optional(),
+  accessFeatures: z.string().optional().nullable(),
+  customName: z.string().optional().nullable(),
 });
 
 export const updateSubDepartmentSchema = createSubDepartmentSchema.partial();

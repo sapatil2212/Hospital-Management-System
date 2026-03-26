@@ -9,6 +9,7 @@ import {
   CalendarDays, Filter, Download, Users, CheckCircle2, Clock,
   Settings
 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -388,8 +389,9 @@ function NewBillModal({ onClose, onDone }: { onClose: () => void; onDone: () => 
 // ── MAIN FINANCE DASHBOARD ───────────────────────────────────────────────────
 export default function FinanceDashboard() {
   const router = useRouter();
-  const [user,    setUser]    = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user,        setUser]        = useState<any>(null);
+  const [profile,     setProfile]     = useState<any>(null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab]         = useState<DashTab>("overview");
 
@@ -402,6 +404,8 @@ export default function FinanceDashboard() {
   const [billsLoading, setBillsLoading] = useState(false);
   const [billSearch, setBillSearch] = useState("");
   const [billStatus, setBillStatus] = useState("");
+  const [billDateFrom, setBillDateFrom] = useState("");
+  const [billDateTo,   setBillDateTo]   = useState("");
   const [viewBillId, setViewBillId] = useState<string | null>(null);
   const [payBill,    setPayBill]    = useState<any>(null);
   const [showNewBill, setShowNewBill] = useState(false);
@@ -428,13 +432,15 @@ export default function FinanceDashboard() {
 
   const loadBills = useCallback(async () => {
     setBillsLoading(true);
-    const qs = new URLSearchParams({ limit: "20" });
-    if (billSearch) qs.set("search", billSearch);
-    if (billStatus) qs.set("status", billStatus);
+    const qs = new URLSearchParams({ limit: "50" });
+    if (billSearch)   qs.set("search",   billSearch);
+    if (billStatus)   qs.set("status",   billStatus);
+    if (billDateFrom) qs.set("dateFrom", billDateFrom);
+    if (billDateTo)   qs.set("dateTo",   billDateTo);
     const d = await api(`/api/billing?${qs}`);
     if (d.success) { setBills(d.data.bills || []); setBillsMeta(d.data); }
     setBillsLoading(false);
-  }, [billSearch, billStatus]);
+  }, [billSearch, billStatus, billDateFrom, billDateTo]);
 
   const loadExpenses = useCallback(async () => {
     setExpLoading(true);
@@ -464,6 +470,7 @@ export default function FinanceDashboard() {
       if (!me.success) { router.push("/login"); return; }
       if (me.data?.role !== "FINANCE_HEAD" && me.data?.role !== "HOSPITAL_ADMIN") { router.push("/login"); return; }
       setUser(me.data);
+      if (me.data.profilePhoto) setProfilePhoto(me.data.profilePhoto);
       const prof = await api("/api/finance/me");
       if (prof.success) setProfile(prof.data);
       await loadStats();
@@ -602,7 +609,9 @@ export default function FinanceDashboard() {
           </nav>
           <div className="fin-foot">
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", marginBottom: 10 }}>
-              <div className="fin-av">{initials(user?.name || "FH")}</div>
+              <div className="fin-av" style={profilePhoto ? { padding: 0, overflow: "hidden" } : {}}>
+                {profilePhoto ? <img src={profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials(user?.name || "FH")}
+              </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name || "Finance Head"}</div>
                 <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600 }}>Finance Head</div>
@@ -629,13 +638,14 @@ export default function FinanceDashboard() {
               <button onClick={() => { loadStats(); if (tab === "bills") loadBills(); if (tab === "expenses") loadExpenses(); }} style={{ width: 36, height: 36, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <RefreshCw size={15} color="#f59e0b" />
               </button>
+              <NotificationBell accentColor="#f59e0b" bgColor="#fffbeb" borderColor="#fde68a" />
               <button onClick={() => setShowNewBill(true)} className="fin-primary"><Plus size={14} />New Bill</button>
               <div 
                 className="fin-av" 
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                style={{ cursor: "pointer", position: "relative" }}
+                style={{ cursor: "pointer", position: "relative", ...(profilePhoto ? { padding: 0, overflow: "hidden" } : {}) }}
               >
-                {initials(user?.name || "FH")}
+                {profilePhoto ? <img src={profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 9 }} /> : initials(user?.name || "FH")}
                 
                 {/* Profile Dropdown */}
                 {profileDropdownOpen && (
@@ -865,6 +875,11 @@ export default function FinanceDashboard() {
                   <Search size={14} color="#94a3b8" />
                   <input value={billSearch} onChange={e => setBillSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && loadBills()} placeholder="Search bill no, patient…" style={{ border: "none", outline: "none", fontSize: 13, color: "#334155", background: "none", width: "100%" }} />
                 </div>
+                <input type="date" value={billDateFrom} onChange={e => setBillDateFrom(e.target.value)}
+                  title="From date" style={{ padding: "9px 12px", borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13, color: "#334155", outline: "none", background: "#fff" }} />
+                <span style={{ color: "#94a3b8", fontSize: 12 }}>–</span>
+                <input type="date" value={billDateTo} onChange={e => setBillDateTo(e.target.value)}
+                  title="To date" style={{ padding: "9px 12px", borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13, color: "#334155", outline: "none", background: "#fff" }} />
                 <select value={billStatus} onChange={e => { setBillStatus(e.target.value); }} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13, background: "#fff", color: "#334155", outline: "none" }}>
                   <option value="">All Status</option>
                   <option value="PENDING">Pending</option>
@@ -875,6 +890,16 @@ export default function FinanceDashboard() {
                 <button onClick={loadBills} style={{ padding: "9px 16px", borderRadius: 10, border: "1px solid #fde68a", background: "#fffbeb", color: "#b45309", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                   <Filter size={13} />Filter
                 </button>
+                {(billDateFrom || billDateTo || billStatus || billSearch) && (
+                  <button onClick={() => { setBillDateFrom(""); setBillDateTo(""); setBillStatus(""); setBillSearch(""); }} style={{ padding: "9px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                    <X size={12} />Clear
+                  </button>
+                )}
+                <a
+                  href={`/api/export/billing${(() => { const p = new URLSearchParams(); if (billStatus) p.set("status",billStatus); if (billSearch) p.set("search",billSearch); if (billDateFrom) p.set("dateFrom",billDateFrom); if (billDateTo) p.set("dateTo",billDateTo); const s = p.toString(); return s ? `?${s}` : ""; })()}`}
+                  download title="Export bills as CSV"
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+                ><Download size={13} />Export CSV</a>
                 <button onClick={() => setShowNewBill(true)} className="fin-primary"><Plus size={14} />New Bill</button>
               </div>
 
@@ -1018,6 +1043,9 @@ export default function FinanceDashboard() {
                   <span className="fin-card-title"><TrendingDown size={14} color="#6366f1" />Expenses</span>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#6366f1" }}>Month: ₹{fmt(expMeta.stats?.monthTotal)}</span>
+                    <a href="/api/export/expenses" download title="Export expenses as CSV"
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 9, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 12, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+                    ><Download size={12} />Export</a>
                     <button onClick={() => { setShowExpForm(true); setEditExp(null); }} className="fin-primary" style={{ padding: "6px 14px", fontSize: 12 }}><Plus size={13} />Add</button>
                   </div>
                 </div>
@@ -1100,6 +1128,9 @@ export default function FinanceDashboard() {
               <div className="fin-card" style={{ marginBottom: 0 }}>
                 <div className="fin-card-hd">
                   <span className="fin-card-title"><Activity size={14} color="#f59e0b" />Revenue Log</span>
+                  <a href="/api/export/revenue" download title="Export revenue as CSV"
+                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 9, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 12, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+                  ><Download size={12} />Export</a>
                 </div>
                 <table className="fin-tbl">
                   <thead><tr><th>Date</th><th>Source</th><th>Description</th><th>Amount</th></tr></thead>

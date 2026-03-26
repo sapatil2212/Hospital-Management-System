@@ -15,33 +15,41 @@ interface Department {
   name: string;
   code: string;
   description?: string | null;
-  type: "OPD" | "IPD" | "DIAGNOSTIC" | "SUPPORT";
+  type: "OPD" | "IPD" | "DIAGNOSTIC" | "SUPPORT" | "CUSTOM";
   isActive: boolean;
   consultationFee?: number | null;
   allowAppointments: boolean;
   isIPD: boolean;
   hodDoctorId?: string | null;
+  hodUserId?: string | null;
+  customTypeName?: string | null;
   hodDoctor?: { id: string; name: string; specialization?: string } | null;
+  hodUser?: { id: string; name: string; role?: string } | null;
   location?: string | null;
   billingCode?: string | null;
   _count?: { doctors: number; staff: number; subDepartments: number };
 }
 
-interface Doctor {
+interface UserItem {
   id: string;
   name: string;
-  specialization?: string;
+  email: string;
+  role: string;
 }
 
 interface FormData {
   name: string;
   code: string;
   description: string;
-  type: "OPD" | "IPD" | "DIAGNOSTIC" | "SUPPORT";
+  type: "OPD" | "IPD" | "DIAGNOSTIC" | "SUPPORT" | "CUSTOM";
+  customTypeName: string;
   consultationFee: string;
   allowAppointments: boolean;
   isIPD: boolean;
-  hodDoctorId: string;
+  showIPDOptions: boolean;
+  showAppointmentOptions: boolean;
+  showFinancialOptions: boolean;
+  hodUserId: string;
   location: string;
   billingCode: string;
   isActive: boolean;
@@ -76,10 +84,11 @@ const api = async (url: string, method = "GET", body?: any) => {
 };
 
 const DEPT_TYPES = [
-  { value: "OPD", label: "OPD", desc: "Outpatient Department" },
+  { value: "OPD", label: "OPD", desc: "Outpatient / Consulting" },
   { value: "IPD", label: "IPD", desc: "Inpatient Department" },
   { value: "DIAGNOSTIC", label: "Diagnostic", desc: "Diagnostic Services" },
   { value: "SUPPORT", label: "Support", desc: "Support Services" },
+  { value: "CUSTOM", label: "Custom", desc: "Define your own type" },
 ];
 
 const TYPE_COLORS: Record<string, string> = {
@@ -87,6 +96,7 @@ const TYPE_COLORS: Record<string, string> = {
   IPD: "purple",
   DIAGNOSTIC: "orange",
   SUPPORT: "gray",
+  CUSTOM: "teal",
 };
 
 const emptyForm: FormData = {
@@ -94,10 +104,14 @@ const emptyForm: FormData = {
   code: "",
   description: "",
   type: "OPD",
+  customTypeName: "",
   consultationFee: "",
   allowAppointments: true,
   isIPD: false,
-  hodDoctorId: "",
+  showIPDOptions: false,
+  showAppointmentOptions: false,
+  showFinancialOptions: false,
+  hodUserId: "",
   location: "",
   billingCode: "",
   isActive: true,
@@ -246,8 +260,8 @@ export default function DepartmentPanel() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Doctors for HOD dropdown
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  // Users for HOD dropdown
+  const [users, setUsers] = useState<UserItem[]>([]);
 
   // Delete confirmation
   const [deleteItem, setDeleteItem] = useState<Department | null>(null);
@@ -282,17 +296,17 @@ export default function DepartmentPanel() {
     setLoading(false);
   }, [search, filterType, filterStatus, pagination.page, pagination.limit]);
 
-  // Load doctors for dropdown
-  const loadDoctors = async () => {
-    const res = await api("/api/config/doctors?simple=true");
+  // Load all users for HOD dropdown
+  const loadUsers = async () => {
+    const res = await api("/api/user/list");
     if (res.success && res.data) {
-      setDoctors(Array.isArray(res.data) ? res.data : res.data.data || []);
+      setUsers(Array.isArray(res.data) ? res.data : []);
     }
   };
 
   useEffect(() => {
     load();
-    loadDoctors();
+    loadUsers();
   }, [load]);
 
   // Auto-generate code from name
@@ -320,10 +334,14 @@ export default function DepartmentPanel() {
       code: item.code,
       description: item.description || "",
       type: item.type,
+      customTypeName: item.customTypeName || "",
       consultationFee: item.consultationFee?.toString() || "",
       allowAppointments: item.allowAppointments,
       isIPD: item.isIPD,
-      hodDoctorId: item.hodDoctorId || "",
+      showIPDOptions: item.isIPD,
+      showAppointmentOptions: item.allowAppointments,
+      showFinancialOptions: !!(item.consultationFee || item.billingCode),
+      hodUserId: item.hodUserId || "",
       location: item.location || "",
       billingCode: item.billingCode || "",
       isActive: item.isActive,
@@ -338,7 +356,10 @@ export default function DepartmentPanel() {
     if (!form.name || form.name.length < 2) errs.name = "Name must be at least 2 characters";
     if (!form.code || form.code.length < 1) errs.code = "Code is required";
     if (form.code.length > 10) errs.code = "Code must be 10 characters or less";
-    if (form.consultationFee && isNaN(parseFloat(form.consultationFee))) {
+    if (form.type === "CUSTOM" && !form.customTypeName?.trim()) {
+      errs.customTypeName = "Please enter a name for the custom type";
+    }
+    if (form.showFinancialOptions && form.consultationFee && isNaN(parseFloat(form.consultationFee))) {
       errs.consultationFee = "Must be a valid number";
     }
     setErrors(errs);
@@ -356,14 +377,26 @@ export default function DepartmentPanel() {
       code: form.code.toUpperCase(),
       description: form.description || null,
       type: form.type,
-      consultationFee: form.consultationFee ? parseFloat(form.consultationFee) : null,
-      allowAppointments: form.allowAppointments,
-      isIPD: form.isIPD,
-      hodDoctorId: form.hodDoctorId || null,
+      customTypeName: form.type === "CUSTOM" ? (form.customTypeName || null) : null,
+      consultationFee: form.showFinancialOptions && form.consultationFee ? parseFloat(form.consultationFee) : null,
+      allowAppointments: form.showAppointmentOptions ? form.allowAppointments : false,
+      isIPD: form.showIPDOptions ? form.isIPD : false,
+      hodUserId: form.hodUserId || null,
+      hodDoctorId: null,
       location: form.location || null,
-      billingCode: form.billingCode || null,
+      billingCode: form.showFinancialOptions ? (form.billingCode || null) : null,
       isActive: form.isActive,
     };
+    if (!form.showFinancialOptions) {
+      delete payload.consultationFee;
+      delete payload.billingCode;
+    }
+    if (!form.showAppointmentOptions) {
+      delete payload.allowAppointments;
+    }
+    if (!form.showIPDOptions) {
+      delete payload.isIPD;
+    }
 
     let res;
     if (editItem) {
@@ -452,6 +485,7 @@ export default function DepartmentPanel() {
         .dept-badge.purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe}
         .dept-badge.orange{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa}
         .dept-badge.gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
+        .dept-badge.teal{background:#f0fdfa;color:#0d9488;border:1px solid #99f6e4}
         .dept-icon-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
         .dept-edit{background:#E6F4F4;color:#0E898F}.dept-edit:hover{background:#B3E0E0}
         .dept-del{background:#fff5f5;color:#ef4444}.dept-del:hover{background:#fee2e2}
@@ -642,7 +676,9 @@ export default function DepartmentPanel() {
                     <span className="dept-dept-code">{row.code}</span>
                   </td>
                   <td>
-                    <span className={`dept-badge ${TYPE_COLORS[row.type]}`}>{row.type}</span>
+                    <span className={`dept-badge ${TYPE_COLORS[row.type] || "gray"}`}>
+                      {row.type === "CUSTOM" && row.customTypeName ? row.customTypeName : row.type}
+                    </span>
                   </td>
                   <td>
                     <div className="dept-actions">
@@ -775,73 +811,132 @@ export default function DepartmentPanel() {
                   <select
                     className="dept-select"
                     value={form.type}
-                    onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as any }))}
+                    onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as any, customTypeName: "" }))}
                   >
                     {DEPT_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
-                        {t.label} - {t.desc}
+                        {t.label} — {t.desc}
                       </option>
                     ))}
                   </select>
                 </div>
+                {form.type === "CUSTOM" && (
+                  <div className="dept-field full">
+                    <label className="dept-lbl">Custom Type Name *</label>
+                    <input
+                      className={`dept-input ${errors.customTypeName ? "error" : ""}`}
+                      placeholder="e.g., HR, Administrative, Legal..."
+                      value={form.customTypeName}
+                      onChange={(e) => setForm((f) => ({ ...f, customTypeName: e.target.value }))}
+                      maxLength={100}
+                    />
+                    {errors.customTypeName && <span className="dept-error">{errors.customTypeName}</span>}
+                    <span style={{fontSize:11,color:"#94a3b8",marginTop:3}}>This label will be displayed as the department type.</span>
+                  </div>
+                )}
+
+                {/* Appointment Booking Toggle - Available for all types */}
                 <div className="dept-field full">
                   <div className="dept-toggle-row">
                     <div>
-                      <div className="dept-toggle-label">Allow Appointments</div>
-                      <div className="dept-toggle-desc">Enable patients to book appointments for this department</div>
+                      <div className="dept-toggle-label">Enable Appointment Booking <span style={{fontWeight:400,color:"#94a3b8",fontSize:11}}>(Optional)</span></div>
+                      <div className="dept-toggle-desc">Allow patients to book appointments for this department</div>
                     </div>
                     <Toggle
-                      checked={form.allowAppointments}
-                      onChange={(v) => setForm((f) => ({ ...f, allowAppointments: v }))}
+                      checked={form.showAppointmentOptions}
+                      onChange={(v) => setForm((f) => ({ ...f, showAppointmentOptions: v, allowAppointments: v ? f.allowAppointments : false }))}
                     />
                   </div>
                 </div>
+                {form.showAppointmentOptions && (
+                  <div className="dept-field full" style={{paddingLeft:12,borderLeft:"3px solid #e2e8f0"}}>
+                    <div className="dept-toggle-row" style={{background:"#eff6ff",borderColor:"#bfdbfe"}}>
+                      <div>
+                        <div className="dept-toggle-label" style={{color:"#1d4ed8"}}>Appointments Active</div>
+                        <div className="dept-toggle-desc">Patients can currently book appointments</div>
+                      </div>
+                      <Toggle checked={form.allowAppointments} onChange={(v) => setForm((f) => ({ ...f, allowAppointments: v }))} />
+                    </div>
+                  </div>
+                )}
+
+                {/* IPD Toggle - Available for all types */}
                 <div className="dept-field full">
                   <div className="dept-toggle-row">
                     <div>
-                      <div className="dept-toggle-label">IPD Department</div>
-                      <div className="dept-toggle-desc">This department handles inpatient admissions</div>
+                      <div className="dept-toggle-label">Enable IPD (Inpatient) <span style={{fontWeight:400,color:"#94a3b8",fontSize:11}}>(Optional)</span></div>
+                      <div className="dept-toggle-desc">Does this department handle inpatient admissions?</div>
                     </div>
-                    <Toggle checked={form.isIPD} onChange={(v) => setForm((f) => ({ ...f, isIPD: v }))} />
+                    <Toggle
+                      checked={form.showIPDOptions}
+                      onChange={(v) => setForm((f) => ({ ...f, showIPDOptions: v, isIPD: v ? f.isIPD : false }))}
+                    />
+                  </div>
+                </div>
+                {form.showIPDOptions && (
+                  <div className="dept-field full" style={{paddingLeft:12,borderLeft:"3px solid #e2e8f0"}}>
+                    <div className="dept-toggle-row" style={{background:"#f0fdf4",borderColor:"#bbf7d0"}}>
+                      <div>
+                        <div className="dept-toggle-label" style={{color:"#16a34a"}}>Mark as IPD</div>
+                        <div className="dept-toggle-desc">Enable IPD workflows and inpatient admission tracking</div>
+                      </div>
+                      <Toggle checked={form.isIPD} onChange={(v) => setForm((f) => ({ ...f, isIPD: v }))} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Financial Settings Toggle - Available for all types */}
+                <div className="dept-field full">
+                  <div className="dept-toggle-row">
+                    <div>
+                      <div className="dept-toggle-label">Enable Financial Settings <span style={{fontWeight:400,color:"#94a3b8",fontSize:11}}>(Optional)</span></div>
+                      <div className="dept-toggle-desc">Add consultation fees and billing codes</div>
+                    </div>
+                    <Toggle
+                      checked={form.showFinancialOptions}
+                      onChange={(v) => setForm((f) => ({ ...f, showFinancialOptions: v }))}
+                    />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Financial */}
-            <div className="dept-section">
-              <div className="dept-section-title">
-                <span className="dept-section-icon green">
-                  <DollarSign size={16} />
-                </span>
-                Financial Settings
-              </div>
-              <div className="dept-form-grid">
-                <div className="dept-field">
-                  <label className="dept-lbl">Default Consultation Fee (₹)</label>
-                  <input
-                    className={`dept-input ${errors.consultationFee ? "error" : ""}`}
-                    type="number"
-                    placeholder="e.g., 500"
-                    value={form.consultationFee}
-                    onChange={(e) => setForm((f) => ({ ...f, consultationFee: e.target.value }))}
-                    min="0"
-                    step="0.01"
-                  />
-                  {errors.consultationFee && <span className="dept-error">{errors.consultationFee}</span>}
+            {/* Section 3: Financial Settings - Shown when toggle is enabled */}
+            {form.showFinancialOptions && (
+              <div className="dept-section">
+                <div className="dept-section-title">
+                  <span className="dept-section-icon green">
+                    <DollarSign size={16} />
+                  </span>
+                  Financial Settings
                 </div>
-                <div className="dept-field">
-                  <label className="dept-lbl">Billing Code</label>
-                  <input
-                    className="dept-input"
-                    placeholder="e.g., DEPT-001"
-                    value={form.billingCode}
-                    onChange={(e) => setForm((f) => ({ ...f, billingCode: e.target.value }))}
-                    maxLength={20}
-                  />
+                <div className="dept-form-grid">
+                  <div className="dept-field">
+                    <label className="dept-lbl">Default Consultation Fee (₹)</label>
+                    <input
+                      className={`dept-input ${errors.consultationFee ? "error" : ""}`}
+                      type="number"
+                      placeholder="e.g., 500"
+                      value={form.consultationFee}
+                      onChange={(e) => setForm((f) => ({ ...f, consultationFee: e.target.value }))}
+                      min="0"
+                      step="0.01"
+                    />
+                    {errors.consultationFee && <span className="dept-error">{errors.consultationFee}</span>}
+                  </div>
+                  <div className="dept-field">
+                    <label className="dept-lbl">Billing Code</label>
+                    <input
+                      className="dept-input"
+                      placeholder="e.g., DEPT-001"
+                      value={form.billingCode}
+                      onChange={(e) => setForm((f) => ({ ...f, billingCode: e.target.value }))}
+                      maxLength={20}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Section 4: Management */}
             <div className="dept-section">
@@ -856,16 +951,19 @@ export default function DepartmentPanel() {
                   <label className="dept-lbl">Head of Department (HOD)</label>
                   <select
                     className="dept-select"
-                    value={form.hodDoctorId}
-                    onChange={(e) => setForm((f) => ({ ...f, hodDoctorId: e.target.value }))}
+                    value={form.hodUserId}
+                    onChange={(e) => setForm((f) => ({ ...f, hodUserId: e.target.value }))}
                   >
-                    <option value="">Select Doctor...</option>
-                    {doctors.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} {d.specialization ? `(${d.specialization})` : ""}
+                    <option value="">— Select User —</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.role}){u.email ? ` · ${u.email}` : ""}
                       </option>
                     ))}
                   </select>
+                  {users.length === 0 && (
+                    <span style={{fontSize:11,color:"#94a3b8",marginTop:3}}>No users found. Users are created when credentials are sent to doctors or staff.</span>
+                  )}
                 </div>
               </div>
             </div>

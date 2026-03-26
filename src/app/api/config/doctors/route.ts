@@ -13,7 +13,7 @@ import {
   queryDoctorSchema,
 } from "../../../../../backend/validations/doctor.validation";
 
-const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/config/doctors - List doctors with pagination and filters

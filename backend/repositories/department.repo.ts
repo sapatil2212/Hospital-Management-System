@@ -32,6 +32,7 @@ export const createDepartment = async (data: Prisma.DepartmentUncheckedCreateInp
     data,
     include: {
       hodDoctor: { select: { id: true, name: true, specialization: true } },
+      hodUser: { select: { id: true, name: true, role: true } },
       _count: { select: { doctors: true, staff: true, subDepartments: true } },
     },
   });
@@ -76,6 +77,7 @@ export const findAllDepartments = async (
       where,
       include: {
         hodDoctor: { select: { id: true, name: true, specialization: true } },
+        hodUser: { select: { id: true, name: true, role: true } },
         _count: { select: { doctors: true, staff: true, subDepartments: true } },
       },
       orderBy: { [sortBy]: sortOrder },
@@ -119,6 +121,7 @@ export const findDepartmentById = async (id: string, hospitalId: string) => {
     where: { id, hospitalId },
     include: {
       hodDoctor: { select: { id: true, name: true, email: true, specialization: true } },
+      hodUser: { select: { id: true, name: true, role: true } },
       doctors: { select: { id: true, name: true, specialization: true, isAvailable: true } },
       staff: { select: { id: true, name: true, role: true, isActive: true } },
       subDepartments: { select: { id: true, name: true, type: true, isActive: true } },
@@ -147,17 +150,17 @@ export const checkDuplicateCode = async (
 export const updateDepartment = async (
   id: string,
   hospitalId: string,
-  data: Prisma.DepartmentUpdateInput
+  data: Prisma.DepartmentUncheckedUpdateInput
 ) => {
   return prisma.department.update({
     where: { id },
     data: {
       ...data,
-      // Ensure the hospital owns this department
-      hospital: { connect: { id: hospitalId } },
+      hospitalId,
     },
     include: {
       hodDoctor: { select: { id: true, name: true, specialization: true } },
+      hodUser: { select: { id: true, name: true, role: true } },
       _count: { select: { doctors: true, staff: true, subDepartments: true } },
     },
   });

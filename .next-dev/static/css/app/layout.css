@@ -181,7 +181,7 @@ input, textarea {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  background: var(--primary-50);
+  background: rgba(14, 137, 143, 0.06);
   color: var(--primary);
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -424,6 +424,11 @@ input, textarea {
     padding: var(--space-12) 0;
   }
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin-anim { animation: spin .7s linear infinite; }
 
 /*!**************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/AppointmentModal.module.css ***!

@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { ViewRecordModal, EditRecordModal, TransferPatientModal, ViewPrescriptionModal } from "./modals";
+import NotificationBell from "@/components/NotificationBell";
+
 import {
   LogOut, Loader2, Bell, User, Phone, Mail, Activity, LayoutDashboard,
   Layers, ArrowRight, CheckCircle, Clock, Stethoscope, Settings,
@@ -10,8 +13,12 @@ import {
   TestTube2, HelpCircle, PlayCircle, CheckCircle2, AlertCircle,
   CalendarDays, FileText, TrendingUp, FlaskConical,
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
-  Save, Ban, ChevronDown, MessageSquare, UserCheck, Eye
+  Save, Ban, ChevronDown, MessageSquare, UserCheck, Eye, Download,
+  ShieldCheck, BarChart2, Package
 } from "lucide-react";
+
+const BillingModuleLazy = dynamic(() => import("@/components/BillingModule"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Module...</span></div> });
+const AppointmentPanelLazy = dynamic(() => import("@/components/AppointmentPanel"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Appointments...</span></div> });
 
 // ─── Department metadata ──────────────────────────────────────────────────────
 type DeptMeta = { Icon: any; gradient: string; accent: string; lightBg: string; borderColor: string };
@@ -27,6 +34,7 @@ const SUB_DEPT_META: Record<string, DeptMeta> = {
   RADIOLOGY:   { Icon: Scan,        gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
   LABORATORY:  { Icon: TestTube2,   gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
   PROCEDURE:   { Icon: Stethoscope, gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
+  RECEPTION:   { Icon: Users,       gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
   OTHER:       { Icon: Layers,      gradient: "linear-gradient(135deg,#64748b,#334155)", accent: "#334155", lightBg: "#f8fafc", borderColor: "#e2e8f0" },
 };
 
@@ -55,7 +63,7 @@ export default function SubDeptDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"dept">("overview");
+  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"finance"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept">("overview");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Queue
@@ -76,6 +84,10 @@ export default function SubDeptDashboard() {
   const [procSaving, setProcSaving]     = useState(false);
   const [procMsg, setProcMsg]           = useState("");
 
+  // Upcoming Sessions
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading]   = useState(false);
+
   // Records
   const [records, setRecords]           = useState<any[]>([]);
   const [recordsMeta, setRecordsMeta]   = useState<any>({});
@@ -94,6 +106,25 @@ export default function SubDeptDashboard() {
   const [transferForm, setTransferForm]     = useState({ subDeptId: "", notes: "" });
   const [transferring, setTransferring]     = useState(false);
 
+  // Reception-specific: Patients
+  const [ptList, setPtList] = useState<any[]>([]);
+  const [ptLoading, setPtLoading] = useState(false);
+  const [ptSearch, setPtSearch] = useState("");
+  const [ptStats, setPtStats] = useState<any>({});
+
+  // Reception-specific: Doctors
+  const [docList, setDocList] = useState<any[]>([]);
+  const [docLoading, setDocLoading] = useState(false);
+  const [docSearch, setDocSearch] = useState("");
+
+  // ── Load upcoming sessions ──
+  const loadSessions = useCallback(async (subDeptId: string) => {
+    setSessionsLoading(true);
+    const res = await fetch(`/api/treatment-plans?subDepartmentId=${subDeptId}&status=ACTIVE&limit=10`, { credentials: "include" }).then(r => r.json());
+    if (res.success) setUpcomingSessions(res.data?.plans || []);
+    setSessionsLoading(false);
+  }, []);
+
   // ── Load profile ──
   useEffect(() => {
     (async () => {
@@ -102,11 +133,11 @@ export default function SubDeptDashboard() {
         if (!me.success || me.data?.role !== "SUB_DEPT_HEAD") { router.push("/login"); return; }
         setUser(me.data);
         const prof = await fetch("/api/subdept/me", { credentials: "include" }).then(r => r.json());
-        if (prof.success) setProfile(prof.data);
+        if (prof.success) { setProfile(prof.data); if (prof.data?.id) loadSessions(prof.data.id); }
       } catch { router.push("/login"); }
       setLoading(false);
     })();
-  }, [router]);
+  }, [router, loadSessions]);
 
   // ── Load queue ──
   const loadQueue = useCallback(async () => {
@@ -146,6 +177,33 @@ export default function SubDeptDashboard() {
       .then(d => { if (d.success) setSubDepts(d.data?.data || d.data || []); })
       .catch(() => {});
   }, []);
+
+  // ── Reception: Load Patients ──
+  const loadPatients = useCallback(async (search = "") => {
+    setPtLoading(true);
+    let url = `/api/patients?limit=50`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    const res = await fetch(url, { credentials: "include" }).then(r => r.json());
+    if (res.success) {
+      setPtList(res.data?.patients || res.data?.data || res.data || []);
+      setPtStats(res.data?.stats || {});
+    }
+    setPtLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "patients") loadPatients(ptSearch); }, [tab, loadPatients]);
+
+  // ── Reception: Load Doctors ──
+  const loadDoctors = useCallback(async (search = "") => {
+    setDocLoading(true);
+    let url = `/api/config/doctors?limit=50`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    const res = await fetch(url, { credentials: "include" }).then(r => r.json());
+    if (res.success) setDocList(res.data?.doctors || res.data?.data || res.data || []);
+    setDocLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "doctors") loadDoctors(docSearch); }, [tab, loadDoctors]);
 
   // ── Procedure CRUD ──
   const openAddProc  = () => { setEditingProc(null); setProcForm(BLANK_PROC); setProcMsg(""); setShowProcForm(true); };
@@ -245,16 +303,43 @@ export default function SubDeptDashboard() {
   const activeProcs   = procs.length > 0 ? procs.filter((p: any) => p.isActive) : profileProcs.filter((p: any) => p.isActive);
   const displayProcs  = procs.length > 0 ? procs : profileProcs;
   const hodName       = profile?.hodName || user?.name || "HOD";
-  const deptName      = profile?.name    || "Sub-Department";
+  const deptName      = (profile?.type === "OTHER" && profile?.customName) ? profile.customName : (profile?.name || "Sub-Department");
   const today         = new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
-  const navItems = [
-    { id: "overview",    label: "Overview",       icon: <LayoutDashboard size={16}/> },
-    { id: "queue",       label: "Referrals Today", icon: <UserCheck size={16}/>, badge: queue.length || null },
-    { id: "procedures",  label: "Procedures",     icon: <ClipboardList size={16}/> },
-    { id: "records",     label: "Patient Records", icon: <IndianRupee size={16}/>, badge: recordsMeta.todayRecords || null },
-    { id: "dept",        label: "Department",     icon: <Building2 size={16}/> },
+  // Type-based predefined tabs
+  const deptType = profile?.type || "OTHER";
+  const TYPE_TABS: Record<string, string[]> = {
+    DENTAL:      ["overview","queue","procedures","records","dept"],
+    DERMATOLOGY: ["overview","queue","procedures","records","dept"],
+    HAIR:        ["overview","queue","procedures","records","dept"],
+    ONCOLOGY:    ["overview","queue","procedures","records","dept"],
+    CARDIOLOGY:  ["overview","queue","procedures","records","dept"],
+    RECEPTION:   ["overview","appointments","billing","patients","doctors","inventory","dept"],
+    PHARMACY:    ["overview","queue","procedures","records","dept"],
+    BILLING:     ["overview","queue","billing","records","dept"],
+    PATHOLOGY:   ["overview","queue","procedures","records","dept"],
+    RADIOLOGY:   ["overview","queue","procedures","records","dept"],
+    LABORATORY:  ["overview","queue","procedures","records","dept"],
+    PROCEDURE:   ["overview","queue","procedures","records","dept"],
+    OTHER:       ["overview","queue","procedures","records","dept"],
+  };
+  const enabledTabs = new Set(TYPE_TABS[deptType] || TYPE_TABS.OTHER);
+
+  const allNavItems: {id:string;label:string;icon:any;badge?:any}[] = [
+    { id: "overview",      label: "Overview",           icon: <LayoutDashboard size={16}/> },
+    { id: "queue",         label: "Referrals Today",    icon: <UserCheck size={16}/>,      badge: queue.length || null },
+    { id: "procedures",    label: "Procedures",         icon: <ClipboardList size={16}/> },
+    { id: "records",       label: "Patient Records",    icon: <IndianRupee size={16}/>,    badge: recordsMeta.todayRecords || null },
+    { id: "appointments",  label: "Appointments",       icon: <CalendarDays size={16}/> },
+    { id: "billing",       label: "Billing",            icon: <Receipt size={16}/> },
+    { id: "patients",      label: "Patient Management", icon: <Users size={16}/> },
+    { id: "doctors",       label: "Doctors",            icon: <Stethoscope size={16}/> },
+    { id: "inventory",     label: "Inventory",          icon: <Package size={16}/> },
+    { id: "reports",       label: "Reports",            icon: <BarChart2 size={16}/> },
+    { id: "finance",       label: "Finance",            icon: <TrendingUp size={16}/> },
+    { id: "dept",          label: "Department",         icon: <Building2 size={16}/> },
   ];
+  const navItems = allNavItems.filter(n => enabledTabs.has(n.id));
 
   const filteredQueue = queue.filter(q => {
     return !queueSearch ||
@@ -373,9 +458,11 @@ export default function SubDeptDashboard() {
           {/* Top Bar */}
           <header className="sd2-topbar">
             <div>
-              <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{
-                tab==="overview"?"Overview":tab==="queue"?"Patient Queue":tab==="procedures"?"Procedures":tab==="records"?"Patient Records":"Department Info"
-              }</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{{
+                overview:"Overview",queue:"Patient Queue",procedures:"Procedures",records:"Patient Records",
+                appointments:"Appointments",billing:"Billing",finance:"Finance",doctors:"Doctors",
+                patients:"Patient Management",inventory:"Inventory",reports:"Reports",dept:"Department Info"
+              }[tab] || "Overview"}</div>
               <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{today}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -390,10 +477,7 @@ export default function SubDeptDashboard() {
                   <RefreshCw size={14} color={queueLoading?"#94a3b8":meta.accent} style={queueLoading?{animation:"spin .7s linear infinite"}:{}}/>
                 </button>
               )}
-              <div style={{width:36,height:36,borderRadius:10,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative"}}>
-                <Bell size={15} color="#64748b"/>
-                <span style={{position:"absolute",top:8,right:8,width:6,height:6,borderRadius:"50%",background:meta.accent,border:"1.5px solid #fff"}}/>
-              </div>
+              <NotificationBell accentColor={meta.accent} bgColor={meta.lightBg} borderColor={meta.borderColor} />
               <div 
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,cursor:"pointer",position:"relative"}}
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
@@ -526,6 +610,10 @@ export default function SubDeptDashboard() {
                     onClick:()=>{setTab("records");loadRecords();} },
                   { label:"Total Records",     value:recordsMeta.totalRecords||0, Icon:Layers, color:"#6366f1", bg:"#eef2ff",
                     onClick:()=>{setTab("records");loadRecords();} },
+                  { label:"Today Revenue",     value:`₹${(recordsMeta.todayRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#10b981", bg:"#f0fdf4",
+                    onClick:()=>{setTab("records");loadRecords();} },
+                  { label:"Total Revenue",     value:`₹${(recordsMeta.totalRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#059669", bg:"#f0fdf4",
+                    onClick:()=>{setTab("records");loadRecords();} },
                 ].map((s,i)=>{
                   const SI = s.Icon;
                   return (
@@ -600,6 +688,49 @@ export default function SubDeptDashboard() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Upcoming Treatment Plans */}
+              <div className="sd2-card" style={{marginTop:18}}>
+                <div className="sd2-card-hd">
+                  <span className="sd2-card-title"><Activity size={15} color={meta.accent}/>Active Treatment Plans</span>
+                  <span style={{fontSize:11,color:"#94a3b8"}}>{upcomingSessions.length} active plan{upcomingSessions.length!==1?"s":""}</span>
+                </div>
+                {sessionsLoading ? (
+                  <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading sessions...
+                  </div>
+                ) : upcomingSessions.length===0 ? (
+                  <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No active treatment plans for this department</div>
+                ) : (
+                  <div style={{padding:"8px 0"}}>
+                    {upcomingSessions.map((plan:any) => {
+                      const pct = plan.totalSessions>0 ? (plan.completedSessions/plan.totalSessions)*100 : 0;
+                      return (
+                        <div key={plan.id} style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",borderBottom:"1px solid #f8fafc"}}>
+                          <div style={{width:36,height:36,borderRadius:10,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <Activity size={16} color={meta.accent}/>
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{plan.planName}</div>
+                            <div style={{fontSize:11,color:"#64748b"}}>{plan.patient?.name} · {plan.patient?.patientId}</div>
+                            <div style={{marginTop:5,height:4,background:"#f1f5f9",borderRadius:100,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${meta.accent},#10b981)`,borderRadius:100}}/>
+                            </div>
+                          </div>
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{plan.completedSessions}/{plan.totalSessions}</div>
+                            <div style={{fontSize:10,color:"#94a3b8"}}>sessions</div>
+                          </div>
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            <div style={{fontSize:12,fontWeight:700,color:"#10b981"}}>₹{(plan.paidAmount||0).toLocaleString()}</div>
+                            <div style={{fontSize:10,color:"#94a3b8"}}>of ₹{(plan.totalCost||0).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </>)}
 
@@ -983,6 +1114,12 @@ export default function SubDeptDashboard() {
                       <input placeholder="Search patient…" value={recordsSearch} onChange={e=>{setRecordsSearch(e.target.value);loadRecords(e.target.value);}}/>
                     </div>
                     {recordsLoading && <Loader2 size={13} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                    <a
+                      href={`/api/subdept/records/export${recordsSearch ? `?search=${encodeURIComponent(recordsSearch)}` : ""}`}
+                      download
+                      title="Export CSV"
+                      style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:9,background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",fontSize:12,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}
+                    ><Download size={12}/>Export</a>
                     <button onClick={()=>setShowRecordForm(true)} style={{padding:"6px 14px",borderRadius:9,background:meta.gradient,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",display:"flex",alignItems:"center",gap:5}}><Plus size={13}/>New Record</button>
                   </div>
                 </div>
@@ -1042,6 +1179,151 @@ export default function SubDeptDashboard() {
                 )}
               </div>
             </>)}
+
+            {/* ═══════════════════ APPOINTMENTS (Reception) ═══════════════════ */}
+            {tab==="appointments" && <AppointmentPanelLazy />}
+
+            {/* ═══════════════════ BILLING (Reception) ═══════════════════ */}
+            {tab==="billing" && (<div><BillingModuleLazy /></div>)}
+
+            {/* ═══════════════════ PATIENTS (Reception) ═══════════════════ */}
+            {tab==="patients" && (<>
+              <div className="sd2-card">
+                <div className="sd2-card-hd">
+                  <span className="sd2-card-title"><Users size={15} color={meta.accent}/>Patient Management</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div className="sd2-search" style={{width:220}}>
+                      <Search size={13} color="#94a3b8"/>
+                      <input placeholder="Search name, ID, phone…" value={ptSearch} onChange={e=>{setPtSearch(e.target.value);loadPatients(e.target.value);}}/>
+                    </div>
+                    <button onClick={()=>loadPatients(ptSearch)} style={{width:34,height:34,borderRadius:8,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                      <RefreshCw size={13} color={ptLoading?"#94a3b8":meta.accent} style={ptLoading?{animation:"spin .7s linear infinite"}:{}}/>
+                    </button>
+                  </div>
+                </div>
+                {/* Stats */}
+                <div style={{display:"flex",gap:12,padding:"12px 18px",borderBottom:"1px solid #f1f5f9",flexWrap:"wrap"}}>
+                  {[
+                    {label:"Total Patients",value:ptStats.total||ptList.length,color:meta.accent},
+                    {label:"Registered Today",value:ptStats.today||0,color:"#16a34a"},
+                  ].map(s=>(
+                    <div key={s.label} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:100,background:s.color+"10",border:`1px solid ${s.color}30`}}>
+                      <span style={{fontSize:16,fontWeight:800,color:s.color}}>{s.value}</span>
+                      <span style={{fontSize:11,fontWeight:600,color:s.color}}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+                {ptLoading ? (
+                  <div style={{padding:40,textAlign:"center"}}><Loader2 size={22} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/></div>
+                ) : ptList.length===0 ? (
+                  <div style={{padding:56,textAlign:"center",color:"#94a3b8",fontSize:13}}>No patients found</div>
+                ) : (
+                  <table className="sd2-tbl">
+                    <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Age</th><th>Blood</th><th>Registered</th></tr></thead>
+                    <tbody>
+                      {ptList.map((p:any)=>(
+                        <tr key={p.id}>
+                          <td style={{fontWeight:700,color:meta.accent,fontSize:12}}>{p.patientId||"—"}</td>
+                          <td>
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                              <div style={{width:32,height:32,borderRadius:9,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:11,color:meta.accent,flexShrink:0,border:`1px solid ${meta.borderColor}`}}>{(p.name||"?")[0].toUpperCase()}</div>
+                              <div>
+                                <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{p.name}</div>
+                                {p.email && <div style={{fontSize:11,color:"#94a3b8"}}>{p.email}</div>}
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{fontSize:13,color:"#475569"}}>{p.phone||"—"}</td>
+                          <td><span className="sd2-badge" style={{background:p.gender==="MALE"?"#eff6ff":"#fdf2f8",color:p.gender==="MALE"?"#3b82f6":"#ec4899",border:`1px solid ${p.gender==="MALE"?"#bfdbfe":"#fbcfe8"}`}}>{p.gender||"—"}</span></td>
+                          <td style={{fontSize:13,fontWeight:600,color:"#475569"}}>{p.dateOfBirth?calcAge(p.dateOfBirth):"—"}</td>
+                          <td style={{fontSize:12,fontWeight:600,color:"#ef4444"}}>{p.bloodGroup||"—"}</td>
+                          <td style={{fontSize:11,color:"#94a3b8"}}>{p.createdAt?new Date(p.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>)}
+
+            {/* ═══════════════════ DOCTORS (Reception) ═══════════════════ */}
+            {tab==="doctors" && (<>
+              <div className="sd2-card">
+                <div className="sd2-card-hd">
+                  <span className="sd2-card-title"><Stethoscope size={15} color={meta.accent}/>Doctors Management</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div className="sd2-search" style={{width:220}}>
+                      <Search size={13} color="#94a3b8"/>
+                      <input placeholder="Search doctor…" value={docSearch} onChange={e=>{setDocSearch(e.target.value);loadDoctors(e.target.value);}}/>
+                    </div>
+                    <button onClick={()=>loadDoctors(docSearch)} style={{width:34,height:34,borderRadius:8,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                      <RefreshCw size={13} color={docLoading?"#94a3b8":meta.accent} style={docLoading?{animation:"spin .7s linear infinite"}:{}}/>
+                    </button>
+                  </div>
+                </div>
+                {docLoading ? (
+                  <div style={{padding:40,textAlign:"center"}}><Loader2 size={22} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/></div>
+                ) : docList.length===0 ? (
+                  <div style={{padding:56,textAlign:"center",color:"#94a3b8",fontSize:13}}>No doctors found</div>
+                ) : (
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14,padding:18}}>
+                    {docList.map((d:any)=>(
+                      <div key={d.id} style={{background:"#fff",border:`1.5px solid ${meta.borderColor}`,borderRadius:14,padding:18,transition:"box-shadow .2s",cursor:"default"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+                          <div style={{width:48,height:48,borderRadius:13,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:"#fff",flexShrink:0}}>{(d.name||"D")[0].toUpperCase()}</div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:14,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.name}</div>
+                            <div style={{fontSize:12,color:"#64748b"}}>{d.specialization||d.qualification||"Doctor"}</div>
+                          </div>
+                          <span className="sd2-badge" style={{background:d.isActive!==false?"#f0fdf4":"#fef2f2",color:d.isActive!==false?"#16a34a":"#ef4444",border:`1px solid ${d.isActive!==false?"#bbf7d0":"#fecaca"}`}}>{d.isActive!==false?"Active":"Inactive"}</span>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {d.department?.name && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#475569"}}><Building2 size={12} color="#94a3b8"/>{d.department.name}</div>}
+                          {d.phone && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#475569"}}><Phone size={12} color="#94a3b8"/>{d.phone}</div>}
+                          {d.email && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#475569"}}><Mail size={12} color="#94a3b8"/>{d.email}</div>}
+                          {d.consultationFee!=null && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,fontWeight:700,color:"#10b981"}}><IndianRupee size={12}/>₹{d.consultationFee} / consultation</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>)}
+
+            {/* ═══════════════════ INVENTORY (Placeholder) ═══════════════════ */}
+            {tab==="inventory" && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:360}}>
+                <div style={{textAlign:"center",maxWidth:400}}>
+                  <div style={{width:72,height:72,borderRadius:20,background:"#f0fdf4",border:"2px solid #bbf7d022",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:"#10b981"}}><Package size={28}/></div>
+                  <div style={{fontSize:22,fontWeight:800,color:"#1e293b",marginBottom:8}}>Inventory Management</div>
+                  <div style={{fontSize:14,color:"#64748b",lineHeight:1.6,marginBottom:20}}>Track and manage department stock, medical supplies, and equipment. This module is being set up for your department.</div>
+                  <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 18px",borderRadius:100,background:"#f0fdf4",border:"1.5px solid #bbf7d0",color:"#16a34a",fontSize:12,fontWeight:700}}>
+                    <Clock size={14}/> Coming Soon
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════ FINANCE / REPORTS (fallback placeholder) ═══════════════════ */}
+            {["finance","reports"].includes(tab) && (() => {
+              const fm: Record<string,{icon:any;color:string;bg:string;title:string;desc:string}> = {
+                finance: {icon:<TrendingUp size={28}/>,color:"#6366f1",bg:"#eef2ff",title:"Finance",desc:"Track revenue, expenses and financial reports."},
+                reports: {icon:<BarChart2 size={28}/>,color:"#8b5cf6",bg:"#f5f3ff",title:"Reports",desc:"Access detailed analytics and reports for this department."},
+              };
+              const f = fm[tab];
+              return (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:360}}>
+                  <div style={{textAlign:"center",maxWidth:360}}>
+                    <div style={{width:72,height:72,borderRadius:20,background:f.bg,border:`2px solid ${f.color}22`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:f.color}}>{f.icon}</div>
+                    <div style={{fontSize:22,fontWeight:800,color:"#1e293b",marginBottom:8}}>{f.title}</div>
+                    <div style={{fontSize:14,color:"#64748b",lineHeight:1.6,marginBottom:20}}>{f.desc}</div>
+                    <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 18px",borderRadius:100,background:f.bg,border:`1.5px solid ${f.color}44`,color:f.color,fontSize:12,fontWeight:700}}>
+                      <Clock size={14}/> Coming Soon
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ═══════════════════ DEPARTMENT INFO ═══════════════════ */}
             {tab==="dept" && (
