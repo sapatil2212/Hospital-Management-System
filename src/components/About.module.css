@@ -1,6 +1,34 @@
+/* ===== About Section ===== */
 .about {
   padding: var(--space-24) 0;
   background: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background decorative blobs */
+.bgBlob1 {
+  position: absolute;
+  top: -180px;
+  right: -180px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(14, 137, 143, 0.07) 0%, transparent 68%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bgBlob2 {
+  position: absolute;
+  bottom: -120px;
+  left: -120px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .aboutInner {
@@ -8,13 +36,17 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-16);
   align-items: center;
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-/* Content */
+/* ── Left Content ── */
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .titleAccent {
@@ -25,30 +57,36 @@
 }
 
 .description {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   color: var(--gray-500);
-  line-height: 1.8;
-  margin-bottom: var(--space-4);
+  line-height: 1.75;
+  max-width: 520px;
+  margin-top: calc(-1 * var(--space-3));
 }
 
-/* Features */
+/* ── Feature Items ── */
 .features {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  margin-bottom: var(--space-6);
+  gap: 0;
 }
 
 .featureItem {
   display: flex;
   gap: var(--space-4);
   align-items: flex-start;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.featureItem:last-child {
+  border-bottom: none;
 }
 
 .featureIcon {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -58,32 +96,59 @@
 .featureText {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 4px;
+  padding-top: 2px;
 }
 
 .featureTitle {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--gray-900);
+  letter-spacing: -0.2px;
 }
 
 .featureDesc {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--gray-500);
-  line-height: 1.6;
+  line-height: 1.65;
+}
+
+/* ── CTA Row ── */
+.ctaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding-top: var(--space-2);
 }
 
 .aboutCta {
   width: fit-content;
 }
 
-/* Visual */
+.secondaryCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  transition: gap var(--transition-base), opacity var(--transition-base);
+}
+
+.secondaryCta:hover {
+  gap: 8px;
+  opacity: 0.85;
+}
+
+/* ── Right Visual ── */
 .visual {
   position: relative;
 }
 
 .imageGrid {
   position: relative;
+  z-index: 1;
 }
 
 .mainImage {
@@ -97,79 +162,39 @@
   height: auto;
   object-fit: cover;
   border-radius: var(--radius-2xl);
+  display: block;
 }
 
-.videoBadge {
+/* ── Rating Badge ── */
+.ratingBadge {
   position: absolute;
-  bottom: var(--space-6);
-  left: var(--space-6);
+  top: var(--space-6);
+  right: -18px;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  background: var(--primary);
-  color: white;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  box-shadow: var(--shadow-blue);
-}
-
-/* Hours Card */
-.hoursCard {
-  position: absolute;
-  bottom: var(--space-8);
-  right: -20px;
+  gap: 6px;
   background: var(--white);
-  border-radius: var(--radius-xl);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-xl);
-  min-width: 240px;
+  border-radius: var(--radius-full);
+  padding: 8px var(--space-4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.09);
   border: 1px solid var(--gray-100);
+  z-index: 2;
+  color: var(--warning);
 }
 
-.hoursHeader {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+.ratingNum {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
   color: var(--gray-900);
 }
 
-.hoursHeader h4 {
-  font-size: var(--font-size-base);
-  font-weight: 700;
-}
-
-.hoursList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.hoursRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hoursDay {
-  font-size: var(--font-size-sm);
-  color: var(--gray-600);
+.ratingLabel {
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
   font-weight: 500;
 }
 
-.hoursTime {
-  font-size: var(--font-size-sm);
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.closed {
-  color: var(--error);
-}
-
-/* Responsive */
+/* ── Responsive ── */
 @media (max-width: 1024px) {
   .aboutInner {
     grid-template-columns: 1fr;
@@ -183,10 +208,50 @@
 }
 
 @media (max-width: 768px) {
-  .hoursCard {
-    position: relative;
-    right: 0;
-    bottom: 0;
-    margin-top: var(--space-4);
+  .about {
+    padding: var(--space-16) 0;
+  }
+
+  /* Center align title and description on mobile */
+  .content {
+    text-align: center;
+    align-items: center;
+  }
+
+  /* Keep features left-aligned on mobile */
+  .features {
+    align-self: stretch;
+  }
+
+  .featureItem {
+    justify-content: flex-start;
+  }
+
+  .featureText {
+    text-align: left;
+  }
+
+  .description {
+    max-width: 100%;
+  }
+
+  /* Reduce button sizes on mobile */
+  .ctaRow {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .aboutCta {
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--font-size-sm);
+  }
+
+  .secondaryCta {
+    font-size: var(--font-size-xs);
+  }
+
+  /* Hide rating badge on mobile */
+  .ratingBadge {
+    display: none;
   }
 }

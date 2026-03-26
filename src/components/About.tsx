@@ -3,47 +3,45 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
-  HeartHandshake,
-  Stethoscope,
-  Clock,
+  BrainCircuit,
+  Cpu,
   ArrowRight,
-  CheckCircle2,
-  Video,
+  Award,
+  Star,
+  ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./About.module.css";
 
 const features = [
   {
-    icon: <HeartHandshake size={24} />,
-    title: "Patient-Centered Care",
+    icon: <BrainCircuit size={22} />,
+    title: "AI-Powered Diagnostics",
     description:
-      "Putting you at the heart of everything we do. Our patient-centered approach ensures personalized treatment.",
+      "Cutting-edge AI for accurate, personalized diagnoses and precise treatment planning.",
     color: "#0E898F",
     bgColor: "#E6F4F4",
+    accent: "#0E898F",
   },
   {
-    icon: <Stethoscope size={24} />,
-    title: "Specialist Doctors",
+    icon: <Cpu size={22} />,
+    title: "Robotic Precision",
     description:
-      "Access to over 500+ board-certified specialists across every medical discipline.",
+      "Advanced robotic technology with globally approved techniques for safe, effective procedures.",
     color: "#10B981",
     bgColor: "#D1FAE5",
+    accent: "#10B981",
   },
   {
-    icon: <Clock size={24} />,
-    title: "24 Hours Service",
+    icon: <Award size={22} />,
+    title: "Specialized Expertise",
     description:
-      "Round-the-clock emergency and consultation services. We're here when you need us most.",
+      "Dedicated specialists in skin, hair, dental & head-neck oncology delivering lasting results.",
     color: "#8B5CF6",
     bgColor: "#EDE9FE",
+    accent: "#8B5CF6",
   },
-];
-
-const hours = [
-  { day: "Mon To Fri", time: "09:30 – 07:30", active: true },
-  { day: "Saturday", time: "10:30 – 5:00", active: true },
-  { day: "Sunday", time: "Closed", active: false },
 ];
 
 export default function About() {
@@ -52,6 +50,10 @@ export default function About() {
 
   return (
     <section id="about" className={styles.about} ref={ref}>
+      {/* Background decorations */}
+      <div className={styles.bgBlob1} />
+      <div className={styles.bgBlob2} />
+
       <div className={`container ${styles.aboutInner}`}>
         {/* Left Content */}
         <motion.div
@@ -60,20 +62,16 @@ export default function About() {
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
-          <span className="section-label">
-            <HeartHandshake size={16} />
-            About Us
-          </span>
-
           <h2 className="section-title">
             Professionals dedicated <br />
             to your <span className={styles.titleAccent}>health</span>
           </h2>
 
           <p className={styles.description}>
-            Our team of skilled professionals is committed to providing
-            personalized, compassionate care. With a focus on innovation and
-            excellence, we deliver healthcare solutions that make a difference.
+            India&apos;s first AI-based robotic aesthetic hospital, redefining
+            modern healthcare with advanced technology and ethical, patient-first
+            care. We leverage AI diagnostics, robotic precision, and globally
+            approved technologies for accurate, safe, and personalized outcomes.
           </p>
 
           {/* Features */}
@@ -84,7 +82,8 @@ export default function About() {
                 className={styles.featureItem}
                 initial={{ opacity: 0, x: -20 }}
                 animate={isInView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
+                transition={{ delay: 0.3 + i * 0.12, duration: 0.5 }}
+                style={{ "--accent-color": feature.accent } as React.CSSProperties}
               >
                 <div
                   className={styles.featureIcon}
@@ -100,16 +99,22 @@ export default function About() {
             ))}
           </div>
 
-          <motion.a
-            href="#services"
-            className={`btn btn-primary ${styles.aboutCta}`}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
-            transition={{ delay: 0.6 }}
+          {/* CTA Row */}
+          <motion.div
+            className={styles.ctaRow}
+            initial={{ opacity: 0, y: 10 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.7 }}
           >
-            View More About Us
-            <ArrowRight size={18} />
-          </motion.a>
+            <Link href="/about" className={`btn btn-primary ${styles.aboutCta}`}>
+              Discover Our Approach
+              <ArrowRight size={17} />
+            </Link>
+            <Link href="/contact" className={styles.secondaryCta}>
+              Book Consultation
+              <ChevronRight size={16} />
+            </Link>
+          </motion.div>
         </motion.div>
 
         {/* Right Visual */}
@@ -122,44 +127,24 @@ export default function About() {
           <div className={styles.imageGrid}>
             <div className={styles.mainImage}>
               <Image
-                src="/images/about-team.png"
-                alt="Medical team providing care"
+                src="/about/home-about.png"
+                alt="Celeb Aesthecia medical team"
                 width={480}
                 height={540}
                 className={styles.aboutImage}
               />
-              {/* Video Call Badge */}
-              <div className={styles.videoBadge}>
-                <Video size={16} />
-                <span>Video Call Support</span>
-              </div>
             </div>
           </div>
 
-          {/* Opening Hours Card */}
+          {/* Rating Badge */}
           <motion.div
-            className={styles.hoursCard}
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            className={styles.ratingBadge}
+            animate={{ y: [0, 5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           >
-            <div className={styles.hoursHeader}>
-              <Clock size={20} />
-              <h4>Opening Hours</h4>
-            </div>
-            <div className={styles.hoursList}>
-              {hours.map((h) => (
-                <div key={h.day} className={styles.hoursRow}>
-                  <span className={styles.hoursDay}>{h.day}</span>
-                  <span
-                    className={`${styles.hoursTime} ${
-                      !h.active ? styles.closed : ""
-                    }`}
-                  >
-                    {h.time}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <Star size={13} fill="currentColor" />
+            <span className={styles.ratingNum}>4.9</span>
+            <span className={styles.ratingLabel}>Patient Rating</span>
           </motion.div>
         </motion.div>
       </div>
