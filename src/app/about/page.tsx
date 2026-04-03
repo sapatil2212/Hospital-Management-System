@@ -29,7 +29,14 @@ const doctors = [
     name: "Dr. Rutuja",
     role: "Chief Executive Officer",
     specialty: "Dental & Aesthetic Expert",
-    description: "A highly skilled dental and aesthetic expert with extensive experience in smile designing and cosmetic dentistry. She specializes in implantology, root canal treatments, and clear aligner therapy (Invisalign).",
+    experience: "15+ Years",
+    qualifications: "BDS, MDS (Prosthodontics)",
+    expertise: [
+      "Expert in smile designing & cosmetic dentistry",
+      "Specialized in implantology & root canal treatments",
+      "Certified in clear aligner therapy (Invisalign)",
+    ],
+    image: "/doctors/dr-rutuja.png",
     color: "#0E898F",
     bgColor: "#E6F4F4",
   },
@@ -37,7 +44,14 @@ const doctors = [
     name: "Dr. Sandiip Jaibhave",
     role: "Managing Director",
     specialty: "Oncology & Aesthetic Medicine",
-    description: "A dynamic medical professional with versatile clinical experience across HNF oncology, cosmetic dermatology, trichology, aesthetic medicine, and Lasers.",
+    experience: "20+ Years",
+    qualifications: "MBBS, MD (Oncology)",
+    expertise: [
+      "Versatile experience in HNF oncology",
+      "Expert in cosmetic dermatology & trichology",
+      "Specialized in aesthetic medicine & Lasers",
+    ],
+    image: "/doctors/doctor-sandiip.png",
     color: "#10B981",
     bgColor: "#D1FAE5",
   },
@@ -45,32 +59,24 @@ const doctors = [
 
 const features = [
   {
-    icon: <Cpu size={28} />,
     title: "AI-Based Diagnosis",
     description: "Latest AI-powered machines for skin, hair, and dental diagnosis.",
-    color: "#0E898F",
-    bgColor: "#E6F4F4",
+    image: "/why-choose-us/1.webp",
   },
   {
-    icon: <Zap size={28} />,
     title: "Modular OT",
     description: "India's first dental surgery in a fully equipped modular operation theatre.",
-    color: "#10B981",
-    bgColor: "#D1FAE5",
+    image: "/why-choose-us/2.webp",
   },
   {
-    icon: <Microscope size={28} />,
     title: "In-House Lab",
     description: "Advanced dental, pharmacy, and pathology labs for complete care.",
-    color: "#8B5CF6",
-    bgColor: "#EDE9FE",
+    image: "/why-choose-us/3.webp",
   },
   {
-    icon: <Activity size={28} />,
     title: "Patient First",
     description: "Ethical and transparent practices with personalized recovery care.",
-    color: "#F59E0B",
-    bgColor: "#FEF3C7",
+    image: "/why-choose-us/4.webp",
   },
 ];
 
@@ -93,61 +99,11 @@ export default function AboutPage() {
           <AboutHero />
         </div>
 
-        {/* Who We Are Section */}
-        <WhoWeAre />
-
         {/* New Mission Section Component */}
         <MissionSection />
 
-        {/* Mission Section */}
-        <section className={styles.section} ref={ref}>
-          <div className={`container ${styles.missionGrid}`}>
-            <motion.div
-              className={styles.missionImage}
-              initial={{ opacity: 0, x: -40 }}
-              animate={isInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.6 }}
-            >
-              <div className={styles.imageWrapper}>
-                <Image
-                  src="/images/about-team.png"
-                  alt="Celeb Aesthecia Medical Team"
-                  width={560}
-                  height={420}
-                  className={styles.image}
-                />
-              </div>
-            </motion.div>
-            <motion.div
-              className={styles.missionContent}
-              initial={{ opacity: 0, x: 40 }}
-              animate={isInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <h2 className="section-title">
-                Our <span className={styles.accent}>Philosophy</span>
-              </h2>
-              <p className={styles.missionText}>
-                At Celeb Aesthecia, we believe in ethical and transparent medical practice. We prioritize a patient-first approach with personalized care, delivering natural, safe, and long-lasting results in a premium healing environment.
-              </p>
-              <div className={styles.checkList}>
-                {[
-                  "AI-based precision diagnosis & investigation",
-                  "Modular OT for maximum infection control",
-                  "FDA-approved & CE-certified technologies",
-                  "Expert medical team for specialized domains",
-                ].map((item) => (
-                  <div key={item} className={styles.checkItem}>
-                    <div className={styles.checkIconWrapper}>
-                      <CheckCircle2 size={16} />
-                    </div>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </section>
+        {/* Who We Are Section */}
+        <WhoWeAre />
 
         {/* Meet Our Doctors */}
         <section className={styles.doctorsSection} ref={ref4}>
@@ -173,14 +129,40 @@ export default function AboutPage() {
                   animate={isInView4 ? { opacity: 1, y: 0 } : {}}
                   transition={{ delay: i * 0.2 }}
                 >
-                  <div className={styles.doctorHeader} style={{ background: doctor.bgColor }}>
-                    <Users size={40} color={doctor.color} />
+                  {/* Left Side - Image */}
+                  <div className={styles.doctorImageWrapper} style={{ background: doctor.bgColor }}>
+                    <div className={styles.doctorImageInner}>
+                      <Image
+                        src={doctor.image}
+                        alt={doctor.name}
+                        width={200}
+                        height={240}
+                        className={styles.doctorImage}
+                      />
+                    </div>
+                    <div className={styles.verifiedBadge}>
+                      <Shield size={16} color={doctor.color} />
+                    </div>
                   </div>
+
+                  {/* Right Side - Content */}
                   <div className={styles.doctorContent}>
                     <h3 className={styles.doctorName}>{doctor.name}</h3>
-                    <span className={styles.doctorRole} style={{ color: doctor.color }}>{doctor.role}</span>
-                    <span className={styles.doctorSpecialty}>{doctor.specialty}</span>
-                    <p className={styles.doctorDesc}>{doctor.description}</p>
+                    <p className={styles.doctorSpecialty} style={{ color: doctor.color }}>{doctor.specialty}</p>
+                    
+                    <div className={styles.doctorMeta}>
+                      <span className={styles.experienceBadge}>{doctor.experience}</span>
+                      <span className={styles.qualificationBadge}>{doctor.qualifications}</span>
+                    </div>
+
+                    <ul className={styles.expertiseList}>
+                      {doctor.expertise.map((item, idx) => (
+                        <li key={idx} className={styles.expertiseItem}>
+                          <CheckCircle2 size={14} color={doctor.color} />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </motion.div>
               ))}
@@ -199,7 +181,7 @@ export default function AboutPage() {
               <h2 className="section-title">
                 Why <span className={styles.accent}>Celeb Aesthecia</span>
               </h2>
-              <p className="section-subtitle">
+              <p className={`section-subtitle ${styles.valuesSubtitle}`}>
                 Pioneering the future of aesthetic healthcare in India.
               </p>
             </motion.div>
@@ -213,14 +195,18 @@ export default function AboutPage() {
                   transition={{ delay: i * 0.1 }}
                   whileHover={{ y: -6 }}
                 >
-                  <div
-                    className={styles.valueIcon}
-                    style={{ background: f.bgColor, color: f.color }}
-                  >
-                    {f.icon}
+                  <div className={styles.valueImageWrap}>
+                    <Image
+                      src={f.image}
+                      alt={f.title}
+                      fill
+                      className={styles.valueImage}
+                    />
                   </div>
-                  <h3 className={styles.valueTitle}>{f.title}</h3>
-                  <p className={styles.valueDesc}>{f.description}</p>
+                  <div className={styles.valueContent}>
+                    <h3 className={styles.valueTitle}>{f.title}</h3>
+                    <p className={styles.valueDesc}>{f.description}</p>
+                  </div>
                 </motion.div>
               ))}
             </div>

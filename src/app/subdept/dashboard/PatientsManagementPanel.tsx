@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,7 +7,7 @@ import {
   LogOut, Search, Bell, MessageSquare, Building2, Stethoscope, ClipboardList,
   CreditCard, IndianRupee, Plus, Trash2, Eye, ChevronRight, ChevronLeft,
   Phone, Mail, Calendar, Droplet, User, Activity, RefreshCw, Loader2,
-  UserCircle, AlertTriangle
+  UserCircle, AlertTriangle, Pencil, X
 } from "lucide-react";
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -19,8 +20,10 @@ const api = async (url: string, method = "GET", body?: any) => {
 const initials = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
 // ─── Patient Management Panel ───
-function PatientsPanel() {
+export function PatientsManagementPanel() {
   const router = useRouter();
+
+  const [user, setUser] = useState<any>(null);
 
   // List view state
   const [patients, setPatients] = useState<any[]>([]);
@@ -31,6 +34,7 @@ function PatientsPanel() {
   const [totalCount, setTotalCount] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [patientEditId, setPatientEditId] = useState<string | null>(null);
   const itemsPerPage = 15;
 
   // Detail view state
@@ -54,6 +58,15 @@ function PatientsPanel() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    api("/api/auth/me").then(data => {
+      if (data.success) {
+        setUser(data.data);
+        console.log("User role:", data.data.role);
+      }
+    });
+  }, []);
+
   const loadPatientDetails = async (id: string) => {
     setDetailsLoading(true);
     setDetailTab("overview");
@@ -62,21 +75,31 @@ function PatientsPanel() {
     setProcedures([]);
     setTreatmentPlans([]);
 
-    const [pRes, aRes, bRes, prRes, tpRes] = await Promise.all([
-      api(`/api/patients/${id}`),
-      api(`/api/appointments?patientId=${id}`),
-      api(`/api/billing?patientId=${id}`),
-      api(`/api/subdept/records?patientId=${id}`),
-      api(`/api/treatment-plans?patientId=${id}&limit=50`),
-    ]);
+    try {
+      const [pRes, aRes, bRes, prRes, tpRes] = await Promise.all([
+        api(`/api/patients/${id}`),
+        api(`/api/appointments?patientId=${id}`),
+        api(`/api/billing?patientId=${id}`),
+        api(`/api/subdept/records?patientId=${id}`),
+        api(`/api/treatment-plans?patientId=${id}&limit=50`),
+      ]);
 
-    if (pRes.success) setPatientDetails(pRes.data);
-    if (aRes.success) setAppointments(Array.isArray(aRes.data?.data) ? aRes.data.data : []);
-    if (bRes.success) setBills(Array.isArray(bRes.data?.bills) ? bRes.data.bills : Array.isArray(bRes.data) ? bRes.data : []);
-    if (prRes.success) setProcedures(Array.isArray(prRes.data?.data) ? prRes.data.data : []);
-    if (tpRes.success) setTreatmentPlans(Array.isArray(tpRes.data?.plans) ? tpRes.data.plans : []);
+      if (!pRes.success) {
+        throw new Error(pRes.message || "Could not fetch patient details.");
+      }
 
-    setDetailsLoading(false);
+      setPatientDetails(pRes.data);
+      if (aRes.success) setAppointments(Array.isArray(aRes.data?.data) ? aRes.data.data : []);
+      if (bRes.success) setBills(Array.isArray(bRes.data?.bills) ? bRes.data.bills : Array.isArray(bRes.data) ? bRes.data : []);
+      if (prRes.success) setProcedures(Array.isArray(prRes.data?.data) ? prRes.data.data : []);
+      if (tpRes.success) setTreatmentPlans(Array.isArray(tpRes.data?.plans) ? tpRes.data.plans : []);
+
+    } catch (error: any) {
+      alert(`Failed to load patient dashboard: ${error.message}`);
+      setSelectedPatient(null); // Close the view if data loading fails
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
   useEffect(() => { loadPatients(); }, [currentPage, searchTerm]);
@@ -436,7 +459,9 @@ function PatientsPanel() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: 0 }}>Patient Management</h1>
-          <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>{totalCount} registered patients</p>
+          {totalCount > 0 && (
+            <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>{totalCount} registered patients</p>
+          )}
         </div>
         <button
           onClick={() => router.push("/hospitaladmin/appointments")}
@@ -516,15 +541,24 @@ function PatientsPanel() {
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
                           onClick={() => { setSelectedPatient(p); loadPatientDetails(p.id); }}
-                          style={{ padding: "6px 12px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600 }}
+                          style={{ padding: "8px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="View Profile"
                         >
-                          <Eye size={13} /> View
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => setPatientEditId(p.id)}
+                          style={{ padding: "8px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="Edit Profile"
+                        >
+                          <Pencil size={15} />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(p)}
-                          style={{ padding: "6px 10px", background: "#fff5f5", color: "#ef4444", border: "none", borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
+                          style={{ padding: "8px", background: "#fff5f5", color: "#ef4444", border: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="Delete Patient"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>
@@ -594,15 +628,163 @@ function PatientsPanel() {
           </div>
         </div>
       )}
+      {/* Edit Modal */}
+      {patientEditId && (
+        <PatientEditModal 
+          patientId={patientEditId} 
+          onClose={() => setPatientEditId(null)} 
+          onUpdate={loadPatients} 
+        />
+      )}
     </div>
   );
 }
 
-// ── Main Page ──
-export default function PatientsPage() {
+// ─── Patient Edit Modal Component ───
+function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string; onClose: () => void; onUpdate: () => void }) {
+  const [form, setForm] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const d = await api(`/api/patients/${patientId}`);
+        if (d.success) {
+          setForm(d.data);
+        } else {
+          throw new Error(d.message || "Could not fetch patient details.");
+        }
+      } catch (error: any) {
+        alert(`Failed to load patient for editing: ${error.message}`);
+        onClose(); // Close the modal if data loading fails
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPatient();
+  }, [patientId, onClose]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMsg("");
+    const d = await api(`/api/patients/${patientId}`, "PUT", form);
+    if (d.success) {
+      onUpdate();
+      onClose();
+    } else {
+      setMsg(d.message || "Failed to update patient");
+    }
+    setSaving(false);
+  };
+
+  if (loading) return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: 40, textAlign: "center", width: 400 }}>
+        <Loader2 size={24} style={{ animation: "spin 1s linear infinite", margin: "0 auto 10px", color: "#0E898F" }} />
+        <div style={{ fontSize: 13, color: "#64748b" }}>Loading patient profile...</div>
+      </div>
+    </div>
+  );
+
+  if (!form) return null;
+
   return (
-    <div className="hd-center">
-      <PatientsPanel />
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>Edit Patient Profile</div>
+            <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>Update basic information for {form.name}</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Full Name</label>
+              <input 
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                value={form.name} 
+                onChange={e => setForm({ ...form, name: e.target.value })} 
+                required 
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Phone Number</label>
+              <input 
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                value={form.phone} 
+                onChange={e => setForm({ ...form, phone: e.target.value })} 
+                required 
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Email</label>
+              <input 
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                type="email" 
+                value={form.email || ""} 
+                onChange={e => setForm({ ...form, email: e.target.value })} 
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Gender</label>
+              <select 
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, background: "#fff" }}
+                value={form.gender || ""} 
+                onChange={e => setForm({ ...form, gender: e.target.value })}
+              >
+                <option value="">Select</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Blood Group</label>
+              <select 
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, background: "#fff" }}
+                value={form.bloodGroup || ""} 
+                onChange={e => setForm({ ...form, bloodGroup: e.target.value })}
+              >
+                <option value="">Select</option>
+                {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Address</label>
+              <input 
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                value={form.address || ""} 
+                onChange={e => setForm({ ...form, address: e.target.value })} 
+              />
+            </div>
+          </div>
+
+          {msg && <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 8, background: "#fff5f5", color: "#ef4444", fontSize: 12, fontWeight: 600 }}>{msg}</div>}
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
+            <button 
+              type="button" 
+              onClick={onClose}
+              style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={saving}
+              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            >
+              {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

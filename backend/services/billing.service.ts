@@ -561,30 +561,64 @@ export async function getBillById(billId: string, hospitalId: string): Promise<a
   return bill;
 }
 
-// ── Update bill (discount / tax / notes) ──────────────────────────────────
+// ── Update bill (discount / tax / GST / notes) ────────────────────────────
 export async function updateBill(
   billId: string,
   hospitalId: string,
-  data: { discount?: number; tax?: number; notes?: string; status?: string }
+  data: {
+    discount?: number; tax?: number; notes?: string; status?: string;
+    isGst?: boolean; cgst?: number; sgst?: number; igst?: number;
+    addItem?: { name: string; unitPrice: number; quantity: number; type?: string };
+  }
 ): Promise<any> {
   const bill = await (prisma as any).bill.findFirst({ where: { id: billId, hospitalId } });
   if (!bill) throw new BillingServiceError("Bill not found", 404);
-  if ((bill.status === "PAID" || Number(bill.paidAmount || 0) > 0) && (data.discount !== undefined || data.tax !== undefined)) {
+  if ((bill.status === "PAID" || Number(bill.paidAmount || 0) > 0) && (data.discount !== undefined || data.tax !== undefined || data.isGst !== undefined)) {
     throw new BillingServiceError("Cannot change tax/discount after payments. Create an adjustment bill instead.", 400);
+  }
+
+  // Handle addItem inline (also used standalone by billing queue)
+  if (data.addItem) {
+    const { name, unitPrice, quantity, type } = data.addItem;
+    const amount = unitPrice * (quantity || 1);
+    await (prisma as any).billItem.create({
+      data: { billId, hospitalId, name, unitPrice, quantity: quantity || 1, amount, type: type || "OTHER" },
+    });
+    await recalculateBill(billId, hospitalId);
+    // Reload bill after recalc so GST/discount below use fresh subtotal
+    const refreshed = await (prisma as any).bill.findFirst({ where: { id: billId, hospitalId } });
+    if (refreshed) Object.assign(bill, refreshed);
   }
 
   // Sync with workflow charges
   await addWorkflowChargesToBill(billId, hospitalId).catch(() => {});
 
-  const discount = data.discount ?? bill.discount;
-  const tax      = data.tax      ?? bill.tax;
-  const total    = Math.max(0, bill.subtotal + tax - discount);
+  // Reload subtotal (may have changed from addItem / recalculate)
+  const freshBill = await (prisma as any).bill.findFirst({ where: { id: billId, hospitalId } });
+  const subtotal = freshBill?.subtotal ?? bill.subtotal;
 
-  // Recalculate status based on new total and existing paid amount
-  let newStatus = bill.status;
-  if (total <= bill.paidAmount + 0.01) {
+  const isGst   = data.isGst   !== undefined ? data.isGst   : bill.isGst;
+  const cgst    = data.cgst    !== undefined ? data.cgst    : bill.cgst;
+  const sgst    = data.sgst    !== undefined ? data.sgst    : bill.sgst;
+  const igst    = data.igst    !== undefined ? data.igst    : bill.igst;
+  const discount = data.discount !== undefined ? data.discount : (freshBill?.discount ?? bill.discount);
+
+  // Compute tax amount from GST percentages when isGst is true
+  let tax: number;
+  if (data.tax !== undefined) {
+    tax = data.tax;
+  } else if (isGst) {
+    tax = (subtotal * ((cgst || 0) + (sgst || 0) + (igst || 0))) / 100;
+  } else {
+    tax = 0;
+  }
+
+  const total = Math.max(0, subtotal + tax - discount);
+
+  let newStatus = freshBill?.status ?? bill.status;
+  if (total <= (freshBill?.paidAmount ?? bill.paidAmount) + 0.01) {
     newStatus = "PAID";
-  } else if (bill.paidAmount > 0) {
+  } else if ((freshBill?.paidAmount ?? bill.paidAmount) > 0) {
     newStatus = "PARTIALLY_PAID";
   } else {
     newStatus = "PENDING";
@@ -599,6 +633,10 @@ export async function updateBill(
       discount,
       tax,
       total,
+      isGst,
+      cgst,
+      sgst,
+      igst,
       notes: data.notes ?? bill.notes,
       status: finalStatus,
       paidAt,

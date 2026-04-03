@@ -9,7 +9,7 @@ import {
 } from "../../../../../backend/services/patient.service";
 import { updatePatientSchema } from "../../../../../backend/validations/patient.validation";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT"];
 
 // GET /api/patients/[id]
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {

@@ -53,7 +53,7 @@ interface Procedure {
   isActive: boolean;
 }
 
-interface Department { id: string; name: string; }
+interface Department { id: string; name: string; type?: string; }
 interface Toast { id: number; type: "success" | "error" | "info"; message: string; }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -74,6 +74,80 @@ const SUB_DEPT_TYPES = [
   { value: "OTHER",       label: "Other",             Icon: Layers,      color: "#94a3b8" },
 ];
 
+const DEPT_SUBDEPT_MAP: Record<string, Array<{value: string; label: string; color: string}>> = {
+  ADMINISTRATIVE: [
+    { value: "RECEPTION",  label: "Reception / Front Desk",    color: "#3b82f6" },
+    { value: "BILLING",    label: "Billing (GST / Non-GST)",   color: "#f59e0b" },
+    { value: "HR",         label: "HR",                        color: "#8b5cf6" },
+    { value: "ACCOUNTS",   label: "Accounts",                  color: "#10b981" },
+    { value: "CUSTOM",     label: "Custom",                    color: "#94a3b8" },
+  ],
+  SUPPORT: [
+    { value: "PHARMACY",    label: "Pharmacy",                  color: "#0E898F" },
+    { value: "NURSING",     label: "Nursing",                   color: "#ec4899" },
+    { value: "HOUSEKEEPING",label: "Housekeeping",              color: "#f97316" },
+    { value: "AMBULANCE",   label: "Ambulance",                 color: "#ef4444" },
+    { value: "BIOMEDICAL",  label: "Biomedical / Equipment",    color: "#6366f1" },
+    { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
+  ],
+  PROCEDURE: [
+    { value: "OT",          label: "Operation Theatre (OT)",    color: "#ef4444" },
+    { value: "DIALYSIS",    label: "Dialysis Unit",             color: "#6366f1" },
+    { value: "PHYSIOTHERAPY",label: "Physiotherapy",            color: "#84cc16" },
+    { value: "DENTAL",      label: "Dental",                    color: "#06b6d4" },
+    { value: "COSMETIC",    label: "Cosmetic / Aesthetic",      color: "#ec4899" },
+    { value: "ENDOSCOPY",   label: "Endoscopy",                 color: "#f97316" },
+    { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
+  ],
+  DIAGNOSTIC: [
+    { value: "PATHOLOGY",   label: "Pathology / Lab",           color: "#10b981" },
+    { value: "RADIOLOGY",   label: "Radiology (X-ray, MRI, CT Scan)", color: "#6366f1" },
+    { value: "BLOOD_BANK",  label: "Blood Bank",                color: "#ef4444" },
+    { value: "ECG",         label: "ECG / EEG",                 color: "#f59e0b" },
+    { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
+  ],
+  CLINICAL: [
+    { value: "OPD",            label: "OPD (Outpatient Department)",  color: "#0ea5e9" },
+    { value: "IPD",            label: "IPD (Inpatient Department)",   color: "#8b5cf6" },
+    { value: "EMERGENCY",      label: "Emergency / Casualty",         color: "#ef4444" },
+    { value: "ICU",            label: "ICU / NICU",                   color: "#f97316" },
+    { value: "GENERAL_MEDICINE",label: "General Medicine",            color: "#10b981" },
+    { value: "SURGERY",        label: "Surgery",                      color: "#64748b" },
+    { value: "GYNECOLOGY",     label: "Gynecology",                   color: "#ec4899" },
+    { value: "PEDIATRICS",     label: "Pediatrics",                   color: "#06b6d4" },
+    { value: "CUSTOM",         label: "Custom",                       color: "#94a3b8" },
+  ],
+};
+
+const ALL_SUBDEPT_OPTIONS = Object.values(DEPT_SUBDEPT_MAP)
+  .flat()
+  .filter((t, i, arr) => arr.findIndex(x => x.value === t.value) === i);
+
+const TYPE_EXTRA: Record<string, {label: string; Icon: any; color: string}> = {
+  HR:              { label: "HR",                     Icon: UserPlus,    color: "#8b5cf6" },
+  ACCOUNTS:        { label: "Accounts",               Icon: Receipt,     color: "#10b981" },
+  NURSING:         { label: "Nursing",                Icon: Heart,       color: "#ec4899" },
+  HOUSEKEEPING:    { label: "Housekeeping",            Icon: Wind,        color: "#f97316" },
+  AMBULANCE:       { label: "Ambulance",              Icon: Activity,    color: "#ef4444" },
+  BIOMEDICAL:      { label: "Biomedical / Equipment", Icon: Stethoscope, color: "#6366f1" },
+  OT:              { label: "Operation Theatre (OT)", Icon: Scissors,    color: "#ef4444" },
+  DIALYSIS:        { label: "Dialysis Unit",          Icon: FlaskConical,color: "#6366f1" },
+  PHYSIOTHERAPY:   { label: "Physiotherapy",          Icon: Activity,    color: "#84cc16" },
+  COSMETIC:        { label: "Cosmetic / Aesthetic",   Icon: Sparkles,    color: "#ec4899" },
+  ENDOSCOPY:       { label: "Endoscopy",              Icon: Scan,        color: "#f97316" },
+  BLOOD_BANK:      { label: "Blood Bank",             Icon: Heart,       color: "#ef4444" },
+  ECG:             { label: "ECG / EEG",              Icon: Activity,    color: "#f59e0b" },
+  OPD:             { label: "OPD (Outpatient)",       Icon: Stethoscope, color: "#0ea5e9" },
+  IPD:             { label: "IPD (Inpatient)",        Icon: Building2,   color: "#8b5cf6" },
+  EMERGENCY:       { label: "Emergency / Casualty",   Icon: Activity,    color: "#ef4444" },
+  ICU:             { label: "ICU / NICU",             Icon: Heart,       color: "#f97316" },
+  GENERAL_MEDICINE:{ label: "General Medicine",       Icon: Stethoscope, color: "#10b981" },
+  SURGERY:         { label: "Surgery",                Icon: Scissors,    color: "#64748b" },
+  GYNECOLOGY:      { label: "Gynecology",             Icon: Heart,       color: "#ec4899" },
+  PEDIATRICS:      { label: "Pediatrics",             Icon: Smile,       color: "#06b6d4" },
+  CUSTOM:          { label: "Custom",                 Icon: Layers,      color: "#94a3b8" },
+};
+
 const PROCEDURE_TYPES = [
   { value: "DIAGNOSTIC", label: "Diagnostic" },
   { value: "TREATMENT", label: "Treatment" },
@@ -90,19 +164,41 @@ const PROC_TYPE_COLORS: Record<string, string> = {
 };
 
 const PREDEFINED_ACCESS: Record<string, string[]> = {
-  DENTAL:      ["appointments", "procedures", "patients"],
-  DERMATOLOGY: ["appointments", "procedures", "patients"],
-  HAIR:        ["appointments", "procedures", "patients"],
-  ONCOLOGY:    ["appointments", "procedures", "patients"],
-  CARDIOLOGY:  ["appointments", "procedures", "patients"],
-  RECEPTION:   ["appointments", "billing", "patients", "inventory", "doctors"],
-  PHARMACY:    ["procedures", "inventory", "patients"],
-  BILLING:     ["billing", "finance", "patients"],
-  PATHOLOGY:   ["procedures", "patients", "reports"],
-  RADIOLOGY:   ["procedures", "patients", "reports"],
-  LABORATORY:  ["procedures", "patients", "reports"],
-  PROCEDURE:   ["procedures", "patients", "appointments"],
-  OTHER:       ["appointments", "procedures", "patients", "billing", "doctors", "inventory", "reports"],
+  DENTAL:          ["appointments", "procedures", "patients"],
+  DERMATOLOGY:     ["appointments", "procedures", "patients"],
+  HAIR:            ["appointments", "procedures", "patients"],
+  ONCOLOGY:        ["appointments", "procedures", "patients"],
+  CARDIOLOGY:      ["appointments", "procedures", "patients"],
+  RECEPTION:       ["appointments", "billing", "patients", "inventory", "doctors"],
+  PHARMACY:        ["procedures", "inventory", "patients"],
+  BILLING:         ["billing", "finance", "patients"],
+  PATHOLOGY:       ["procedures", "patients", "reports"],
+  RADIOLOGY:       ["procedures", "patients", "reports"],
+  LABORATORY:      ["procedures", "patients", "reports"],
+  PROCEDURE:       ["procedures", "patients", "appointments"],
+  OTHER:           ["appointments", "procedures", "patients", "billing", "doctors", "inventory", "reports"],
+  HR:              ["doctors", "patients"],
+  ACCOUNTS:        ["billing", "finance"],
+  NURSING:         ["appointments", "patients", "procedures"],
+  HOUSEKEEPING:    [],
+  AMBULANCE:       ["patients"],
+  BIOMEDICAL:      ["procedures", "inventory"],
+  OT:              ["procedures", "patients", "appointments"],
+  DIALYSIS:        ["procedures", "patients", "appointments"],
+  PHYSIOTHERAPY:   ["procedures", "patients", "appointments"],
+  COSMETIC:        ["appointments", "procedures", "patients"],
+  ENDOSCOPY:       ["procedures", "patients", "reports"],
+  BLOOD_BANK:      ["procedures", "patients", "reports"],
+  ECG:             ["procedures", "patients", "reports"],
+  OPD:             ["appointments", "patients", "doctors", "billing"],
+  IPD:             ["appointments", "patients", "doctors", "billing"],
+  EMERGENCY:       ["appointments", "patients", "procedures", "billing"],
+  ICU:             ["patients", "procedures"],
+  GENERAL_MEDICINE:["appointments", "patients", "doctors"],
+  SURGERY:         ["procedures", "patients", "appointments"],
+  GYNECOLOGY:      ["appointments", "procedures", "patients"],
+  PEDIATRICS:      ["appointments", "procedures", "patients"],
+  CUSTOM:          ["appointments", "procedures", "patients", "billing", "doctors", "inventory", "reports"],
 };
 const FEATURE_LABELS: Record<string, string> = {
   billing: "Billing", finance: "Finance", appointments: "Appointments",
@@ -117,7 +213,13 @@ const api = async (url: string, method = "GET", body?: any) => {
   return r.json();
 };
 
-const getTypeInfo = (type: string) => SUB_DEPT_TYPES.find(t => t.value === type) || { label: type, Icon: Layers, color: "#94a3b8" };
+const getTypeInfo = (type: string) => {
+  const legacy = SUB_DEPT_TYPES.find(t => t.value === type);
+  if (legacy) return legacy;
+  const extra = TYPE_EXTRA[type];
+  if (extra) return extra;
+  return { label: type, Icon: Layers, color: "#94a3b8" };
+};
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -319,13 +421,22 @@ export default function SubDepartmentPanel() {
 
   useEffect(() => { load(); loadDepartments(); }, [load]);
 
+  // Handle parent department change — resets sub-dept type to first valid option
+  const handleParentDeptChange = (deptId: string) => {
+    const dept = departments.find(d => d.id === deptId);
+    const newParentType = dept?.type || "";
+    const options = DEPT_SUBDEPT_MAP[newParentType] || ALL_SUBDEPT_OPTIONS;
+    setForm((f: any) => {
+      const currentValid = options.some((t: any) => t.value === f.type);
+      return { ...f, departmentId: deptId, parentDeptType: newParentType, type: currentValid ? f.type : (options[0]?.value || "CUSTOM"), customName: "" };
+    });
+  };
+
   // Open add/edit modal
   const openAdd = () => {
     setEditItem(null);
-    const defaultType = "DENTAL";
-    const typeInfo = getTypeInfo(defaultType);
-    const pw = generatePassword("Dental");
-    setForm({ name: "", code: "", type: defaultType, description: "", color: typeInfo.color, flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true, accessFeatures: [], customName: "" });
+    const pw = generatePassword("Dept");
+    setForm({ name: "", code: "", type: "RECEPTION", parentDeptType: "", description: "", color: "#3b82f6", flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true, accessFeatures: [], customName: "" });
     setHodSearch(""); setHodResults([]); setHodDropdownOpen(false);
     setModal(true);
   };
@@ -337,10 +448,12 @@ export default function SubDepartmentPanel() {
     try {
       parsedFeatures = item.accessFeatures ? JSON.parse(item.accessFeatures) : [];
     } catch { parsedFeatures = []; }
+    const parentDept = departments.find(d => d.id === item.departmentId);
     setForm({
       name: item.name,
       code: item.code || "",
       type: item.type,
+      parentDeptType: parentDept?.type || "",
       description: item.description || "",
       color: item.color || "",
       flow: item.flow || "",
@@ -364,7 +477,7 @@ export default function SubDepartmentPanel() {
     e.preventDefault();
     setSaving(true);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { loginPassword, hodStaffId, consultationFee, accessFeatures, ...rest } = form;
+    const { loginPassword, hodStaffId, consultationFee, accessFeatures, parentDeptType, ...rest } = form;
     const payload = {
       ...rest,
       color: form.color || undefined,
@@ -375,7 +488,7 @@ export default function SubDepartmentPanel() {
       hodPhone: form.hodPhone || null,
       loginEmail: form.loginEmail || null,
       accessFeatures: JSON.stringify(PREDEFINED_ACCESS[form.type] || []),
-      customName: form.type === "OTHER" ? form.customName || null : null,
+      customName: form.type === "CUSTOM" ? form.customName || null : null,
     };
     let res;
     if (editItem) res = await api(`/api/config/subdepartments/${editItem.id}`, "PUT", payload);
@@ -719,26 +832,65 @@ export default function SubDepartmentPanel() {
             </div>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
               <div className="sd-modal-body">
-                {/* Type Selection */}
+                {/* Section 1: Parent Department */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><Layers size={14} />Department Type</div>
-                  <div className="sd-type-grid">
-                    {SUB_DEPT_TYPES.map(t => {
-                      const sel = form.type === t.value;
-                      const bg = t.color + "18";
-                      return (
-                        <div key={t.value} className={`sd-type-card ${sel ? "selected" : ""}`}
-                          style={sel ? { "--type-color": t.color, "--type-bg": bg } as any : {}}
-                          onClick={() => setForm((f: any) => ({ ...f, type: t.value, color: t.color }))}>
-                          <div className="sd-type-icon"><t.Icon size={18} /></div>
-                          <div>{t.label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <div className="sd-section-title"><Building2 size={14} />Parent Department</div>
+                  <select
+                    className="sd-select"
+                    value={form.departmentId}
+                    onChange={e => handleParentDeptChange(e.target.value)}
+                  >
+                    <option value="">— None / Independent —</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}{d.type ? ` (${d.type.charAt(0) + d.type.slice(1).toLowerCase()})` : ""}</option>
+                    ))}
+                  </select>
+                  {!form.departmentId && (
+                    <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>
+                      Select a parent department to see relevant sub-department types.
+                    </p>
+                  )}
                 </div>
 
-                {/* Basic Info */}
+                {/* Section 2: Sub-Department Type */}
+                <div className="sd-section">
+                  <div className="sd-section-title"><Layers size={14} />Sub-Department Type *</div>
+                  {(() => {
+                    const options = DEPT_SUBDEPT_MAP[form.parentDeptType] || ALL_SUBDEPT_OPTIONS;
+                    return (
+                      <>
+                        <select
+                          className="sd-select"
+                          value={form.type}
+                          onChange={e => {
+                            const t = options.find((o: any) => o.value === e.target.value);
+                            setForm((f: any) => ({ ...f, type: e.target.value, color: t?.color || f.color, customName: "" }));
+                          }}
+                          required
+                        >
+                          {options.map((t: any) => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                        {form.type === "CUSTOM" && (
+                          <div style={{ marginTop: 10 }}>
+                            <label className="sd-lbl">Custom Type Name *</label>
+                            <input
+                              className="sd-input"
+                              placeholder="e.g., Research Lab, ICU Step-Down..."
+                              value={form.customName}
+                              onChange={e => setForm((f: any) => ({ ...f, customName: e.target.value }))}
+                              style={{ marginTop: 4 }}
+                              required
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Section 3: Basic Info */}
                 <div className="sd-section">
                   <div className="sd-section-title"><FlaskConical size={14} />Basic Info</div>
                   <div className="sd-form-grid">
@@ -755,13 +907,6 @@ export default function SubDepartmentPanel() {
                       <textarea className="sd-input sd-textarea" placeholder="Brief description..." value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
                     </div>
                     <div className="sd-field">
-                      <label className="sd-lbl">Parent Department</label>
-                      <select className="sd-select" value={form.departmentId} onChange={e => setForm((f: any) => ({ ...f, departmentId: e.target.value }))}>
-                        <option value="">None / Independent</option>
-                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="sd-field">
                       <label className="sd-lbl">Accent Color</label>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <input type="color" value={form.color || "#0E898F"} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} style={{ width: 38, height: 36, border: "1.5px solid #e2e8f0", borderRadius: 9, cursor: "pointer", padding: 2 }} />
@@ -772,12 +917,6 @@ export default function SubDepartmentPanel() {
                       <label className="sd-lbl">Patient Flow</label>
                       <input className="sd-input" placeholder="e.g., OPD → Procedure → Billing → Follow-up" value={form.flow} onChange={e => setForm((f: any) => ({ ...f, flow: e.target.value }))} />
                     </div>
-                    {form.type === "OTHER" && (
-                      <div className="sd-field full">
-                        <label className="sd-lbl">Custom Department Name *</label>
-                        <input className="sd-input" placeholder="Enter custom department name" value={form.customName} onChange={e => setForm((f: any) => ({ ...f, customName: e.target.value }))} required />
-                      </div>
-                    )}
                     <div className="sd-field full">
                       <div className="sd-toggle-wrap">
                         <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Active</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Accept patients and appointments</div></div>

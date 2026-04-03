@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ViewRecordModal, EditRecordModal, TransferPatientModal, ViewPrescriptionModal } from "./modals";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -14,11 +14,12 @@ import {
   CalendarDays, FileText, TrendingUp, FlaskConical,
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
   Save, Ban, ChevronDown, MessageSquare, UserCheck, Eye, Download,
-  ShieldCheck, BarChart2, Package
+  ShieldCheck, BarChart2, Package, UserPlus
 } from "lucide-react";
 
 const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Queue...</span></div> });
 const AppointmentPanelLazy = dynamic(() => import("@/components/AppointmentPanel"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Appointments...</span></div> });
+const PatientsManagementPanelLazy = dynamic(() => import("./PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Patient Management...</span></div> });
 
 // ─── Department metadata ──────────────────────────────────────────────────────
 type DeptMeta = { Icon: any; gradient: string; accent: string; lightBg: string; borderColor: string };
@@ -58,12 +59,29 @@ const calcAge  = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).g
 const BLANK_PROC = { name:"", description:"", type:"OTHER", fee:"", duration:"", sequence:"0", isActive:true };
 const BLANK_REC  = { patientId:"", patientSearch:"", procedureId:"", appointmentId:"", amount:"", notes:"", performedBy:"", status:"COMPLETED" };
 
-export default function SubDeptDashboard() {
+function SubDeptDashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [profile, setProfile] = useState<any>(null);
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"finance"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept">("overview");
+
+  // Sync tab from URL on mount
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t) setTab(t as any);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync tab to URL when it changes
+  useEffect(() => {
+    if (tab) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", tab);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [tab, pathname, router, searchParams]);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Queue
@@ -106,16 +124,32 @@ export default function SubDeptDashboard() {
   const [transferForm, setTransferForm]     = useState({ subDeptId: "", notes: "" });
   const [transferring, setTransferring]     = useState(false);
 
-  // Reception-specific: Patients
-  const [ptList, setPtList] = useState<any[]>([]);
-  const [ptLoading, setPtLoading] = useState(false);
-  const [ptSearch, setPtSearch] = useState("");
-  const [ptStats, setPtStats] = useState<any>({});
-
   // Reception-specific: Doctors
   const [docList, setDocList] = useState<any[]>([]);
   const [docLoading, setDocLoading] = useState(false);
   const [docSearch, setDocSearch] = useState("");
+
+  // Reception: Recent Appointments
+  const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
+  const [recentAppointmentsLoading, setRecentAppointmentsLoading] = useState(false);
+  const [billingQueue, setBillingQueue] = useState<any[]>([]);
+  const [billingQueueLoading, setBillingQueueLoading] = useState(false);
+
+  // ── Reception: Load Recent Appointments ──
+  const loadRecentAppointments = useCallback(async () => {
+    setRecentAppointmentsLoading(true);
+    const res = await fetch("/api/appointments?limit=5", { credentials: "include" }).then(r => r.json());
+    if (res.success) setRecentAppointments(res.data?.appointments || res.data?.data || []);
+    setRecentAppointmentsLoading(false);
+  }, []);
+
+  // ── Reception: Load Billing Queue ──
+  const loadBillingQueue = useCallback(async () => {
+    setBillingQueueLoading(true);
+    const res = await fetch("/api/billing/queue", { credentials: "include" }).then(r => r.json());
+    if (res.success) setBillingQueue(res.data || []);
+    setBillingQueueLoading(false);
+  }, []);
 
   // ── Load upcoming sessions ──
   const loadSessions = useCallback(async (subDeptId: string) => {
@@ -133,7 +167,10 @@ export default function SubDeptDashboard() {
         if (!me.success || me.data?.role !== "SUB_DEPT_HEAD") { router.push("/login"); return; }
         setUser(me.data);
         const prof = await fetch("/api/subdept/me", { credentials: "include" }).then(r => r.json());
-        if (prof.success) { setProfile(prof.data); if (prof.data?.id) loadSessions(prof.data.id); }
+        if (prof.success) { 
+          setProfile(prof.data); 
+          if (prof.data?.id && prof.data?.type !== "RECEPTION") loadSessions(prof.data.id); 
+        }
       } catch { router.push("/login"); }
       setLoading(false);
     })();
@@ -178,21 +215,6 @@ export default function SubDeptDashboard() {
       .catch(() => {});
   }, []);
 
-  // ── Reception: Load Patients ──
-  const loadPatients = useCallback(async (search = "") => {
-    setPtLoading(true);
-    let url = `/api/patients?limit=50`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    const res = await fetch(url, { credentials: "include" }).then(r => r.json());
-    if (res.success) {
-      setPtList(res.data?.patients || res.data?.data || res.data || []);
-      setPtStats(res.data?.stats || {});
-    }
-    setPtLoading(false);
-  }, []);
-
-  useEffect(() => { if (tab === "patients") loadPatients(ptSearch); }, [tab, loadPatients]);
-
   // ── Reception: Load Doctors ──
   const loadDoctors = useCallback(async (search = "") => {
     setDocLoading(true);
@@ -204,6 +226,13 @@ export default function SubDeptDashboard() {
   }, []);
 
   useEffect(() => { if (tab === "doctors") loadDoctors(docSearch); }, [tab, loadDoctors]);
+
+  useEffect(() => {
+    if (tab === "overview" && profile?.type === "RECEPTION") {
+      loadRecentAppointments();
+      loadBillingQueue();
+    }
+  }, [tab, profile, loadRecentAppointments, loadBillingQueue]);
 
   // ── Procedure CRUD ──
   const openAddProc  = () => { setEditingProc(null); setProcForm(BLANK_PROC); setProcMsg(""); setShowProcForm(true); };
@@ -302,6 +331,7 @@ export default function SubDeptDashboard() {
   const profileProcs: any[] = profile?.procedures || [];
   const activeProcs   = procs.length > 0 ? procs.filter((p: any) => p.isActive) : profileProcs.filter((p: any) => p.isActive);
   const displayProcs  = procs.length > 0 ? procs : profileProcs;
+  const pendingBillingQueue = billingQueue.filter((item: any) => item.bill?.status !== "PAID");
   const hodName       = profile?.hodName || user?.name || "HOD";
   const deptName      = (profile?.type === "OTHER" && profile?.customName) ? profile.customName : (profile?.name || "Sub-Department");
   const today         = new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
@@ -582,9 +612,47 @@ export default function SubDeptDashboard() {
                     <h1 style={{fontSize:24,fontWeight:800,marginBottom:4,lineHeight:1.2}}>{deptName}</h1>
                     {profile?.description && <p style={{fontSize:13,opacity:.82,maxWidth:520}}>{profile.description}</p>}
                   </div>
-                  <div style={{flexShrink:0,textAlign:"right"}}>
-                    <div style={{fontSize:11,opacity:.7,marginBottom:4}}>Department Status</div>
-                    <span style={{background:"rgba(255,255,255,.2)",padding:"4px 12px",borderRadius:100,fontSize:12,fontWeight:700}}>{profile?.isActive?"● Active":"○ Inactive"}</span>
+                  <div style={{flexShrink:0,textAlign:"right", display:"flex", gap:10}}>
+                    <button 
+                      onClick={() => setTab("billing")} 
+                      style={{
+                        background: "rgba(255,255,255,.2)", 
+                        padding: "10px 18px", 
+                        borderRadius: 100, 
+                        fontSize: 13, 
+                        fontWeight: 700, 
+                        border: "1px solid rgba(255,255,255,.3)",
+                        color: "#fff",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        backdropFilter: "blur(4px)"
+                      }}
+                    >
+                      <Receipt size={16} />
+                      Collect Bill
+                    </button>
+                    <button 
+                      onClick={() => setTab("appointments")} 
+                      style={{
+                        background: meta.accent, 
+                        padding: "10px 18px", 
+                        borderRadius: 100, 
+                        fontSize: 13, 
+                        fontWeight: 700, 
+                        border: "1px solid rgba(255,255,255,.3)",
+                        color: "#fff",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                      }}
+                    >
+                      <CalendarDays size={16} />
+                      Book Appointment
+                    </button>
                   </div>
                 </div>
                 {profile?.flow && (
@@ -600,8 +668,21 @@ export default function SubDeptDashboard() {
               </div>
 
               {/* Stats */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:14,marginBottom:20}}>
-                {[
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
+                {(profile?.type === "RECEPTION" ? [
+                  { label:"Today's Appts", value:recentAppointments.length, Icon:CalendarDays, color:meta.accent, bg:meta.lightBg,
+                    onClick:()=>setTab("appointments") },
+                  { label:"Pending Bills", value:pendingBillingQueue.length, Icon:Clock, color:"#f59e0b", bg:"#fffbeb",
+                    onClick:()=>setTab("billing") },
+                  { label:"New Patients Today", value:recordsMeta.todayRecords||0, Icon:UserPlus, color:"#10b981", bg:"#f0fdf4",
+                    onClick:()=>setTab("patients") },
+                  { label:"Billing Today",     value:`₹${(recordsMeta.todayRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#10b981", bg:"#f0fdf4",
+                    onClick:()=>setTab("billing") },
+                  { label:"Total Records",     value:recordsMeta.totalRecords||0, Icon:Layers, color:"#6366f1", bg:"#eef2ff",
+                    onClick:()=>setTab("records") },
+                  { label:"Total Revenue",     value:`₹${(recordsMeta.totalRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#059669", bg:"#f0fdf4",
+                    onClick:()=>setTab("records") },
+                ] : [
                   { label:"Active Procedures", value:activeProcs.length, Icon:ClipboardList, color:meta.accent, bg:meta.lightBg },
                   { label:"Total Procedures",  value:displayProcs.length, Icon:Layers,       color:"#6366f1",  bg:"#eef2ff" },
                   { label:"Referrals Today",   value:queue.length||"—",  Icon:UserCheck,     color:"#10b981",  bg:"#f0fdf4",
@@ -614,124 +695,220 @@ export default function SubDeptDashboard() {
                     onClick:()=>{setTab("records");loadRecords();} },
                   { label:"Total Revenue",     value:`₹${(recordsMeta.totalRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#059669", bg:"#f0fdf4",
                     onClick:()=>{setTab("records");loadRecords();} },
-                ].map((s,i)=>{
+                ]).map((s,i)=>{
                   const SI = s.Icon;
                   return (
-                    <div key={i} className="sd2-sc" onClick={s.onClick} style={{cursor:s.onClick?"pointer":"default"}}>
-                      <div style={{width:44,height:44,borderRadius:12,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        <SI size={20} color={s.color}/>
+                    <div key={i} className="sd2-sc" onClick={s.onClick} style={{cursor:s.onClick?"pointer":"default", padding: 14, gap: 12}}>
+                      <div style={{width:38,height:38,borderRadius:10,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <SI size={18} color={s.color}/>
                       </div>
                       <div>
-                        <div style={{fontSize:22,fontWeight:800,color:"#1e293b"}}>{s.value}</div>
-                        <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{s.label}</div>
+                        <div style={{fontSize:20,fontWeight:800,color:"#1e293b"}}>{s.value}</div>
+                        <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{s.label}</div>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Bottom: Procedures preview + HOD */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:18}}>
-                <div className="sd2-card">
-                  <div className="sd2-card-hd">
-                    <span className="sd2-card-title"><ClipboardList size={15} color={meta.accent}/>Procedure Catalog</span>
-                    <span style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active / {procs.length} total</span>
-                  </div>
-                  <div style={{padding:"10px 0"}}>
-                    {displayProcs.slice(0,6).map((p:any)=>(
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 18px",borderBottom:"1px solid #f8fafc"}}>
-                        <div style={{width:8,height:8,borderRadius:"50%",background:PROC_TYPE_COLOR[p.type]||"#94a3b8",flexShrink:0}}/>
-                        <div style={{flex:1,fontSize:13,fontWeight:500,color:p.isActive?"#334155":"#94a3b8"}}>{p.name}</div>
-                        <span style={{fontSize:10,padding:"2px 7px",borderRadius:100,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8",fontWeight:700}}>{p.type}</span>
-                        {p.fee!=null && <span style={{fontSize:11,fontWeight:700,color:"#10b981",minWidth:40,textAlign:"right"}}>₹{p.fee}</span>}
-                      </div>
-                    ))}
-                    {displayProcs.length>6 && <div style={{padding:"10px 18px",fontSize:12,color:meta.accent,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("procedures")}>View all {displayProcs.length} procedures →</div>}
-                    {displayProcs.length===0 && <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No procedures configured yet</div>}
-                  </div>
-                </div>
-
-                <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                  {/* HOD */}
+              {/* Bottom: Recent Activity for Reception */}
+              {profile?.type === "RECEPTION" && (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18, marginTop: 18}}>
+                  {/* Recent Appointments */}
                   <div className="sd2-card">
-                    <div className="sd2-card-hd"><span className="sd2-card-title"><User size={14} color={meta.accent}/>Head of Department</span></div>
-                    <div style={{padding:"16px"}}>
-                      {profile?.hodName ? (<>
-                        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-                          <div style={{width:46,height:46,borderRadius:12,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:"#fff"}}>{initials(profile.hodName)}</div>
-                          <div>
-                            <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{profile.hodName}</div>
-                            <div style={{fontSize:11,color:"#94a3b8"}}>Head of Department</div>
-                          </div>
+                    <div className="sd2-card-hd">
+                      <span className="sd2-card-title"><CalendarDays size={15} color={meta.accent}/>Recent Appointments</span>
+                      <span style={{fontSize:11,color:"#94a3b8"}}>{recentAppointments.length} most recent</span>
+                    </div>
+                    <div style={{padding:"10px 0"}}>
+                      {recentAppointmentsLoading ? (
+                        <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading...
                         </div>
-                        {profile.hodEmail && <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#64748b",marginBottom:6}}><Mail size={11}/>{profile.hodEmail}</div>}
-                        {profile.hodPhone && <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#64748b"}}><Phone size={11}/>{profile.hodPhone}</div>}
-                      </>) : <div style={{padding:"20px 0",textAlign:"center",color:"#94a3b8",fontSize:13}}>No HOD assigned</div>}
-                    </div>
-                  </div>
-
-                  {/* Quick stats */}
-                  <div style={{background:meta.lightBg,borderRadius:12,border:`1px solid ${meta.borderColor}`,padding:"14px 16px"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>Department Details</div>
-                    {[
-                      ["Type",        profile?.type?.replace(/_/g," ")],
-                      ["Code",        profile?.code || "—"],
-                      ["Parent Dept", profile?.department?.name || "Independent"],
-                    ].map(([k,v])=>(
-                      <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:7}}>
-                        <span style={{color:"#64748b"}}>{k}</span>
-                        <span style={{fontWeight:600,color:"#1e293b"}}>{v}</span>
-                      </div>
-                    ))}
-                    <div style={{borderTop:`1px solid ${meta.borderColor}`,paddingTop:8,marginTop:4,fontSize:11,color:"#94a3b8"}}>
-                      Login: {profile?.loginEmail || user?.email || "—"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upcoming Treatment Plans */}
-              <div className="sd2-card" style={{marginTop:18}}>
-                <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><Activity size={15} color={meta.accent}/>Active Treatment Plans</span>
-                  <span style={{fontSize:11,color:"#94a3b8"}}>{upcomingSessions.length} active plan{upcomingSessions.length!==1?"s":""}</span>
-                </div>
-                {sessionsLoading ? (
-                  <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading sessions...
-                  </div>
-                ) : upcomingSessions.length===0 ? (
-                  <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No active treatment plans for this department</div>
-                ) : (
-                  <div style={{padding:"8px 0"}}>
-                    {upcomingSessions.map((plan:any) => {
-                      const pct = plan.totalSessions>0 ? (plan.completedSessions/plan.totalSessions)*100 : 0;
-                      return (
-                        <div key={plan.id} style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",borderBottom:"1px solid #f8fafc"}}>
-                          <div style={{width:36,height:36,borderRadius:10,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <Activity size={16} color={meta.accent}/>
+                      ) : recentAppointments.length > 0 ? (
+                        recentAppointments.map((a: any) => (
+                          <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 18px",borderBottom:"1px solid #f8fafc"}}>
+                            <div style={{width:32,height:32,borderRadius:8,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <User size={14} color={meta.accent}/>
+                            </div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{a.patient?.name}</div>
+                              <div style={{fontSize:11,color:"#64748b"}}>{a.doctor?.name} · {a.timeSlot}</div>
+                            </div>
+                            <span style={{
+                              fontSize:10,padding:"2px 8px",borderRadius:100,
+                              background:STATUS_CFG[a.status]?.bg || "#f1f5f9",
+                              color:STATUS_CFG[a.status]?.color || "#475569",
+                              fontWeight:700,border:`1px solid ${STATUS_CFG[a.status]?.border || "#e2e8f0"}`
+                            }}>
+                              {STATUS_CFG[a.status]?.label || a.status}
+                            </span>
                           </div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{plan.planName}</div>
-                            <div style={{fontSize:11,color:"#64748b"}}>{plan.patient?.name} · {plan.patient?.patientId}</div>
-                            <div style={{marginTop:5,height:4,background:"#f1f5f9",borderRadius:100,overflow:"hidden"}}>
-                              <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${meta.accent},#10b981)`,borderRadius:100}}/>
+                        ))
+                      ) : (
+                        <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No recent appointments found</div>
+                      )}
+                      {recentAppointments.length > 0 && (
+                        <div style={{padding:"10px 18px",fontSize:12,color:meta.accent,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("appointments")}>View all appointments →</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pending Billing Queue */}
+                  <div className="sd2-card">
+                    <div className="sd2-card-hd">
+                      <span className="sd2-card-title"><Receipt size={15} color="#f59e0b"/>Pending Bills</span>
+                      <span style={{fontSize:11,color:"#94a3b8"}}>{pendingBillingQueue.length} pending</span>
+                    </div>
+                    <div style={{padding:"10px 0"}}>
+                      {billingQueueLoading ? (
+                        <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading...
+                        </div>
+                      ) : pendingBillingQueue.length > 0 ? (
+                        pendingBillingQueue.slice(0, 5).map((item: any) => (
+                          <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 18px",borderBottom:"1px solid #f8fafc"}}>
+                            <div style={{width:32,height:32,borderRadius:8,background:"#fffbeb",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <IndianRupee size={14} color="#f59e0b"/>
+                            </div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{item.patient?.name}</div>
+                              <div style={{fontSize:11,color:"#64748b"}}>{item.doctor?.name} · {item.timeSlot}</div>
+                            </div>
+                            <div style={{textAlign: "right"}}>
+                              <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>₹{(item.bill?.total || item.consultationFee || 0).toLocaleString()}</div>
+                              <div style={{
+                                fontSize: 10, 
+                                fontWeight: 700,
+                                color: item.bill?.status === "PARTIALLY_PAID" ? "#b45309" : "#c2410c",
+                                background: item.bill?.status === "PARTIALLY_PAID" ? "#fef3c7" : "#fff7ed",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                marginTop: 2,
+                                display: "inline-block"
+                              }}>
+                                {item.bill?.status === "PARTIALLY_PAID" ? "Partial" : "Pending"}
+                              </div>
                             </div>
                           </div>
-                          <div style={{textAlign:"right",flexShrink:0}}>
-                            <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{plan.completedSessions}/{plan.totalSessions}</div>
-                            <div style={{fontSize:10,color:"#94a3b8"}}>sessions</div>
-                          </div>
-                          <div style={{textAlign:"right",flexShrink:0}}>
-                            <div style={{fontSize:12,fontWeight:700,color:"#10b981"}}>₹{(plan.paidAmount||0).toLocaleString()}</div>
-                            <div style={{fontSize:10,color:"#94a3b8"}}>of ₹{(plan.totalCost||0).toLocaleString()}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        ))
+                      ) : (
+                        <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No pending bills in queue</div>
+                      )}
+                      {pendingBillingQueue.length > 0 && (
+                        <div style={{padding:"10px 18px",fontSize:12,color:meta.accent,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("billing")}>Go to billing queue →</div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Bottom: Procedures preview + HOD (For Non-Reception) */}
+              {profile?.type !== "RECEPTION" && (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:18}}>
+                  <div className="sd2-card">
+                    <div className="sd2-card-hd">
+                      <span className="sd2-card-title"><ClipboardList size={15} color={meta.accent}/>Procedure Catalog</span>
+                      <span style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active / {procs.length} total</span>
+                    </div>
+                    <div style={{padding:"10px 0"}}>
+                      {displayProcs.slice(0,6).map((p:any)=>(
+                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 18px",borderBottom:"1px solid #f8fafc"}}>
+                          <div style={{width:8,height:8,borderRadius:"50%",background:PROC_TYPE_COLOR[p.type]||"#94a3b8",flexShrink:0}}/>
+                          <div style={{flex:1,fontSize:13,fontWeight:500,color:p.isActive?"#334155":"#94a3b8"}}>{p.name}</div>
+                          <span style={{fontSize:10,padding:"2px 7px",borderRadius:100,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8",fontWeight:700}}>{p.type}</span>
+                          {p.fee!=null && <span style={{fontSize:11,fontWeight:700,color:"#10b981",minWidth:40,textAlign:"right"}}>₹{p.fee}</span>}
+                        </div>
+                      ))}
+                      {displayProcs.length>6 && <div style={{padding:"10px 18px",fontSize:12,color:meta.accent,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("procedures")}>View all {displayProcs.length} procedures →</div>}
+                      {displayProcs.length===0 && <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No procedures configured yet</div>}
+                    </div>
+                  </div>
+                  
+                  <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                    {/* HOD */}
+                    <div className="sd2-card">
+                      <div className="sd2-card-hd"><span className="sd2-card-title"><User size={14} color={meta.accent}/>Head of Department</span></div>
+                      <div style={{padding:"16px"}}>
+                        {profile?.hodName ? (<>
+                          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+                            <div style={{width:46,height:46,borderRadius:12,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:"#fff"}}>{initials(profile.hodName)}</div>
+                            <div>
+                              <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{profile.hodName}</div>
+                              <div style={{fontSize:11,color:"#94a3b8"}}>Head of Department</div>
+                            </div>
+                          </div>
+                          {profile.hodEmail && <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#64748b",marginBottom:6}}><Mail size={11}/>{profile.hodEmail}</div>}
+                          {profile.hodPhone && <div style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#64748b"}}><Phone size={11}/>{profile.hodPhone}</div>}
+                        </>) : <div style={{padding:"20px 0",textAlign:"center",color:"#94a3b8",fontSize:13}}>No HOD assigned</div>}
+                      </div>
+                    </div>
+
+                    {/* Quick stats */}
+                    <div style={{background:meta.lightBg,borderRadius:12,border:`1px solid ${meta.borderColor}`,padding:"14px 16px"}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>Department Details</div>
+                      {[
+                        ["Type",        profile?.type?.replace(/_/g," ")],
+                        ["Code",        profile?.code || "—"],
+                        ["Parent Dept", profile?.department?.name || "Independent"],
+                      ].map(([k,v])=>(
+                        <div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:7}}>
+                          <span style={{color:"#64748b"}}>{k}</span>
+                          <span style={{fontWeight:600,color:"#1e293b"}}>{v}</span>
+                        </div>
+                      ))}
+                      <div style={{borderTop:`1px solid ${meta.borderColor}`,paddingTop:8,marginTop:4,fontSize:11,color:"#94a3b8"}}>
+                        Login: {profile?.loginEmail || user?.email || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Upcoming Treatment Plans */}
+              {profile?.type !== "RECEPTION" && (
+                <div className="sd2-card" style={{marginTop:18}}>
+                  <div className="sd2-card-hd">
+                    <span className="sd2-card-title"><Activity size={15} color={meta.accent}/>Active Treatment Plans</span>
+                    <span style={{fontSize:11,color:"#94a3b8"}}>{upcomingSessions.length} active plan{upcomingSessions.length!==1?"s":""}</span>
+                  </div>
+                  {sessionsLoading ? (
+                    <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading sessions...
+                    </div>
+                  ) : upcomingSessions.length===0 ? (
+                    <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No active treatment plans for this department</div>
+                  ) : (
+                    <div style={{padding:"8px 0"}}>
+                      {upcomingSessions.map((plan:any) => {
+                        const pct = plan.totalSessions>0 ? (plan.completedSessions/plan.totalSessions)*100 : 0;
+                        return (
+                          <div key={plan.id} style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",borderBottom:"1px solid #f8fafc"}}>
+                            <div style={{width:36,height:36,borderRadius:10,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <Activity size={16} color={meta.accent}/>
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{plan.planName}</div>
+                              <div style={{fontSize:11,color:"#64748b"}}>{plan.patient?.name} · {plan.patient?.patientId}</div>
+                              <div style={{marginTop:5,height:4,background:"#f1f5f9",borderRadius:100,overflow:"hidden"}}>
+                                <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${meta.accent},#10b981)`,borderRadius:100}}/>
+                              </div>
+                            </div>
+                            <div style={{textAlign:"right",flexShrink:0}}>
+                              <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{plan.completedSessions}/{plan.totalSessions}</div>
+                              <div style={{fontSize:10,color:"#94a3b8"}}>sessions</div>
+                            </div>
+                            <div style={{textAlign:"right",flexShrink:0}}>
+                              <div style={{fontSize:12,fontWeight:700,color:"#10b981"}}>₹{(plan.paidAmount||0).toLocaleString()}</div>
+                              <div style={{fontSize:10,color:"#94a3b8"}}>of ₹{(plan.totalCost||0).toLocaleString()}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </>)}
 
             {/* ═══════════════════ DOCTOR REFERRALS QUEUE ═══════════════════ */}
@@ -1187,64 +1364,7 @@ export default function SubDeptDashboard() {
             {tab==="billing" && <BillingQueueLazy />}
 
             {/* ═══════════════════ PATIENTS (Reception) ═══════════════════ */}
-            {tab==="patients" && (<>
-              <div className="sd2-card">
-                <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><Users size={15} color={meta.accent}/>Patient Management</span>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div className="sd2-search" style={{width:220}}>
-                      <Search size={13} color="#94a3b8"/>
-                      <input placeholder="Search name, ID, phone…" value={ptSearch} onChange={e=>{setPtSearch(e.target.value);loadPatients(e.target.value);}}/>
-                    </div>
-                    <button onClick={()=>loadPatients(ptSearch)} style={{width:34,height:34,borderRadius:8,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                      <RefreshCw size={13} color={ptLoading?"#94a3b8":meta.accent} style={ptLoading?{animation:"spin .7s linear infinite"}:{}}/>
-                    </button>
-                  </div>
-                </div>
-                {/* Stats */}
-                <div style={{display:"flex",gap:12,padding:"12px 18px",borderBottom:"1px solid #f1f5f9",flexWrap:"wrap"}}>
-                  {[
-                    {label:"Total Patients",value:ptStats.total||ptList.length,color:meta.accent},
-                    {label:"Registered Today",value:ptStats.today||0,color:"#16a34a"},
-                  ].map(s=>(
-                    <div key={s.label} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:100,background:s.color+"10",border:`1px solid ${s.color}30`}}>
-                      <span style={{fontSize:16,fontWeight:800,color:s.color}}>{s.value}</span>
-                      <span style={{fontSize:11,fontWeight:600,color:s.color}}>{s.label}</span>
-                    </div>
-                  ))}
-                </div>
-                {ptLoading ? (
-                  <div style={{padding:40,textAlign:"center"}}><Loader2 size={22} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/></div>
-                ) : ptList.length===0 ? (
-                  <div style={{padding:56,textAlign:"center",color:"#94a3b8",fontSize:13}}>No patients found</div>
-                ) : (
-                  <table className="sd2-tbl">
-                    <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Age</th><th>Blood</th><th>Registered</th></tr></thead>
-                    <tbody>
-                      {ptList.map((p:any)=>(
-                        <tr key={p.id}>
-                          <td style={{fontWeight:700,color:meta.accent,fontSize:12}}>{p.patientId||"—"}</td>
-                          <td>
-                            <div style={{display:"flex",alignItems:"center",gap:10}}>
-                              <div style={{width:32,height:32,borderRadius:9,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:11,color:meta.accent,flexShrink:0,border:`1px solid ${meta.borderColor}`}}>{(p.name||"?")[0].toUpperCase()}</div>
-                              <div>
-                                <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{p.name}</div>
-                                {p.email && <div style={{fontSize:11,color:"#94a3b8"}}>{p.email}</div>}
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{fontSize:13,color:"#475569"}}>{p.phone||"—"}</td>
-                          <td><span className="sd2-badge" style={{background:p.gender==="MALE"?"#eff6ff":"#fdf2f8",color:p.gender==="MALE"?"#3b82f6":"#ec4899",border:`1px solid ${p.gender==="MALE"?"#bfdbfe":"#fbcfe8"}`}}>{p.gender||"—"}</span></td>
-                          <td style={{fontSize:13,fontWeight:600,color:"#475569"}}>{p.dateOfBirth?calcAge(p.dateOfBirth):"—"}</td>
-                          <td style={{fontSize:12,fontWeight:600,color:"#ef4444"}}>{p.bloodGroup||"—"}</td>
-                          <td style={{fontSize:11,color:"#94a3b8"}}>{p.createdAt?new Date(p.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </>)}
+            {tab==="patients" && <PatientsManagementPanelLazy/>}
 
             {/* ═══════════════════ DOCTORS (Reception) ═══════════════════ */}
             {tab==="doctors" && (<>
@@ -1403,5 +1523,18 @@ export default function SubDeptDashboard() {
       {transferTarget && <TransferPatientModal record={transferTarget} subDepts={subDepts} onClose={() => setTransferTarget(null)} onTransfer={handleTransferPatient} meta={meta} />}
       {viewPrescription && <ViewPrescriptionModal appointment={viewPrescription} onClose={() => setViewPrescription(null)} meta={meta} />}
     </>
+  );
+}
+
+export default function SubDeptDashboard() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#64748b", fontSize: 14, gap: 14 }}>
+        <Loader2 size={24} style={{ animation: "spin .7s linear infinite" }} />
+        Loading dashboard...
+      </div>
+    }>
+      <SubDeptDashboardContent />
+    </Suspense>
   );
 }

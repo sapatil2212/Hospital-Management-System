@@ -7,10 +7,8 @@ import {
   Clock,
   Award,
   Heart,
-  ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import styles from "./MissionSection.module.css";
 
 const features = [
@@ -56,45 +54,13 @@ export default function MissionSection() {
         >
           <div className={styles.imageWrapper}>
             <Image
-              src="/images/hero-doctor.png"
+              src="/about/about.png"
               alt="Healthcare Professional"
               width={520}
               height={600}
               className={styles.doctorImage}
               priority
             />
-
-            {/* Experience Badge */}
-            <motion.div
-              className={styles.expBadge}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <div className={styles.expIconWrapper}>
-                <Award size={22} />
-              </div>
-              <div className={styles.expContent}>
-                <span className={styles.expNumber}>15+</span>
-                <span className={styles.expLabel}>Years Exp.</span>
-              </div>
-            </motion.div>
-
-            {/* Team Image */}
-            <motion.div
-              className={styles.teamImageWrapper}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              <Image
-                src="/images/about-team.png"
-                alt="Medical Team"
-                width={200}
-                height={140}
-                className={styles.teamImage}
-              />
-            </motion.div>
           </div>
         </motion.div>
 
@@ -105,8 +71,6 @@ export default function MissionSection() {
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <span className={styles.missionBadge}>Our Mission</span>
-
           <h2 className={styles.mainHeading}>
             Healthcare Designed <br />
             Around <span className={styles.headingAccent}>You</span>
@@ -138,18 +102,6 @@ export default function MissionSection() {
               </motion.div>
             ))}
           </div>
-
-          {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.4, delay: 0.7 }}
-          >
-            <Link href="/about" className={styles.ctaButton}>
-              Discover Our Story
-              <ArrowRight size={18} />
-            </Link>
-          </motion.div>
         </motion.div>
       </div>
     </section>

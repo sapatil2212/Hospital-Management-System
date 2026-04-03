@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, Suspense, Fragment, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, UserRound, Settings, HelpCircle,
@@ -44,10 +45,7 @@ const mockAppointments = [
   { id: "A004", patient: "Kavita Singh", doctor: "Dr. Priya Sharma", dept: "Cardiology", time: "11:00 AM", status: "confirmed" },
   { id: "A005", patient: "Ankit Tiwari", doctor: "Dr. Rajan Mehta", dept: "Neurology", time: "11:30 AM", status: "cancelled" },
 ];
-const barData = [
-  { month: "Jan", val: 220 }, { month: "Feb", val: 180 }, { month: "Mar", val: 340 }, { month: "Apr", val: 160 },
-  { month: "May", val: 200 }, { month: "Jun", val: 290 }, { month: "Jul", val: 310 }, { month: "Aug", val: 270 }, { month: "Sep", val: 250 },
-];
+const PatientsManagementPanelLazy = dynamic(() => import("../../subdept/dashboard/PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Patient Management...</span></div> });
 const reports = [
   { icon: <Stethoscope size={14} />, msg: "Ventilator unit requires inspection in ICU", time: "5 minutes ago", highlight: true },
   { icon: <Settings size={14} />, msg: "Breakdown in elevator on 2nd floor", time: "18 minutes ago", highlight: false },
@@ -1503,271 +1501,6 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
   );
 }
 
-// ─── Comprehensive Patients Management Panel ───
-function PatientsManagementPanel() {
-  const router = useRouter();
-  const [patients, setPatients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
-  const [deleting, setDeleting] = useState(false);
-  const itemsPerPage = 10;
-
-  const loadPatients = async () => {
-    setLoading(true);
-    const response = await api(`/api/patients?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`);
-    if (response.success) {
-      setPatients(response.data.data || []);
-      setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
-      setTotalCount(response.data.total || 0);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { loadPatients(); }, [currentPage, searchTerm]);
-
-  const handleDeletePatient = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    const d = await api(`/api/patients/${deleteTarget.id}`, "DELETE");
-    if (d.success) {
-      setDeleteTarget(null);
-      loadPatients();
-    } else {
-      alert(d.message || "Failed to delete patient");
-    }
-    setDeleting(false);
-  };
-
-  const calculateAge = (dob?: string) => {
-    if (!dob) return "—";
-    return Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000);
-  };
-
-  return (
-    <div className="hd-card mb16">
-      <div className="hd-card-head" style={{ flexWrap: "wrap", gap: 15 }}>
-        <div>
-          <div className="hd-card-title">Patient Management</div>
-          <div className="hd-card-sub">{totalCount} registered patients</div>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, flex: 1, justifyContent: "flex-end", minWidth: 300 }}>
-          <div className="hd-search-wrap" style={{ width: "100%", maxWidth: 300 }}>
-            <Search size={14} color="#94a3b8" />
-            <input className="hd-search" placeholder="Search name, phone, ID..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
-          </div>
-          <button className="hd-btn-primary" onClick={() => router.push("/hospitaladmin/appointments")} style={{ whiteSpace: "nowrap" }}>
-            <Plus size={14} /> Register Patient
-          </button>
-        </div>
-      </div>
-
-      <div className="hd-tbl-wrap">
-        {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8" }}>
-            <Loader2 size={24} className="hd-spin" style={{ margin: "0 auto 10px", borderColor: "#0E898F" }} />
-            <div style={{ fontSize: 13 }}>Loading patients...</div>
-          </div>
-        ) : patients.length === 0 ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8" }}>
-            <Users size={32} style={{ opacity: .3, marginBottom: 10 }} />
-            <div style={{ fontSize: 14, fontWeight: 600 }}>No patients found</div>
-          </div>
-        ) : (
-          <>
-            <table className="hd-tbl">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Patient</th>
-                  <th>Contact</th>
-                  <th>Gender/Age</th>
-                  <th>Blood Group</th>
-                  <th>Activity</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {patients.map(p => (
-                  <tr key={p.id}>
-                    <td><span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "2px 6px", borderRadius: 5 }}>{p.patientId}</span></td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700 }}>{p.name.charAt(0).toUpperCase()}</div>
-                        <span className="hd-td-name">{p.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: 12, fontWeight: 500 }}>{p.phone}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{p.email || "No email"}</div>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                        <span className="hd-badge" style={{ background: "#f1f5f9", color: "#64748b" }}>{p.gender || "—"}</span>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{calculateAge(p.dateOfBirth)} yrs</span>
-                      </div>
-                    </td>
-                    <td><span className="hd-badge" style={{ background: "#fef3c7", color: "#f59e0b" }}>{p.bloodGroup || "—"}</span></td>
-                    <td>
-                      <div style={{ display: "flex", gap: 12 }}>
-                        <div title="Appointments"><div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>Visits</div><div style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments || 0}</div></div>
-                        <div title="Follow-ups"><div style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>F/Up</div><div style={{ fontSize: 12, fontWeight: 700, color: "#10b981" }}>{p._count?.followUps || 0}</div></div>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                        <button className="hd-card-icon-btn" onClick={() => router.push(`/hospitaladmin/appointments?patientId=${p.id}`)} title="View Records"><ChevronRight size={14} /></button>
-                        <button className="hd-card-icon-btn" style={{ color: "#ef4444" }} onClick={() => setDeleteTarget(p)} title="Delete Patient"><Trash2 size={13} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {totalPages > 1 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderTop: "1px solid #f1f5f9" }}>
-                <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {patients.length} of {totalCount} patients</div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button className="hd-filter-btn" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ opacity: currentPage === 1 ? .5 : 1 }}>Prev</button>
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    const pageNum = currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
-                    if (pageNum < 1 || pageNum > totalPages) return null;
-                    return (
-                      <button key={i} className={`hd-filter-btn${currentPage === pageNum ? " on" : ""}`} onClick={() => setCurrentPage(pageNum)}
-                        style={{ minWidth: 32, justifyContent: "center", background: currentPage === pageNum ? "#0E898F" : "#f1f5f9", color: currentPage === pageNum ? "#fff" : "#64748b" }}>
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                  <button className="hd-filter-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ opacity: currentPage === totalPages ? .5 : 1 }}>Next</button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {deleteTarget && (
-        <div className="hd-modal-bg" onClick={() => setDeleteTarget(null)}>
-          <div className="hd-modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", gap: 15, marginBottom: 20 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><AlertTriangle size={20} color="#ef4444" /></div>
-              <div>
-                <div className="hd-modal-title">Delete Patient?</div>
-                <div className="hd-modal-sub">Are you sure you want to delete <b>{deleteTarget.name}</b>? This will permanently remove all medical history, appointments, and prescriptions.</div>
-              </div>
-            </div>
-            <div className="hd-ma">
-              <button className="hd-mcancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="hd-msubmit" style={{ background: "#ef4444" }} onClick={handleDeletePatient} disabled={deleting}>{deleting ? <span className="hd-spin" /> : "Delete Permanently"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Patient Edit Modal ───
-function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string; onClose: () => void; onUpdate: () => void }) {
-  const [form, setForm] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-
-  useEffect(() => {
-    api(`/api/patients/${patientId}`).then(d => {
-      if (d.success) setForm(d.data);
-      setLoading(false);
-    });
-  }, [patientId]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true); setMsg("");
-    const d = await api(`/api/patients/${patientId}`, "PUT", form);
-    if (d.success) {
-      onUpdate();
-      onClose();
-    } else {
-      setMsg(d.message || "Failed to update");
-    }
-    setSaving(false);
-  };
-
-  if (loading) return (
-    <div className="hd-modal-bg">
-      <div className="hd-modal" style={{ textAlign: "center", padding: 40 }}>
-        <Loader2 size={24} className="hd-spin" style={{ margin: "0 auto 10px", borderColor: "#0E898F" }} />
-        <div style={{ fontSize: 13, color: "#64748b" }}>Loading patient profile...</div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="hd-modal-bg" onClick={onClose}>
-      <div className="hd-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 15 }}>
-          <div>
-            <div className="hd-modal-title">Edit Patient Profile</div>
-            <div className="hd-modal-sub">Update basic information for {form.name}</div>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={18} /></button>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-            <div className="hd-mf" style={{ gridColumn: "span 2" }}>
-              <label className="hd-ml">Full Name</label>
-              <input className="hd-mi" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-            </div>
-            <div className="hd-mf">
-              <label className="hd-ml">Phone Number</label>
-              <input className="hd-mi" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
-            </div>
-            <div className="hd-mf">
-              <label className="hd-ml">Email</label>
-              <input className="hd-mi" type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} />
-            </div>
-            <div className="hd-mf">
-              <label className="hd-ml">Gender</label>
-              <select className="hd-mi" value={form.gender || ""} onChange={e => setForm({ ...form, gender: e.target.value })}>
-                <option value="">Select</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-            <div className="hd-mf">
-              <label className="hd-ml">Blood Group</label>
-              <select className="hd-mi" value={form.bloodGroup || ""} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
-                <option value="">Select</option>
-                {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-            <div className="hd-mf" style={{ gridColumn: "span 2" }}>
-              <label className="hd-ml">Address</label>
-              <input className="hd-mi" value={form.address || ""} onChange={e => setForm({ ...form, address: e.target.value })} />
-            </div>
-          </div>
-
-          {msg && <div className="hd-msg-err">{msg}</div>}
-
-          <div className="hd-ma">
-            <button type="button" className="hd-mcancel" onClick={onClose}>Cancel</button>
-            <button type="submit" className="hd-msubmit" disabled={saving}>{saving ? <span className="hd-spin" /> : "Save Changes"}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 type NavTab = "overview" | "appointments" | "staff" | "doctors" | "patients" | "inventory" | "billing" | "ipd" | "reports" | "finance" | "settings" | "profile";
 
 export default function HospitalAdminDashboard() {
@@ -1791,7 +1524,6 @@ function DashboardContent() {
   const [search, setSearch] = useState("");
   const [apptStats, setApptStats] = useState<any>(null);
   const [patientStats, setPatientStats] = useState<any>(null);
-  const [patientEditId, setPatientEditId] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
@@ -1941,8 +1673,6 @@ function DashboardContent() {
           </div>
         </div>
       )}
-
-      {patientEditId && <PatientEditModal patientId={patientEditId} onClose={() => setPatientEditId(null)} onUpdate={() => setTab("patients")} />}
 
       <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "reports") ? { gridTemplateColumns: "1fr" } : undefined}>
     <div className="hd-center">
@@ -2121,7 +1851,7 @@ function DashboardContent() {
               <div className="hd-card-title">Recently Registered Patients</div>
               <div className="hd-card-sub">{dashboardData ? `${dashboardData.patients.total} total · ${dashboardData.patients.newToday} registered today` : "Loading..."}</div>
             </div>
-            <button className="hd-card-icon-btn" onClick={() => router.push("/hospitaladmin/patients")} title="View all"><ChevronRight size={14} /></button>
+            <button className="hd-card-icon-btn" onClick={() => setTab("patients")} title="View all"><ChevronRight size={14} /></button>
           </div>
           <div className="hd-tbl-wrap">
             {dashboardLoading && !dashboardData ? (
@@ -2314,7 +2044,7 @@ function DashboardContent() {
       )}
 
       {tab === "patients" && (
-        <PatientsManagementPanel />
+        <PatientsManagementPanelLazy />
       )}
 
       {tab === "inventory" && (

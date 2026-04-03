@@ -1,5 +1,5 @@
 .stats {
-  padding: var(--space-16) 0;
+  padding: var(--space-8) 0;
   background: var(--white);
   position: relative;
 }
@@ -26,8 +26,10 @@
 
 .statsInner {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-8);
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .statCard {
@@ -85,7 +87,7 @@
 
 @media (max-width: 1024px) {
   .statsInner {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-6);
   }
 
@@ -100,12 +102,12 @@
   }
 
   .statsInner {
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-1);
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
   }
 
   .statCard {
-    padding: var(--space-1);
+    padding: var(--space-2);
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -113,17 +115,17 @@
   }
 
   .statIcon {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
   }
 
   .statIcon svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 
   .statValue {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
   }
 
   .statLabel {

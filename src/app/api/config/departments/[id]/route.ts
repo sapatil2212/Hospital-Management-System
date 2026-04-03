@@ -98,7 +98,9 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 /**
  * DELETE /api/config/departments/[id]
  * Delete a department by ID
- * Query params: ?force=true to force delete with dependencies
+ * Query params: 
+ *   ?force=true - force delete department only, keep related items
+ *   ?cascade=true - cascade delete department and all related items
  */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   const auth = await requireHospitalAdmin(req);
@@ -108,8 +110,9 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const force = searchParams.get("force") === "true";
+    const cascade = searchParams.get("cascade") === "true";
 
-    const result = await deleteDepartment(id, auth.hospitalId, force);
+    const result = await deleteDepartment(id, auth.hospitalId, force, cascade);
     return successResponse(result, "Department deleted");
   } catch (e: any) {
     if (e instanceof DepartmentServiceError) {

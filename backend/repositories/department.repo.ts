@@ -179,8 +179,47 @@ export const toggleDepartmentStatus = async (
 };
 
 // Delete department (with dependency check)
-export const deleteDepartment = async (id: string, hospitalId: string) => {
-  return prisma.department.deleteMany({ where: { id, hospitalId } });
+export const deleteDepartment = async (id: string, hospitalId: string, cascade = false) => {
+  if (cascade) {
+    // Cascade delete: remove department and all related entities in a transaction
+    return prisma.$transaction(async (tx) => {
+      // Delete related entities first (due to foreign key constraints)
+      await tx.doctor.updateMany({
+        where: { departmentId: id, hospitalId },
+        data: { departmentId: null },
+      });
+      await tx.staff.updateMany({
+        where: { departmentId: id, hospitalId },
+        data: { departmentId: null },
+      });
+      // Delete sub-departments (cascade will handle their related records)
+      await (tx as any).subDepartment.deleteMany({
+        where: { departmentId: id, hospitalId },
+      });
+      // Delete the department itself
+      return tx.department.deleteMany({ where: { id, hospitalId } });
+    });
+  } else {
+    // Force delete: just remove department, unlink related items
+    return prisma.$transaction(async (tx) => {
+      // Unlink doctors and staff
+      await tx.doctor.updateMany({
+        where: { departmentId: id, hospitalId },
+        data: { departmentId: null },
+      });
+      await tx.staff.updateMany({
+        where: { departmentId: id, hospitalId },
+        data: { departmentId: null },
+      });
+      // Unlink sub-departments
+      await (tx as any).subDepartment.updateMany({
+        where: { departmentId: id, hospitalId },
+        data: { departmentId: null },
+      });
+      // Delete the department
+      return tx.department.deleteMany({ where: { id, hospitalId } });
+    });
+  }
 };
 
 // Check department dependencies before deletion

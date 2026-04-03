@@ -6,6 +6,11 @@ export const createSubDepartmentSchema = z.object({
   type: z.enum([
     "PHARMACY", "PATHOLOGY", "RADIOLOGY", "PROCEDURE", "LABORATORY",
     "DENTAL", "DERMATOLOGY", "HAIR", "ONCOLOGY", "CARDIOLOGY", "BILLING", "RECEPTION", "OTHER",
+    "HR", "ACCOUNTS", "NURSING", "HOUSEKEEPING", "AMBULANCE", "BIOMEDICAL",
+    "OT", "DIALYSIS", "PHYSIOTHERAPY", "COSMETIC", "ENDOSCOPY",
+    "BLOOD_BANK", "ECG",
+    "OPD", "IPD", "EMERGENCY", "ICU", "GENERAL_MEDICINE", "SURGERY", "GYNECOLOGY", "PEDIATRICS",
+    "CUSTOM",
   ]),
   description: z.string().optional().nullable(),
   color: z.string().optional().nullable(),

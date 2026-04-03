@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { id: "appointments", label: "Appointments",      Icon: CalendarDays,    section: "General", route: "/hospitaladmin/appointments" },
   { id: "staff",        label: "Staff",             Icon: Users,           section: "General", route: "/hospitaladmin/staff" },
   { id: "doctors",      label: "Doctors",           Icon: Stethoscope,     section: "General", route: "/hospitaladmin/doctors" },
-  { id: "patients",     label: "Patients",          Icon: UserRound,       section: "General", route: "/hospitaladmin/patients" },
+  { id: "patients",     label: "Patients",          Icon: UserRound,       section: "General", route: "/hospitaladmin/dashboard?tab=patients" },
   { id: "inventory",    label: "Inventory",         Icon: ClipboardList,   section: "General", route: "/hospitaladmin/dashboard?tab=inventory" },
   { id: "billing",      label: "Billing",           Icon: CreditCard,      section: "General", route: "/hospitaladmin/dashboard?tab=billing" },
   { id: "ipd",          label: "IPD / Wards",       Icon: BedDouble,       section: "General", route: "/hospitaladmin/dashboard?tab=ipd" },
@@ -29,7 +29,6 @@ function getActiveId(pathname: string, tab: string | null): string {
   if (pathname.startsWith("/hospitaladmin/finance"))       return "finance";
   if (pathname.startsWith("/hospitaladmin/staff"))        return "staff";
   if (pathname.startsWith("/hospitaladmin/doctors"))      return "doctors";
-  if (pathname.startsWith("/hospitaladmin/patients"))     return "patients";
   if (pathname.startsWith("/hospitaladmin/configure"))    return "configure";
   if (pathname.startsWith("/hospitaladmin/profile"))      return "profile";
   if (pathname.startsWith("/hospitaladmin/dashboard")) {
@@ -39,6 +38,7 @@ function getActiveId(pathname: string, tab: string | null): string {
     if (tab === "reports")   return "reports";
     if (tab === "finance")   return "finance";
     if (tab === "settings")  return "settings";
+    if (tab === "patients")  return "patients";
     return "overview";
   }
   return "overview";

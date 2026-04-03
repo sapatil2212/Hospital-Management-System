@@ -15,7 +15,7 @@ interface Department {
   name: string;
   code: string;
   description?: string | null;
-  type: "OPD" | "IPD" | "DIAGNOSTIC" | "SUPPORT" | "CUSTOM";
+  type: "CLINICAL" | "DIAGNOSTIC" | "PROCEDURE" | "SUPPORT" | "ADMINISTRATIVE" | "CUSTOM";
   isActive: boolean;
   consultationFee?: number | null;
   allowAppointments: boolean;
@@ -41,7 +41,7 @@ interface FormData {
   name: string;
   code: string;
   description: string;
-  type: "OPD" | "IPD" | "DIAGNOSTIC" | "SUPPORT" | "CUSTOM";
+  type: "CLINICAL" | "DIAGNOSTIC" | "PROCEDURE" | "SUPPORT" | "ADMINISTRATIVE" | "CUSTOM";
   customTypeName: string;
   consultationFee: string;
   allowAppointments: boolean;
@@ -84,18 +84,20 @@ const api = async (url: string, method = "GET", body?: any) => {
 };
 
 const DEPT_TYPES = [
-  { value: "OPD", label: "OPD", desc: "Outpatient / Consulting" },
-  { value: "IPD", label: "IPD", desc: "Inpatient Department" },
-  { value: "DIAGNOSTIC", label: "Diagnostic", desc: "Diagnostic Services" },
-  { value: "SUPPORT", label: "Support", desc: "Support Services" },
+  { value: "CLINICAL", label: "Clinical Departments (Patient Care)", desc: "Direct patient care and treatment" },
+  { value: "DIAGNOSTIC", label: "Diagnostic Departments", desc: "Diagnostic and testing services" },
+  { value: "PROCEDURE", label: "Procedure / Treatment Departments", desc: "Specialized procedures and treatments" },
+  { value: "SUPPORT", label: "Support / Service Departments", desc: "Support and auxiliary services" },
+  { value: "ADMINISTRATIVE", label: "Administrative Departments", desc: "Administrative and management" },
   { value: "CUSTOM", label: "Custom", desc: "Define your own type" },
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  OPD: "blue",
-  IPD: "purple",
+  CLINICAL: "blue",
   DIAGNOSTIC: "orange",
+  PROCEDURE: "purple",
   SUPPORT: "gray",
+  ADMINISTRATIVE: "teal",
   CUSTOM: "teal",
 };
 
@@ -103,7 +105,7 @@ const emptyForm: FormData = {
   name: "",
   code: "",
   description: "",
-  type: "OPD",
+  type: "CLINICAL",
   customTypeName: "",
   consultationFee: "",
   allowAppointments: true,
@@ -172,44 +174,104 @@ function Modal({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFIRM DIALOG
+// DELETE CONFIRM DIALOG
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ConfirmDialog({
+function DeleteConfirmDialog({
   open,
   onClose,
   onConfirm,
-  title,
-  message,
-  confirmText = "Delete",
+  department,
   loading = false,
 }: {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: string;
-  confirmText?: string;
+  onConfirm: (mode: "force" | "cascade") => void;
+  department: Department | null;
   loading?: boolean;
 }) {
-  if (!open) return null;
+  if (!open || !department) return null;
+  
+  const hasDeps = (department._count?.doctors || 0) > 0 || 
+                  (department._count?.staff || 0) > 0 || 
+                  (department._count?.subDepartments || 0) > 0;
+  
   return (
     <div className="dept-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="dept-modal dept-modal-sm">
+      <div className="dept-modal dept-modal-md">
         <div className="dept-confirm-icon">
           <AlertTriangle size={32} color="#ef4444" />
         </div>
-        <h3 className="dept-confirm-title">{title}</h3>
-        <p className="dept-confirm-msg">{message}</p>
-        <div className="dept-confirm-actions">
-          <button className="dept-btn-ghost" onClick={onClose} disabled={loading}>
-            Cancel
-          </button>
-          <button className="dept-btn-danger" onClick={onConfirm} disabled={loading}>
-            {loading && <Loader2 size={14} className="dept-spin" />}
-            {confirmText}
-          </button>
-        </div>
+        <h3 className="dept-confirm-title">Delete Department: {department.name}?</h3>
+        
+        {hasDeps ? (
+          <>
+            <p className="dept-confirm-msg">
+              This department has the following related items:
+            </p>
+            <div className="dept-deps-list">
+              {(department._count?.doctors || 0) > 0 && (
+                <div className="dept-dep-item">
+                  <User size={16} />
+                  <span><strong>{department._count?.doctors}</strong> Doctor{department._count?.doctors !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+              {(department._count?.staff || 0) > 0 && (
+                <div className="dept-dep-item">
+                  <User size={16} />
+                  <span><strong>{department._count?.staff}</strong> Staff member{department._count?.staff !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+              {(department._count?.subDepartments || 0) > 0 && (
+                <div className="dept-dep-item">
+                  <Building2 size={16} />
+                  <span><strong>{department._count?.subDepartments}</strong> Sub-department{department._count?.subDepartments !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+            </div>
+            <p className="dept-confirm-msg" style={{marginTop:12}}>
+              How would you like to proceed?
+            </p>
+            <div className="dept-delete-actions">
+              <button className="dept-btn-ghost" onClick={onClose} disabled={loading}>
+                Cancel
+              </button>
+              <button 
+                className="dept-btn-warning" 
+                onClick={() => onConfirm("force")} 
+                disabled={loading}
+                title="Delete department only, keep related items"
+              >
+                {loading && <Loader2 size={14} className="dept-spin" />}
+                Keep Related Items
+              </button>
+              <button 
+                className="dept-btn-danger" 
+                onClick={() => onConfirm("cascade")} 
+                disabled={loading}
+                title="Delete department and all related items"
+              >
+                {loading && <Loader2 size={14} className="dept-spin" />}
+                Delete All
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="dept-confirm-msg">
+              This department has no related items. Are you sure you want to delete it?
+            </p>
+            <div className="dept-confirm-actions">
+              <button className="dept-btn-ghost" onClick={onClose} disabled={loading}>
+                Cancel
+              </button>
+              <button className="dept-btn-danger" onClick={() => onConfirm("force")} disabled={loading}>
+                {loading && <Loader2 size={14} className="dept-spin" />}
+                Delete Department
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -430,13 +492,22 @@ export default function DepartmentPanel() {
   };
 
   // Handle delete
-  const handleDelete = async () => {
+  const handleDelete = async (mode: "force" | "cascade") => {
     if (!deleteItem) return;
     setDeleting(true);
-    const res = await api(`/api/config/departments/${deleteItem.id}`, "DELETE");
+    
+    const url = mode === "cascade" 
+      ? `/api/config/departments/${deleteItem.id}?cascade=true`
+      : `/api/config/departments/${deleteItem.id}?force=true`;
+    
+    const res = await api(url, "DELETE");
     setDeleting(false);
+    
     if (res.success) {
-      addToast("success", "Department deleted successfully");
+      const msg = mode === "cascade" 
+        ? "Department and all related items deleted successfully"
+        : "Department deleted successfully (related items kept)";
+      addToast("success", msg);
       setDeleteItem(null);
       load();
     } else {
@@ -542,6 +613,13 @@ export default function DepartmentPanel() {
         .dept-confirm-title{font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px}
         .dept-confirm-msg{font-size:14px;color:#64748b;margin-bottom:20px;line-height:1.5}
         .dept-confirm-actions{display:flex;gap:10px;justify-content:center}
+        .dept-deps-list{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin:12px 0;display:flex;flex-direction:column;gap:8px}
+        .dept-dep-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#334155}
+        .dept-dep-item strong{color:#1e293b;font-weight:600}
+        .dept-delete-actions{display:flex;gap:8px;justify-content:center;margin-top:20px}
+        .dept-btn-warning{padding:10px 20px;border-radius:9px;border:none;background:#f59e0b;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+        .dept-btn-warning:hover{background:#d97706}
+        .dept-btn-warning:disabled{opacity:.55;cursor:not-allowed}
         .dept-toast-container{position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
         .dept-toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease}
         @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -1012,13 +1090,11 @@ export default function DepartmentPanel() {
       </Modal>
 
       {/* Delete Confirmation */}
-      <ConfirmDialog
+      <DeleteConfirmDialog
         open={!!deleteItem}
         onClose={() => setDeleteItem(null)}
         onConfirm={handleDelete}
-        title="Delete Department"
-        message={`Are you sure you want to delete "${deleteItem?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
+        department={deleteItem}
         loading={deleting}
       />
     </>

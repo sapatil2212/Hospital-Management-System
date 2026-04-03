@@ -13,10 +13,30 @@ export default function WhoWeAre() {
   return (
     <section className={styles.whoWeAreSection} ref={ref}>
       <div className={`container ${styles.container}`}>
-        {/* Left Side - Image */}
+        {/* Left Side - Content */}
+        <motion.div
+          className={styles.contentSection}
+          initial={{ opacity: 0, x: -40 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <h2 className={styles.mainHeading}>
+            Redefining Healthcare with AI
+          </h2>
+
+          <p className={styles.description}>
+            Celeb Aesthecia is proudly recognized as India's first AI-based robotic aesthetic hospital, specializing in skin, hair, dental, and head & neck oncology (HNF oncology). We are at the forefront of modern healthcare, where advanced technology seamlessly integrates with ethical, patient-first care to deliver exceptional clinical outcomes.
+          </p>
+
+          <p className={styles.description}>
+            Our mission is to transform the healthcare experience by combining Artificial Intelligence (AI), robotic precision, and globally approved medical technologies—ensuring accurate diagnosis, personalized treatment planning, and safe, long-lasting results.
+          </p>
+        </motion.div>
+
+        {/* Right Side - Image */}
         <motion.div
           className={styles.imageSection}
-          initial={{ opacity: 0, x: -40 }}
+          initial={{ opacity: 0, x: 40 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
@@ -37,7 +57,7 @@ export default function WhoWeAre() {
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               <div className={styles.badgeInner}>
-                <span className={styles.badgeNumber}>10+</span>
+                <span className={styles.badgeNumber}>9+</span>
                 <div className={styles.badgeText}>
                   <svg viewBox="0 0 140 140">
                     <defs>
@@ -56,31 +76,6 @@ export default function WhoWeAre() {
               </div>
             </motion.div>
           </div>
-        </motion.div>
-
-        {/* Right Side - Content */}
-        <motion.div
-          className={styles.contentSection}
-          initial={{ opacity: 0, x: 40 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <span className={styles.sectionBadge}>Who we are</span>
-
-          <h2 className={styles.mainHeading}>
-            About <span className={styles.headingAccent}>Celeb Aesthecia</span>
-          </h2>
-
-          <p className={styles.description}>
-            We are dedicated to delivering exceptional healthcare services with 
-            compassion and expertise. With a commitment to patient-centered care, 
-            our team of healthcare professionals strives to provide comprehensive 
-            medical treatments tailored to individual needs.
-          </p>
-
-          <Link href="/treatments" className={styles.ctaButton}>
-            Learn more
-          </Link>
         </motion.div>
       </div>
     </section>

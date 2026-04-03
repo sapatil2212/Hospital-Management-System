@@ -4,56 +4,45 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Calendar, Clock, User, Mail, Phone, FileText,
+  X, Calendar, User, Mail, Phone, FileText,
   CheckCircle2, Loader2, ChevronDown, ChevronLeft, ChevronRight,
-  Stethoscope, SmilePlus, Sparkles, Ribbon, HeartPulse, Check,
+  Stethoscope, Check,
   ClipboardList, UserCircle, ArrowRight, ArrowLeft, Edit3,
 } from "lucide-react";
 import styles from "./AppointmentModal.module.css";
+
+interface Doctor { id: string; name: string; specialization?: string; departmentId?: string; department?: { name: string }; consultationFee?: number; }
+interface Department { id: string; name: string; code: string; type?: string; }
 
 interface AppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const api = async (url: string, method = "GET", body?: any) => {
+  const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+};
+
+const fmt12 = (t: string) => {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+};
+
 /* ─── Static Data ─── */
-const consultationTypes = [
-  { label: "First Consultation", desc: "New patient visit" },
-  { label: "Follow-up Consultation", desc: "Returning patient" },
-];
-
-const departments = [
-  { label: "General OPD", icon: <Stethoscope size={16} /> },
-  { label: "Dental", icon: <SmilePlus size={16} /> },
-  { label: "Dermatology", icon: <Sparkles size={16} /> },
-  { label: "Cancer (Oncology)", icon: <Ribbon size={16} /> },
-  { label: "Cardiology", icon: <HeartPulse size={16} /> },
-];
-
-const presetTimes = [
-  { label: "09:00 AM", period: "Morning" },
-  { label: "09:30 AM", period: "Morning" },
-  { label: "10:00 AM", period: "Morning" },
-  { label: "10:30 AM", period: "Morning" },
-  { label: "11:00 AM", period: "Morning" },
-  { label: "11:30 AM", period: "Morning" },
-  { label: "02:00 PM", period: "Afternoon" },
-  { label: "02:30 PM", period: "Afternoon" },
-  { label: "03:00 PM", period: "Afternoon" },
-  { label: "03:30 PM", period: "Afternoon" },
-  { label: "04:00 PM", period: "Afternoon" },
-  { label: "04:30 PM", period: "Afternoon" },
-];
-
-const genderOptions = ["Male", "Female", "Other", "Prefer not to say"];
-
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+const APPOINTMENT_DEPARTMENT_TYPES = ["CLINICAL", "DIAGNOSTIC", "PROCEDURE", "SUPPORT"];
 
 const steps = [
-  { num: 1, label: "Consultation & Personal Details", icon: <UserCircle size={18} /> },
-  { num: 2, label: "Medical Information",             icon: <ClipboardList size={18} /> },
-  { num: 3, label: "Confirm Appointment",             icon: <CheckCircle2 size={18} /> },
+  { num: 1, label: "Your Info", icon: <UserCircle size={18} /> },
+  { num: 2, label: "Appointment", icon: <ClipboardList size={18} /> },
+  { num: 3, label: "Confirm", icon: <CheckCircle2 size={18} /> },
 ];
 
 /* ─── Portal Dropdown ─── */
@@ -111,16 +100,31 @@ function PortalDropdown({ anchorEl, isOpen, children }: PortalDropdownProps) {
 /* ─── Component ─── */
 export default function AppointmentModal({ isOpen, onClose }: AppointmentModalProps) {
   const [step, setStep] = useState(1);
+  const [departmentsData, setDepartmentsData] = useState<Department[]>([]);
+  const [doctorsData, setDoctorsData] = useState<Doctor[]>([]);
+  const [slotsData, setSlotsData] = useState<string[]>([]);
+  const [bookedSlotsData, setBookedSlotsData] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   const [form, setForm] = useState({
-    consultationType: "", department: "", date: "", time: "", customTime: "",
-    name: "", email: "", phone: "", age: "", gender: "",
-    complaint: "", previousTreatments: "", currentMedications: "", notes: "",
+    // Step 1
+    name: "",
+    phone: "",
+    email: "",
+    // Step 2
+    departmentId: "",
+    doctorId: "",
+    appointmentDate: "",
+    timeSlot: "",
+    notes: "",
+    // Hidden
+    consultationFee: "",
+    type: "OPD",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [useCustomTime, setUseCustomTime] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const [calMonth, setCalMonth] = useState(today.getMonth());
@@ -128,11 +132,64 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
 
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Reset when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(() => {
+        setStep(1);
+        setForm({
+          name: "", phone: "", email: "",
+          departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "",
+          notes: "", consultationFee: "", type: "OPD",
+        });
+        setErrors({});
+        setOpenDropdown(null);
+        setIsSuccess(false);
+      }, 300);
+    }
+  }, [isOpen]);
+
+  // Fetch Departments
+  useEffect(() => {
+    if (isOpen) {
+      api("/api/config/departments?simple=true").then(d => {
+        const rows: Department[] = d.data || [];
+        setDepartmentsData(rows.filter(dep => dep.type && APPOINTMENT_DEPARTMENT_TYPES.includes(dep.type)));
+      });
+    }
+  }, [isOpen]);
+
+  // Fetch Doctors based on Department
+  useEffect(() => {
+    if (isOpen) {
+      if (!form.departmentId) {
+        setDoctorsData([]);
+        return;
+      }
+      api(`/api/config/doctors?simple=true&departmentId=${form.departmentId}`).then(d => setDoctorsData(d.data || []));
+    }
+  }, [isOpen, form.departmentId]);
+
+  // Fetch Slots based on Doctor and Date
+  useEffect(() => {
+    if (form.doctorId && form.appointmentDate) {
+      setLoadingSlots(true);
+      api(`/api/appointments/slots?doctorId=${form.doctorId}&date=${form.appointmentDate}`)
+        .then(d => {
+          setSlotsData(d.data?.slots || []);
+          setBookedSlotsData(d.data?.bookedSlots || []);
+        })
+        .finally(() => setLoadingSlots(false));
+    } else {
+      setSlotsData([]);
+      setBookedSlotsData([]);
+    }
+  }, [form.doctorId, form.appointmentDate]);
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
-      // Also check portal content (appended to body)
       const portalPanels = document.querySelectorAll(`.${styles.dropdownPanel}`);
       const inPortal = Array.from(portalPanels).some((el) => el.contains(target));
       const anyContains = Object.values(dropdownRefs.current).some((ref) => ref?.contains(target));
@@ -141,24 +198,6 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  // Reset when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setTimeout(() => {
-        setStep(1);
-        setForm({
-          consultationType: "", department: "", date: "", time: "", customTime: "",
-          name: "", email: "", phone: "", age: "", gender: "",
-          complaint: "", previousTreatments: "", currentMedications: "", notes: "",
-        });
-        setErrors({});
-        setOpenDropdown(null);
-        setUseCustomTime(false);
-        setIsSuccess(false);
-      }, 300);
-    }
-  }, [isOpen]);
 
   const updateField = (field: string, value: string) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -173,17 +212,16 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const validateStep = (s: number) => {
     const errs: Record<string, string> = {};
     if (s === 1) {
-      if (!form.consultationType) errs.consultationType = "Required";
-      if (!form.department) errs.department = "Required";
-      if (!form.date) errs.date = "Required";
-      if (!form.time && !form.customTime) errs.time = "Required";
-      if (!form.name.trim()) errs.name = "Required";
-      if (!form.email.trim()) errs.email = "Required";
-      else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Invalid email";
-      if (!form.phone.trim()) errs.phone = "Required";
+      if (!form.name.trim()) errs.name = "Full Name is required";
+      if (!form.phone.trim()) errs.phone = "Phone Number is required";
+      if (!form.email.trim()) errs.email = "Email is required";
+      else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Invalid email address";
     }
     if (s === 2) {
-      if (!form.complaint.trim()) errs.complaint = "Required";
+      if (!form.departmentId) errs.departmentId = "Please select a department";
+      if (!form.doctorId) errs.doctorId = "Please select a doctor";
+      if (!form.appointmentDate) errs.appointmentDate = "Please select a date";
+      if (!form.timeSlot) errs.timeSlot = "Please select a time slot";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -194,10 +232,15 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1800));
+    const d = await api("/api/appointments", "POST", form);
     setIsSubmitting(false);
-    setIsSuccess(true);
-    setTimeout(() => { onClose(); }, 2800);
+
+    if (d.success) {
+      setIsSuccess(true);
+      setTimeout(() => { onClose(); }, 2800);
+    } else {
+      setErrors({ submit: d.message || "An unknown error occurred." });
+    }
   };
 
   /* ─── Calendar ─── */
@@ -219,16 +262,6 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const stripTime = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const isPast = (d: Date) => stripTime(d) < stripTime(today);
   const isToday = (d: Date) => stripTime(d).getTime() === stripTime(today).getTime();
-  const isSelected = (d: Date) => {
-    if (!form.date) return false;
-    const s = new Date(form.date);
-    return stripTime(d).getTime() === stripTime(s).getTime();
-  };
-  const selectDate = (d: Date) => {
-    if (isPast(d)) return;
-    updateField("date", `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`);
-    setOpenDropdown(null);
-  };
   const fmtDate = (v: string) => {
     if (!v) return "";
     const d = new Date(v);
@@ -237,7 +270,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const prevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(calYear-1); } else setCalMonth(calMonth-1); };
   const nextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(calYear+1); } else setCalMonth(calMonth+1); };
 
-  const displayTime = useCustomTime ? form.customTime : form.time;
+  const displayTime = form.timeSlot ? fmt12(form.timeSlot) : "";
 
   /* ─── Render Helpers ─── */
   const renderDropdown = (
@@ -356,35 +389,58 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                 {/* ─── STEP 1 ─── */}
                 {step === 1 && (
                   <motion.div key="step1" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-                    <h3 className={styles.stepTitle}>Consultation & Personal Details</h3>
+                    <h3 className={styles.stepTitle}>Your Information</h3>
+                    <p className={styles.stepSubtext}>Please provide your contact details.</p>
+                    <div className={styles.formRow}>
+                      {renderInput("name", "Full Name", <User size={16} />, "text", "e.g. John Doe")}
+                      {renderInput("phone", "Phone Number", <Phone size={16} />, "tel", "e.g. 9876543210")}
+                    </div>
+                    <div className={styles.formRow}>
+                      {renderInput("email", "Email Address", <Mail size={16} />, "email", "e.g. john.doe@example.com")}
+                      <div className={styles.field} />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ─── STEP 2 ─── */}
+                {step === 2 && (
+                  <motion.div key="step2" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
+                    <h3 className={styles.stepTitle}>Appointment Details</h3>
 
                     <div className={styles.formRow}>
-                      {/* Consultation Type */}
-                      {renderDropdown("consultationType", "Consultation Type *", <ClipboardList size={16} />, form.consultationType, "Select type",
-                        consultationTypes.map((ct) => (
-                          <button key={ct.label} type="button"
-                            className={`${styles.dropdownOption} ${form.consultationType === ct.label ? styles.dropdownOptionSelected : ""}`}
-                            onClick={() => { updateField("consultationType", ct.label); setOpenDropdown(null); }}
+                      {/* Department */}
+                      {renderDropdown("departmentId", "Department *", <Stethoscope size={16} />,
+                        departmentsData.find(d => d.id === form.departmentId)?.name || "", "Select Department",
+                        departmentsData.map((d) => (
+                          <button key={d.id} type="button"
+                            className={`${styles.dropdownOption} ${form.departmentId === d.id ? styles.dropdownOptionSelected : ""}`}
+                            onClick={() => { updateField("departmentId", d.id); updateField("doctorId", ""); updateField("timeSlot", ""); setOpenDropdown(null); }}
                           >
-                            <div>
-                              <span className={styles.optionLabel}>{ct.label}</span>
-                              <span className={styles.optionDesc}>{ct.desc}</span>
-                            </div>
-                            {form.consultationType === ct.label && <Check size={14} className={styles.optionCheck} />}
+                            <span className={styles.optionLabel}>{d.name}</span>
+                            {form.departmentId === d.id && <Check size={14} className={styles.optionCheck} />}
                           </button>
                         ))
                       )}
 
-                      {/* Department */}
-                      {renderDropdown("department", "Department *", <Stethoscope size={16} />, form.department, "Select department",
-                        departments.map((d) => (
-                          <button key={d.label} type="button"
-                            className={`${styles.dropdownOption} ${form.department === d.label ? styles.dropdownOptionSelected : ""}`}
-                            onClick={() => { updateField("department", d.label); setOpenDropdown(null); }}
+                      {/* Doctor */}
+                      {renderDropdown("doctorId", "Doctor *", <User size={16} />,
+                        doctorsData.find(d => d.id === form.doctorId)?.name || "", "Select Doctor",
+                        doctorsData.map((d) => (
+                          <button key={d.id} type="button"
+                            className={`${styles.dropdownOption} ${form.doctorId === d.id ? styles.dropdownOptionSelected : ""}`}
+                            onClick={() => {
+                              updateField("doctorId", d.id);
+                              updateField("timeSlot", "");
+                              if (d.consultationFee) updateField("consultationFee", String(d.consultationFee));
+                              if (d.departmentId && !form.departmentId) updateField("departmentId", d.departmentId);
+                              setOpenDropdown(null);
+                            }}
                           >
-                            <span className={styles.optionIcon}>{d.icon}</span>
-                            <span className={styles.optionLabel}>{d.label}</span>
-                            {form.department === d.label && <Check size={14} className={styles.optionCheck} />}
+                            <div>
+                              <span className={styles.optionLabel}>{d.name}</span>
+                              <span className={styles.optionDesc}>{d.specialization || d.department?.name}</span>
+                            </div>
+                            {form.doctorId === d.id && <Check size={14} className={styles.optionCheck} />}
                           </button>
                         ))
                       )}
@@ -392,7 +448,8 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
 
                     <div className={styles.formRow}>
                       {/* Date */}
-                      {renderDropdown("date", "Preferred Date *", <Calendar size={16} />, form.date ? fmtDate(form.date) : "", "Select date",
+                      {renderDropdown("appointmentDate", "Appointment Date *", <Calendar size={16} />,
+                        form.appointmentDate ? fmtDate(form.appointmentDate) : "", "Select Date",
                         <div className={styles.calendarInner}>
                           <div className={styles.calNav}>
                             <button type="button" className={styles.calNavBtn} onClick={prevMonth}><ChevronLeft size={16} /></button>
@@ -405,96 +462,57 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                           <div className={styles.calGrid}>
                             {calendarDays.map((cell, i) => (
                               <button key={i} type="button" disabled={isPast(cell.date)}
-                                className={`${styles.calDay} ${!cell.current ? styles.calDayOther : ""} ${isPast(cell.date) ? styles.calDayDisabled : ""} ${isToday(cell.date) ? styles.calDayToday : ""} ${isSelected(cell.date) ? styles.calDaySelected : ""}`}
-                                onClick={() => selectDate(cell.date)}
+                                className={`${styles.calDay} ${!cell.current ? styles.calDayOther : ""} ${isPast(cell.date) ? styles.calDayDisabled : ""} ${isToday(cell.date) ? styles.calDayToday : ""} ${form.appointmentDate === cell.date.toISOString().split('T')[0] ? styles.calDaySelected : ""}`}
+                                onClick={() => { updateField("appointmentDate", cell.date.toISOString().split('T')[0]); updateField("timeSlot", ""); setOpenDropdown(null); }}
                               >{cell.day}</button>
                             ))}
                           </div>
                         </div>
                       )}
 
-                      {/* Time */}
-                      {renderDropdown("time", "Preferred Time *", <Clock size={16} />, displayTime, "Select time",
-                        <div className={styles.timeInner}>
-                          {/* Preset pills */}
-                          <div className={styles.timeGroup}>
-                            <span className={styles.timeGroupLabel}>Morning</span>
-                            <div className={styles.timeGrid}>
-                              {presetTimes.filter(t => t.period === "Morning").map((slot) => (
-                                <button key={slot.label} type="button"
-                                  className={`${styles.timeChip} ${form.time === slot.label && !useCustomTime ? styles.timeChipSelected : ""}`}
-                                  onClick={() => { updateField("time", slot.label); setUseCustomTime(false); setOpenDropdown(null); }}
-                                >{slot.label}</button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className={styles.timeGroup}>
-                            <span className={styles.timeGroupLabel}>Afternoon</span>
-                            <div className={styles.timeGrid}>
-                              {presetTimes.filter(t => t.period === "Afternoon").map((slot) => (
-                                <button key={slot.label} type="button"
-                                  className={`${styles.timeChip} ${form.time === slot.label && !useCustomTime ? styles.timeChipSelected : ""}`}
-                                  onClick={() => { updateField("time", slot.label); setUseCustomTime(false); setOpenDropdown(null); }}
-                                >{slot.label}</button>
-                              ))}
-                            </div>
-                          </div>
-                          {/* Custom time */}
-                          <div className={styles.customTimeSection}>
-                            <span className={styles.timeGroupLabel}>Or enter custom time</span>
-                            <div className={styles.customTimeRow}>
-                              <input
-                                type="time"
-                                value={form.customTime}
-                                onChange={(e) => { updateField("customTime", e.target.value); setUseCustomTime(true); updateField("time", ""); }}
-                                className={styles.customTimeInput}
-                              />
-                              {form.customTime && (
-                                <button type="button" className={styles.customTimeConfirm}
-                                  onClick={() => setOpenDropdown(null)}
+                      {/* Type */}
+                      <div className={styles.field}>
+                        <label className={styles.label}>Appointment Type</label>
+                        <select className={styles.input} value={form.type} onChange={(e) => updateField("type", e.target.value)}>
+                          <option value="OPD">OPD</option>
+                          <option value="ONLINE">Online</option>
+                          <option value="FOLLOW_UP">Follow-up</option>
+                          <option value="EMERGENCY">Emergency</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Time Slots */}
+                    {form.doctorId && form.appointmentDate && (
+                      <div className={styles.slotsSection}>
+                        <label className={styles.label}>
+                          Available Slots {loadingSlots && <Loader2 size={12} className={styles.spinner} />}
+                        </label>
+                        {slotsData.length === 0 && !loadingSlots ? (
+                          <div className={styles.noSlots}>No slots available for this date.</div>
+                        ) : (
+                          <div className={styles.timeGrid}>
+                            {slotsData.map((slot) => {
+                              const isBooked = bookedSlotsData.includes(slot);
+                              const isSelected = form.timeSlot === slot;
+                              return (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  disabled={isBooked}
+                                  className={`${styles.timeChip} ${isSelected ? styles.timeChipSelected : ""} ${isBooked ? styles.timeChipDisabled : ""}`}
+                                  onClick={() => updateField("timeSlot", slot)}
                                 >
-                                  <Check size={14} /> Confirm
+                                  {fmt12(slot)}
                                 </button>
-                              )}
-                            </div>
+                              );
+                            })}
                           </div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
 
-                    <div className={styles.formRow}>
-                      {renderInput("name", "Full Name", <User size={16} />, "text", "e.g. Swapnil Patil")}
-                      {renderInput("email", "Email", <Mail size={16} />, "email", "name@example.com")}
-                    </div>
-                    <div className={styles.formRow}>
-                      {renderInput("phone", "Phone Number", <Phone size={16} />, "tel", "+91 88305 53868")}
-                      {renderInput("age", "Age", <User size={16} />, "number", "e.g. 28", false)}
-                    </div>
-                    <div className={styles.formRow}>
-                      {renderDropdown("gender", "Gender", <UserCircle size={16} />, form.gender, "Select gender",
-                        genderOptions.map((g) => (
-                          <button key={g} type="button"
-                            className={`${styles.dropdownOption} ${form.gender === g ? styles.dropdownOptionSelected : ""}`}
-                            onClick={() => { updateField("gender", g); setOpenDropdown(null); }}
-                          >
-                            <span className={styles.optionLabel}>{g}</span>
-                            {form.gender === g && <Check size={14} className={styles.optionCheck} />}
-                          </button>
-                        ))
-                      )}
-                      <div className={styles.field} /> {/* spacer */}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* ─── STEP 2 ─── */}
-                {step === 2 && (
-                  <motion.div key="step2" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-                    <h3 className={styles.stepTitle}>Medical Information</h3>
-                    {renderTextarea("complaint", "Chief Complaint / Main Health Concern *", "Describe your primary health concern or symptoms...", true, 3)}
-                    {renderTextarea("previousTreatments", "Previous Treatments (if any)", "Any prior treatments, surgeries, or therapies related to this concern...", false, 2)}
-                    {renderTextarea("currentMedications", "Current Medications", "List any medications you are currently taking...", false, 2)}
-                    {renderTextarea("notes", "Additional Notes", "Anything else you'd like us to know...", false, 2)}
+                    {renderTextarea("notes", "Reason for Visit / Notes", "Describe your symptoms or any special requests...", false, 3)}
                   </motion.div>
                 )}
 
@@ -505,49 +523,47 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                     <p className={styles.confirmSubtext}>Please review the details below before confirming.</p>
 
                     <div className={styles.summaryCard}>
-                      {/* Section: Consultation */}
+                      {/* Section: Patient */}
                       <div className={styles.summarySection}>
                         <div className={styles.summarySectionHeader}>
-                          <Calendar size={16} /> <span>Consultation Details</span>
-                          <button type="button" className={styles.editBtn} onClick={() => setStep(1)}><Edit3 size={12} /> Edit</button>
-                        </div>
-                        <div className={styles.summaryGrid}>
-                          <SummaryItem label="Type" value={form.consultationType} />
-                          <SummaryItem label="Department" value={form.department} />
-                          <SummaryItem label="Date" value={fmtDate(form.date)} />
-                          <SummaryItem label="Time" value={displayTime} />
-                        </div>
-                      </div>
-
-                      {/* Section: Personal */}
-                      <div className={styles.summarySection}>
-                        <div className={styles.summarySectionHeader}>
-                          <User size={16} /> <span>Personal Details</span>
+                          <User size={16} /> <span>Your Details</span>
                           <button type="button" className={styles.editBtn} onClick={() => setStep(1)}><Edit3 size={12} /> Edit</button>
                         </div>
                         <div className={styles.summaryGrid}>
                           <SummaryItem label="Name" value={form.name} />
-                          <SummaryItem label="Email" value={form.email} />
                           <SummaryItem label="Phone" value={form.phone} />
-                          <SummaryItem label="Age" value={form.age || "—"} />
-                          <SummaryItem label="Gender" value={form.gender || "—"} />
+                          <SummaryItem label="Email" value={form.email} />
                         </div>
                       </div>
 
-                      {/* Section: Medical */}
+                      {/* Section: Appointment */}
                       <div className={styles.summarySection}>
                         <div className={styles.summarySectionHeader}>
-                          <ClipboardList size={16} /> <span>Medical Information</span>
+                          <Calendar size={16} /> <span>Appointment Details</span>
                           <button type="button" className={styles.editBtn} onClick={() => setStep(2)}><Edit3 size={12} /> Edit</button>
                         </div>
                         <div className={styles.summaryGrid}>
-                          <SummaryItem label="Chief Complaint" value={form.complaint} full />
-                          {form.previousTreatments && <SummaryItem label="Previous Treatments" value={form.previousTreatments} full />}
-                          {form.currentMedications && <SummaryItem label="Current Medications" value={form.currentMedications} full />}
-                          {form.notes && <SummaryItem label="Notes" value={form.notes} full />}
+                          <SummaryItem label="Doctor" value={doctorsData.find(d => d.id === form.doctorId)?.name || ""} />
+                          <SummaryItem label="Department" value={departmentsData.find(d => d.id === form.departmentId)?.name || "—"} />
+                          <SummaryItem label="Date" value={form.appointmentDate ? fmtDate(form.appointmentDate) : ""} />
+                          <SummaryItem label="Time" value={displayTime} />
+                          <SummaryItem label="Type" value={form.type} />
+                          <SummaryItem label="Fee" value={form.consultationFee ? `₹${form.consultationFee}` : "—"} />
                         </div>
                       </div>
+
+                      {form.notes && (
+                        <div className={styles.summarySection}>
+                          <div className={styles.summarySectionHeader}>
+                            <FileText size={16} /> <span>Notes</span>
+                          </div>
+                          <div className={styles.summaryGrid}>
+                            <SummaryItem label="Details" value={form.notes} full />
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    {errors.submit && <div className={styles.submitError}>{errors.submit}</div>}
                   </motion.div>
                 )}
               </AnimatePresence>

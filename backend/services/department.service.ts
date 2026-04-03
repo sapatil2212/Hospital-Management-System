@@ -184,11 +184,14 @@ export const toggleStatus = async (
 
 /**
  * Delete a department
+ * @param force - If true, delete department only (unlink related items)
+ * @param cascade - If true, delete department AND all related items
  */
 export const deleteDepartment = async (
   id: string,
   hospitalId: string,
-  force = false
+  force = false,
+  cascade = false
 ) => {
   // Check if department exists
   const existing = await findDepartmentById(id, hospitalId);
@@ -201,7 +204,7 @@ export const deleteDepartment = async (
   }
 
   // Check dependencies
-  if (!force) {
+  if (!force && !cascade) {
     const dependencies = await checkDepartmentDependencies(id, hospitalId);
     if (dependencies) {
       const { hasDoctor, hasStaff, hasSubDepartments, hasPricing, counts } = dependencies;
@@ -215,8 +218,8 @@ export const deleteDepartment = async (
     }
   }
 
-  await deleteDepartmentRepo(id, hospitalId);
-  return { id, deleted: true };
+  await deleteDepartmentRepo(id, hospitalId, cascade);
+  return { id, deleted: true, cascade };
 };
 
 /**

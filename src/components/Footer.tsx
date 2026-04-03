@@ -11,7 +11,6 @@ import {
   Twitter,
   Instagram,
   Linkedin,
-  Send,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import styles from "./Footer.module.css";
@@ -46,38 +45,6 @@ export default function Footer() {
 
   return (
     <footer id="contact" className={styles.footer}>
-      {/* Newsletter Banner */}
-      {isHomePage && (
-        <div className={`container ${styles.newsletterWrapper}`}>
-          <div className={styles.newsletter}>
-            <div className={styles.nlContent}>
-              <h3 className={styles.nlTitle}>
-                Subscribe to Our Health Newsletter
-              </h3>
-              <p className={styles.nlText}>
-                Get the latest health tips, wellness advice, and medical news
-                delivered to your inbox weekly.
-              </p>
-            </div>
-            <div className={styles.nlForm}>
-              <div className={styles.inputWrapper}>
-                <Mail size={18} className={styles.inputIcon} />
-                <input
-                  type="email"
-                  placeholder="Enter your email address"
-                  className={styles.nlInput}
-                  id="newsletter-email"
-                />
-              </div>
-              <button className={`btn btn-primary ${styles.nlButton}`}>
-                Subscribe
-                <Send size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Footer Content */}
       <div className={`container ${styles.footerContent} ${!isHomePage ? styles.footerNoNewsletter : ""}`}>
         {/* About Column */}

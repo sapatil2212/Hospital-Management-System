@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Department Type Enum
-export const DepartmentTypeEnum = z.enum(["OPD", "IPD", "DIAGNOSTIC", "SUPPORT", "CUSTOM"]);
+export const DepartmentTypeEnum = z.enum(["OPD", "IPD", "CLINICAL", "DIAGNOSTIC", "PROCEDURE", "SUPPORT", "ADMINISTRATIVE", "CUSTOM"]);
 export type DepartmentType = z.infer<typeof DepartmentTypeEnum>;
 
 // Create Department Schema
@@ -9,7 +9,7 @@ export const createDepartmentSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   code: z.string().min(1, "Code is required").max(10).transform(v => v.toUpperCase()),
   description: z.string().max(500).optional().nullable(),
-  type: DepartmentTypeEnum.default("OPD"),
+  type: DepartmentTypeEnum.default("CLINICAL"),
   consultationFee: z.number().min(0, "Consultation fee cannot be negative").optional().nullable(),
   allowAppointments: z.boolean().default(true),
   isIPD: z.boolean().default(false),
