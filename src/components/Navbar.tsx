@@ -89,8 +89,6 @@ export default function Navbar() {
             </span>
           </div>
           <div className={styles.topBarRight}>
-            <span className={styles.topBarItem}>Emergency: 24/7 Available</span>
-            <span className={styles.topBarDivider}>|</span>
             <Link href="/login" className={styles.topBarLink}>
               <LogIn size={14} />
               Login
@@ -247,10 +245,10 @@ export default function Navbar() {
           <div className={styles.navActions}>
             <a
               href="tel:+919059053938"
-              className={`${styles.navBtn} ${styles.navEmergency}`}
+              className={`${styles.navBtn} ${styles.navContact}`}
             >
               <PhoneCall size={15} />
-              Emergency
+              +91 90590 53938
             </a>
             <button
               onClick={openAppointment}

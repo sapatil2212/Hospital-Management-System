@@ -1,6 +1,6 @@
 .newsletterSection {
-  padding: var(--space-24) var(--space-6);
-  background-color: var(--white);
+  padding: var(--space-16) var(--space-6);
+  background-color: var(--bg-light);
   overflow: visible; /* To allow image to pop out from container */
 }
 
@@ -107,24 +107,44 @@
   .container {
     flex-direction: column;
     text-align: center;
-    padding: var(--space-12) var(--space-6);
+    padding: var(--space-8) var(--space-6) 0;
     overflow: hidden; /* Hide overflow on mobile for simplicity */
     min-height: auto;
   }
   .content {
     max-width: 100%;
-    margin-bottom: var(--space-10);
+    margin-bottom: var(--space-4);
+  }
+  .title {
+    font-size: var(--font-size-xl);
+  }
+  .subtitle {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--space-4);
+    line-height: 1.5;
   }
   .form {
     flex-direction: column;
     margin: 0 auto;
+    width: auto;
+    display: inline-flex;
+  }
+  .button {
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--font-size-xs);
+    width: auto;
+    white-space: nowrap;
   }
   .imageWrapper {
     position: relative;
     right: 0;
-    width: 80%;
+    width: 55%;
     height: auto;
     margin: 0 auto;
-    margin-top: var(--space-8);
+    margin-top: var(--space-2);
+    margin-bottom: 0;
+  }
+  .image {
+    margin-bottom: 0;
   }
 }

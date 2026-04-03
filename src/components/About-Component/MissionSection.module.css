@@ -132,7 +132,7 @@
 }
 
 .mainHeading {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2rem, 4vw, 2.75rem);
   font-weight: 800;
   color: var(--gray-900);
   line-height: 1.15;
@@ -144,9 +144,9 @@
 }
 
 .description {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   color: var(--gray-500);
-  line-height: 1.7;
+  line-height: 1.8;
   max-width: 540px;
 }
 

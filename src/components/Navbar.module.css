@@ -434,15 +434,16 @@
   box-shadow: 0 4px 18px rgba(14, 137, 143, 0.50);
 }
 
-/* Emergency – red solid */
-.navEmergency {
-  background: linear-gradient(135deg, #e53e3e, #c53030);
-  color: #fff;
-  box-shadow: 0 2px 12px rgba(229, 62, 62, 0.30);
+/* Contact – faint gray outline */
+.navContact {
+  background: transparent;
+  color: var(--gray-600);
+  border: 1.5px solid var(--gray-300);
 }
-.navEmergency:hover {
-  background: linear-gradient(135deg, #c53030, #9b2c2c);
-  box-shadow: 0 4px 18px rgba(229, 62, 62, 0.45);
+.navContact:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+  color: var(--gray-700);
 }
 
 /* Hamburger */

@@ -1,5 +1,5 @@
 .testimonials {
-  padding: var(--space-20) 0;
+  padding: var(--space-16) 0;
   background: var(--bg-light);
   overflow: hidden;
 }
@@ -344,7 +344,7 @@
   }
 
   .header {
-    margin-bottom: var(--space-10);
+    margin-bottom: var(--space-8);
   }
 
   .title {
@@ -360,18 +360,35 @@
     width: 40px;
   }
 
+  .carouselWrapper {
+    position: relative;
+    margin: 0;
+    padding: 0 var(--space-2);
+  }
+
   .navButton {
     width: 36px;
     height: 36px;
     opacity: 1;
+    top: 45%;
+    transform: translateY(-50%);
   }
 
   .navPrev {
-    left: 4px;
+    left: 2px;
   }
 
   .navNext {
-    right: 4px;
+    right: 2px;
+  }
+
+  .swiper {
+    padding: var(--space-2) !important;
+    padding-bottom: 0 !important;
+  }
+
+  .testimonialCard {
+    margin-bottom: 0;
   }
 }
 

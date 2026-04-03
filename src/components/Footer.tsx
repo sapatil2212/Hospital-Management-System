@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import {
   MapPin,
@@ -23,13 +22,17 @@ const quickLinks = [
   { label: "Contact Us", href: "#contact" },
 ];
 
-const serviceLinks = [
-  "Cardiology",
-  "Neurology",
-  "Dermatology",
-  "Orthopedics",
-  "Pediatrics",
-  "Ophthalmology",
+const treatmentLinks = [
+  { label: "Dental", href: "/treatments/dental" },
+  { label: "Skin", href: "/treatments/skin" },
+  { label: "Hair", href: "/treatments/hair" },
+  { label: "HNF Cancer", href: "/treatments/oncology" },
+  { label: "Facial Trauma", href: "/treatments/general-opd" },
+  { label: "Body Shaping", href: "/treatments" },
+  { label: "Nutrition", href: "/treatments" },
+  { label: "Sexual Health", href: "/treatments" },
+  { label: "Premium Aesthetic", href: "/treatments" },
+  { label: "Dental and Medical Tourism", href: "/treatments" },
 ];
 
 const socialLinks = [
@@ -58,9 +61,9 @@ export default function Footer() {
               className={styles.footerLogoImage}
             />
           </a>
+          <h5 className={styles.footerTagline}>Experience the Future of Healthcare</h5>
           <p className={styles.footerAbout}>
-            Providing world-class healthcare services with compassion and
-            innovation. Your trusted partner in health and wellness since 2010.
+            At Celeb Aesthecia, we are not just treating patients—we are redefining healthcare experiences through innovation, precision, and compassion.
           </p>
           <div className={styles.socialLinks}>
             {socialLinks.map((social) => (
@@ -91,15 +94,15 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Services */}
+        {/* Treatments */}
         <div className={styles.footerCol}>
-          <h4 className={styles.colTitle}>Our Services</h4>
+          <h4 className={styles.colTitle}>Our Treatments</h4>
           <ul className={styles.linkList}>
-            {serviceLinks.map((service) => (
-              <li key={service}>
-                <a href="#services" className={styles.footerLink}>
+            {treatmentLinks.map((treatment) => (
+              <li key={treatment.label}>
+                <a href={treatment.href} className={styles.footerLink}>
                   <ArrowRight size={14} />
-                  {service}
+                  {treatment.label}
                 </a>
               </li>
             ))}

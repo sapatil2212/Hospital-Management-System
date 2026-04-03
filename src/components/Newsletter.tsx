@@ -32,7 +32,7 @@ const Newsletter: React.FC = () => {
         
         <div className={styles.imageWrapper}>
           <Image 
-            src="/about/about.png" 
+            src="/images/home-cta.webp" 
             alt="Healthcare professional" 
             width={500} 
             height={600} 

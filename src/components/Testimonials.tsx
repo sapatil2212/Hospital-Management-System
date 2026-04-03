@@ -24,16 +24,6 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
   // SEXUAL HEALTH & WELLNESS
   {
-    id: 1,
-    name: "Amit Patil",
-    treatment: "Sexual Health & Wellness",
-    rating: 5,
-    text: "I was silently dealing with erectile dysfunction for almost 2 years. It started affecting my confidence and relationship. I finally decided to consult here, and I'm glad I did. The doctors were very understanding and maintained complete privacy. The treatment plan was explained step by step, and within a few months, I saw significant improvement. It has completely changed my confidence.",
-    avatar: "AP",
-    color: "#0E898F",
-    verified: true,
-  },
-  {
     id: 2,
     name: "Rohit Kulkarni",
     treatment: "Sexual Health & Wellness",

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { SmilePlus, CheckCircle, ArrowRight, Calendar, Shield, Award, Users, Microscope, Clock, Phone, Scissors } from "lucide-react";
+import { SmilePlus, CheckCircle, ArrowRight, Calendar, Shield, Award, Users, Microscope, Clock, Phone, Scissors, Star, HeartPulse, Wrench, Ruler, Baby, Sparkles, Cpu, Gem, Zap, AlertCircle, Pill } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "../treatments.module.css";
+import DentalHero from "./DentalHero";
 
 export const metadata: Metadata = {
   title: "Best Dental Clinic in India | Advanced Dental Care & Surgery",
@@ -19,46 +21,11 @@ export const metadata: Metadata = {
   ],
 };
 
-const dentalServices = [
-  {
-    icon: <SmilePlus size={28} />,
-    title: "Dental Implants",
-    description: "Permanent tooth replacement solutions with advanced implant technology and expert surgical care.",
-  },
-  {
-    icon: <Shield size={28} />,
-    title: "Root Canal Treatment",
-    description: "Pain-free RCT procedures to save infected teeth and restore oral health with modern techniques.",
-  },
-  {
-    icon: <Award size={28} />,
-    title: "Cosmetic Dentistry",
-    description: "Smile makeover solutions including veneers, bonding, and aesthetic corrections for a perfect smile.",
-  },
-  {
-    icon: <Microscope size={28} />,
-    title: "Teeth Whitening",
-    description: "Professional whitening treatments for a brighter, more confident smile with lasting results.",
-  },
-  {
-    icon: <Scissors size={28} />,
-    title: "Orthodontics",
-    description: "Braces and aligner treatments for perfectly aligned teeth and improved bite function.",
-  },
-];
-
 const whyChooseUs = [
   { icon: <Microscope size={24} />, text: "Advanced CBCT & OPG imaging" },
   { icon: <Shield size={24} />, text: "Modular OT for surgeries" },
   { icon: <Award size={24} />, text: "High sterilization standards" },
   { icon: <Users size={24} />, text: "Experienced dental specialists" },
-];
-
-const stats = [
-  { number: "12K+", label: "Dental Procedures" },
-  { number: "99%", label: "Success Rate" },
-  { number: "10+", label: "Dental Experts" },
-  { number: "5★", label: "Google Rating" },
 ];
 
 const processSteps = [
@@ -73,63 +40,665 @@ export default function DentalTreatmentsPage() {
     <>
       <Navbar />
       <main className={styles.page}>
-        {/* Hero Section */}
-        <section className={styles.hero}>
+        <DentalHero />
+
+        {/* General Dentistry Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <div className={styles.heroContent}>
-              <div className={styles.heroBadge}>
-                <SmilePlus size={18} />
-                <span>Advanced Dental Care</span>
+            <div className={styles.aboutInner}>
+              {/* Content Side */}
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <SmilePlus size={16} />
+                  <span>General Dentistry</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Healthy Teeth Begin with <span className={styles.titleAccent}>Preventive Care</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our preventive dentistry focuses on maintaining optimal oral health and detecting issues early through AI-assisted diagnosis and routine care.
+                </p>
+
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "AI-based dental consultation & screening",
+                    "Oral prophylaxis (scaling & polishing)",
+                    "Fluoride therapy for cavity prevention",
+                    "Pit & fissure sealants",
+                    "Tooth-colored fillings",
+                    "Tooth sensitivity treatment",
+                    
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Ideal for maintaining long-term dental health and avoiding major treatments.</span>
+                </div>
               </div>
-              <h1 className={styles.heroTitle}>
-                Advanced <span className={styles.accent}>Dental Care</span> & Surgery in India
-              </h1>
-              <p className={styles.heroDescription}>
-                Celeb Aesthecia is a leading dental clinic in India, offering advanced dental treatments 
-                with modern imaging systems and a modular operation theatre. We provide precise, safe, 
-                and high-quality dental care.
-              </p>
-              <p className={styles.heroSubtext}>
-                Our expert dental team ensures pain-free procedures and long-lasting oral health solutions.
-              </p>
-              <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/contact" className={styles.ctaButton}>
-                  <Calendar size={18} /> Book Consultation
-                </Link>
-                <Link href="tel:+919876543210" className={styles.ctaButton} style={{ background: "var(--white)", color: "#0E898F", border: "2px solid #0E898F" }}>
-                  <Phone size={18} /> Call Now
-                </Link>
+
+              {/* Visual Side */}
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/dental/dental-1.png" 
+                    alt="General Dentistry Care" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className={styles.statsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* Restorative Dentistry Section */}
+        <section className={styles.about}>
           <div className="container">
-            <div className={styles.statsGrid}>
-              {stats.map((stat, index) => (
-                <div key={index} className={styles.statCard}>
-                  <div className={styles.statNumber}>{stat.number}</div>
-                  <div className={styles.statLabel}>{stat.label}</div>
+            <div className={styles.aboutInner}>
+              {/* Content Side */}
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Shield size={16} />
+                  <span>Restorative Dentistry</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Restore Strength, <span className={styles.titleAccent}>Function & Natural Appearance</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We repair damaged or decayed teeth using advanced materials and techniques that mimic natural teeth.
+                </p>
+
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Tooth-colored aesthetic fillings",
+                    "Post & core build-up",
+                    "Inlays & onlays (precision restorations)",
+                    "Tooth reconstruction",
+                    "Full mouth rehabilitation"
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Designed to restore both function and aesthetics seamlessly.</span>
+                </div>
+              </div>
+
+              {/* Visual Side */}
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dental-2.png" 
+                    alt="Restorative Dentistry" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Services Section */}
-        <section className={styles.treatmentsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* Prosthodontics Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Our Dental Services</h2>
-            <div className={styles.treatmentsGrid}>
-              {dentalServices.map((service, index) => (
-                <div key={index} className={styles.treatmentCard}>
-                  <div className={styles.treatmentIcon}>{service.icon}</div>
-                  <h3 className={styles.treatmentTitle}>{service.title}</h3>
-                  <p className={styles.treatmentDescription}>{service.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Wrench size={16} />
+                  <span>Prosthodontics</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Rebuild Your Smile with <span className={styles.titleAccent}>Advanced Prosthetic Solutions</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We offer customized solutions to replace missing teeth and restore oral function.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Complete & partial dentures",
+                    "Crown & bridge solutions",
+                    "Implant-supported prosthesis",
+                    "Full mouth rehabilitation",
+                    "Maxillofacial prosthesis",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Regain confidence with natural-looking, durable restorations.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/treatments/dental/prosthodontics.png" alt="Prosthodontics" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Oral & Maxillofacial Surgery Section */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Scissors size={16} />
+                  <span>Oral & Maxillofacial Surgery</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Advanced Surgical Care with <span className={styles.titleAccent}>Maximum Safety</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our surgical procedures are performed in a modular OT setup, ensuring international safety standards.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Tooth extraction (simple & surgical)",
+                    "Wisdom tooth removal",
+                    "Dental implants",
+                    "Bone grafting & sinus lift",
+                    "Cyst & tumor removal",
+                    "Facial trauma management",
+                    "Minor & major oral surgeries",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Expert surgical care with precision and infection control.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/images/treatment-dental-2.png" alt="Oral & Maxillofacial Surgery" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Periodontics Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <HeartPulse size={16} />
+                  <span>Periodontics</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Healthy Gums for <span className={styles.titleAccent}>Strong Teeth</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We treat gum diseases and bone loss using both conventional and laser techniques.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Deep scaling & root planing",
+                    "Gum flap surgery",
+                    "Laser gum treatment",
+                    "Gingivectomy / gingivoplasty",
+                    "Pyorrhea treatment",
+                    "Bone regeneration procedures",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Essential for maintaining long-term oral health and preventing tooth loss.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/treatments/dental/dental-1.png" alt="Periodontics" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Orthodontics Section */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Ruler size={16} />
+                  <span>Orthodontics</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Achieve a <span className={styles.titleAccent}>Perfectly Aligned Smile</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We provide modern orthodontic solutions for all age groups.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Metal, ceramic & self-ligating braces",
+                    "Invisible aligners (clear aligners)",
+                    "Lingual braces (hidden braces)",
+                    "Growth modification appliances",
+                    "Retainers",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Straighten your teeth comfortably with advanced solutions.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/images/treatment-dental-2.png" alt="Orthodontics" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Pedodontics Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Baby size={16} />
+                  <span>Pedodontics</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Gentle Dental Care for <span className={styles.titleAccent}>Children</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We ensure a comfortable, child-friendly dental experience.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Pediatric dental check-ups",
+                    "Fluoride application",
+                    "Habit-breaking appliances",
+                    "Space maintainers",
+                    "Pediatric root canal treatment",
+                    "Preventive dentistry for children",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Building healthy smiles from an early age.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/treatments/dental/dental-1.png" alt="Pedodontics" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Cosmetic & Aesthetic Dentistry Section */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Sparkles size={16} />
+                  <span>Cosmetic & Aesthetic Dentistry</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Design Your <span className={styles.titleAccent}>Perfect Smile</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Enhance your smile with advanced cosmetic dental treatments.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Digital smile design (DSD)",
+                    "Teeth whitening (laser / Zoom)",
+                    "Dental veneers (porcelain / composite)",
+                    "Hollywood smile makeover",
+                    "Tooth reshaping & contouring",
+                    "Gap closure (diastema)",
+                    "Gum depigmentation",
+                    "Cosmetic bonding",
+                    "Lip & smile harmony treatments",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Achieve a confident, radiant smile with natural results.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/images/treatment-dental-2.png" alt="Cosmetic Dentistry" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* CAD-CAM & Digital Dentistry Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Cpu size={16} />
+                  <span>CAD-CAM & Digital Dentistry</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Next-Generation <span className={styles.titleAccent}>Digital Dental Solutions</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We utilize cutting-edge digital workflows for faster, more accurate treatments.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Same-day crowns (chairside CAD-CAM)",
+                    "Digital impressions (intraoral scanning)",
+                    "CAD-CAM veneers & bridges",
+                    "AI-based smile designing",
+                    "3D printing of prosthesis",
+                    "Computer-guided implant surgery",
+                    "In-house advanced dental lab",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Precision, speed, and superior outcomes with digital dentistry.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/treatments/dental/dental-1.png" alt="CAD-CAM Digital Dentistry" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Oral Diagnostics & Radiology Section */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Microscope size={16} />
+                  <span>Oral Diagnostics & Radiology</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Accurate Diagnosis for <span className={styles.titleAccent}>Better Treatment Outcomes</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Advanced imaging ensures precise treatment planning.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Digital OPG (panoramic X-ray)",
+                    "CBCT scan (3D imaging)",
+                    "IOPA X-rays",
+                    "AI-based diagnosis",
+                    "Oral cancer screening",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Early detection leads to better, safer results.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/images/treatment-dental-2.png" alt="Oral Diagnostics" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Implantology Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Gem size={16} />
+                  <span>Implantology</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Permanent Solutions for <span className={styles.titleAccent}>Missing Teeth</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We offer world-class dental implant solutions with high success rates.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Single tooth implants",
+                    "Full mouth implants (All-on-4 / All-on-6)",
+                    "Immediate implants",
+                    "Zygomatic implants",
+                    "Fixed & removable implant prosthesis",
+                    "Guided implant surgery",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Strong, natural-looking, and long-lasting tooth replacement.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/treatments/dental/dental-1.png" alt="Implantology" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Laser Dentistry Section */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Zap size={16} />
+                  <span>Laser Dentistry</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Minimally Invasive & <span className={styles.titleAccent}>Painless Treatments</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Laser technology ensures faster healing and reduced discomfort.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Laser fillings",
+                    "Laser gum surgery",
+                    "Laser teeth whitening",
+                    "Ulcer treatment",
+                    "Soft tissue surgeries",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Comfortable treatments with minimal downtime.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/images/treatment-dental-2.png" alt="Laser Dentistry" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Emergency Dental Care Section */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <AlertCircle size={16} />
+                  <span>Emergency Dental Care</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Immediate Relief <span className={styles.titleAccent}>When You Need It Most</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We provide quick and effective emergency dental care.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Toothache relief",
+                    "Dental trauma & fracture management",
+                    "Emergency extractions",
+                    "Infection & abscess treatment",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Prompt care to relieve pain and prevent complications.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/treatments/dental/dental-1.png" alt="Emergency Dental Care" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Dental Support Services Section */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Pill size={16} />
+                  <span>Dental Support Services</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Complete Care <span className={styles.titleAccent}>Beyond Treatment</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our integrated support services ensure seamless patient experience.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "In-house pharmacy",
+                    "Advanced sterilization protocols (modular OT dentistry)",
+                    "High-end dental laboratory support",
+                    "AI-based patient records (EMR/EHR)",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Ensuring safety, efficiency, and continuity of care.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image src="/images/treatment-dental-2.png" alt="Dental Support Services" width={500} height={600} className={styles.aboutImage} />
+                </div>
+              </div>
             </div>
           </div>
         </section>
