@@ -1,33 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, ArrowRight, Calendar, User, Search, Tag, Clock, TrendingUp } from "lucide-react";
-import Image from "next/image";
+import { ArrowRight, Calendar, User, Search, Tag, Clock, TrendingUp, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "./blog.module.css";
 
-const categories = ["All", "Technology", "Patient Care", "Wellness", "Research"];
-
-const posts = [
-  { slug: "ai-healthcare-diagnostics", image: "/images/blog-medtech.png", category: "Technology", date: "Mar 15, 2026", author: "Dr. Sarah Chen", readTime: "8 min read", title: "The Future of AI in Healthcare Diagnostics", excerpt: "Discover how artificial intelligence is revolutionizing the way doctors diagnose and treat complex medical conditions.", color: "#0E898F", bgColor: "#E6F4F4" },
-  { slug: "regular-health-checkups", image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 12, 2026", author: "Dr. James Wilson", readTime: "6 min read", title: "Why Regular Health Checkups Save Lives", excerpt: "Learn about the importance of preventive healthcare and routine checkups for early detection.", color: "#10B981", bgColor: "#D1FAE5" },
-  { slug: "heart-health-habits", image: "/images/blog-wellness.png", category: "Wellness", date: "Mar 10, 2026", author: "Dr. Emily Park", readTime: "5 min read", title: "5 Simple Habits for Better Heart Health", excerpt: "Small lifestyle changes can make a big difference. Here are five evidence-based habits for a healthier heart.", color: "#8B5CF6", bgColor: "#EDE9FE" },
-  { slug: "gene-therapy-breakthroughs", image: "/images/about-team.png", category: "Research", date: "Mar 8, 2026", author: "Dr. Michael Rivera", readTime: "10 min read", title: "Breakthroughs in Gene Therapy for Rare Diseases", excerpt: "New advances in gene therapy are opening doors for treating previously untreatable genetic conditions.", color: "#F97316", bgColor: "#FFF7ED" },
-  { slug: "telemedicine-new-normal", image: "/images/blog-medtech.png", category: "Technology", date: "Mar 5, 2026", author: "Dr. Sarah Chen", readTime: "7 min read", title: "Telemedicine: The New Normal in Healthcare", excerpt: "How virtual consultations are making healthcare more accessible and convenient for millions.", color: "#0E898F", bgColor: "#E6F4F4" },
-  { slug: "mental-health-workplace", image: "/images/blog-consultation.png", category: "Patient Care", date: "Mar 3, 2026", author: "Dr. James Wilson", readTime: "8 min read", title: "Understanding Mental Health in the Workplace", excerpt: "A comprehensive guide to recognizing and addressing mental health challenges in professional settings.", color: "#10B981", bgColor: "#D1FAE5" },
-];
+const CATEGORY_COLORS: Record<string, { color: string; bg: string }> = {
+  Technology: { color: "#0E898F", bg: "#E6F4F4" },
+  "Patient Care": { color: "#10B981", bg: "#D1FAE5" },
+  Wellness: { color: "#8B5CF6", bg: "#EDE9FE" },
+  Research: { color: "#F97316", bg: "#FFF7ED" },
+  "Health Tips": { color: "#EC4899", bg: "#FCE7F3" },
+  "Medical News": { color: "#0EA5E9", bg: "#E0F2FE" },
+};
 
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [posts, setPosts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>(["All"]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/blogs?public=true&limit=50")
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data?.data) {
+          setPosts(d.data.data);
+          if (d.data.categories?.length > 1) setCategories(d.data.categories);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered = posts.filter((p) => {
     const matchCategory = activeCategory === "All" || p.category === activeCategory;
     const matchSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      (p.excerpt || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchCategory && matchSearch;
   });
 
@@ -35,16 +48,6 @@ export default function BlogPage() {
     <>
       <Navbar />
       <main>
-        <section className={styles.pageHero}>
-          <div className="container">
-            <motion.div className={styles.heroContent} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
-              <span className="section-label"><BookOpen size={16} />Our Blog</span>
-              <h1 className={styles.heroTitle}>Health Tips & <span className={styles.accent}>Insights</span></h1>
-              <p className={styles.heroSubtext}>Stay informed with the latest medical research, health tips, and wellness advice.</p>
-            </motion.div>
-          </div>
-        </section>
-
         <section className={styles.section}>
           <div className="container">
             {/* Filters */}
@@ -63,43 +66,57 @@ export default function BlogPage() {
             </div>
 
             {/* Posts */}
-            <motion.div className={styles.grid} layout>
-              <AnimatePresence mode="popLayout">
-                {filtered.map((post, i) => (
-                  <motion.article
-                    key={post.slug}
-                    className={styles.card}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
-                    whileHover={{ y: -6 }}
-                  >
-                    <Link href={`/blog/${post.slug}`} className={styles.cardLink}>
-                      <div className={styles.imageWrapper}>
-                        <Image src={post.image} alt={post.title} width={400} height={220} className={styles.cardImage} />
-                        <span className={styles.categoryBadge} style={{ color: post.color, background: post.bgColor }}>
-                          <TrendingUp size={12} />
-                          {post.category}
-                        </span>
-                      </div>
-                      <div className={styles.cardBody}>
-                        <div className={styles.meta}>
-                          <span className={styles.metaItem}><Calendar size={14} />{post.date}</span>
-                          <span className={styles.metaItem}><Clock size={14} />{post.readTime}</span>
-                        </div>
-                        <h3 className={styles.cardTitle}>{post.title}</h3>
-                        <p className={styles.cardExcerpt}>{post.excerpt}</p>
-                        <span className={styles.readMore}>Read Article <ArrowRight size={16} /></span>
-                      </div>
-                    </Link>
-                  </motion.article>
-                ))}
-              </AnimatePresence>
-            </motion.div>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
+                <Loader2 size={28} style={{ margin: "0 auto 12px", display: "block", animation: "spin 1s linear infinite" }} />
+                <p>Loading articles...</p>
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+              </div>
+            ) : (
+              <motion.div className={styles.grid} layout>
+                <AnimatePresence mode="popLayout">
+                  {filtered.map((post, i) => {
+                    const catStyle = CATEGORY_COLORS[post.category] || { color: "#64748b", bg: "#f1f5f9" };
+                    const dateStr = post.publishedAt
+                      ? new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                      : "";
+                    return (
+                      <motion.article
+                        key={post.slug}
+                        className={styles.card}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        whileHover={{ y: -6 }}
+                      >
+                        <Link href={`/blog/${post.slug}`} className={styles.cardLink}>
+                          <div className={styles.imageWrapper}>
+                            <img src={post.coverImage || "/images/blog-medtech.png"} alt={post.title} className={styles.cardImage} style={{ width: "100%", height: 220, objectFit: "cover" }} />
+                            <span className={styles.categoryBadge} style={{ color: catStyle.color, background: catStyle.bg }}>
+                              <TrendingUp size={12} />
+                              {post.category || "Blog"}
+                            </span>
+                          </div>
+                          <div className={styles.cardBody}>
+                            <div className={styles.meta}>
+                              <span className={styles.metaItem}><Calendar size={14} />{dateStr}</span>
+                              <span className={styles.metaItem}><Clock size={14} />{post.readTime ? `${post.readTime} min read` : ""}</span>
+                            </div>
+                            <h3 className={styles.cardTitle}>{post.title}</h3>
+                            <p className={styles.cardExcerpt}>{post.excerpt}</p>
+                            <span className={styles.readMore}>Read Article <ArrowRight size={16} /></span>
+                          </div>
+                        </Link>
+                      </motion.article>
+                    );
+                  })}
+                </AnimatePresence>
+              </motion.div>
+            )}
 
-            {filtered.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <div className={styles.empty}>
                 <p>No articles found. Try a different search or category.</p>
               </div>
