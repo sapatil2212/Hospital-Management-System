@@ -1,156 +1,454 @@
 import type { Metadata } from "next";
-import { HeartPulse, CheckCircle, ArrowRight, Calendar, Shield, Award, Users, Microscope, Clock, Phone, Activity } from "lucide-react";
+import { 
+  HeartPulse, 
+  CheckCircle, 
+  ArrowRight, 
+  Calendar, 
+  Microscope, 
+  Shield, 
+  Activity, 
+  Sparkles, 
+  Users,
+  Stethoscope,
+  Target,
+  Search,
+  Zap
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "../treatments.module.css";
+import OncologyHero from "./OncologyHero";
 
 export const metadata: Metadata = {
-  title: "Head & Neck Cancer Treatment in India | Oncology Care",
+  title: "Head, Neck & Facial (HNF) Oncology | Celeb Aesthecia",
   description:
-    "Expert head & neck oncology treatment with advanced diagnostics and personalized care at Celeb Aesthecia. Early detection and better outcomes.",
+    "Comprehensive head, neck, and facial oncology care at Celeb Aesthecia. Early detection, advanced surgical oncology, and holistic rehabilitation.",
   keywords: [
-    "head and neck cancer treatment India",
-    "oncology hospital India",
-    "oral cancer treatment",
-    "throat cancer treatment",
-    "cancer care India",
+    "HNF oncology",
+    "head and neck cancer treatment",
+    "oral cancer screening",
+    "surgical oncology India",
+    "facial reconstruction surgery",
+    "palliative care oncology",
   ],
 };
-
-const conditionsWeTreat = [
-  {
-    icon: <HeartPulse size={28} />,
-    title: "Oral Cancer",
-    description: "Comprehensive diagnosis and treatment for oral cavity cancers with precision care and multidisciplinary approach.",
-  },
-  {
-    icon: <Activity size={28} />,
-    title: "Throat Cancer",
-    description: "Advanced therapies for pharyngeal and laryngeal cancers with state-of-the-art treatment protocols.",
-  },
-  {
-    icon: <Microscope size={28} />,
-    title: "Neck Tumors",
-    description: "Expert management of benign and malignant neck tumors with surgical precision and care.",
-  },
-  {
-    icon: <Shield size={28} />,
-    title: "Salivary Gland Disorders",
-    description: "Specialized care for salivary gland tumors and related conditions with advanced diagnostics.",
-  },
-];
-
-const whyChooseUs = [
-  { icon: <Users size={24} />, text: "Expert oncology specialists" },
-  { icon: <Microscope size={24} />, text: "Advanced diagnostic systems" },
-  { icon: <Award size={24} />, text: "Comprehensive treatment planning" },
-  { icon: <HeartPulse size={24} />, text: "Ethical and patient-focused care" },
-];
-
-const stats = [
-  { number: "5K+", label: "Cancer Treatments" },
-  { number: "92%", label: "Success Rate" },
-  { number: "8+", label: "Oncology Experts" },
-  { number: "5★", label: "Google Rating" },
-];
-
-const processSteps = [
-  { step: 1, title: "Diagnosis", description: "Advanced cancer detection" },
-  { step: 2, title: "Staging", description: "Precise cancer staging" },
-  { step: 3, title: "Treatment", description: "Multidisciplinary care" },
-  { step: 4, title: "Recovery", description: "Post-treatment support" },
-];
 
 export default function OncologyPage() {
   return (
     <>
       <Navbar />
       <main className={styles.page}>
-        {/* Hero Section */}
-        <section className={styles.hero}>
+        <OncologyHero />
+
+        {/* 1. Oral Cancer Screening & Early Detection */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <div className={styles.heroContent}>
-              <div className={styles.heroBadge}>
-                <HeartPulse size={18} />
-                <span>Oncology Excellence</span>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Search size={16} />
+                  <span>Oral Cancer Screening & Early Detection</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Early Diagnosis Can <span className={styles.titleAccent}>Save Lives</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We emphasize routine screening and early detection, especially for high-risk individuals, using AI-assisted technology.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "AI-assisted oral cancer screening",
+                    "Identification of precancerous lesions",
+                    "Risk assessment for tobacco and alcohol users",
+                    "Preventive guidance and regular monitoring",
+                  ].map((highlight, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{highlight}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Early detection significantly increases treatment success rates.</span>
+                </div>
               </div>
-              <h1 className={styles.heroTitle}>
-                Advanced Head & Neck <span className={styles.accent}>Oncology</span> Treatment in India
-              </h1>
-              <p className={styles.heroDescription}>
-                Celeb Aesthecia offers specialized head and neck cancer treatment in India, focusing on 
-                early diagnosis, precision care, and better clinical outcomes. Our oncology team uses 
-                advanced technology and multidisciplinary approaches.
-              </p>
-              <p className={styles.heroSubtext}>
-                We provide comprehensive cancer care with a patient-first approach, ensuring safety and 
-                effectiveness at every stage.
-              </p>
-              <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/contact" className={styles.ctaButton}>
-                  <Calendar size={18} /> Book Consultation
-                </Link>
-                <Link href="tel:+919876543210" className={styles.ctaButton} style={{ background: "var(--white)", color: "#0E898F", border: "2px solid #0E898F" }}>
-                  <Phone size={18} /> Call Now
-                </Link>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-cancer.png" 
+                    alt="Oral Cancer Screening" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className={styles.statsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 2. Head & Neck Tumor Diagnosis */}
+        <section className={styles.about}>
           <div className="container">
-            <div className={styles.statsGrid}>
-              {stats.map((stat, index) => (
-                <div key={index} className={styles.statCard}>
-                  <div className={styles.statNumber}>{stat.number}</div>
-                  <div className={styles.statLabel}>{stat.label}</div>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Stethoscope size={16} />
+                  <span>Head & Neck Tumor Diagnosis</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Accurate Diagnosis for <span className={styles.titleAccent}>Effective Treatment Planning</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We use advanced diagnostic tools to identify and evaluate tumors in the head and neck region accurately.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Clinical examination by oncology specialists",
+                    "Advanced imaging and investigations",
+                    "Tumor staging and risk assessment",
+                  ].map((service, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{service}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Precise diagnosis ensures the right treatment at the right time.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-cancer -2.png" 
+                    alt="Head & Neck Tumor Diagnosis" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Conditions Section */}
-        <section className={styles.treatmentsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 3. Biopsy & Histopathology */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Conditions We Treat</h2>
-            <div className={styles.treatmentsGrid}>
-              {conditionsWeTreat.map((condition, index) => (
-                <div key={index} className={styles.treatmentCard}>
-                  <div className={styles.treatmentIcon}>{condition.icon}</div>
-                  <h3 className={styles.treatmentTitle}>{condition.title}</h3>
-                  <p className={styles.treatmentDescription}>{condition.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Microscope size={16} />
+                  <span>Biopsy & Histopathology</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Confirming Diagnosis with <span className={styles.titleAccent}>Scientific Precision</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We perform detailed biopsy procedures followed by histopathological analysis to confirm cancer diagnosis and guide treatment.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Accurate identification of cancer type and stage",
+                    "Guidance for personalized treatment planning",
+                    "Reliable and evidence-based reporting",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>A critical step in designing effective cancer treatment strategies.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/Quick-Treatments/Hnfcancer.png" 
+                    alt="Biopsy & Histopathology" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Process Section */}
-        <section className={styles.processSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 4. Surgical Oncology (Tumor Resection) */}
+        <section className={styles.about}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Our Treatment Process</h2>
-            <div className={styles.processGrid}>
-              {processSteps.map((step, index) => (
-                <div key={index} className={styles.processCard}>
-                  <div className={styles.processNumber}>{step.step}</div>
-                  <h3 className={styles.processTitle}>{step.title}</h3>
-                  <p className={styles.processDescription}>{step.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Activity size={16} />
+                  <span>Surgical Oncology (Tumor Resection)</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Advanced Surgical Treatment with <span className={styles.titleAccent}>Maximum Precision</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our expert surgeons perform tumor removal procedures with a focus on safety, precision, and complete disease control.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Advanced surgical techniques",
+                    "Modular OT setup for maximum safety",
+                    "Focus on complete tumor removal with minimal complications",
+                  ].map((feature, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Delivering effective treatment with patient safety as the highest priority.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-cancer.png" 
+                    alt="Surgical Oncology" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Why Choose Us Section */}
+        <div className={styles.sectionSeparator} />
+
+        {/* 5. Reconstruction Surgeries */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Sparkles size={16} />
+                  <span>Reconstruction Surgeries</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Restoring Form, Function & <span className={styles.titleAccent}>Confidence</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Post-tumor removal, we provide advanced reconstructive procedures to restore both function and appearance.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Facial reconstruction",
+                    "Jaw and oral structure restoration",
+                    "Functional rehabilitation (speech, chewing)",
+                  ].map((focus, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{focus}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Helping patients regain confidence and quality of life.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-cancer -2.png" 
+                    alt="Reconstruction Surgeries" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 6. Multidisciplinary Cancer Care */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Users size={16} />
+                  <span>Multidisciplinary Cancer Care</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Collaborative Approach for <span className={styles.titleAccent}>Better Outcomes</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our oncology care involves a team of specialists working together to provide comprehensive treatment.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Oncologists and Surgeons",
+                    "Dermatologists and Pathologists",
+                    "Rehabilitation experts and Nutritionists",
+                  ].map((member, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{member}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>A coordinated approach ensures complete and effective care.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/Quick-Treatments/Hnfcancer.png" 
+                    alt="Multidisciplinary Care" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 7. Palliative & Rehabilitation Support */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <HeartPulse size={16} />
+                  <span>Palliative & Rehabilitation Support</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Care Beyond <span className={styles.titleAccent}>Treatment</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We provide supportive care to improve quality of life during and after cancer treatment.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Pain management and symptom control",
+                    "Nutritional guidance and physical therapy",
+                    "Emotional and psychological support",
+                    "Post-treatment rehabilitation",
+                  ].map((support, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{support}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Focused on comfort, dignity, and recovery.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-cancer.png" 
+                    alt="Palliative Support" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 8. Tobacco & Alcohol De-Addiction Programs */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Shield size={16} />
+                  <span>Tobacco & Alcohol De-Addiction Programs</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Prevent, Recover & <span className={styles.titleAccent}>Stay Healthy</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We offer structured programs to help patients quit harmful habits that increase cancer risk.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Medical and behavioral counseling",
+                    "Personalized de-addiction plans",
+                    "Long-term lifestyle support",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Prevention is the first step toward a healthier future.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-cancer -2.png" 
+                    alt="De-Addiction Programs" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Us for Oncology Care</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for HNF Oncology?</h2>
             <div className={styles.featuresGrid}>
-              {whyChooseUs.map((feature, index) => (
+              {[
+                { icon: <Microscope size={24} />, text: "AI-assisted early detection and diagnosis" },
+                { icon: <Activity size={24} />, text: "Experienced oncology and surgical specialists" },
+                { icon: <Shield size={24} />, text: "Advanced modular OT for safe surgeries" },
+                { icon: <Users size={24} />, text: "Multidisciplinary treatment approach" },
+                { icon: <HeartPulse size={24} />, text: "Comprehensive rehabilitation and support care" },
+                { icon: <Target size={24} />, text: "Strong focus on prevention and awareness" },
+              ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
                   <span className={styles.featureIcon}>{feature.icon}</span>
                   <span>{feature.text}</span>
@@ -160,17 +458,30 @@ export default function OncologyPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section — Newsletter Style */}
         <section className={styles.ctaSection}>
-          <div className="container">
+          <div className={styles.ctaContainer}>
             <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>Need Expert Cancer Care?</h2>
+              <h2 className={styles.ctaTitle}>
+                Book a Cancer Screening Consultation
+              </h2>
               <p className={styles.ctaDescription}>
-                Book a consultation with our oncology specialists and get the care you deserve.
+                Early detection can make a life-saving difference. Take the first step toward timely diagnosis and expert care at Celeb Aesthecia.
               </p>
-              <Link href="/contact" className={styles.ctaButtonWhite}>
-                <Calendar size={18} /> Schedule Your Appointment
-              </Link>
+              <div className={styles.ctaBtnRow}>
+                <Link href="/contact" className={styles.ctaButtonWhite}>
+                  <Calendar size={18} /> Schedule Your Consultation
+                </Link>
+              </div>
+            </div>
+            <div className={styles.ctaImageWrapper}>
+              <Image
+                src="/images/Quick-Treatments/Hnfcancer.png"
+                alt="Expert Oncology Care"
+                width={500}
+                height={600}
+                className={styles.ctaImage}
+              />
             </div>
           </div>
         </section>

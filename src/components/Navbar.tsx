@@ -18,15 +18,15 @@ const treatmentsLeft = [
   { label: "Skin", href: "/treatments/skin", icon: <Sparkles size={18} /> },
   { label: "Hair", href: "/treatments/hair", icon: <Ribbon size={18} /> },
   { label: "HNF Cancer", href: "/treatments/oncology", icon: <HeartPulse size={18} /> },
-  { label: "Facial Trauma", href: "/treatments/general-opd", icon: <Stethoscope size={18} /> },
+  { label: "Facial Trauma", href: "/treatments/facial-trauma", icon: <Stethoscope size={18} /> },
 ];
 
 const treatmentsRight = [
-  { label: "Body Shaping", href: "/treatments", icon: <Scissors size={18} /> },
-  { label: "Nutrition", href: "/treatments", icon: <Apple size={18} /> },
-  { label: "Sexual Health", href: "/treatments", icon: <HeartPulse size={18} /> },
-  { label: "Premium Aesthetic", href: "/treatments", icon: <Gem size={18} /> },
-  { label: "Dental and Medical Tourism", href: "/treatments", icon: <Plane size={18} /> },
+  { label: "Body Shaping", href: "/treatments/body-shaping", icon: <Scissors size={18} /> },
+  { label: "Nutrition", href: "/treatments/nutrition", icon: <Apple size={18} /> },
+  { label: "Sexual Health", href: "/treatments/sexual-health", icon: <HeartPulse size={18} /> },
+  { label: "Premium Aesthetic", href: "/treatments/premium-aesthetic", icon: <Gem size={18} /> },
+  { label: "Dental and Medical Tourism", href: "/treatments/medical-tourism", icon: <Plane size={18} /> },
 ];
 
 const navLinks = [
@@ -85,7 +85,7 @@ export default function Navbar() {
             </span>
             <span className={styles.topBarDivider}>|</span>
             <span className={styles.topBarItem}>
-              Mon – Fri: 8:00 AM – 7:00 PM
+              Mon – Sat: 9:00 AM – 9:00 PM
             </span>
           </div>
           <div className={styles.topBarRight}>

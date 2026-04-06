@@ -413,3 +413,145 @@ export const sendStaffCredentials = async (opts: {
     `,
   });
 };
+
+export const sendEnquiryConfirmation = async (opts: {
+  to: string;
+  fullName: string;
+  mobile: string;
+  department: string;
+  enquiryType: string;
+  details: string;
+  hospitalName: string;
+  hospitalEmail: string;
+  hospitalPhone: string;
+  hospitalLogo?: string | null;
+}) => {
+  const logoHtml = opts.hospitalLogo
+    ? `<img src="${opts.hospitalLogo}" alt="${opts.hospitalName}" style="max-height:60px;max-width:200px;object-fit:contain;margin-bottom:12px;" />`
+    : `<div style="font-size:18px;font-weight:700;color:#334155;margin-bottom:12px;">${opts.hospitalName}</div>`;
+
+  console.log("[Mailer] sendEnquiryConfirmation - Sending to:", opts.to);
+  
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: `Enquiry Received – ${opts.hospitalName}`,
+    html: `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;max-width:560px;margin:40px auto;background:#ffffff;border:1px solid #f1f5f9;border-radius:8px;overflow:hidden;">
+        <div style="padding:32px 32px 24px;text-align:center;border-bottom:1px solid #f8fafc;">
+          ${logoHtml}
+          <div style="font-size:13px;color:#94a3b8;font-weight:500;">Enquiry Confirmation</div>
+        </div>
+        
+        <div style="padding:28px 32px;">
+          <p style="font-size:15px;color:#1e293b;margin:0 0 8px;font-weight:600;">Hello ${opts.fullName},</p>
+          <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0 0 24px;">Thank you for reaching out to us. We have received your enquiry and our team will get back to you shortly.</p>
+          
+          <div style="background:#fafbfc;border:1px solid #f1f5f9;border-radius:6px;padding:18px;margin-bottom:20px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="font-size:13px;color:#94a3b8;padding:5px 0;width:100px;">Name</td><td style="font-size:13px;color:#334155;padding:5px 0;">${opts.fullName}</td></tr>
+              <tr><td style="font-size:13px;color:#94a3b8;padding:5px 0;">Mobile</td><td style="font-size:13px;color:#334155;padding:5px 0;">${opts.mobile}</td></tr>
+              ${opts.department ? `<tr><td style="font-size:13px;color:#94a3b8;padding:5px 0;">Department</td><td style="font-size:13px;color:#334155;padding:5px 0;">${opts.department}</td></tr>` : ""}
+              ${opts.enquiryType ? `<tr><td style="font-size:13px;color:#94a3b8;padding:5px 0;">Type</td><td style="font-size:13px;color:#334155;padding:5px 0;">${opts.enquiryType}</td></tr>` : ""}
+            </table>
+          </div>
+          
+          ${opts.details ? `
+          <div style="background:#fefefe;border:1px solid #f1f5f9;border-radius:6px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Your Message</div>
+            <div style="font-size:13px;color:#475569;line-height:1.6;white-space:pre-wrap;">${opts.details}</div>
+          </div>` : ""}
+          
+          <div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:6px;">For urgent queries, please contact us:</div>
+          <div style="font-size:13px;color:#334155;line-height:1.7;">
+            <div>📞 <a href="tel:${opts.hospitalPhone}" style="color:#0E898F;text-decoration:none;">${opts.hospitalPhone}</a></div>
+            <div>✉️ <a href="mailto:${opts.hospitalEmail}" style="color:#0E898F;text-decoration:none;">${opts.hospitalEmail}</a></div>
+          </div>
+        </div>
+        
+        <div style="padding:16px 32px;background:#fafbfc;border-top:1px solid #f1f5f9;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#cbd5e1;">This is an automated message from ${opts.hospitalName}</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
+export const sendEnquiryNotificationToHospital = async (opts: {
+  to: string;
+  fullName: string;
+  mobile: string;
+  altContact: string;
+  email: string;
+  gender: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  department: string;
+  enquiryType: string;
+  details: string;
+  hospitalName: string;
+  hospitalLogo?: string | null;
+  enquiryId: string;
+}) => {
+  const logoHtml = opts.hospitalLogo
+    ? `<img src="${opts.hospitalLogo}" alt="${opts.hospitalName}" style="max-height:50px;max-width:180px;object-fit:contain;margin-bottom:10px;" />`
+    : `<div style="font-size:16px;font-weight:700;color:#334155;margin-bottom:10px;">${opts.hospitalName}</div>`;
+
+  console.log("[Mailer] sendEnquiryNotificationToHospital - Sending to:", opts.to);
+  
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: `New Enquiry from ${opts.fullName} – ${opts.department || "General"}`,
+    html: `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:40px auto;background:#ffffff;border:1px solid #f1f5f9;border-radius:8px;overflow:hidden;">
+        <div style="padding:24px 28px;text-align:center;background:#fafbfc;border-bottom:1px solid #f1f5f9;">
+          ${logoHtml}
+          <div style="font-size:15px;color:#334155;font-weight:600;margin-bottom:2px;">New Enquiry Received</div>
+          <div style="font-size:11px;color:#cbd5e1;font-family:monospace;">ID: ${opts.enquiryId}</div>
+        </div>
+        
+        <div style="padding:24px 28px;">
+          <div style="background:#fafbfc;border:1px solid #f1f5f9;border-radius:6px;padding:16px;margin-bottom:14px;">
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;font-weight:600;">Contact Details</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;width:100px;">Name</td><td style="font-size:13px;color:#334155;padding:4px 0;font-weight:600;">${opts.fullName}</td></tr>
+              <tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;">Mobile</td><td style="font-size:13px;color:#334155;padding:4px 0;"><a href="tel:${opts.mobile}" style="color:#0E898F;text-decoration:none;">${opts.mobile}</a></td></tr>
+              ${opts.altContact ? `<tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;">Alt Contact</td><td style="font-size:13px;color:#334155;padding:4px 0;">${opts.altContact}</td></tr>` : ""}
+              ${opts.email ? `<tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;">Email</td><td style="font-size:13px;color:#334155;padding:4px 0;"><a href="mailto:${opts.email}" style="color:#0E898F;text-decoration:none;">${opts.email}</a></td></tr>` : ""}
+              ${opts.gender ? `<tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;">Gender</td><td style="font-size:13px;color:#334155;padding:4px 0;">${opts.gender}</td></tr>` : ""}
+            </table>
+          </div>
+          
+          <div style="background:#fafbfc;border:1px solid #f1f5f9;border-radius:6px;padding:16px;margin-bottom:14px;">
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;font-weight:600;">Location</div>
+            <div style="font-size:13px;color:#475569;">
+              ${[opts.city, opts.state, opts.country].filter(Boolean).join(", ") || "Not provided"}
+              ${opts.pincode ? ` – ${opts.pincode}` : ""}
+            </div>
+          </div>
+          
+          <div style="background:#fafbfc;border:1px solid #f1f5f9;border-radius:6px;padding:16px;margin-bottom:14px;">
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;font-weight:600;">Enquiry Details</div>
+            <table style="width:100%;border-collapse:collapse;">
+              ${opts.department ? `<tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;width:100px;">Department</td><td style="font-size:13px;color:#334155;padding:4px 0;font-weight:600;">${opts.department}</td></tr>` : ""}
+              ${opts.enquiryType ? `<tr><td style="font-size:13px;color:#94a3b8;padding:4px 0;">Type</td><td style="font-size:13px;color:#334155;padding:4px 0;">${opts.enquiryType}</td></tr>` : ""}
+            </table>
+          </div>
+          
+          ${opts.details ? `
+          <div style="background:#fefefe;border:1px solid #f1f5f9;border-radius:6px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Message</div>
+            <div style="font-size:13px;color:#475569;line-height:1.6;white-space:pre-wrap;">${opts.details}</div>
+          </div>` : ""}
+          
+          <div style="font-size:11px;color:#cbd5e1;padding-top:12px;border-top:1px solid #f8fafc;">
+            Submitted at ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};

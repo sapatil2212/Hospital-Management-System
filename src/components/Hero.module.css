@@ -241,23 +241,6 @@
   color: var(--gray-800);
 }
 
-.doctorSub {
-  font-size: var(--font-size-xs);
-  color: var(--success);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.doctorSub::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse 2s infinite;
-}
-
 /* Satisfied Card */
 .satisfiedCard {
   bottom: 15%;

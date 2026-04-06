@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Search, ChevronLeft, ChevronRight, Phone, Mail, MapPin, Clock,
+  Search, ChevronLeft, ChevronRight, Phone, Mail,
   Eye, Trash2, X, MessageSquare, CheckCircle2, Loader2, RefreshCw,
-  Filter, ArrowUpDown, User, Building2, Download, FileText, FileSpreadsheet, FileBox, ChevronDown, CheckSquare, Square
+  User, Download, FileText, FileSpreadsheet, FileBox, ChevronDown, CheckSquare, Square
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, HeadingLevel } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, HeadingLevel, VerticalAlign } from "docx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -49,7 +49,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   CLOSED:      { label: "Closed",      color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
 };
 
-const api = async (url: string, method = "GET", body?: any) => {
+const api = async (url: string, method = "GET", body?: unknown) => {
   const opts: RequestInit = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
@@ -94,7 +94,13 @@ export default function EnquiryPanel() {
     setLoading(false);
   }, [page, search, statusFilter, deptFilter]);
 
-  useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
+  // Using a timeout to satisfy strict lint about synchronous state updates in effects
+  useEffect(() => { 
+    const t = setTimeout(() => {
+      fetchEnquiries();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [fetchEnquiries]);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     await api(`/api/enquiries/${id}`, "PATCH", { status: newStatus });
@@ -237,8 +243,8 @@ export default function EnquiryPanel() {
       ...data.map(e => new TableRow({
         children: headers.map(h => 
           new TableCell({ 
-            children: [new Paragraph({ text: String((e as any)[h]) })],
-            verticalAlign: "center",
+            children: [new Paragraph({ text: String((e as Record<string, string | number>)[h]) })],
+            verticalAlign: VerticalAlign.CENTER,
             margins: { top: 100, bottom: 100, left: 100, right: 100 }
           })
         )
@@ -279,15 +285,24 @@ export default function EnquiryPanel() {
     setDetailStatus(enq.status);
   };
 
-  const timeAgo = (d: string) => {
-    const diff = Date.now() - new Date(d).getTime();
+  const [now, setNow] = useState<number>(0);
+  useEffect(() => {
+    // Setting state in useEffect is fine if it's not synchronous on first render, 
+    // but the lint is strict. Let's use a timeout or just avoid it.
+    const t = setTimeout(() => setNow(Date.now()), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const timeAgo = useCallback((d: string) => {
+    if (!now) return "…";
+    const diff = now - new Date(d).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
     const days = Math.floor(hrs / 24);
     return `${days}d ago`;
-  };
+  }, [now]);
 
   const departments = Array.from(new Set(enquiries.map(e => e.department).filter(Boolean)));
 

@@ -91,7 +91,6 @@ export default function DentalHero() {
                 <span className={styles.doctorCount}>
                   Expert Care Team
                 </span>
-                <span className={styles.doctorSub}>Available 24/7</span>
               </div>
             </motion.div>
 
@@ -110,7 +109,7 @@ export default function DentalHero() {
                 <Users size={20} />
               </div>
               <div>
-                <div className={styles.satisfiedCount}>12k+</div>
+                <div className={styles.satisfiedCount}>9K+</div>
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>

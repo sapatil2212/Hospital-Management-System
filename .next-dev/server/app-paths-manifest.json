@@ -1,12 +1,12 @@
 {
-  "/subdept/dashboard/page": "app/subdept/dashboard/page.js",
+  "/blog/[slug]/page": "app/blog/[slug]/page.js",
+  "/blog/page": "app/blog/page.js",
   "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/billing/queue/route": "app/api/billing/queue/route.js",
-  "/api/dashboard/overview/route": "app/api/dashboard/overview/route.js",
-  "/about/page": "app/about/page.js",
-  "/api/patients/route": "app/api/patients/route.js",
+  "/api/auth/profile/route": "app/api/auth/profile/route.js",
   "/api/appointments/route": "app/api/appointments/route.js",
+  "/api/patients/route": "app/api/patients/route.js",
+  "/api/dashboard/overview/route": "app/api/dashboard/overview/route.js",
+  "/treatments/medical-tourism/page": "app/treatments/medical-tourism/page.js",
   "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js",
-  "/doctor/dashboard/page": "app/doctor/dashboard/page.js",
-  "/doctor/dashboard/prescription/[appointmentId]/page": "app/doctor/dashboard/prescription/[appointmentId]/page.js"
+  "/hospitaladmin/profile/page": "app/hospitaladmin/profile/page.js"
 }

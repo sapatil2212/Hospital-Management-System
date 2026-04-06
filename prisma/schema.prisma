@@ -52,6 +52,8 @@ model Hospital {
   services              Service[]
   treatmentPlans        TreatmentPlan[]
   treatmentSessions     TreatmentSession[]
+  enquiries             Enquiry[]
+  blogs                 Blog[]
 }
 
 model User {
@@ -1569,4 +1571,76 @@ enum BillingStatus {
   PARTIAL
   PAID
   CANCELLED
+}
+
+model Enquiry {
+  id          String        @id @default(uuid())
+  hospitalId  String
+  fullName    String
+  mobile      String
+  altContact  String?
+  email       String?
+  gender      String?
+  city        String?
+  state       String?
+  country     String?
+  pincode     String?
+  department  String?
+  enquiryType String?
+  details     String?       @db.Text
+  status      EnquiryStatus @default(NEW)
+  notes       String?       @db.Text
+  assignedTo  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  hospital    Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([hospitalId, status])
+  @@index([hospitalId, createdAt])
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  IN_PROGRESS
+  CONVERTED
+  CLOSED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOG MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Blog {
+  id            String     @id @default(uuid())
+  hospitalId    String
+  title         String
+  slug          String
+  excerpt       String?    @db.Text
+  content       String?    @db.LongText
+  coverImage    String?    @db.Text
+  category      String?
+  tags          String?    @db.Text
+  author        String?
+  status        BlogStatus @default(DRAFT)
+  metaTitle     String?
+  metaDesc      String?    @db.Text
+  readTime      Int?
+  publishedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  hospital      Hospital   @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, slug])
+  @@index([hospitalId])
+  @@index([hospitalId, status])
+  @@index([hospitalId, category])
+  @@index([hospitalId, publishedAt])
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

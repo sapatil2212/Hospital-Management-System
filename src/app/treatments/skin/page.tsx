@@ -1,163 +1,503 @@
 import type { Metadata } from "next";
-import { Sparkles, CheckCircle, ArrowRight, Calendar, Shield, Award, Users, Microscope, Clock, Phone } from "lucide-react";
+import { 
+  Sparkles, 
+  CheckCircle, 
+  ArrowRight, 
+  Calendar, 
+  Microscope, 
+  Shield, 
+  Zap, 
+  HeartPulse, 
+  Star, 
+  Eraser, 
+  Stethoscope, 
+  Target,
+  Users
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "../treatments.module.css";
+import SkinHero from "./SkinHero";
 
 export const metadata: Metadata = {
-  title: "AI Skin Treatment in India | Advanced Dermatology Clinic | Celeb Aesthecia",
+  title: "AI Skin Treatment & Advanced Dermatology | Celeb Aesthecia",
   description:
-    "Get advanced AI-based skin treatments for acne, pigmentation, anti-aging, and laser therapy at Celeb Aesthecia. Safe, personalized, and result-driven care.",
+    "Advanced AI-based skin treatments, laser therapy, and dermatology services at Celeb Aesthecia. Personalized care for acne, anti-aging, and skin rejuvenation.",
   keywords: [
-    "AI skin treatment India",
-    "skin clinic",
-    "acne treatment",
-    "pigmentation treatment",
+    "AI skin treatment",
+    "dermatology India",
     "laser skin treatment",
-    "anti aging treatment",
-    "dermatology clinic India",
+    "acne scar reduction",
+    "anti aging treatments",
+    "medi facials",
   ],
 };
-
-const skinTreatments = [
-  {
-    icon: <Sparkles size={28} />,
-    title: "Acne & Acne Scar Treatment",
-    description: "Advanced solutions for active acne and scar reduction using AI-powered skin analysis and targeted therapies.",
-  },
-  {
-    icon: <Microscope size={28} />,
-    title: "Pigmentation & Melasma Treatment",
-    description: "Targeted therapies for uneven skin tone and dark spots with personalized protocols and laser technology.",
-  },
-  {
-    icon: <Clock size={28} />,
-    title: "Anti-Aging Solutions",
-    description: "Comprehensive treatments to reduce fine lines, wrinkles, and restore youthful, radiant skin.",
-  },
-  {
-    icon: <Shield size={28} />,
-    title: "Laser Skin Therapy",
-    description: "State-of-the-art laser treatments for various skin concerns with precision care and minimal downtime.",
-  },
-  {
-    icon: <Award size={28} />,
-    title: "Skin Rejuvenation",
-    description: "Advanced procedures to revitalize and refresh your skin's natural glow and texture.",
-  },
-];
-
-const whyChooseUs = [
-  { icon: <Microscope size={24} />, text: "AI-powered skin diagnosis" },
-  { icon: <Users size={24} />, text: "Customized treatment plans" },
-  { icon: <Shield size={24} />, text: "Advanced laser technologies" },
-  { icon: <Award size={24} />, text: "Trusted dermatology experts" },
-];
-
-const stats = [
-  { number: "10K+", label: "Skin Treatments" },
-  { number: "98%", label: "Success Rate" },
-  { number: "15+", label: "Expert Doctors" },
-  { number: "5★", label: "Google Rating" },
-];
-
-const processSteps = [
-  { step: 1, title: "AI Analysis", description: "Advanced skin scanning and diagnosis" },
-  { step: 2, title: "Custom Plan", description: "Personalized treatment protocol" },
-  { step: 3, title: "Treatment", description: "Expert procedure execution" },
-  { step: 4, title: "Follow-up", description: "Ongoing care and monitoring" },
-];
 
 export default function SkinTreatmentsPage() {
   return (
     <>
       <Navbar />
       <main className={styles.page}>
-        {/* Hero Section */}
-        <section className={styles.hero}>
+        <SkinHero />
+
+        {/* 1. AI-Based Skin Diagnosis & Analysis */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <div className={styles.heroContent}>
-              <div className={styles.heroBadge}>
-                <Sparkles size={18} />
-                <span>AI-Powered Skin Care</span>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Microscope size={16} />
+                  <span>AI-Based Skin Diagnosis & Analysis</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Personalized Skin Care Begins with <span className={styles.titleAccent}>Precision</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our advanced AI systems analyze your skin in detail—identifying concerns like pigmentation, acne, aging signs, and hydration levels.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Accurate skin assessment using AI technology",
+                    "Customized treatment plans based on real data",
+                    "Early detection of underlying skin issues",
+                    "Predictable and result-oriented outcomes",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>No guesswork—only precision-driven skincare.</span>
+                </div>
               </div>
-              <h1 className={styles.heroTitle}>
-                Advanced AI <span className={styles.accent}>Skin Treatments</span> in India
-              </h1>
-              <p className={styles.heroDescription}>
-                Celeb Aesthecia offers AI-based skin treatments in India, combining advanced dermatology 
-                with intelligent diagnostics to deliver personalized skincare solutions. Our treatments 
-                target acne, pigmentation, aging, and other skin concerns using FDA-approved technologies.
-              </p>
-              <p className={styles.heroSubtext}>
-                With expert dermatologists and modern equipment, we ensure safe, effective, and 
-                long-lasting skin results tailored to your skin type.
-              </p>
-              <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/contact" className={styles.ctaButton}>
-                  <Calendar size={18} /> Book Consultation
-                </Link>
-                <Link href="tel:+919876543210" className={styles.ctaButton} style={{ background: "var(--white)", color: "#0E898F", border: "2px solid #0E898F" }}>
-                  <Phone size={18} /> Call Now
-                </Link>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology.png" 
+                    alt="AI Skin Diagnosis" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className={styles.statsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 2. Clinical Dermatology */}
+        <section className={styles.about}>
           <div className="container">
-            <div className={styles.statsGrid}>
-              {stats.map((stat, index) => (
-                <div key={index} className={styles.statCard}>
-                  <div className={styles.statNumber}>{stat.number}</div>
-                  <div className={styles.statLabel}>{stat.label}</div>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Stethoscope size={16} />
+                  <span>Clinical Dermatology</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Medical Solutions for <span className={styles.titleAccent}>Healthy Skin</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We provide expert treatment for a wide range of skin conditions using clinically proven methods.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Acne & acne scars",
+                    "Psoriasis & eczema",
+                    "Hyperpigmentation & melasma",
+                    "Skin allergies & infections",
+                  ].map((condition, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{condition}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Safe, dermatologist-guided treatments for long-term skin health.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology-2.png" 
+                    alt="Clinical Dermatology" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Treatments Section */}
-        <section className={styles.treatmentsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 3. Advanced Laser Treatments */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Our Skin Treatments</h2>
-            <div className={styles.treatmentsGrid}>
-              {skinTreatments.map((treatment, index) => (
-                <div key={index} className={styles.treatmentCard}>
-                  <div className={styles.treatmentIcon}>{treatment.icon}</div>
-                  <h3 className={styles.treatmentTitle}>{treatment.title}</h3>
-                  <p className={styles.treatmentDescription}>{treatment.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Zap size={16} />
+                  <span>Advanced Laser Treatments</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  High-Precision Laser Technology for <span className={styles.titleAccent}>Visible Results</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We use FDA-approved and CE-certified laser systems for targeted and effective skin treatments.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "CO2 laser (resurfacing & scar reduction)",
+                    "Q-Switch laser (pigmentation & tattoo removal)",
+                    "Diode laser (hair reduction)",
+                  ].map((tech, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{tech}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Minimally invasive procedures with faster recovery and superior outcomes.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/Laser.png" 
+                    alt="Laser Treatments" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Process Section */}
-        <section className={styles.processSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 4. Anti-Aging Treatments */}
+        <section className={styles.about}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Our Treatment Process</h2>
-            <div className={styles.processGrid}>
-              {processSteps.map((step, index) => (
-                <div key={index} className={styles.processCard}>
-                  <div className={styles.processNumber}>{step.step}</div>
-                  <h3 className={styles.processTitle}>{step.title}</h3>
-                  <p className={styles.processDescription}>{step.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Star size={16} />
+                  <span>Anti-Aging Treatments</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Restore Youthful, <span className={styles.titleAccent}>Natural-Looking Skin</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our anti-aging solutions focus on enhancing your natural beauty without overdoing it.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Botox for wrinkle reduction",
+                    "Dermal fillers for volume restoration",
+                    "Thread lift for non-surgical facelift",
+                  ].map((treatment, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{treatment}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Achieve a youthful, refreshed appearance with subtle, natural results.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/1.png" 
+                    alt="Anti-Aging" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Why Choose Us Section */}
+        <div className={styles.sectionSeparator} />
+
+        {/* 5. PRP, GFC & Mesotherapy */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <HeartPulse size={16} />
+                  <span>PRP, GFC & Mesotherapy</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Regenerative Skin & <span className={styles.titleAccent}>Hair Therapies</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We use advanced regenerative treatments to stimulate collagen and skin repair naturally.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Improves skin texture and glow",
+                    "Reduces fine lines and pigmentation",
+                    "Promotes natural healing and rejuvenation",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Harness your body’s natural healing power for healthier skin.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/Mesotherapy.png" 
+                    alt="Regenerative Therapy" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 6. Medi-Facials & Skin Treatments */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Sparkles size={16} />
+                  <span>Medi-Facials & Skin Treatments</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Instant Glow with <span className={styles.titleAccent}>Medical-Grade Skincare</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our medical facials go beyond basic skincare to deliver deep nourishment and rejuvenation.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Chemical peels for exfoliation and renewal",
+                    "HydraFacial for hydration and glow",
+                    "Medi-facials tailored to your skin type",
+                  ].map((treatment, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{treatment}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Perfect for achieving radiant, healthy-looking skin.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/Medi-Facials.png" 
+                    alt="Medi-Facials" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 7. Skin Rejuvenation & Glass Skin Protocols */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Target size={16} />
+                  <span>Skin Rejuvenation & Glass Skin Protocols</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Achieve Smooth, Radiant & <span className={styles.titleAccent}>Flawless Skin</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our advanced skin rejuvenation treatments focus on improving texture, tone, and overall skin quality.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Brighter and even skin tone",
+                    "Improved skin texture",
+                    "Long-lasting glow and hydration",
+                  ].map((result, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{result}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Inspired by global beauty standards for flawless skin.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/Rejuvenation.png" 
+                    alt="Skin Rejuvenation" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 8. Scar Revision & Pigmentation Correction */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Eraser size={16} />
+                  <span>Scar Revision & Pigmentation Correction</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Clearer, Even-Toned Skin with <span className={styles.titleAccent}>Advanced Solutions</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We provide targeted treatments to reduce scars and pigmentation effectively.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Acne scar reduction",
+                    "Stretch mark improvement",
+                    "Pigmentation and melasma correction",
+                  ].map((treatment, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{treatment}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Restore smooth, even-toned skin with expert care.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/scar.png" 
+                    alt="Scar Revision" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 9. Dermatosurgery */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Shield size={16} />
+                  <span>Dermatosurgery</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Safe & Precise <span className={styles.titleAccent}>Minor Skin Procedures</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Our dermatosurgical procedures are performed with advanced techniques ensuring safety and minimal discomfort.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Mole removal",
+                    "Wart removal",
+                    "Cyst excision",
+                  ].map((procedure, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{procedure}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Quick, safe, and effective solutions for skin concerns.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/treatments/skin/Dermatosurgery.png" 
+                    alt="Dermatosurgery" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Skin Care</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Skin & Aesthetic Treatments?</h2>
             <div className={styles.featuresGrid}>
-              {whyChooseUs.map((feature, index) => (
+              {[
+                { icon: <Microscope size={24} />, text: "AI-based skin analysis for precise diagnosis" },
+                { icon: <Zap size={24} />, text: "Advanced FDA-approved & CE-certified technologies" },
+                { icon: <Users size={24} />, text: "Experienced dermatologists and aesthetic experts" },
+                { icon: <Target size={24} />, text: "Personalized treatment plans for every skin type" },
+                { icon: <Shield size={24} />, text: "Safe, minimally invasive procedures" },
+                { icon: <Sparkles size={24} />, text: "Premium, hygienic, and patient-friendly environment" },
+              ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
                   <span className={styles.featureIcon}>{feature.icon}</span>
                   <span>{feature.text}</span>
@@ -167,17 +507,30 @@ export default function SkinTreatmentsPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section — Newsletter Style */}
         <section className={styles.ctaSection}>
-          <div className="container">
+          <div className={styles.ctaContainer}>
             <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>Ready to Transform Your Skin?</h2>
+              <h2 className={styles.ctaTitle}>
+                Book Your Skin Consultation Today
+              </h2>
               <p className={styles.ctaDescription}>
-                Book a consultation with our expert dermatologists and start your journey to healthier, glowing skin.
+                Take the first step toward healthy, glowing, and youthful skin with expert care at Celeb Aesthecia. Experience advanced dermatology like never before.
               </p>
-              <Link href="/contact" className={styles.ctaButtonWhite}>
-                <Calendar size={18} /> Schedule Your Appointment
-              </Link>
+              <div className={styles.ctaBtnRow}>
+                <Link href="/contact" className={styles.ctaButtonWhite}>
+                  <Calendar size={18} /> Schedule Your Consultation
+                </Link>
+              </div>
+            </div>
+            <div className={styles.ctaImageWrapper}>
+              <Image
+                src="/images/treatment-dermatology.png"
+                alt="Expert skin care"
+                width={500}
+                height={600}
+                className={styles.ctaImage}
+              />
             </div>
           </div>
         </section>

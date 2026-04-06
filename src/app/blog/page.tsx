@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Calendar, User, Search, Tag, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowRight, Calendar, Search, Clock, TrendingUp, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -17,10 +17,20 @@ const CATEGORY_COLORS: Record<string, { color: string; bg: string }> = {
   "Medical News": { color: "#0EA5E9", bg: "#E0F2FE" },
 };
 
+interface BlogPost {
+  title: string;
+  slug: string;
+  excerpt?: string;
+  coverImage?: string;
+  category: string;
+  publishedAt?: string;
+  readTime?: number;
+}
+
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
 

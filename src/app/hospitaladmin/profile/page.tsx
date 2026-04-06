@@ -90,6 +90,8 @@ export default function ProfilePage() {
       if (data.success) {
         setMessage({ type: "success", text: "Profile updated successfully!" });
         setUser((prev) => prev ? { ...prev, name: formData.name, email: formData.email, profilePhoto } : null);
+        // Notify layout to refresh user data (updates navbar & sidebar photos)
+        window.dispatchEvent(new Event("profileUpdated"));
       } else {
         setMessage({ type: "error", text: data.message || "Failed to update profile" });
       }

@@ -208,7 +208,6 @@ export default function Hero() {
               <span className={styles.doctorCount}>
                 Expert Care Team
               </span>
-              <span className={styles.doctorSub}>Available 24/7</span>
             </div>
           </motion.div>
 
@@ -227,7 +226,7 @@ export default function Hero() {
               <Users size={20} />
             </div>
             <div>
-              <div className={styles.satisfiedCount}>10k+</div>
+              <div className={styles.satisfiedCount}>9K+</div>
               <div className={styles.satisfiedLabel}>Happy Patients</div>
             </div>
           </motion.div>

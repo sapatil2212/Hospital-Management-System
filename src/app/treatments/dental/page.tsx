@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SmilePlus, CheckCircle, ArrowRight, Calendar, Shield, Award, Users, Microscope, Clock, Phone, Scissors, Star, HeartPulse, Wrench, Ruler, Baby, Sparkles, Cpu, Gem, Zap, AlertCircle, Pill } from "lucide-react";
+import { SmilePlus, CheckCircle, ArrowRight, Calendar, Shield, Scissors, HeartPulse, Wrench, Ruler, Baby, Sparkles, Cpu, Gem, Zap, AlertCircle, Pill, Microscope } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
@@ -20,20 +20,6 @@ export const metadata: Metadata = {
     "dental surgery India",
   ],
 };
-
-const whyChooseUs = [
-  { icon: <Microscope size={24} />, text: "Advanced CBCT & OPG imaging" },
-  { icon: <Shield size={24} />, text: "Modular OT for surgeries" },
-  { icon: <Award size={24} />, text: "High sterilization standards" },
-  { icon: <Users size={24} />, text: "Experienced dental specialists" },
-];
-
-const processSteps = [
-  { step: 1, title: "Digital Scan", description: "Advanced 3D dental imaging" },
-  { step: 2, title: "Treatment Plan", description: "Customized dental solution" },
-  { step: 3, title: "Procedure", description: "Expert dental treatment" },
-  { step: 4, title: "After Care", description: "Follow-up and maintenance" },
-];
 
 export default function DentalTreatmentsPage() {
   return (
@@ -239,7 +225,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/images/treatment-dental-2.png" alt="Oral & Maxillofacial Surgery" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Maxillofacial-Surgery.png" alt="Oral & Maxillofacial Surgery" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -285,7 +271,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/treatments/dental/dental-1.png" alt="Periodontics" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Periodontics.png" alt="Periodontics" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -330,7 +316,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/images/treatment-dental-2.png" alt="Orthodontics" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Orthodontics.png" alt="Orthodontics" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -376,7 +362,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/treatments/dental/dental-1.png" alt="Pedodontics" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Pedodontics.png" alt="Pedodontics" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -425,7 +411,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/images/treatment-dental-2.png" alt="Cosmetic Dentistry" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Cosmetic.png" alt="Cosmetic Dentistry" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -472,7 +458,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/treatments/dental/dental-1.png" alt="CAD-CAM Digital Dentistry" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/cad.png" alt="CAD-CAM Digital Dentistry" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -517,7 +503,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/images/treatment-dental-2.png" alt="Oral Diagnostics" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/oral.png" alt="Oral Diagnostics" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -563,7 +549,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/treatments/dental/dental-1.png" alt="Implantology" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Implantology.png" alt="Implantology" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -608,7 +594,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/images/treatment-dental-2.png" alt="Laser Dentistry" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Laser.png" alt="Laser Dentistry" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -652,7 +638,7 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/treatments/dental/dental-1.png" alt="Emergency Dental Care" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/Emergency.png" alt="Emergency Dental Care" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
@@ -696,55 +682,37 @@ export default function DentalTreatmentsPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image src="/images/treatment-dental-2.png" alt="Dental Support Services" width={500} height={600} className={styles.aboutImage} />
+                  <Image src="/treatments/dental/DentalSupport.png" alt="Dental Support Services" width={500} height={600} className={styles.aboutImage} />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Process Section */}
-        <section className={styles.processSection}>
-          <div className="container">
-            <h2 className={styles.sectionTitle}>Our Treatment Process</h2>
-            <div className={styles.processGrid}>
-              {processSteps.map((step, index) => (
-                <div key={index} className={styles.processCard}>
-                  <div className={styles.processNumber}>{step.step}</div>
-                  <h3 className={styles.processTitle}>{step.title}</h3>
-                  <p className={styles.processDescription}>{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Why Choose Us Section */}
-        <section className={styles.whyChooseSection}>
-          <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Our Dental Clinic</h2>
-            <div className={styles.featuresGrid}>
-              {whyChooseUs.map((feature, index) => (
-                <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
+        {/* CTA Section — Newsletter Style */}
         <section className={styles.ctaSection}>
-          <div className="container">
+          <div className={styles.ctaContainer}>
             <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>Ready for a Perfect Smile?</h2>
+              <h2 className={styles.ctaTitle}>
+                Ready for a Perfect Smile? <br /> Book Your Consultation Today
+              </h2>
               <p className={styles.ctaDescription}>
-                Book a consultation with our expert dentists and start your journey to a healthier, brighter smile.
+                Experience advanced, ethical, and personalized dental treatment designed for your health, confidence, and long-term results.
               </p>
-              <Link href="/contact" className={styles.ctaButtonWhite}>
-                <Calendar size={18} /> Schedule Your Appointment
-              </Link>
+              <div className={styles.ctaBtnRow}>
+                <Link href="/contact" className={styles.ctaButtonWhite}>
+                  <Calendar size={18} /> Book Appointment Now
+                </Link>
+              </div>
+            </div>
+            <div className={styles.ctaImageWrapper}>
+              <Image
+                src="/treatments/dental/CTA.png"
+                alt="Expert dental care"
+                width={500}
+                height={600}
+                className={styles.ctaImage}
+              />
             </div>
           </div>
         </section>

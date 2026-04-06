@@ -1,3 +1,6 @@
 "use client";
 import PrescriptionPage from "../../../../doctor/prescription/[appointmentId]/page";
-export default PrescriptionPage;
+
+export default function DashboardPrescriptionPage() {
+  return <PrescriptionPage />;
+}

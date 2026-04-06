@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, UserRound, Settings, HelpCircle,
   LogOut, Search, MessageSquare, Building2, Stethoscope, ClipboardList,
-  IndianRupee, CreditCard, ChevronDown, User, LogIn, BedDouble, BarChart2
+  IndianRupee, CreditCard, ChevronDown, User, LogIn, BedDouble, BarChart2, FileQuestion, BookOpen
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -20,6 +20,8 @@ const NAV_ITEMS = [
   { id: "inventory",    label: "Inventory",         Icon: ClipboardList,   section: "General", route: "/hospitaladmin/dashboard?tab=inventory" },
   { id: "billing",      label: "Billing",           Icon: CreditCard,      section: "General", route: "/hospitaladmin/dashboard?tab=billing" },
   { id: "ipd",          label: "IPD / Wards",       Icon: BedDouble,       section: "General", route: "/hospitaladmin/dashboard?tab=ipd" },
+  { id: "enquiries",    label: "Enquiries",         Icon: FileQuestion,    section: "General", route: "/hospitaladmin/dashboard?tab=enquiries" },
+  { id: "blogs",        label: "Blogs",              Icon: BookOpen,        section: "General", route: "/hospitaladmin/dashboard?tab=blogs" },
   { id: "reports",      label: "Reports",           Icon: BarChart2,       section: "System",  route: "/hospitaladmin/dashboard?tab=reports" },
   { id: "finance",      label: "Finance",           Icon: IndianRupee,     section: "System",  route: "/hospitaladmin/finance" },
 ];
@@ -35,6 +37,8 @@ function getActiveId(pathname: string, tab: string | null): string {
     if (tab === "inventory") return "inventory";
     if (tab === "billing")   return "billing";
     if (tab === "ipd")       return "ipd";
+    if (tab === "enquiries") return "enquiries";
+    if (tab === "blogs")     return "blogs";
     if (tab === "reports")   return "reports";
     if (tab === "finance")   return "finance";
     if (tab === "settings")  return "settings";
@@ -66,7 +70,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const tab = searchParams.get("tab");
   const activeId = getActiveId(pathname, tab);
 
-  useEffect(() => {
+  const fetchUser = () => {
     fetch("/api/auth/me", { credentials: "include" })
       .then(r => r.json())
       .then(d => {
@@ -80,7 +84,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         setLoading(false);
       })
       .catch(() => router.push("/login"));
+  };
+
+  useEffect(() => {
+    fetchUser();
   }, [router]);
+
+  // Re-fetch user data when profile is updated from the profile page
+  useEffect(() => {
+    const handleProfileUpdate = () => fetchUser();
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
+  }, []);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
@@ -118,7 +133,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-nb.on .hd-nb-dot{display:block}
         .hd-sb-foot{padding:14px 16px 18px;border-top:1px solid #f1f5f9}
         .hd-user-chip{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px}
-        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        .hd-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
         .hd-uname{font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
@@ -134,7 +149,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-notif:hover{background:#E6F4F4}
         .hd-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #fff}
         .hd-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
-        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+        .hd-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0E898F,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden}
         .hd-profile-name{font-size:11px;font-weight:600;color:#1e293b}
         .hd-profile-role{font-size:9px;color:#64748b}
         .hd-body{display:grid;grid-template-columns:1fr 260px;flex:1;min-height:0}
@@ -270,7 +285,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
           <div className="hd-sb-foot">
             <div className="hd-user-chip">
-              <div className="hd-av">{user?.name ? initials(user.name) : "HA"}</div>
+              <div className="hd-av">{user?.profilePhoto ? <img src={user.profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 9 }} /> : (user?.name ? initials(user.name) : "HA")}</div>
               <div style={{ overflow: "hidden" }}>
                 <div className="hd-uname">{user?.name || "Hospital Admin"}</div>
                 <div className="hd-urole">Hospital Admin</div>
@@ -302,7 +317,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 style={{ position: "relative" }}
               >
-                <div className="hd-profile-av">{user?.name ? initials(user.name) : "HA"}</div>
+                <div className="hd-profile-av">{user?.profilePhoto ? <img src={user.profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} /> : (user?.name ? initials(user.name) : "HA")}</div>
                 <div>
                   <div className="hd-profile-name">{user?.name?.split(" ")[0] || "Admin"}</div>
                   <div className="hd-profile-role">Hosp. Admin</div>

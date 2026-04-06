@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { AppointmentProvider } from "@/components/AppointmentProvider";
+import MobileAppointment from "@/components/mobile-appointment";
+import WhatsAppWidget from "@/components/whatsapp-widget";
+import AIChatbot from "@/components/ai-chatbot";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,7 +41,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppointmentProvider>{children}</AppointmentProvider>
+        <AppointmentProvider>
+          {children}
+          <WhatsAppWidget />
+          <AIChatbot />
+          <MobileAppointment />
+        </AppointmentProvider>
       </body>
     </html>
   );

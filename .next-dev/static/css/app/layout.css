@@ -205,10 +205,11 @@ input, textarea {
 }
 
 .section-subtitle {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   color: var(--gray-500);
-  line-height: 1.7;
+  line-height: 1.8;
   max-width: 600px;
+  margin: 0 auto;
 }
 
 /* ---------- Buttons ---------- */
@@ -430,6 +431,278 @@ input, textarea {
 }
 .spin-anim { animation: spin .7s linear infinite; }
 
+/*!********************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/ai-chatbot.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************/
+.ai-chatbot_container__SJxtb {
+  position: fixed;
+  right: 24px;
+  bottom: 100px; /* Positioned above the WhatsApp widget (60px height + spacing) */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.ai-chatbot_trigger__MlSio {
+  pointer-events: auto;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #0E898F; /* Primary clinic color */
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(14, 137, 143, 0.3);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.ai-chatbot_triggerActive__DYQqa {
+  background: #ff4d4d;
+  box-shadow: 0 4px 16px rgba(255, 77, 77, 0.3);
+}
+
+.ai-chatbot_trigger__MlSio:hover {
+  transform: scale(1.1);
+}
+
+.ai-chatbot_badge__WODZw {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ff4d4d;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.ai-chatbot_chatWindow__BsdHC {
+  pointer-events: auto;
+  width: 360px;
+  height: 520px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: ai-chatbot_slideUp__Xitj_ 0.3s ease-out;
+}
+
+@keyframes ai-chatbot_slideUp__Xitj_ {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-chatbot_header__3PIx8 {
+  padding: 20px;
+  background: #0E898F;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-chatbot_headerInfo__m3pcu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-chatbot_headerIcon__X1zev {
+  color: #a8f0f3;
+}
+
+.ai-chatbot_headerTitle__v_z4O {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ai-chatbot_headerStatus__U8IBD {
+  font-size: 12px;
+  margin: 2px 0 0;
+  opacity: 0.9;
+}
+
+.ai-chatbot_closeBtn__N5qpm {
+  background: transparent;
+  border: none;
+  color: white;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ai-chatbot_closeBtn__N5qpm:hover {
+  opacity: 1;
+}
+
+.ai-chatbot_messagesContainer__xSU_S {
+  flex: 1 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+}
+
+.ai-chatbot_messageWrapper__B2Pae {
+  display: flex;
+  gap: 10px;
+  max-width: 85%;
+}
+
+.ai-chatbot_userWrapper__yNyw1 {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.ai-chatbot_botWrapper__ClnMX {
+  align-self: flex-start;
+}
+
+.ai-chatbot_avatar__vfi6_ {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.ai-chatbot_userWrapper__yNyw1 .ai-chatbot_avatar__vfi6_ {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.ai-chatbot_botWrapper__ClnMX .ai-chatbot_avatar__vfi6_ {
+  background: #0E898F;
+  color: white;
+}
+
+.ai-chatbot_messageBubble__wxjoF {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.ai-chatbot_userWrapper__yNyw1 .ai-chatbot_messageBubble__wxjoF {
+  background: #0E898F;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-chatbot_botWrapper__ClnMX .ai-chatbot_messageBubble__wxjoF {
+  background: white;
+  color: #334155;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ai-chatbot_loadingBubble__npME7 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.ai-chatbot_spin__vWl4Q {
+  animation: ai-chatbot_spin__vWl4Q 1s linear infinite;
+}
+
+@keyframes ai-chatbot_spin__vWl4Q {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ai-chatbot_inputArea__PAZdg {
+  padding: 16px 20px;
+  background: white;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ai-chatbot_input__ib5rw {
+  flex: 1 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ai-chatbot_input__ib5rw:focus {
+  border-color: #0E898F;
+}
+
+.ai-chatbot_sendBtn__AKhvD {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #0E898F;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-chatbot_sendBtn__AKhvD:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.ai-chatbot_sendBtn__AKhvD:not(:disabled):hover {
+  background: #0b7176;
+  transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ai-chatbot_container__SJxtb {
+    right: 16px;
+    bottom: 120px; /* Higher on mobile to clear the bottom action bar and larger WhatsApp icon spacing */
+  }
+
+  .ai-chatbot_chatWindow__BsdHC {
+    width: calc(100vw - 32px);
+    height: 480px;
+    position: fixed;
+    bottom: 190px;
+    right: 16px;
+  }
+
+  .ai-chatbot_trigger__MlSio {
+    width: 50px;
+    height: 50px;
+  }
+}
+
 /*!**************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/AppointmentModal.module.css ***!
   \**************************************************************************************************************************************************************************************************************************************************************************************/
@@ -603,6 +876,13 @@ input, textarea {
   font-weight: 800;
   color: var(--gray-900);
   margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_stepSubtext__Xwp4h {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  margin-bottom: var(--space-6);
+  margin-top: calc(var(--space-2) * -1);
 }
 
 /* ─── Form Layout ─── */
@@ -1133,6 +1413,40 @@ input, textarea {
   word-break: break-word;
 }
 
+/* ─── Appointment Details ─── */
+.AppointmentModal_slotsSection__Cy93T {
+  margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_noSlots__Vi0zi {
+  font-size: var(--font-size-sm);
+  color: var(--error);
+  padding: var(--space-3);
+  background: var(--error-50);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.AppointmentModal_timeChipDisabled__ewUJJ {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--gray-100);
+  color: var(--gray-400);
+  text-decoration: line-through;
+}
+
+.AppointmentModal_submitError__eLG9F {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 640px) {
   .AppointmentModal_modal__KJrrN {
@@ -1168,3 +1482,153 @@ input, textarea {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/*!****************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/mobile-appointment.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************/
+.mobile-appointment_mobileContainer__pUH1D {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 999;
+}
+
+.mobile-appointment_buttonGroup__n_xj8 {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.mobile-appointment_appointmentButton__248jk,
+.mobile-appointment_contactButton__nZcxh {
+  flex: 1 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mobile-appointment_appointmentButton__248jk {
+  background: #0E898F; /* Primary clinic color */
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(14, 137, 143, 0.2);
+}
+
+.mobile-appointment_contactButton__nZcxh {
+  background: #ffffff;
+  color: #0E898F;
+  border: 1px solid rgba(14, 137, 143, 0.2);
+}
+
+.mobile-appointment_appointmentButton__248jk:active,
+.mobile-appointment_contactButton__nZcxh:active {
+  transform: scale(0.98);
+}
+
+.mobile-appointment_appointmentButton__248jk:active {
+  background: #0b7176;
+}
+
+.mobile-appointment_contactButton__nZcxh:active {
+  background: #f0f9fa;
+}
+
+.mobile-appointment_icon__MEzih {
+  flex-shrink: 0;
+}
+
+/* Show only on mobile devices */
+@media (max-width: 768px) {
+  .mobile-appointment_mobileContainer__pUH1D {
+    display: block;
+  }
+}
+
+/*!*************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/whatsapp-widget.module.css ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************/
+.whatsapp-widget_whatsappWidget__V__cK {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 60px;
+  height: 60px;
+  background-color: #25d366; /* WhatsApp green */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-decoration: none;
+}
+
+.whatsapp-widget_whatsappLogo__Swtjc {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.whatsapp-widget_whatsappWidget__V__cK:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.whatsapp-widget_whatsappWidget__V__cK:hover .whatsapp-widget_tooltip__JR68L {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-10px);
+}
+
+.whatsapp-widget_iconWrapper__8Ol_M {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.whatsapp-widget_tooltip__JR68L {
+  position: absolute;
+  right: 100%;
+  background: #333;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+/* Adjust for mobile view when the bottom sticky bar is visible */
+@media (max-width: 768px) {
+  .whatsapp-widget_whatsappWidget__V__cK {
+    right: 16px;
+    bottom: 60px; /* Offset for the mobile appointment bar (36px height + padding) */
+    width: 50px;
+    height: 50px;
+  }
+  
+  .whatsapp-widget_whatsappWidget__V__cK:hover .whatsapp-widget_tooltip__JR68L {
+    display: none; /* Hide tooltip on mobile hover */
+  }
+}
+

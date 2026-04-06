@@ -15,7 +15,7 @@ const quickTreatments = [
   {
     id: "hair",
     title: "HAIR",
-    href: "/treatments/prp-hair",
+    href: "/treatments/hair",
     image: "/images/Quick-Treatments/Hair.png",
   },
   {
@@ -27,7 +27,7 @@ const quickTreatments = [
   {
     id: "trauma",
     title: "TRAUMA",
-    href: "/treatments/general-opd",
+    href: "/treatments/facial-trauma",
     image: "/images/Quick-Treatments/Trauma.png",
   },
   {
@@ -39,32 +39,32 @@ const quickTreatments = [
   {
     id: "body-shaping",
     title: "BODY SHAPING",
-    href: "/treatments",
+    href: "/treatments/body-shaping",
     image: "/images/Quick-Treatments/BodyShaping.png",
   },
    {
     id: "premium-aesthetic",
     title: "PREMIUM AESTHETIC",
-    href: "/treatments",
+    href: "/treatments/premium-aesthetic",
     image: "/images/Quick-Treatments/Premiumaesthetic.png",
   },
   {
     id: "nutrition",
     title: "NUTRITION",
-    href: "/treatments",
+    href: "/treatments/nutrition",
     image: "/images/Quick-Treatments/Nutrition.png",
   },
 
   {
     id: "sexual-health",
     title: "SEXUAL HEALTH",
-    href: "/treatments",
+    href: "/treatments/sexual-health",
     image: "/images/Quick-Treatments/Sexualhealth.png",
   },
    {
     id: "medical-tourism",
     title: "MEDICAL TOURISM",
-    href: "/treatments",
+    href: "/treatments/medical-tourism",
     image: "/images/Quick-Treatments/Medicaltourism.png",
   },
 ];

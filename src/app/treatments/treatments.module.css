@@ -330,23 +330,6 @@
   color: var(--gray-800);
 }
 
-.doctorSub {
-  font-size: var(--font-size-xs);
-  color: var(--success);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.doctorSub::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  animation: pulse 2s infinite;
-}
-
 .satisfiedCard {
   bottom: 15%;
   right: 0;
@@ -767,65 +750,94 @@
   font-weight: 500;
 }
 
-/* CTA Section */
+/* CTA Section — Newsletter Style */
 .ctaSection {
-  padding: var(--space-12) 0;
-  background: linear-gradient(135deg, #0E898F, #0A6B70);
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+  padding: var(--space-16) var(--space-6);
+  background-color: var(--bg-light);
+  overflow: visible;
 }
 
-.ctaSection::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 10% 50%, rgba(255,255,255,0.1) 0%, transparent 40%),
-    radial-gradient(circle at 90% 50%, rgba(255,255,255,0.1) 0%, transparent 40%);
+.ctaContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: var(--primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8) var(--space-12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: visible;
+  min-height: 280px;
 }
 
 .ctaContent {
-  position: relative;
-  z-index: 1;
-  max-width: 700px;
-  margin: 0 auto;
+  flex: 1;
+  max-width: 65%;
+  color: var(--white);
+  z-index: 2;
 }
 
 .ctaTitle {
   font-size: var(--font-size-3xl);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--white);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
+  line-height: 1.2;
 }
 
 .ctaDescription {
-  font-size: var(--font-size-lg);
-  color: rgba(255,255,255,0.9);
-  margin-bottom: var(--space-8);
+  font-size: var(--font-size-base);
+  color: var(--white);
+  opacity: 0.9;
+  line-height: 1.6;
+  margin-bottom: var(--space-6);
+}
+
+.ctaBtnRow {
+  display: flex;
+  gap: var(--space-4);
+  max-width: 500px;
 }
 
 .ctaButtonWhite {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-8);
-  background: var(--white);
-  color: #0E898F;
+  padding: var(--space-3) var(--space-8);
+  background: var(--primary-light);
+  color: var(--white);
   font-size: var(--font-size-base);
   font-weight: 600;
   border-radius: var(--radius-full);
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
 }
 
 .ctaButtonWhite:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.ctaImageWrapper {
+  position: absolute;
+  right: var(--space-12);
+  bottom: 0;
+  width: 30%;
+  height: 115%;
+  display: flex;
+  align-items: flex-end;
+  z-index: 1;
+}
+
+.ctaImage {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 /* Process Section */
@@ -1023,6 +1035,18 @@
   .treatmentImage {
     height: 280px;
   }
+
+  .ctaContainer {
+    padding: var(--space-10) var(--space-8);
+  }
+
+  .ctaTitle {
+    font-size: var(--font-size-3xl);
+  }
+
+  .ctaImageWrapper {
+    width: 40%;
+  }
 }
 
 /* Responsive - Mobile (768px) */
@@ -1056,6 +1080,51 @@
 
   .processGrid {
     grid-template-columns: 1fr;
+  }
+
+  .ctaContainer {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-8) var(--space-6) 0;
+    overflow: hidden;
+    min-height: auto;
+  }
+
+  .ctaContent {
+    max-width: 100%;
+    margin-bottom: var(--space-4);
+  }
+
+  .ctaTitle {
+    font-size: var(--font-size-xl);
+  }
+
+  .ctaDescription {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--space-4);
+    line-height: 1.5;
+  }
+
+  .ctaBtnRow {
+    flex-direction: column;
+    margin: 0 auto;
+    width: auto;
+    display: inline-flex;
+  }
+
+  .ctaButtonWhite {
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+  }
+
+  .ctaImageWrapper {
+    position: relative;
+    right: 0;
+    width: 55%;
+    height: auto;
+    margin: 0 auto;
+    margin-top: var(--space-2);
   }
 }
 

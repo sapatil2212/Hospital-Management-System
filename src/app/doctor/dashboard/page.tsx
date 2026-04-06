@@ -47,15 +47,24 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
   const [showServicePlan, setShowServicePlan] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [planCreated, setPlanCreated] = useState(false);
+  const [subDeptsLoaded, setSubDeptsLoaded] = useState(false);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
 
   useEffect(() => {
-    api("/api/config/subdepartments?limit=50").then(r => {
-      if (r.success) setSubDepts(r.data?.data || r.data || []);
-    }).catch(() => {});
-    api("/api/config/services?isActive=true&limit=100").then(r => {
-      if (r.success) setServices(r.data?.services || r.data?.data || []);
-    }).catch(() => {});
-  }, []);
+    if (showReferral && !subDeptsLoaded) {
+      api("/api/config/subdepartments?limit=50").then(r => {
+        if (r.success) setSubDepts(r.data?.data || r.data || []);
+      }).catch(() => {}).finally(() => setSubDeptsLoaded(true));
+    }
+  }, [showReferral, subDeptsLoaded]);
+
+  useEffect(() => {
+    if (showServicePlan && !servicesLoaded) {
+      api("/api/config/services?isActive=true&limit=100").then(r => {
+        if (r.success) setServices(r.data?.services || r.data?.data || []);
+      }).catch(() => {}).finally(() => setServicesLoaded(true));
+    }
+  }, [showServicePlan, servicesLoaded]);
 
   const doBillingTransfer = async () => {
     const r = await api("/api/billing/transfer", "POST", {

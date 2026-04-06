@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Calendar, Clock, Bookmark, Heart, MessageCircle,
+  ArrowLeft, Calendar, Clock, Bookmark, Heart,
   ChevronUp, Twitter, Linkedin, Facebook, Link as LinkIcon,
   Check, Sparkles, BookOpen, Tag, Loader2
 } from "lucide-react";
@@ -139,7 +139,20 @@ function EngagementButtons() {
   );
 }
 
-function RelatedPosts({ currentSlug, posts }: { currentSlug: string; posts: any[] }) {
+interface BlogPost {
+  title: string;
+  slug: string;
+  content: string;
+  coverImage?: string;
+  category: string;
+  author?: string;
+  publishedAt?: string;
+  createdAt?: string;
+  readTime?: number;
+  tags?: string;
+}
+
+function RelatedPosts({ currentSlug, posts }: { currentSlug: string; posts: BlogPost[] }) {
   const items = posts.filter(p => p.slug !== currentSlug).slice(0, 2);
   if (!items.length) return null;
   return (
@@ -175,13 +188,13 @@ function RelatedPosts({ currentSlug, posts }: { currentSlug: string; posts: any[
 export default function BlogPostPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
-  const [related, setRelated] = useState<any[]>([]);
+  const [related, setRelated] = useState<BlogPost[]>([]);
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true);
+    
     fetch(`/api/blogs/${slug}?public=true`)
       .then(r => r.json())
       .then(d => { if (d.success && d.data) setPost(d.data); })

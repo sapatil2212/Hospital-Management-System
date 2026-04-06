@@ -107,10 +107,12 @@ export default function PrescriptionPage() {
       setShowAi(false);
       setShowHist(false);
 
-      const [me, ar] = await Promise.all([
+      const fetches: [Promise<any>, Promise<any>, Promise<any>] = [
         api("/api/doctor/me"),
         api(`/api/appointments/${appointmentId}`),
-      ]);
+        api("/api/prescriptions", "POST", { appointmentId }),
+      ];
+      const [me, ar, rr] = await Promise.all(fetches);
 
       if (!me.success) { router.push("/login"); return; }
       setDoctor(me.data);
@@ -123,7 +125,6 @@ export default function PrescriptionPage() {
       setPatient(ar.data.patient);
       setFee(ar.data.consultationFee || me.data.consultationFee || 0);
 
-      const rr = await api("/api/prescriptions", "POST", { appointmentId });
       if (rr.success && rr.data?.prescription) {
         const p = rr.data.prescription;
         setRx(p);

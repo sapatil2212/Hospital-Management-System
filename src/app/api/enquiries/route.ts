@@ -44,8 +44,9 @@ async function pushToGoogleSheet(data: Record<string, string>) {
       console.log("[GSheet] Response:", res.status, text);
       return;
     }
-  } catch (err: any) {
-    console.error("[GSheet] Error:", err.message);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[GSheet] Error:", msg);
   }
 }
 
@@ -165,9 +166,10 @@ export async function POST(req: NextRequest) {
     }).catch(err => console.error("[Email] Hospital notification error:", err.message));
 
     return successResponse({ id }, "Enquiry submitted successfully", 201);
-  } catch (e: any) {
-    console.error("POST /api/enquiries error:", e);
-    return errorResponse(e.message || "Failed", 500);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("POST /api/enquiries error:", msg);
+    return errorResponse(msg || "Failed", 500);
   }
 }
 
@@ -191,7 +193,7 @@ export async function GET(req: NextRequest) {
     const department = searchParams.get("department") || undefined;
 
     let whereClause = `WHERE hospitalId = ?`;
-    const params: any[] = [auth.hospitalId];
+    const params: (string | number | boolean | undefined | null)[] = [auth.hospitalId];
 
     if (status) { whereClause += ` AND status = ?`; params.push(status); }
     if (department) { whereClause += ` AND department = ?`; params.push(department); }
@@ -203,23 +205,24 @@ export async function GET(req: NextRequest) {
 
     const countParams = [...params];
 
-    const enquiries = await prisma.$queryRawUnsafe<any[]>(
+    const enquiries = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
       `SELECT * FROM Enquiry ${whereClause} ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
       ...params, limit, skip
     );
 
-    const countResult = await prisma.$queryRawUnsafe<any[]>(
+    const countResult = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
       `SELECT COUNT(*) as cnt FROM Enquiry ${whereClause}`, ...countParams
     );
     const total = Number(countResult[0]?.cnt || 0);
 
-    const statsResult = await prisma.$queryRawUnsafe<any[]>(
+    const statsResult = await prisma.$queryRawUnsafe<{ status: string, cnt: bigint }[]>(
       `SELECT status, COUNT(*) as cnt FROM Enquiry WHERE hospitalId = ? GROUP BY status`,
       auth.hospitalId
     );
-    const totalAll = await prisma.$queryRawUnsafe<any[]>(
+    const totalAllResult = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
       `SELECT COUNT(*) as cnt FROM Enquiry WHERE hospitalId = ?`, auth.hospitalId
     );
+    const totalAll = Number(totalAllResult[0]?.cnt || 0);
 
     const statsMap: Record<string, number> = {};
     for (const r of statsResult) statsMap[r.status] = Number(r.cnt);
@@ -233,12 +236,13 @@ export async function GET(req: NextRequest) {
         inProgress: statsMap["IN_PROGRESS"] || 0,
         converted: statsMap["CONVERTED"] || 0,
         closed: statsMap["CLOSED"] || 0,
-        total: Number(totalAll[0]?.cnt || 0),
+        total: totalAll,
       },
     });
-  } catch (e: any) {
-    console.error("GET /api/enquiries error:", e);
-    return errorResponse(e.message || "Failed", 500);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("GET /api/enquiries error:", msg);
+    return errorResponse(msg || "Failed", 500);
   }
 }
 
@@ -263,8 +267,9 @@ export async function DELETE(req: NextRequest) {
     );
 
     return successResponse(null, `${ids.length} enquiries deleted`);
-  } catch (e: any) {
-    console.error("DELETE /api/enquiries error:", e);
-    return errorResponse(e.message || "Failed to delete enquiries", 500);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("DELETE /api/enquiries error:", msg);
+    return errorResponse(msg || "Failed", 500);
   }
 }

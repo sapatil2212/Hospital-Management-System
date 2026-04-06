@@ -15,6 +15,8 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, 
 import BillingQueue from "@/components/BillingQueue";
 import IPDPanel from "@/components/IPDPanel";
 import ReportsPanel from "@/components/ReportsPanel";
+import EnquiryPanel from "@/components/EnquiryPanel";
+import BlogPanel from "@/components/BlogPanel";
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -1501,7 +1503,7 @@ function AddPurchaseModal({ items, suppliers, onClose, onSuccess }: { items: any
   );
 }
 
-type NavTab = "overview" | "appointments" | "staff" | "doctors" | "patients" | "inventory" | "billing" | "ipd" | "reports" | "finance" | "settings" | "profile";
+type NavTab = "overview" | "appointments" | "staff" | "doctors" | "patients" | "inventory" | "billing" | "ipd" | "enquiries" | "blogs" | "reports" | "finance" | "settings" | "profile";
 
 export default function HospitalAdminDashboard() {
   return (
@@ -1546,7 +1548,7 @@ function DashboardContent() {
   useEffect(() => {
     const t = searchParams.get("tab") as NavTab;
     if (t === "finance") { router.push("/hospitaladmin/finance"); return; }
-    if (t && ["overview", "appointments", "staff", "doctors", "patients", "inventory", "billing", "ipd", "settings", "profile"].includes(t)) {
+    if (t && ["overview", "appointments", "staff", "doctors", "patients", "inventory", "billing", "ipd", "enquiries", "blogs", "settings", "profile"].includes(t)) {
       setTab(t);
     }
   }, [searchParams, router]);
@@ -1674,7 +1676,7 @@ function DashboardContent() {
         </div>
       )}
 
-      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "reports") ? { gridTemplateColumns: "1fr" } : undefined}>
+      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "reports" || tab === "enquiries" || tab === "blogs") ? { gridTemplateColumns: "1fr" } : undefined}>
     <div className="hd-center">
       {tab === "overview" && (<>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
@@ -2063,6 +2065,14 @@ function DashboardContent() {
         <div style={{ padding: "4px 0" }}><ReportsPanel /></div>
       )}
 
+      {tab === "enquiries" && (
+        <EnquiryPanel />
+      )}
+
+      {tab === "blogs" && (
+        <BlogPanel />
+      )}
+
       {tab === "settings" && (
         <div className="hd-card mb16">
           <div className="hd-card-head"><div className="hd-card-title">System Settings</div></div>
@@ -2080,7 +2090,7 @@ function DashboardContent() {
       )}
     </div>
 
-    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && (
+    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && tab !== "enquiries" && tab !== "blogs" && (
       <div className="hd-right">
         <div className="hd-right-sec">
           <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>

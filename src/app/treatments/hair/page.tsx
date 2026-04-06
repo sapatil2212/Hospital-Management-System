@@ -1,161 +1,458 @@
 import type { Metadata } from "next";
-import { Ribbon, CheckCircle, ArrowRight, Calendar, Shield, Award, Users, Microscope, Clock, Phone, Scissors } from "lucide-react";
+import { 
+  Sparkles, 
+  CheckCircle, 
+  ArrowRight, 
+  Calendar, 
+  Microscope, 
+  Shield, 
+  Zap, 
+  HeartPulse, 
+  Star, 
+  Eraser, 
+  Stethoscope, 
+  Target,
+  Users,
+  Scissors
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "../treatments.module.css";
+import HairHero from "./HairHero";
 
 export const metadata: Metadata = {
-  title: "Hair Loss Treatment in India | AI Hair Restoration Clinic",
+  title: "AI Hair Restoration & Advanced Trichology | Celeb Aesthecia",
   description:
-    "Best hair loss treatment with AI scalp analysis, PRP therapy, and hair regrowth solutions at Celeb Aesthecia. Effective and long-lasting results.",
+    "Advanced AI-based hair restoration, PRP therapy, and hair transplant services at Celeb Aesthecia. Personalized care for hair loss and scalp health.",
   keywords: [
-    "hair loss treatment India",
-    "hair restoration clinic",
+    "AI hair restoration",
+    "trichology India",
+    "hair transplant FUE FUT",
     "PRP hair treatment",
-    "hair regrowth treatment",
-    "scalp analysis",
-    "hair clinic India",
+    "GFC therapy hair",
+    "beard transplant",
   ],
 };
-
-const hairTreatments = [
-  {
-    icon: <Shield size={28} />,
-    title: "PRP Therapy",
-    description: "Platelet-rich plasma therapy to stimulate natural hair growth and strengthen follicles with AI-guided precision.",
-  },
-  {
-    icon: <Ribbon size={28} />,
-    title: "Hair Regrowth Treatment",
-    description: "Advanced solutions to promote hair regrowth and prevent further hair loss using cutting-edge technology.",
-  },
-  {
-    icon: <Microscope size={28} />,
-    title: "AI Scalp Analysis",
-    description: "AI-powered scalp diagnostics to identify root causes of hair problems and customize treatments.",
-  },
-  {
-    icon: <Award size={28} />,
-    title: "Dandruff Treatment",
-    description: "Effective treatments to eliminate dandruff and maintain optimal scalp health for hair growth.",
-  },
-  {
-    icon: <Scissors size={28} />,
-    title: "Hair Transplant Guidance",
-    description: "Expert consultation and guidance for hair transplant procedures with pre and post-care support.",
-  },
-];
-
-const whyChooseUs = [
-  { icon: <Microscope size={24} />, text: "AI-driven diagnosis" },
-  { icon: <Users size={24} />, text: "Personalized treatment plans" },
-  { icon: <Shield size={24} />, text: "Advanced technology" },
-  { icon: <Award size={24} />, text: "Proven results" },
-];
-
-const stats = [
-  { number: "8K+", label: "Hair Treatments" },
-  { number: "95%", label: "Success Rate" },
-  { number: "12+", label: "Hair Experts" },
-  { number: "5★", label: "Google Rating" },
-];
-
-const processSteps = [
-  { step: 1, title: "Scalp Analysis", description: "AI-powered scalp diagnostics" },
-  { step: 2, title: "Treatment Plan", description: "Customized hair restoration plan" },
-  { step: 3, title: "Procedure", description: "Expert treatment execution" },
-  { step: 4, title: "Maintenance", description: "Ongoing hair care support" },
-];
 
 export default function HairTreatmentsPage() {
   return (
     <>
       <Navbar />
       <main className={styles.page}>
-        {/* Hero Section */}
-        <section className={styles.hero}>
+        <HairHero />
+
+        {/* 1. AI-Based Hair & Scalp Analysis */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <div className={styles.heroContent}>
-              <div className={styles.heroBadge}>
-                <Ribbon size={18} />
-                <span>AI Hair Restoration</span>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Microscope size={16} />
+                  <span>AI-Based Hair & Scalp Analysis</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Precision Diagnosis for <span className={styles.titleAccent}>Effective Treatment</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We utilize advanced AI technology to analyze your scalp condition, hair density, and follicle health to identify the root cause of hair loss.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Detailed scalp and follicle analysis",
+                    "Identification of underlying causes (genetic, hormonal, lifestyle)",
+                    "Personalized treatment planning",
+                    "Predictable and result-oriented outcomes",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Accurate diagnosis is the first step toward successful hair restoration.</span>
+                </div>
               </div>
-              <h1 className={styles.heroTitle}>
-                AI-Based <span className={styles.accent}>Hair Loss</span> & Hair Restoration Treatments
-              </h1>
-              <p className={styles.heroDescription}>
-                Celeb Aesthecia provides advanced hair loss treatments in India using AI-powered scalp 
-                analysis and modern regenerative therapies. Our solutions are designed to treat hair 
-                thinning, baldness, and scalp conditions effectively.
-              </p>
-              <p className={styles.heroSubtext}>
-                We focus on long-term hair restoration with safe and clinically proven methods.
-              </p>
-              <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/contact" className={styles.ctaButton}>
-                  <Calendar size={18} /> Book Consultation
-                </Link>
-                <Link href="tel:+919876543210" className={styles.ctaButton} style={{ background: "var(--white)", color: "#0E898F", border: "2px solid #0E898F" }}>
-                  <Phone size={18} /> Call Now
-                </Link>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology.png" 
+                    alt="AI Hair Analysis" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className={styles.statsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 2. Hair Loss Treatments (Male & Female) */}
+        <section className={styles.about}>
           <div className="container">
-            <div className={styles.statsGrid}>
-              {stats.map((stat, index) => (
-                <div key={index} className={styles.statCard}>
-                  <div className={styles.statNumber}>{stat.number}</div>
-                  <div className={styles.statLabel}>{stat.label}</div>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Stethoscope size={16} />
+                  <span>Hair Loss Treatments (Male & Female)</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Target the Root Cause, <span className={styles.titleAccent}>Not Just the Symptoms</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We offer customized solutions for different types of hair loss, including androgenetic alopecia, stress-related hair fall, and hormonal imbalances.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Medical management and therapies",
+                    "Nutritional and lifestyle guidance",
+                    "Combination treatments for better results",
+                  ].map((approach, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{approach}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Designed to control hair fall and promote natural regrowth.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology-2.png" 
+                    alt="Hair Loss Treatments" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Treatments Section */}
-        <section className={styles.treatmentsSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 3. PRP / GFC Therapy */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Our Hair Treatments</h2>
-            <div className={styles.treatmentsGrid}>
-              {hairTreatments.map((treatment, index) => (
-                <div key={index} className={styles.treatmentCard}>
-                  <div className={styles.treatmentIcon}>{treatment.icon}</div>
-                  <h3 className={styles.treatmentTitle}>{treatment.title}</h3>
-                  <p className={styles.treatmentDescription}>{treatment.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <HeartPulse size={16} />
+                  <span>PRP / GFC Therapy</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Natural Hair Regrowth with <span className={styles.titleAccent}>Regenerative Science</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Platelet-Rich Plasma (PRP) and Growth Factor Concentrate (GFC) therapies use your body’s natural growth factors to stimulate hair follicles.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Strengthens weak hair roots",
+                    "Promotes new hair growth",
+                    "Improves hair thickness and density",
+                    "Safe, non-surgical procedure",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>A proven, natural solution for early to moderate hair loss.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/Quick-Treatments/Hair.png" 
+                    alt="PRP GFC Therapy" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Process Section */}
-        <section className={styles.processSection}>
+        <div className={styles.sectionSeparator} />
+
+        {/* 4. Mesotherapy for Hair */}
+        <section className={styles.about}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Our Treatment Process</h2>
-            <div className={styles.processGrid}>
-              {processSteps.map((step, index) => (
-                <div key={index} className={styles.processCard}>
-                  <div className={styles.processNumber}>{step.step}</div>
-                  <h3 className={styles.processTitle}>{step.title}</h3>
-                  <p className={styles.processDescription}>{step.description}</p>
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Zap size={16} />
+                  <span>Mesotherapy for Hair</span>
                 </div>
-              ))}
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Nutrient-Rich Therapy for <span className={styles.titleAccent}>Stronger Hair</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  Mesotherapy delivers essential vitamins, minerals, and growth factors directly into the scalp for deep nourishment.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Nourishes hair follicles",
+                    "Reduces hair fall",
+                    "Improves scalp health",
+                    "Enhances hair quality",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Revitalize your scalp with targeted nourishment.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology.png" 
+                    alt="Mesotherapy Hair" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Why Choose Us Section */}
+        <div className={styles.sectionSeparator} />
+
+        {/* 5. Hair Transplant (FUE / FUT) */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Scissors size={16} />
+                  <span>Hair Transplant (FUE / FUT)</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Permanent Solution for <span className={styles.titleAccent}>Hair Loss</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We offer advanced hair transplant procedures using FUE (Follicular Unit Extraction) and FUT (Follicular Unit Transplantation) techniques.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Natural hairline design",
+                    "Minimally invasive procedures",
+                    "High graft survival rate",
+                    "Permanent and natural-looking results",
+                  ].map((feature, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Restore your hair and confidence with precision transplant techniques.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/Quick-Treatments/Hair.png" 
+                    alt="Hair Transplant" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 6. Beard & Eyebrow Transplant */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Target size={16} />
+                  <span>Beard & Eyebrow Transplant</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Enhance Facial Aesthetics <span className={styles.titleAccent}>Naturally</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We provide specialized transplant procedures to improve beard and eyebrow density with natural growth patterns.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Natural growth pattern",
+                    "Customized design for facial harmony",
+                    "Long-lasting results",
+                  ].map((benefit, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Perfect solution for patchy or thin beard and eyebrows.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology-2.png" 
+                    alt="Beard Eyebrow Transplant" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 7. Dandruff & Scalp Disorders */}
+        <section className={`${styles.about} ${styles.reversedLayout}`}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Shield size={16} />
+                  <span>Dandruff & Scalp Disorders</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Healthy Scalp for <span className={styles.titleAccent}>Healthy Hair</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We diagnose and treat various scalp conditions that contribute to hair loss and discomfort.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Dandruff and flaky scalp",
+                    "Fungal infections",
+                    "Itching and irritation",
+                    "Seborrheic dermatitis",
+                  ].map((condition, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{condition}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>A healthy scalp is essential for strong and healthy hair.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/treatment-dermatology.png" 
+                    alt="Scalp Disorders" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* 8. Regenerative Hair Therapies */}
+        <section className={styles.about}>
+          <div className="container">
+            <div className={styles.aboutInner}>
+              <div className={styles.aboutContent}>
+                <div className={styles.heroBadge}>
+                  <Sparkles size={16} />
+                  <span>Regenerative Hair Therapies</span>
+                </div>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
+                  Advanced Solutions for <span className={styles.titleAccent}>Hair Revival</span>
+                </h2>
+                <p className={styles.aboutDescription}>
+                  We offer cutting-edge regenerative treatments to repair and rejuvenate damaged hair follicles for sustainable regrowth.
+                </p>
+                <div className={styles.aboutFeatures}>
+                  {[
+                    "Combination therapies (PRP + GFC + Mesotherapy)",
+                    "Collagen stimulation and follicle activation",
+                    "Long-term hair strengthening protocols",
+                  ].map((approach, i) => (
+                    <div key={i} className={styles.aboutFeatureItem}>
+                      <CheckCircle className={styles.aboutFeatureIcon} size={18} />
+                      <span className={styles.aboutFeatureText}>{approach}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.aboutIdeal}>
+                  <ArrowRight size={20} className={styles.aboutFeatureIcon} />
+                  <span>Innovative treatments for sustainable hair regrowth.</span>
+                </div>
+              </div>
+              <div className={styles.aboutVisual}>
+                <div className={styles.aboutImageWrapper}>
+                  <Image 
+                    src="/images/Quick-Treatments/Hair.png" 
+                    alt="Regenerative Hair Therapies" 
+                    width={500} 
+                    height={600} 
+                    className={styles.aboutImage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.sectionSeparator} />
+
+        {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Us for Hair Care</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Hair Treatments?</h2>
             <div className={styles.featuresGrid}>
-              {whyChooseUs.map((feature, index) => (
+              {[
+                { icon: <Microscope size={24} />, text: "AI-based hair and scalp diagnosis" },
+                { icon: <Zap size={24} />, text: "Advanced regenerative and transplant technologies" },
+                { icon: <Users size={24} />, text: "Personalized treatment plans for every patient" },
+                { icon: <Target size={24} />, text: "Expert trichologists and hair specialists" },
+                { icon: <Shield size={24} />, text: "Safe, minimally invasive procedures" },
+                { icon: <Sparkles size={24} />, text: "Natural, long-lasting, and visible results" },
+              ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
                   <span className={styles.featureIcon}>{feature.icon}</span>
                   <span>{feature.text}</span>
@@ -165,17 +462,30 @@ export default function HairTreatmentsPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section — Newsletter Style */}
         <section className={styles.ctaSection}>
-          <div className="container">
+          <div className={styles.ctaContainer}>
             <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>Ready to Restore Your Hair?</h2>
+              <h2 className={styles.ctaTitle}>
+                Book Your Hair Consultation Today
+              </h2>
               <p className={styles.ctaDescription}>
-                Book a consultation with our hair restoration experts and start your journey to fuller, healthier hair.
+                Take the first step toward stronger, healthier, and fuller hair with expert care at Celeb Aesthecia. Start your hair restoration journey with confidence.
               </p>
-              <Link href="/contact" className={styles.ctaButtonWhite}>
-                <Calendar size={18} /> Schedule Your Appointment
-              </Link>
+              <div className={styles.ctaBtnRow}>
+                <Link href="/contact" className={styles.ctaButtonWhite}>
+                  <Calendar size={18} /> Schedule Your Consultation
+                </Link>
+              </div>
+            </div>
+            <div className={styles.ctaImageWrapper}>
+              <Image
+                src="/images/Quick-Treatments/Hair.png"
+                alt="Expert hair care"
+                width={500}
+                height={600}
+                className={styles.ctaImage}
+              />
             </div>
           </div>
         </section>
