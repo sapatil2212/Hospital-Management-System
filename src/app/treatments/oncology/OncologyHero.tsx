@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { HeartPulse, Calendar, Phone, Users } from "lucide-react";
+import { HeartPulse, Calendar, Phone } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "../treatments.module.css";
@@ -72,7 +72,7 @@ export default function OncologyHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/Hnfcancer.png"
+                  src="/treatments/hnf/hnf-hero.png"
                   alt="Advanced Cancer Care"
                   width={580}
                   height={640}
@@ -81,39 +81,6 @@ export default function OncologyHero() {
                 />
               </motion.div>
             </div>
-
-            {/* Floating Card: Specialists */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.doctorsCard}`}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className={styles.doctorInfo}>
-                <span className={styles.doctorCount}>
-                  Expert Oncology Specialists
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Floating Card: Satisfied Clients */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.satisfiedCard}`}
-              animate={{ y: [0, -10, 0] }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            >
-              <div className={styles.satisfiedIcon}>
-                <Users size={20} />
-              </div>
-              <div>
-                <div className={styles.satisfiedCount}>5K+</div>
-                <div className={styles.satisfiedLabel}>Happy Patients</div>
-              </div>
-            </motion.div>
           </div>
         </div>
       </div>
