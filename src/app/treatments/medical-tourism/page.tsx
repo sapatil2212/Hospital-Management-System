@@ -25,9 +25,9 @@ import styles from "../treatments.module.css";
 import MedicalTourismHero from "./MedicalTourismHero";
 
 export const metadata: Metadata = {
-  title: "Medical & Dental Tourism Center | Celeb Aesthecia",
+  title: "Medical & Dental Tourism Center | Celeb Aesthetica",
   description:
-    "World-class medical and dental tourism in India at Celeb Aesthecia. End-to-end support for international patients, including travel, stay, and advanced treatments.",
+    "World-class medical and dental tourism in India at Celeb Aesthetica. End-to-end support for international patients, including travel, stay, and advanced treatments.",
   keywords: [
     "medical tourism India",
     "dental tourism India",
@@ -80,7 +80,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/care.png" 
                     alt="International Patient Services" 
                     width={500} 
                     height={600} 
@@ -130,7 +130,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/package.png" 
                     alt="Treatment Packages" 
                     width={500} 
                     height={600} 
@@ -179,7 +179,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/visa.png" 
                     alt="Travel Coordination" 
                     width={500} 
                     height={600} 
@@ -228,7 +228,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/luxury.png" 
                     alt="Hospitality Services" 
                     width={500} 
                     height={600} 
@@ -277,7 +277,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/care.png" 
                     alt="Patient Care Managers" 
                     width={500} 
                     height={600} 
@@ -326,7 +326,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/virtual.png" 
                     alt="Virtual Consultations" 
                     width={500} 
                     height={600} 
@@ -375,7 +375,7 @@ export default function MedicalTourismPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Medicaltourism.png" 
+                    src="/images/medical-tourism/cost.png" 
                     alt="Cost-Effective Treatments" 
                     width={500} 
                     height={600} 
@@ -392,7 +392,7 @@ export default function MedicalTourismPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Medical Tourism?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Medical Tourism?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Globe size={24} />, text: "Complete end-to-end international patient support" },
@@ -419,7 +419,7 @@ export default function MedicalTourismPage() {
                 Plan Your Treatment Journey Today
               </h2>
               <p className={styles.ctaDescription}>
-                Travel to India with confidence and experience advanced, affordable, and personalized healthcare at Celeb Aesthecia.
+                Travel to India with confidence and experience advanced, affordable, and personalized healthcare at Celeb Aesthetica.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>
@@ -429,7 +429,7 @@ export default function MedicalTourismPage() {
             </div>
             <div className={styles.ctaImageWrapper}>
               <Image
-                src="/images/Quick-Treatments/Medicaltourism.png"
+                src="/images/medical-tourism/hero.png"
                 alt="Plan Your Journey"
                 width={500}
                 height={600}

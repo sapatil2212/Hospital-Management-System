@@ -22,9 +22,9 @@ import styles from "../treatments.module.css";
 import PremiumAestheticHero from "./PremiumAestheticHero";
 
 export const metadata: Metadata = {
-  title: "Premium Aesthetic & Cosmetic Center | Celeb Aesthecia",
+  title: "Premium Aesthetic & Cosmetic Center | Celeb Aesthetica",
   description:
-    "Luxury aesthetic care at Celeb Aesthecia. Subtle, elegant, and long-lasting results for facial rejuvenation, profile enhancement, and more.",
+    "Luxury aesthetic care at Celeb Aesthetica. Subtle, elegant, and long-lasting results for facial rejuvenation, profile enhancement, and more.",
   keywords: [
     "premium aesthetics India",
     "luxury skin care",
@@ -77,7 +77,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/facial.png" 
                     alt="Luxury Facial Aesthetics" 
                     width={500} 
                     height={600} 
@@ -126,7 +126,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/lift.png" 
                     alt="Non-Surgical Face Lift" 
                     width={500} 
                     height={600} 
@@ -175,7 +175,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/jawline.png" 
                     alt="Profile Enhancement" 
                     width={500} 
                     height={600} 
@@ -224,7 +224,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/lip.png" 
                     alt="Lip Augmentation" 
                     width={500} 
                     height={600} 
@@ -273,7 +273,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/fullface.png" 
                     alt="Full Face Rejuvenation" 
                     width={500} 
                     height={600} 
@@ -322,7 +322,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/makeover.png" 
                     alt="Makeover Packages" 
                     width={500} 
                     height={600} 
@@ -371,7 +371,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/antiaging.png" 
                     alt="Anti-Aging Protocols" 
                     width={500} 
                     height={600} 
@@ -420,7 +420,7 @@ export default function PremiumAestheticPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Premiumaesthetic.png" 
+                    src="/images/premium-aesthetic/ai.png" 
                     alt="AI Aesthetic Planning" 
                     width={500} 
                     height={600} 
@@ -437,7 +437,7 @@ export default function PremiumAestheticPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Premium Aesthetics?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Premium Aesthetics?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Microscope size={24} />, text: "AI-based personalized aesthetic planning" },
@@ -464,7 +464,7 @@ export default function PremiumAestheticPage() {
                 Book Your Aesthetic Consultation Today
               </h2>
               <p className={styles.ctaDescription}>
-                Enhance your natural beauty with luxury aesthetic treatments at Celeb Aesthecia. Experience the perfect blend of science and art.
+                Enhance your natural beauty with luxury aesthetic treatments at Celeb Aesthetica. Experience the perfect blend of science and art.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>
@@ -474,7 +474,7 @@ export default function PremiumAestheticPage() {
             </div>
             <div className={styles.ctaImageWrapper}>
               <Image
-                src="/images/Quick-Treatments/Premiumaesthetic.png"
+                src="/images/premium-aesthetic/hero.png"
                 alt="Expert Aesthetic Care"
                 width={500}
                 height={600}

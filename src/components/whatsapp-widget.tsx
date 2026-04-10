@@ -5,7 +5,7 @@ import styles from "./whatsapp-widget.module.css";
 
 export default function WhatsAppWidget() {
   const phoneNumber = "+919059053938";
-  const message = "Hello Celeb Aesthecia, I would like to inquire about your treatments.";
+  const message = "Hello Celeb Aesthetica, I would like to inquire about your treatments.";
   const whatsappUrl = `https://wa.me/${phoneNumber.replace("+", "")}?text=${encodeURIComponent(message)}`;
 
   return (

@@ -34,7 +34,7 @@ export default function SexualHealthHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we understand that sexual health is a deeply personal and important aspect of overall wellbeing. Our specialized clinic offers confidential, ethical, and medically advanced treatments.
+                At Celeb Aesthetica, we understand that sexual health is a deeply personal and important aspect of overall wellbeing. Our specialized clinic offers confidential, ethical, and medically advanced treatments.
               </p>
 
            
@@ -72,7 +72,7 @@ export default function SexualHealthHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/Sexualhealth.png"
+                  src="/images/sexual-health/hero.png"
                   alt="Sexual Health & Wellness"
                   width={580}
                   height={640}

@@ -55,7 +55,7 @@ export default function Footer() {
           <a href="#home" className={styles.footerLogo}>
             <Image
               src="/logo/celeb-aesthecia-logo.png"
-              alt="Celeb Aesthecia"
+              alt="Celeb Aesthetica"
               width={140}
               height={42}
               className={styles.footerLogoImage}
@@ -63,7 +63,7 @@ export default function Footer() {
           </a>
           <h5 className={styles.footerTagline}>Experience the Future of Healthcare</h5>
           <p className={styles.footerAbout}>
-            At Celeb Aesthecia, we are not just treating patients—we are redefining healthcare experiences through innovation, precision, and compassion.
+            At Celeb Aesthetica, we are not just treating patients—we are redefining healthcare experiences through innovation, precision, and compassion.
           </p>
           <div className={styles.socialLinks}>
             {socialLinks.map((social) => (
@@ -137,7 +137,7 @@ export default function Footer() {
       <div className={styles.bottomBar}>
         <div className={`container ${styles.bottomInner}`}>
           <p className={styles.copyright}>
-            © 2026 Celeb Aesthecia. All rights reserved.
+            © 2026 Celeb Aesthetica. All rights reserved.
           </p>
           <div className={styles.bottomLinks}>
             <a href="#">Privacy Policy</a>

@@ -249,20 +249,80 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .container {
-    right: 16px;
-    bottom: 120px; /* Higher on mobile to clear the bottom action bar and larger WhatsApp icon spacing */
-  }
-
-  .chatWindow {
-    width: calc(100vw - 32px);
-    height: 480px;
-    position: fixed;
-    bottom: 190px;
-    right: 16px;
+    right: 12px;
+    bottom: 104px;
   }
 
   .trigger {
-    width: 50px;
-    height: 50px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .trigger svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .badge {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    top: -3px;
+    right: -3px;
+  }
+
+  .chatWindow {
+    width: calc(100vw - 24px);
+    height: 380px;
+    position: fixed;
+    bottom: 155px;
+    right: 12px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .header {
+    padding: 14px 16px;
+  }
+
+  .headerTitle {
+    font-size: 14px;
+  }
+
+  .headerStatus {
+    font-size: 10px;
+  }
+
+  .messagesContainer {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .messageBubble {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+
+  .avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .inputArea {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .input {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .sendBtn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
   }
 }

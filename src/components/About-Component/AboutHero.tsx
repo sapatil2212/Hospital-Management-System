@@ -27,13 +27,16 @@ const features = [
   },
 ];
 
+// Duplicate the array multiple times for seamless infinite scroll
+const marqueeFeatures = [...features, ...features, ...features, ...features, ...features, ...features];
+
 export default function AboutHero() {
   return (
     <section className={styles.heroSection}>
       {/* Background Image */}
       <Image
         src="/about/about-hero.webp"
-        alt="about-hero-image"
+        alt="Compassionate home nursing care - nurse attending to elderly patient"
         fill
         className={styles.heroBackground}
         priority
@@ -42,15 +45,27 @@ export default function AboutHero() {
       {/* Overlay */}
       <div className={styles.heroOverlay} />
 
-      {/* Content Container for Padding/Layout */}
+      {/* Content Container */}
       <div className={styles.heroInner}>
-        {/* Content */}
+        {/* Main Content */}
         <motion.div
           className={styles.heroContent}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          {/* Badge */}
+          <motion.div
+            className={styles.badgeWrapper}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <span className={styles.heroBadge}>
+              Compassionate home nursing care
+            </span>
+          </motion.div>
+
           <motion.h1
             className={styles.heroHeading}
             initial={{ opacity: 0, y: 20 }}
@@ -69,23 +84,29 @@ export default function AboutHero() {
             At Nursing Care, we understand the importance of compassionate care that goes 
             beyond just medical assistance
           </motion.p>
+
+          {/* Removed Learn More Button as per user request */}
         </motion.div>
 
-        {/* Features Bar */}
+        {/* Infinite Scrolling Features Marquee */}
         <motion.div
           className={styles.featuresBar}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          {features.map((feature, index) => (
-            <div key={index} className={styles.featureItem}>
-              <div className={`${styles.featureIcon} ${styles[feature.variant]}`}>
-                {feature.icon}
-              </div>
-              <span className={styles.featureText}>{feature.text}</span>
+          <div className={styles.marqueeTrack}>
+            <div className={styles.marqueeContent}>
+              {marqueeFeatures.map((feature, index) => (
+                <div key={index} className={styles.featureItem}>
+                  <div className={`${styles.featureIcon} ${styles[feature.variant]}`}>
+                    {feature.icon}
+                  </div>
+                  <span className={styles.featureText}>{feature.text}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </motion.div>
       </div>
     </section>

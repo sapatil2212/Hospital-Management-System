@@ -8,6 +8,7 @@ import {
 
 import PatientProfilePanel from "@/components/PatientProfilePanel";
 import PrescriptionSettingsPanel from "@/components/PrescriptionSettingsPanel";
+import ScheduleBuilder from "@/components/ScheduleBuilder";
 import { useDoctorDashboard } from "./DoctorDashboardContext";
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -32,6 +33,196 @@ const STATUS_CFG: Record<string, { label: string; dot: string; badge: [string, s
   NO_SHOW:     { label: "No Show",     dot: "#f97316", badge: ["#fff7ed",   "#c2410c",  "#fed7aa"] },
   RESCHEDULED: { label: "Rescheduled", dot: "#a855f7", badge: ["#faf5ff",   "#7c3aed",  "#e9d5ff"] },
 };
+
+function RescheduleModal({ appt, onClose, onConfirm }: { appt: any; onClose: () => void; onConfirm: (date: string, time: string) => void }) {
+  const fmtD = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [newDate, setNewDate] = useState(fmtD(tomorrow));
+  const [selectedTime, setSelectedTime] = useState("");
+  const [allSlots, setAllSlots] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [noAvailability, setNoAvailability] = useState(false);
+  const [slotErr, setSlotErr] = useState("");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const isSameDateAsAppt = (date: string) => {
+    const apptDate = appt.appointmentDate ? fmtD(new Date(appt.appointmentDate)) : "";
+    return date === apptDate;
+  };
+
+  const fetchSlots = useCallback(async (date: string) => {
+    setSlotsLoading(true);
+    setAllSlots([]);
+    setBookedSlots([]);
+    setSelectedTime("");
+    setNoAvailability(false);
+    setSlotErr("");
+    setErr("");
+    try {
+      const r = await fetch(
+        `/api/appointments/slots?doctorId=${appt.doctorId}&date=${date}`,
+        { credentials: "include" }
+      ).then(x => x.json());
+      if (r.success) {
+        let all: string[] = r.data?.allSlots || [];
+        let booked: string[] = r.data?.bookedSlots || [];
+        if (isSameDateAsAppt(date)) {
+          booked = booked.filter((s: string) => s !== appt.timeSlot);
+        }
+        // Hide past slots when the selected date is today
+        const isToday = date === fmtD(new Date());
+        if (isToday) {
+          const now = new Date();
+          const nowMins = now.getHours() * 60 + now.getMinutes();
+          all = all.filter(s => {
+            const [h, m] = s.split(":").map(Number);
+            return h * 60 + m > nowMins;
+          });
+          booked = booked.filter(s => {
+            const [h, m] = s.split(":").map(Number);
+            return h * 60 + m > nowMins;
+          });
+        }
+        if (!all.length) {
+          setNoAvailability(true);
+        } else {
+          setAllSlots(all);
+          setBookedSlots(booked);
+        }
+      } else {
+        setSlotErr(r.message || "Could not load slots.");
+      }
+    } catch {
+      setSlotErr("Network error loading slots.");
+    } finally {
+      setSlotsLoading(false);
+    }
+  }, [appt.doctorId, appt.timeSlot, appt.appointmentDate]);
+
+  useEffect(() => {
+    if (newDate) fetchSlots(newDate);
+  }, [newDate, fetchSlots]);
+
+  const handleConfirm = () => {
+    if (!newDate) { setErr("Please select a date."); return; }
+    if (!selectedTime) { setErr("Please select a time slot."); return; }
+    setSaving(true);
+    onConfirm(newDate, selectedTime);
+  };
+
+  const availableSlots = allSlots.filter(s => !bookedSlots.includes(s));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.55)", backdropFilter: "blur(4px)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 460, boxShadow: "0 24px 60px rgba(0,0,0,.18)", fontFamily: "'Inter',sans-serif", maxHeight: "90vh", overflowY: "auto" }}>
+
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 3 }}>Reschedule Appointment</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{appt.patient?.name} &nbsp;·&nbsp; Token #{appt.tokenNumber}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}><X size={14} /></button>
+        </div>
+
+        <div style={{ background: "#E6F4F4", borderRadius: 12, padding: "12px 14px", marginBottom: 20, border: "1px solid #B3E0E0" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#0A6B70", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Current Appointment</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#07595D" }}>
+            {new Date(appt.appointmentDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} &nbsp;at&nbsp; {appt.timeSlot}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Select New Date</label>
+          <input
+            type="date"
+            value={newDate}
+            min={fmtD(new Date())}
+            onChange={e => { setNewDate(e.target.value); setErr(""); }}
+            style={{ width: "100%", padding: "10px 13px", borderRadius: 10, border: "1.5px solid #B3E0E0", background: "#f8fafc", fontSize: 14, color: "#334155", outline: "none", fontFamily: "'Inter',sans-serif", boxSizing: "border-box", cursor: "pointer" }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Available Time Slots</label>
+            {!slotsLoading && allSlots.length > 0 && (
+              <span style={{ fontSize: 10, color: "#0E898F", fontWeight: 600, background: "#E6F4F4", padding: "2px 8px", borderRadius: 100, border: "1px solid #B3E0E0" }}>
+                {availableSlots.length} available
+              </span>
+            )}
+          </div>
+
+          {slotsLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>
+              <Loader2 size={16} style={{ animation: "spin .7s linear infinite" }} /> Loading doctor schedule...
+            </div>
+          ) : slotErr ? (
+            <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 600, padding: "12px", background: "#fff5f5", borderRadius: 9, border: "1px solid #fecaca" }}>{slotErr}</div>
+          ) : noAvailability ? (
+            <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, padding: "14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a", textAlign: "center" }}>
+              Doctor is not available on this day. Please choose another date.
+            </div>
+          ) : allSlots.length === 0 ? null : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {allSlots.map(slot => {
+                const isBooked = bookedSlots.includes(slot);
+                const isSelected = selectedTime === slot;
+                return (
+                  <button
+                    key={slot}
+                    disabled={isBooked}
+                    onClick={() => { if (!isBooked) { setSelectedTime(slot); setErr(""); } }}
+                    style={{
+                      padding: "9px 6px",
+                      borderRadius: 9,
+                      border: isSelected ? "2px solid #0E898F" : isBooked ? "1px solid #e2e8f0" : "1.5px solid #B3E0E0",
+                      background: isSelected ? "#0E898F" : isBooked ? "#f1f5f9" : "#E6F4F4",
+                      color: isSelected ? "#fff" : isBooked ? "#cbd5e1" : "#0A6B70",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: isBooked ? "not-allowed" : "pointer",
+                      textDecoration: isBooked ? "line-through" : "none",
+                      fontFamily: "'Inter',sans-serif",
+                      transition: "all .15s",
+                      position: "relative",
+                    }}
+                  >
+                    {slot}
+                    {isBooked && (
+                      <span style={{ position: "absolute", top: -6, right: -4, fontSize: 8, background: "#ef4444", color: "#fff", borderRadius: 100, padding: "1px 4px", fontWeight: 700 }}>Full</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedTime && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#059669", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+              <CheckCircle2 size={13} /> Selected: {selectedTime}
+            </div>
+          )}
+        </div>
+
+        {err && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 12, fontWeight: 600 }}>{err}</div>}
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} disabled={saving}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "2px solid #0E898F", background: "#fff", color: "#0E898F", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
+            Cancel
+          </button>
+          <button onClick={handleConfirm} disabled={saving || !selectedTime}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: saving || !selectedTime ? "#94a3b8" : "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving || !selectedTime ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: saving || !selectedTime ? "none" : "0 4px 14px rgba(14,137,143,.35)" }}>
+            {saving ? <><Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} /> Saving…</> : <><RefreshCw size={13} /> Confirm Reschedule</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedPatientId }: { appt: any; onClose: () => void; onDone: () => void; onStartPrescription: (id: string) => void; setSelectedPatientId: (id: string) => void }) {
   const [notes, setNotes] = useState(appt.notes || "");
@@ -526,6 +717,8 @@ function DoctorDashboardContent() {
   const [allPatients, setAllPatients] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [rescheduleAppt, setRescheduleAppt] = useState<any>(null);
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
   const [activePlansCount, setActivePlansCount] = useState<number | null>(null);
   const [myPlans, setMyPlans] = useState<any[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
@@ -665,15 +858,35 @@ function DoctorDashboardContent() {
     router.push(`/doctor/dashboard/prescription/${appointmentId}?edit=1`);
   };
 
-  const updateAppointmentStatus = async (appointmentId: string, status: string) => {
+  const updateAppointmentStatus = async (appointmentId: string, status: string, extra?: { appointmentDate?: string; timeSlot?: string }) => {
     if (!doctor) return;
     setUpdatingStatusId(appointmentId);
-    const r = await api(`/api/appointments/${appointmentId}`, "PUT", { status });
+    const body: any = { status, ...extra };
+    const r = await api(`/api/appointments/${appointmentId}`, "PUT", body);
     if (r?.success) {
       await fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
       await fetchAllPatients(doctor.id, doctor.department?.id);
     }
     setUpdatingStatusId(null);
+  };
+
+  const handleStatusChange = (appt: any, newStatus: string) => {
+    if (newStatus === "RESCHEDULED") {
+      setRescheduleAppt(appt);
+    } else {
+      updateAppointmentStatus(appt.id, newStatus);
+    }
+  };
+
+  const handleRescheduleConfirm = async (newDate: string, newTime: string) => {
+    if (!rescheduleAppt) return;
+    setRescheduleSaving(true);
+    await updateAppointmentStatus(rescheduleAppt.id, "RESCHEDULED", {
+      appointmentDate: newDate,
+      timeSlot: newTime,
+    });
+    setRescheduleSaving(false);
+    setRescheduleAppt(null);
   };
 
   const todayTotal = appointments.length;
@@ -683,6 +896,13 @@ function DoctorDashboardContent() {
 
   return (
     <>
+      {rescheduleAppt && (
+        <RescheduleModal
+          appt={rescheduleAppt}
+          onClose={() => setRescheduleAppt(null)}
+          onConfirm={handleRescheduleConfirm}
+        />
+      )}
       {consultAppt && (
         <ConsultModal
           appt={consultAppt}
@@ -716,7 +936,7 @@ function DoctorDashboardContent() {
         .doc-critical-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
       `}</style>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: tab === "schedule-mgmt" ? "1fr" : "1fr 260px", gap: 0 }}>
         <div>
           {selectedPatientId ? (
             <PatientProfilePanel 
@@ -837,7 +1057,7 @@ function DoctorDashboardContent() {
                                   <select
                                     value={a.status}
                                     disabled={updatingStatusId === a.id}
-                                    onChange={(e) => updateAppointmentStatus(a.id, e.target.value)}
+                                    onChange={(e) => handleStatusChange(a, e.target.value)}
                                     style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 11, color: "#334155", cursor: updatingStatusId === a.id ? "not-allowed" : "pointer" }}
                                   >
                                     {["SCHEDULED","CONFIRMED","IN_PROGRESS","COMPLETED","NO_SHOW","CANCELLED","RESCHEDULED"].map(s => (
@@ -1054,21 +1274,19 @@ function DoctorDashboardContent() {
             </div>
           )}
 
-          {tab === "schedule-mgmt" && <ScheduleMgmtTab
-            accent={accent}
-            localSchedule={localSchedule}
-            setLocalSchedule={setLocalSchedule}
-            scheduleLoading={scheduleLoading}
-            scheduleSaving={scheduleSaving}
-            setScheduleSaving={setScheduleSaving}
-            scheduleMsg={scheduleMsg}
-            setScheduleMsg={setScheduleMsg}
-            fetchWeeklySchedule={fetchWeeklySchedule}
-          />}
+          {tab === "schedule-mgmt" && doctor && (
+            <ScheduleBuilder
+              doctorId={doctor.id}
+              doctorName={doctorName}
+              accent={accent}
+              apiBase="/api/doctor"
+            />
+          )}
         </div>
 
         {/* Right Sidebar */}
-        <div className="doc-right">
+        {tab !== "schedule-mgmt" && (
+          <div className="doc-right">
           <div style={{marginBottom:22}}>
             <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>
             <MiniCalendar accent={accent} selectedDate={selectedDate} onDateSelect={setSelectedDate}/>
@@ -1109,6 +1327,7 @@ function DoctorDashboardContent() {
             })}
           </div>
         </div>
+        )}
       </div>
     </>
   );

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 const SYSTEM_PROMPT = `
-You are the AI Assistant for Celeb Aesthecia, a premium healthcare and aesthetic clinic. 
+You are the AI Assistant for Celeb Aesthetica, a premium healthcare and aesthetic clinic. 
 Your goal is to help visitors with their inquiries about our treatments and services.
 
 Our Core Treatments include:
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const chat = model.startChat({
       history: [
         { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-        { role: "model", parts: [{ text: "I understand my role as the Celeb Aesthecia AI Assistant. I will provide professional, compassionate, and concise information about our premium treatments. How can I help you today?" }] },
+        { role: "model", parts: [{ text: "I understand my role as the Celeb Aesthetica AI Assistant. I will provide professional, compassionate, and concise information about our premium treatments. How can I help you today?" }] },
         ...(history || [])
           .filter((msg: any) => !msg.content.includes("Hello! I am your AI Health Assistant")) 
           .map((msg: any) => ({

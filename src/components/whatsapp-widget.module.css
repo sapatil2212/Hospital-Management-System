@@ -57,13 +57,18 @@
 /* Adjust for mobile view when the bottom sticky bar is visible */
 @media (max-width: 768px) {
   .whatsappWidget {
-    right: 16px;
-    bottom: 60px; /* Offset for the mobile appointment bar (36px height + padding) */
-    width: 50px;
-    height: 50px;
+    right: 12px;
+    bottom: 56px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .whatsappLogo {
+    width: 22px !important;
+    height: 22px !important;
   }
   
   .whatsappWidget:hover .tooltip {
-    display: none; /* Hide tooltip on mobile hover */
+    display: none;
   }
 }

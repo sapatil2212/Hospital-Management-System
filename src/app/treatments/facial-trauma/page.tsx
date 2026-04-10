@@ -21,9 +21,9 @@ import styles from "../treatments.module.css";
 import FacialTraumaHero from "./FacialTraumaHero";
 
 export const metadata: Metadata = {
-  title: "Facial Trauma & Maxillofacial Surgery | Celeb Aesthecia",
+  title: "Facial Trauma & Maxillofacial Surgery | Celeb Aesthetica",
   description:
-    "Advanced emergency care for facial injuries, jaw fractures, and facial bone reconstruction at Celeb Aesthecia. Expert maxillofacial surgeons and 24/7 care.",
+    "Advanced emergency care for facial injuries, jaw fractures, and facial bone reconstruction at Celeb Aesthetica. Expert maxillofacial surgeons and 24/7 care.",
   keywords: [
     "facial trauma surgery",
     "maxillofacial surgery India",
@@ -387,7 +387,7 @@ export default function FacialTraumaPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Facial Trauma Care?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Facial Trauma Care?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Activity size={24} />, text: "24/7 emergency response for facial injuries" },
@@ -414,7 +414,7 @@ export default function FacialTraumaPage() {
                 Get Immediate Help for Facial Injuries
               </h2>
               <p className={styles.ctaDescription}>
-                In case of facial trauma or emergency, timely care is crucial. Trust the experts at Celeb Aesthecia for rapid, safe, and effective treatment.
+                In case of facial trauma or emergency, timely care is crucial. Trust the experts at Celeb Aesthetica for rapid, safe, and effective treatment.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>

@@ -106,13 +106,13 @@ export default function About() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.7 }}
           >
-            <Link href="/about" className={`btn btn-primary ${styles.aboutCta}`}>
+            <Link href="/about" className={`btn btn-primary btn-sm ${styles.aboutCta}`}>
+              <ArrowRight size={16} />
               Discover Our Approach
-              <ArrowRight size={17} />
             </Link>
-            <Link href="/contact" className={styles.secondaryCta}>
-              Book Consultation
+            <Link href="/contact" className={`btn btn-secondary btn-sm ${styles.secondaryCta}`}>
               <ChevronRight size={16} />
+              Book Consultation
             </Link>
           </motion.div>
         </motion.div>
@@ -128,7 +128,7 @@ export default function About() {
             <div className={styles.mainImage}>
               <Image
                 src="/about/home-about.png"
-                alt="Celeb Aesthecia medical team"
+                alt="Celeb Aesthetica medical team"
                 width={480}
                 height={540}
                 className={styles.aboutImage}

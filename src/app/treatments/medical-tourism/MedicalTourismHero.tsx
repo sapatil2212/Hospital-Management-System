@@ -34,7 +34,7 @@ export default function MedicalTourismHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we offer a seamless medical tourism experience for international patients, combining advanced treatments, personalized care, and premium hospitality.
+                At Celeb Aesthetica, we offer a seamless medical tourism experience for international patients, combining advanced treatments, personalized care, and premium hospitality.
               </p>
 
            
@@ -72,7 +72,7 @@ export default function MedicalTourismHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/Medicaltourism.png"
+                  src="/images/medical-tourism/hero.png"
                   alt="Medical & Dental Tourism"
                   width={580}
                   height={640}

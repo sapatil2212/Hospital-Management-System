@@ -685,21 +685,81 @@ input, textarea {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .ai-chatbot_container__SJxtb {
-    right: 16px;
-    bottom: 120px; /* Higher on mobile to clear the bottom action bar and larger WhatsApp icon spacing */
-  }
-
-  .ai-chatbot_chatWindow__BsdHC {
-    width: calc(100vw - 32px);
-    height: 480px;
-    position: fixed;
-    bottom: 190px;
-    right: 16px;
+    right: 12px;
+    bottom: 104px;
   }
 
   .ai-chatbot_trigger__MlSio {
-    width: 50px;
-    height: 50px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .ai-chatbot_trigger__MlSio svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ai-chatbot_badge__WODZw {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    top: -3px;
+    right: -3px;
+  }
+
+  .ai-chatbot_chatWindow__BsdHC {
+    width: calc(100vw - 24px);
+    height: 380px;
+    position: fixed;
+    bottom: 155px;
+    right: 12px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .ai-chatbot_header__3PIx8 {
+    padding: 14px 16px;
+  }
+
+  .ai-chatbot_headerTitle__v_z4O {
+    font-size: 14px;
+  }
+
+  .ai-chatbot_headerStatus__U8IBD {
+    font-size: 10px;
+  }
+
+  .ai-chatbot_messagesContainer__xSU_S {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .ai-chatbot_messageBubble__wxjoF {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+
+  .ai-chatbot_avatar__vfi6_ {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ai-chatbot_inputArea__PAZdg {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .ai-chatbot_input__ib5rw {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .ai-chatbot_sendBtn__AKhvD {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
   }
 }
 
@@ -1492,7 +1552,7 @@ input, textarea {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 6px 10px;
+  padding: 5px 8px;
   background: rgba(255, 255, 255, 0.95);
   -webkit-backdrop-filter: blur(8px);
           backdrop-filter: blur(8px);
@@ -1509,14 +1569,14 @@ input, textarea {
 .mobile-appointment_appointmentButton__248jk,
 .mobile-appointment_contactButton__nZcxh {
   flex: 1 1;
-  height: 36px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   border: none;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1621,14 +1681,19 @@ input, textarea {
 /* Adjust for mobile view when the bottom sticky bar is visible */
 @media (max-width: 768px) {
   .whatsapp-widget_whatsappWidget__V__cK {
-    right: 16px;
-    bottom: 60px; /* Offset for the mobile appointment bar (36px height + padding) */
-    width: 50px;
-    height: 50px;
+    right: 12px;
+    bottom: 56px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .whatsapp-widget_whatsappLogo__Swtjc {
+    width: 22px !important;
+    height: 22px !important;
   }
   
   .whatsapp-widget_whatsappWidget__V__cK:hover .whatsapp-widget_tooltip__JR68L {
-    display: none; /* Hide tooltip on mobile hover */
+    display: none;
   }
 }
 

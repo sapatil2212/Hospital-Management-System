@@ -152,7 +152,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
@@ -161,7 +161,7 @@ export default function LoginPage() {
         .lp.light { --bg:#f0fdf4; --brand-from:#dcfce7; --brand-to:#bbf7d0; --card-bg:#ffffff; --input-bg:#f9fafb; --input-border:#d1d5db; --input-focus-border:#10b981; --input-focus-shadow:rgba(16,185,129,0.15); --input-color:#111827; --placeholder:#9ca3af; --label:#6b7280; --heading:#111827; --sub:#6b7280; --err-bg:#fef2f2; --err-border:#fecaca; --err-color:#dc2626; --ferr:#dc2626; --suc-bg:#f0fdf4; --suc-border:#bbf7d0; --suc-color:#059669; --toggle-bg:rgba(0,0,0,0.07); --toggle-color:#374151; --toggle-hover:rgba(0,0,0,0.12); --divider:#e5e7eb; --divider-text:#9ca3af; --sa-bg:#fff1f2; --sa-border:#fecdd3; --sa-color:#e11d48; --sa-hover-bg:#ffe4e6; --sa-hover-border:#fda4af; --sa-hover-color:#be123c; --footer-color:#6b7280; --footer-link:#059669; --eye-color:#9ca3af; --eye-hover:#374151; --forgot:#059669; --brand-grid:rgba(16,185,129,0.06); --stat-num:#059669; --stat-label:#6b7280; --stat-div:#d1d5db; --pill-bg:rgba(16,185,129,0.06); --pill-border:rgba(16,185,129,0.18); --pill-color:#065f46; --brand-title:#14532d; --brand-sub:#374151; --modal-bg:#ffffff; --modal-border:#e5e7eb; --modal-input-bg:#f9fafb; --otp-bg:#f9fafb; --otp-border:#d1d5db; --otp-filled-border:#6366f1; }
 
         .lp { min-height:100vh; display:grid; grid-template-columns:1fr 1fr; font-family:'Inter',sans-serif; overflow:hidden; transition:background 0.3s; background:var(--bg); }
-        @media(max-width:768px){ .lp{ grid-template-columns:1fr; } .lp-brand{ display:none; } }
+        @media(max-width:768px){ .lp{ grid-template-columns:1fr !important; } .lp-brand{ display:none !important; } .lp-form-side{ min-height:100vh; padding:24px 16px; } .lp-toggle{ top:14px; right:14px; } .lp-heading{ font-size:22px; margin-bottom:4px; } .lp-sub{ font-size:12px; margin-bottom:18px; } .lp-badge{ font-size:10px; padding:3px 10px; margin-bottom:10px; } .lp-label{ font-size:10px; } .lp-forgot{ font-size:11px; } .lp-input{ font-size:13px; padding:11px 38px 11px 12px; border-radius:9px; } .lp-field{ margin-bottom:12px; } .lp-ferr{ font-size:11px; } .lp-btn{ padding:12px; font-size:14px; border-radius:10px; } .lp-err{ font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:14px; } .lp-suc{ font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:14px; } .lp-divider{ margin:14px 0 10px; } .lp-divider-text{ font-size:10px; } .lp-sa{ font-size:12px; padding:9px; border-radius:9px; } .lp-footer{ font-size:12px; margin-top:16px; } }
 
         .lp-toggle { position:fixed; top:20px; right:20px; z-index:200; width:40px; height:40px; border-radius:50%; border:none; cursor:pointer; background:var(--toggle-bg); color:var(--toggle-color); display:flex; align-items:center; justify-content:center; transition:background 0.2s, transform 0.2s; box-shadow:0 2px 12px rgba(0,0,0,0.12); backdrop-filter:blur(8px); }
         .lp-toggle:hover { background:var(--toggle-hover); transform:scale(1.1); }
@@ -303,7 +303,7 @@ export default function LoginPage() {
         .fp-suc-sub { font-size:13px; color:#9ca3af; line-height:1.6; margin-bottom:18px; }
         .fp-suc-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 22px; border-radius:9px; background:#4f46e5; color:#fff; border:none; font-size:13px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; transition:background 0.15s; }
         .fp-suc-btn:hover { background:#4338ca; }
-      `}</style>
+      `}} />
 
       <button className="lp-toggle" onClick={() => setDark(!dark)} title={dark ? "Light Mode" : "Dark Mode"}>
         {dark

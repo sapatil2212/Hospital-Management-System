@@ -31,6 +31,7 @@ export const findAllocationById = async (id: string, hospitalId: string) => {
           room: { select: { roomNumber: true } },
         },
       },
+      department: { select: { name: true } },
     },
   });
 };
@@ -45,6 +46,7 @@ export const findAllAllocations = async (hospitalId: string, status?: string) =>
           room: { select: { roomNumber: true } },
         },
       },
+      department: { select: { name: true } },
     },
     orderBy: { admissionDate: "desc" },
   });

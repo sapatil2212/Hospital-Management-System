@@ -179,7 +179,7 @@ export default function AboutPage() {
               animate={isInView2 ? { opacity: 1, y: 0 } : {}}
             >
               <h2 className="section-title">
-                Why <span className={styles.accent}>Celeb Aesthecia</span>
+                Why <span className={styles.accent}>Celeb Aesthetica</span>
               </h2>
               <p className={`section-subtitle ${styles.valuesSubtitle}`}>
                 Pioneering the future of aesthetic healthcare in India.

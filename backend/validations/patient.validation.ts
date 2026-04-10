@@ -12,6 +12,8 @@ export const createPatientSchema = z.object({
   dateOfBirth: z.coerce.date().optional().nullable(),
   bloodGroup: z.string().max(10).optional().nullable(),
   address: z.string().max(500).optional().nullable(),
+  profilePhoto: z.string().url().optional().nullable(),
+  documents: z.string().optional().nullable(),
 });
 
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;

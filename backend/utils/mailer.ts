@@ -555,3 +555,40 @@ export const sendEnquiryNotificationToHospital = async (opts: {
     `,
   });
 };
+
+export const sendPayslipEmail = async (opts: {
+  to: string;
+  staffName: string;
+  month: string;
+  netPay: number;
+  hospitalName: string;
+  hospitalLogo?: string | null;
+}) => {
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: `Salary Slip for ${opts.month} – ${opts.hospitalName}`,
+    html: `
+<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 16px;"><tr><td align="center">
+<table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
+<tr><td style="padding:28px 36px;border-bottom:1px solid #f3f4f6;">
+  ${opts.hospitalLogo ? `<img src="${opts.hospitalLogo}" alt="${opts.hospitalName}" style="max-height:40px;margin-bottom:12px;" />` : ""}
+  <h2 style="margin:0;font-size:18px;color:#0E898F;">${opts.hospitalName}</h2>
+</td></tr>
+<tr><td style="padding:28px 36px;">
+  <p style="margin:0 0 16px;font-size:15px;color:#1e293b;">Dear <strong>${opts.staffName}</strong>,</p>
+  <p style="margin:0 0 16px;font-size:14px;color:#475569;line-height:1.6;">Your salary slip for <strong>${opts.month}</strong> has been generated.</p>
+  <div style="background:#E6F4F4;border-radius:10px;padding:16px 20px;margin-bottom:16px;border:1px solid #B3E0E0;">
+    <div style="font-size:12px;color:#0A6B70;font-weight:600;margin-bottom:4px;">Net Pay</div>
+    <div style="font-size:24px;font-weight:800;color:#0E898F;">₹${opts.netPay.toLocaleString("en-IN")}</div>
+  </div>
+  <p style="margin:0;font-size:13px;color:#94a3b8;">Please contact HR for any queries regarding your payslip.</p>
+</td></tr>
+<tr><td style="padding:16px 36px;border-top:1px solid #f3f4f6;font-size:11px;color:#94a3b8;">
+  This is a computer-generated email and does not require authentication.
+</td></tr>
+</table></td></tr></table></body></html>`,
+  });
+};

@@ -34,10 +34,10 @@ export default function BodyShapingHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we offer advanced body contouring and fat reduction treatments that help you achieve a toned, sculpted, and confident appearance—without surgery or downtime.
+                At Celeb Aesthetica, we offer advanced body contouring and fat reduction treatments that help you achieve a toned, sculpted, and confident appearance—without surgery or downtime.
               </p>
 
-           
+
             </motion.div>
 
             <motion.div
@@ -72,7 +72,7 @@ export default function BodyShapingHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/BodyShaping.png"
+                  src="/treatments/body-shaping/body-shaping-hero.png"
                   alt="Body Shaping & Contouring"
                   width={580}
                   height={640}

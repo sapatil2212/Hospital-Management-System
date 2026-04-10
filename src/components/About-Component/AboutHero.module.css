@@ -5,12 +5,12 @@
 .heroSection {
   position: relative;
   width: 100%;
-  min-height: 480px;
+  min-height: 520px;
   border-radius: 40px;
   overflow: hidden;
   margin: var(--space-6) auto;
   max-width: 1400px;
-  background: var(--white);
+  background: var(--gray-900);
 }
 
 .heroBackground {
@@ -24,21 +24,14 @@
   border-radius: 40px;
 }
 
-/* Ensure the background image covers the area properly but stays within the stepped shape */
-.heroBackground {
-  border-radius: 40px;
-  height: 100%;
-  width: 100%;
-}
-
 .heroOverlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     90deg,
-    rgba(15, 23, 42, 0.8) 0%,
+    rgba(15, 23, 42, 0.82) 0%,
     rgba(15, 23, 42, 0.6) 40%,
-    rgba(15, 23, 42, 0.2) 100%
+    rgba(15, 23, 42, 0.15) 100%
   );
   z-index: 1;
   border-radius: 40px;
@@ -48,49 +41,46 @@
   position: relative;
   z-index: 2;
   height: 100%;
-  min-height: 480px;
+  min-height: 520px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
+/* ---- Hero Content ---- */
 .heroContent {
   padding: var(--space-12) var(--space-16);
-  max-width: 700px;
+  padding-bottom: var(--space-8);
+  max-width: 680px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* Badge */
 .badgeWrapper {
-  position: relative;
   margin-bottom: var(--space-6);
-  width: fit-content;
 }
 
 .heroBadge {
-  position: relative;
-  z-index: 2;
   display: inline-flex;
   align-items: center;
-  padding: var(--space-2) var(--space-6);
-  background: rgba(37, 99, 235, 0.2);
+  padding: 8px 22px;
+  background: rgba(14, 137, 143, 0.25);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(14, 137, 143, 0.4);
   color: var(--white);
   font-size: var(--font-size-sm);
   font-weight: 600;
   border-radius: var(--radius-full);
+  letter-spacing: 0.01em;
 }
 
-.badgeBlur {
-  position: absolute;
-  inset: -4px;
-  background: rgba(37, 99, 235, 0.3);
-  filter: blur(12px);
-  z-index: 1;
-  border-radius: var(--radius-full);
-}
-
+/* Heading */
 .heroHeading {
-  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
   font-weight: 700;
   color: var(--white);
   line-height: 1.1;
@@ -98,130 +88,297 @@
   margin-bottom: var(--space-4);
 }
 
+/* Description */
 .heroDescription {
   font-size: var(--font-size-base);
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
   margin-bottom: var(--space-8);
   max-width: 520px;
 }
 
-/* Features Bar */
-.featuresBar {
-  background: var(--white);
-  padding: var(--space-6) var(--space-12);
-  display: flex;
+/* Learn More Button */
+.learnMoreBtn {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-12);
+  justify-content: center;
+  padding: 12px 32px;
+  background: #2563EB;
+  color: var(--white);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
   width: fit-content;
-  border-top-right-radius: 40px;
-  position: relative;
-  margin-top: auto;
 }
 
-/* The curved connector for the step */
+.learnMoreBtn:hover {
+  background: #1D4ED8;
+  box-shadow: 0 6px 24px rgba(37, 99, 235, 0.45);
+}
+
+/* ========================================
+   Infinite Scrolling Features Marquee
+   ======================================== */
+
+.featuresBar {
+  background: var(--white);
+  padding: 18px 0;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
+}
+
+/* White fade overlays on left and right edges */
+.featuresBar::before,
 .featuresBar::after {
   content: '';
   position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 40px;
-  height: 40px;
-  background: transparent;
-  border-bottom-left-radius: 40px;
-  box-shadow: -20px 20px 0 0 var(--white);
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 3;
   pointer-events: none;
+}
+
+.featuresBar::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--white) 0%, transparent 100%);
+}
+
+.featuresBar::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--white) 0%, transparent 100%);
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  overflow: hidden;
+}
+
+.marqueeContent {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  animation: marqueeScroll 28s linear infinite;
+  will-change: transform;
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Pause on hover for accessibility */
+.featuresBar:hover .marqueeContent {
+  animation-play-state: paused;
 }
 
 .featureItem {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .featureIcon {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .featureIcon.safety {
   color: #EF4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .featureIcon.qualified {
   color: #F59E0B;
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .featureIcon.personal {
   color: #EC4899;
+  background: rgba(236, 72, 153, 0.1);
 }
 
 .featureText {
   font-size: var(--font-size-base);
   font-weight: 700;
-  color: #1E3A8A; /* Dark blue for the text as in image */
+  color: #1E3A8A;
   white-space: nowrap;
 }
 
+/* ========================================
+   Desktop > 1025px
+   ======================================== */
 @media (min-width: 1025px) {
   .heroInner {
     justify-content: flex-end;
   }
 
   .heroContent {
-    margin-top: auto;
-    padding-bottom: var(--space-6);
-  }
-
-  .featuresBar {
-    margin-top: 0;
+    flex: 1;
+    justify-content: center;
   }
 }
 
-/* Responsive */
+/* ========================================
+   Tablet ≤ 1024px
+   ======================================== */
 @media (max-width: 1024px) {
   .heroSection {
     margin: var(--space-4);
-    min-height: 400px;
+    min-height: 440px;
     border-radius: 30px;
   }
 
   .heroInner {
-    min-height: 400px;
+    min-height: 440px;
   }
 
   .heroContent {
     padding: var(--space-10) var(--space-8);
   }
 
+  .heroBackground {
+    border-radius: 30px;
+  }
+
+  .heroOverlay {
+    border-radius: 30px;
+  }
+
   .featuresBar {
-    gap: var(--space-6);
-    padding: var(--space-4) var(--space-8);
-    border-top-right-radius: 30px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
   }
 }
 
+/* ========================================
+   Mobile ≤ 768px
+   ======================================== */
 @media (max-width: 768px) {
   .heroSection {
-    display: none;
+    min-height: 380px;
+    border-radius: 24px;
+    margin: var(--space-3);
   }
 
   .heroInner {
-    display: none;
+    min-height: 380px;
+  }
+
+  .heroBackground {
+    border-radius: 24px;
+  }
+
+  .heroOverlay {
+    border-radius: 24px;
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.85) 0%,
+      rgba(15, 23, 42, 0.55) 60%,
+      rgba(15, 23, 42, 0.3) 100%
+    );
   }
 
   .heroContent {
-    display: none;
+    padding: var(--space-8) var(--space-6);
+    padding-bottom: var(--space-4);
+  }
+
+  .heroHeading {
+    font-size: 1.75rem;
+  }
+
+  .heroDescription {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-6);
+  }
+
+  .heroBadge {
+    font-size: var(--font-size-xs);
+    padding: 6px 16px;
+  }
+
+  .learnMoreBtn {
+    padding: 10px 24px;
+    font-size: var(--font-size-sm);
   }
 
   .featuresBar {
-    display: none;
+    padding: 14px 0;
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
+  }
+
+  .marqueeContent {
+    gap: 32px;
+  }
+
+  .featureText {
+    font-size: var(--font-size-sm);
+  }
+
+  .featureIcon {
+    width: 28px;
+    height: 28px;
   }
 }
 
+/* ========================================
+   Small Mobile ≤ 480px
+   ======================================== */
 @media (max-width: 480px) {
   .heroSection {
-    display: none;
+    min-height: 340px;
+    border-radius: 20px;
+  }
+
+  .heroInner {
+    min-height: 340px;
+  }
+
+  .heroBackground {
+    border-radius: 20px;
+  }
+
+  .heroOverlay {
+    border-radius: 20px;
+  }
+
+  .heroContent {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .heroHeading {
+    font-size: 1.5rem;
+  }
+
+  .featuresBar {
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    padding: 12px 0;
+  }
+
+  .marqueeContent {
+    gap: 24px;
   }
 }

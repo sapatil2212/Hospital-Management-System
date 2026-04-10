@@ -666,7 +666,7 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
             <>
               {/* Quick Setup Section */}
               <div className="sched-quick-setup">
-                <h3 className="sched-section-title">⚡ Quick Setup (One-Click)</h3>
+                <h3 className="sched-section-title"><Zap size={15} style={{display:'inline',verticalAlign:'middle',marginRight:6}} /> Quick Setup</h3>
                 <div className="sched-quick-grid">
                   <button className="sched-quick-btn" onClick={quickSetupFullWeek}>
                     <Zap size={16} />
@@ -788,83 +788,66 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
                 </div>
               )}
 
-              <div className="sched-grid">
+              <div className="sched-table">
+                <div className="sched-table-head">
+                  <div>Day</div>
+                  <div>Working Hours</div>
+                  <div>Slot</div>
+                  <div>Buffer</div>
+                  <div>Max/Slot</div>
+                  <div>Breaks</div>
+                  <div>Generated</div>
+                  <div></div>
+                </div>
                 {DAYS.map(day => {
                   const daySchedule = schedule[day] || defaultDaySchedule;
                   const slots = generateSlots(daySchedule);
-
                   return (
-                    <div key={day} className={`sched-day-card ${daySchedule.enabled ? "enabled" : ""}`}>
-                      <div className="sched-day-header">
-                        <label className="sched-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={daySchedule.enabled}
-                            onChange={(e) => updateDay(day, { enabled: e.target.checked })}
-                          />
-                          <span className="sched-day-name">{DAY_LABELS[day]}</span>
+                    <div key={day} className={`sched-tr ${daySchedule.enabled ? "str-on" : "str-off"}`}>
+                      <div className="std-day">
+                        <label className="std-toggle-label">
+                          <input type="checkbox" checked={daySchedule.enabled} onChange={(e) => updateDay(day, { enabled: e.target.checked })} />
+                          <span className={`std-dayname ${daySchedule.enabled ? "on" : ""}`}>{DAY_LABELS[day]}</span>
                         </label>
-                        {daySchedule.enabled && (
-                          <button className="sched-copy-btn" onClick={() => copyToAll(day)} title="Copy to all days">
-                            <Copy size={14} />
-                          </button>
-                        )}
                       </div>
-
-                      {daySchedule.enabled && (
-                        <div className="sched-day-content">
-                          <div className="sched-row">
-                            <div className="sched-field">
-                              <label>Start</label>
-                              <input type="time" value={daySchedule.startTime} onChange={(e) => updateDay(day, { startTime: e.target.value })} />
-                            </div>
-                            <div className="sched-field">
-                              <label>End</label>
-                              <input type="time" value={daySchedule.endTime} onChange={(e) => updateDay(day, { endTime: e.target.value })} />
-                            </div>
+                      {daySchedule.enabled ? (
+                        <>
+                          <div className="std-times">
+                            <input type="time" className="std-time" value={daySchedule.startTime} onChange={(e) => updateDay(day, { startTime: e.target.value })} />
+                            <span className="std-sep">–</span>
+                            <input type="time" className="std-time" value={daySchedule.endTime} onChange={(e) => updateDay(day, { endTime: e.target.value })} />
                           </div>
-
-                          <div className="sched-row">
-                            <div className="sched-field">
-                              <label>Slot (min)</label>
-                              <input type="number" value={daySchedule.slotDuration} onChange={(e) => updateDay(day, { slotDuration: parseInt(e.target.value) || 30 })} min="5" max="120" />
-                            </div>
-                            <div className="sched-field">
-                              <label>Buffer (min)</label>
-                              <input type="number" value={daySchedule.bufferTime} onChange={(e) => updateDay(day, { bufferTime: parseInt(e.target.value) || 0 })} min="0" max="30" />
-                            </div>
+                          <div className="std-num">
+                            <input type="number" className="std-ninput" value={daySchedule.slotDuration} min="5" max="120" onChange={(e) => updateDay(day, { slotDuration: parseInt(e.target.value) || 30 })} />
+                            <span className="std-unit">min</span>
                           </div>
-
-                          <div className="sched-field">
-                            <label>Max Patients/Slot</label>
-                            <input type="number" value={daySchedule.maxPatientsPerSlot} onChange={(e) => updateDay(day, { maxPatientsPerSlot: parseInt(e.target.value) || 1 })} min="1" max="10" />
+                          <div className="std-num">
+                            <input type="number" className="std-ninput" value={daySchedule.bufferTime} min="0" max="30" onChange={(e) => updateDay(day, { bufferTime: parseInt(e.target.value) || 0 })} />
+                            <span className="std-unit">min</span>
                           </div>
-
-                          <div className="sched-breaks">
-                            <div className="sched-breaks-header">
-                              <label>Breaks</label>
-                              <button className="sched-add-break" onClick={() => addBreak(day)}><Plus size={12} /> Add</button>
-                            </div>
+                          <div className="std-num">
+                            <input type="number" className="std-ninput" value={daySchedule.maxPatientsPerSlot} min="1" max="10" onChange={(e) => updateDay(day, { maxPatientsPerSlot: parseInt(e.target.value) || 1 })} />
+                            <span className="std-unit">pt</span>
+                          </div>
+                          <div className="std-breaks">
                             {(daySchedule.breaks || []).map((brk, idx) => (
-                              <div key={idx} className="sched-break-row">
-                                <input type="time" value={brk.start} onChange={(e) => updateBreak(day, idx, "start", e.target.value)} />
-                                <span>to</span>
-                                <input type="time" value={brk.end} onChange={(e) => updateBreak(day, idx, "end", e.target.value)} />
-                                <button className="sched-remove-break" onClick={() => removeBreak(day, idx)}><Trash2 size={12} /></button>
+                              <div key={idx} className="std-break-row">
+                                <input type="time" className="std-time sm" value={brk.start} onChange={(e) => updateBreak(day, idx, "start", e.target.value)} />
+                                <span className="std-sep">–</span>
+                                <input type="time" className="std-time sm" value={brk.end} onChange={(e) => updateBreak(day, idx, "end", e.target.value)} />
+                                <button className="std-rm-brk" onClick={() => removeBreak(day, idx)}><X size={10} /></button>
                               </div>
                             ))}
+                            <button className="std-add-brk" onClick={() => addBreak(day)}><Plus size={11} /> Break</button>
                           </div>
-
-                          <div className="sched-slots-preview">
-                            <div className="sched-slots-header">
-                              <Zap size={12} /> {slots.length} Slots Generated
-                            </div>
-                            <div className="sched-slots-list">
-                              {slots.slice(0, 5).map((slot, i) => <span key={i} className="sched-slot-badge">{slot}</span>)}
-                              {slots.length > 5 && <span className="sched-slot-more">+{slots.length - 5} more</span>}
-                            </div>
+                          <div className="std-slots-count">
+                            <div className="stsc-top"><span className="stsc-num">{slots.length}</span><span className="stsc-lbl">slots</span></div>
+                            {slots.length > 0 && <div className="stsc-chips">{slots.slice(0,3).map((s,i)=><span key={i} className="stsc-chip">{s}</span>)}{slots.length > 3 && <span className="stsc-more">+{slots.length-3}</span>}</div>}
                           </div>
-                        </div>
+                          <button className="std-copy" onClick={() => copyToAll(day)} title="Copy to all days"><Copy size={13} /></button>
+                        </>
+                      ) : (
+                        <div className="std-off-label">Day Off — not available for bookings</div>
                       )}
                     </div>
                   );
@@ -1043,37 +1026,39 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
                             <span className="view-stat-l">Avg Slots / Day</span>
                           </div>
                         </div>
-                        <div className="view-days">
+                        <div className="vw-table">
                           {DAYS.map(day => {
                             const ds = schedule[day];
                             const isActive = ds?.enabled;
                             const slots = isActive ? generateSlots(ds) : [];
                             return (
-                              <div key={day} className={`view-day-card ${isActive ? "" : "vdc-off"}`}>
-                                <div className="view-day-head">
-                                  <span className="view-day-name">{DAY_LABELS[day]}</span>
-                                  {isActive ? (
-                                    <>
-                                      <span className="view-day-time">{ds.startTime} – {ds.endTime}</span>
-                                      <span className="view-day-slots">{slots.length} slots</span>
-                                    </>
-                                  ) : (
-                                    <span className="view-day-off-badge">Day Off</span>
-                                  )}
+                              <div key={day} className={`vw-tr ${isActive ? "vwtr-on" : "vwtr-off"}`}>
+                                <div className="vw-day">
+                                  <span className={`vw-day-pill ${isActive ? "on" : "off"}`}>{DAY_LABELS[day]}</span>
                                 </div>
-                                {isActive && (
+                                {isActive ? (
                                   <>
-                                    <div className="view-day-meta">
-                                      <span>⏱ {ds.slotDuration}min</span>
-                                      {ds.bufferTime > 0 && <span>↔ {ds.bufferTime}min buffer</span>}
-                                      {ds.maxPatientsPerSlot > 1 && <span>👥 {ds.maxPatientsPerSlot}/slot</span>}
-                                      {(ds.breaks || []).length > 0 && <span>☕ {ds.breaks.length} break{ds.breaks.length > 1 ? "s" : ""}</span>}
+                                    <div className="vw-time">
+                                      <Clock size={12} style={{color:'#0E898F',flexShrink:0}} />
+                                      <span>{ds.startTime} – {ds.endTime}</span>
                                     </div>
-                                    <div className="view-day-chips">
-                                      {slots.slice(0, 6).map((s, i) => <span key={i} className="view-slot-chip">{s}</span>)}
-                                      {slots.length > 6 && <span className="view-slot-more">+{slots.length - 6} more</span>}
+                                    <div className="vw-meta">
+                                      <span className="vwm-tag">{ds.slotDuration}min/slot</span>
+                                      {ds.bufferTime > 0 && <span className="vwm-tag">{ds.bufferTime}min buf</span>}
+                                      {ds.maxPatientsPerSlot > 1 && <span className="vwm-tag">{ds.maxPatientsPerSlot} pt/slot</span>}
+                                      {(ds.breaks || []).length > 0 && <span className="vwm-tag brk">{ds.breaks.length} break{ds.breaks.length > 1 ? "s" : ""}</span>}
+                                    </div>
+                                    <div className="vw-slots">
+                                      <span className="vws-count">{slots.length}</span>
+                                      <span className="vws-lbl">slots</span>
+                                    </div>
+                                    <div className="vw-chips">
+                                      {slots.slice(0, 5).map((s, i) => <span key={i} className="vwc-chip">{s}</span>)}
+                                      {slots.length > 5 && <span className="vwc-more">+{slots.length - 5}</span>}
                                     </div>
                                   </>
+                                ) : (
+                                  <div className="vw-off">Day Off</div>
                                 )}
                               </div>
                             );
@@ -1263,14 +1248,14 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .sched-tab.active { color: #0E898F; border-bottom-color: #0E898F; }
         .sched-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
         .sched-loading { text-align: center; padding: 40px; color: #64748b; }
-        .sched-quick-setup { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #bae6fd; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
-        .sched-section-title { font-size: 16px; font-weight: 700; color: #0c4a6e; margin: 0 0 16px; }
-        .sched-quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        .sched-quick-btn { padding: 14px 16px; border: 2px solid #7dd3fc; background: #fff; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; text-align: left; }
-        .sched-quick-btn:hover { border-color: #0ea5e9; background: #f0f9ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2); }
-        .sched-quick-btn svg { color: #0ea5e9; flex-shrink: 0; }
-        .sched-quick-btn strong { display: block; font-size: 13px; font-weight: 700; color: #0c4a6e; margin-bottom: 2px; }
-        .sched-quick-btn span { display: block; font-size: 11px; color: #64748b; }
+        .sched-quick-setup { background: #f8fafc; border: 1px solid #e8edf2; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
+        .sched-section-title { font-size: 13px; font-weight: 700; color: #475569; margin: 0 0 12px; display: flex; align-items: center; }
+        .sched-quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+        .sched-quick-btn { padding: 10px 12px; border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.15s; text-align: left; }
+        .sched-quick-btn:hover { border-color: #0E898F; background: #f0fdf9; box-shadow: 0 2px 8px rgba(14,137,143,.1); }
+        .sched-quick-btn svg { color: #0E898F; flex-shrink: 0; }
+        .sched-quick-btn strong { display: block; font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 1px; }
+        .sched-quick-btn span { display: block; font-size: 10px; color: #94a3b8; }
         .sched-template-select { margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
         .sched-template-select label { font-size: 13px; font-weight: 600; color: #475569; }
         .sched-template-select select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
@@ -1289,35 +1274,45 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .sched-bulk-field { display: flex; flex-direction: column; gap: 4px; }
         .sched-bulk-field label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; }
         .sched-bulk-field input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; width: 120px; }
-        .sched-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-        .sched-day-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px; background: #f8fafc; transition: all 0.2s; }
-        .sched-day-card.enabled { border-color: #0E898F; background: #fff; }
-        .sched-day-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .sched-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .sched-checkbox input { width: 16px; height: 16px; cursor: pointer; }
-        .sched-day-name { font-size: 14px; font-weight: 700; color: #1e293b; }
-        .sched-copy-btn { padding: 6px; border: none; background: #E6F4F4; color: #0E898F; border-radius: 6px; cursor: pointer; display: flex; align-items: center; }
-        .sched-copy-btn:hover { background: #B3E0E0; }
-        .sched-day-content { display: flex; flex-direction: column; gap: 12px; }
-        .sched-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .sched-field { display: flex; flex-direction: column; gap: 4px; }
-        .sched-field label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; }
-        .sched-field input, .sched-field select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
-        .sched-breaks { border-top: 1px solid #e2e8f0; padding-top: 12px; }
-        .sched-breaks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .sched-breaks-header label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; }
-        .sched-add-break { padding: 4px 8px; border: none; background: #f0fdf4; color: #16a34a; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .sched-add-break:hover { background: #dcfce7; }
-        .sched-break-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-        .sched-break-row input { flex: 1; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; }
-        .sched-break-row span { font-size: 11px; color: #94a3b8; }
-        .sched-remove-break { padding: 6px; border: none; background: #fef2f2; color: #ef4444; border-radius: 6px; cursor: pointer; display: flex; align-items: center; }
-        .sched-remove-break:hover { background: #fee2e2; }
-        .sched-slots-preview { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; }
-        .sched-slots-header { font-size: 11px; font-weight: 700; color: #16a34a; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
-        .sched-slots-list { display: flex; flex-wrap: wrap; gap: 4px; }
-        .sched-slot-badge { padding: 3px 8px; background: #dcfce7; color: #15803d; border-radius: 4px; font-size: 10px; font-weight: 600; }
-        .sched-slot-more { padding: 3px 8px; background: #f1f5f9; color: #64748b; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        /* ── Schedule table (horizontal row layout) ── */
+        .sched-table { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-top: 4px; }
+        .sched-table-head { display: grid; grid-template-columns: 82px 220px 90px 82px 82px 1fr 120px 38px; align-items: center; gap: 0; padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .sched-table-head > div { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; }
+        .sched-tr { display: grid; grid-template-columns: 82px 220px 90px 82px 82px 1fr 120px 38px; align-items: center; gap: 0; padding: 9px 14px; border-bottom: 1px solid #f1f5f9; min-height: 54px; transition: background .1s; }
+        .sched-tr:last-child { border-bottom: none; }
+        .sched-tr.str-on { background: #fff; }
+        .sched-tr.str-off { background: #fbfcfd; }
+        .sched-tr.str-on:hover { background: #fafeff; }
+        .std-day { display: flex; align-items: center; }
+        .std-toggle-label { display: flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; }
+        .std-toggle-label input { width: 15px; height: 15px; cursor: pointer; accent-color: #0E898F; }
+        .std-dayname { font-size: 12px; font-weight: 700; color: #cbd5e1; letter-spacing: .02em; }
+        .std-dayname.on { color: #0E898F; }
+        .std-times { display: flex; align-items: center; gap: 5px; }
+        .std-time { padding: 5px 8px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 12px; font-weight: 600; color: #1e293b; background: #fff; outline: none; width: 90px; }
+        .std-time:focus { border-color: #0E898F; box-shadow: 0 0 0 2px rgba(14,137,143,.12); }
+        .std-time.sm { width: 80px; font-size: 11px; }
+        .std-sep { font-size: 11px; color: #cbd5e1; flex-shrink: 0; }
+        .std-num { display: flex; align-items: center; gap: 4px; }
+        .std-ninput { width: 46px; padding: 5px 6px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 12px; font-weight: 600; color: #1e293b; text-align: center; outline: none; background: #fff; }
+        .std-ninput:focus { border-color: #0E898F; box-shadow: 0 0 0 2px rgba(14,137,143,.12); }
+        .std-unit { font-size: 10px; color: #94a3b8; font-weight: 600; }
+        .std-breaks { display: flex; flex-direction: column; gap: 4px; }
+        .std-break-row { display: flex; align-items: center; gap: 4px; }
+        .std-rm-brk { width: 20px; height: 20px; border: none; background: #fef2f2; color: #ef4444; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .std-rm-brk:hover { background: #fee2e2; }
+        .std-add-brk { padding: 3px 7px; background: none; border: 1px dashed #cbd5e1; color: #94a3b8; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 3px; transition: all .12s; width: fit-content; margin-top: 2px; }
+        .std-add-brk:hover { border-color: #0E898F; color: #0E898F; background: #f0fdf9; }
+        .std-slots-count { display: flex; flex-direction: column; gap: 2px; }
+        .stsc-top { display: flex; align-items: baseline; gap: 4px; }
+        .stsc-num { font-size: 20px; font-weight: 800; color: #0E898F; line-height: 1; }
+        .stsc-lbl { font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+        .stsc-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+        .stsc-chip { padding: 2px 6px; background: #E6F4F4; color: #0A6B70; border-radius: 4px; font-size: 9px; font-weight: 700; }
+        .stsc-more { padding: 2px 5px; background: #f1f5f9; color: #94a3b8; border-radius: 4px; font-size: 9px; font-weight: 600; }
+        .std-copy { width: 30px; height: 30px; border: 1px solid #e2e8f0; background: #fff; color: #94a3b8; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .12s; }
+        .std-copy:hover { background: #E6F4F4; border-color: #B3E0E0; color: #0E898F; }
+        .std-off-label { grid-column: 2 / -1; font-size: 12px; color: #cbd5e1; font-style: italic; }
         .sched-templates { display: flex; flex-direction: column; gap: 16px; }
         .sched-template-actions { display: flex; gap: 8px; }
         .sched-save-template { display: flex; gap: 8px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
@@ -1401,19 +1396,27 @@ export default function ScheduleModal({ open, onClose, doctorId, doctorName, onS
         .view-stat-v { display: block; font-size: 24px; font-weight: 800; color: #1e293b; }
         .view-stat-of { font-size: 14px; font-weight: 500; color: #94a3b8; margin-left: 2px; }
         .view-stat-l { display: block; font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 500; }
-        .view-days { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 10px; }
-        .view-day-card { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; }
-        .view-day-card.vdc-off { opacity: .55; background: #f1f5f9; }
-        .view-day-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-        .view-day-name { font-size: 12px; font-weight: 800; background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 6px; }
-        .view-day-time { font-size: 12px; font-weight: 600; color: #07595D; flex: 1; }
-        .view-day-slots { font-size: 11px; background: #dcfce7; color: #15803d; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
-        .view-day-off-badge { font-size: 11px; background: #f1f5f9; color: #94a3b8; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
-        .view-day-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
-        .view-day-meta span { font-size: 11px; color: #64748b; background: #f1f5f9; padding: 2px 7px; border-radius: 5px; }
-        .view-day-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-        .view-slot-chip { padding: 3px 7px; background: #B3E0E0; color: #07595D; border-radius: 4px; font-size: 10px; font-weight: 600; }
-        .view-slot-more { padding: 3px 7px; background: #f1f5f9; color: #64748b; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        /* ── View mode table ── */
+        .vw-table { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .vw-tr { display: grid; grid-template-columns: 76px 160px 1fr 70px 1fr; align-items: center; gap: 0; padding: 10px 16px; border-bottom: 1px solid #f1f5f9; min-height: 50px; }
+        .vw-tr:last-child { border-bottom: none; }
+        .vw-tr.vwtr-on { background: #fff; }
+        .vw-tr.vwtr-off { background: #fbfcfd; }
+        .vw-day { display: flex; align-items: center; }
+        .vw-day-pill { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 6px; letter-spacing: .03em; }
+        .vw-day-pill.on { background: #E6F4F4; color: #07595D; }
+        .vw-day-pill.off { background: #f1f5f9; color: #cbd5e1; }
+        .vw-time { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #0E898F; }
+        .vw-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+        .vwm-tag { font-size: 10px; color: #64748b; background: #f1f5f9; padding: 2px 7px; border-radius: 5px; font-weight: 600; }
+        .vwm-tag.brk { background: #fef3c7; color: #d97706; }
+        .vw-slots { display: flex; align-items: baseline; gap: 4px; }
+        .vws-count { font-size: 20px; font-weight: 800; color: #0E898F; }
+        .vws-lbl { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+        .vw-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+        .vwc-chip { padding: 3px 7px; background: #E6F4F4; color: #07595D; border-radius: 4px; font-size: 10px; font-weight: 700; }
+        .vwc-more { padding: 3px 7px; background: #f1f5f9; color: #94a3b8; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .vw-off { grid-column: 2 / -1; font-size: 12px; color: #e2e8f0; font-style: italic; }
         .vm-cal { display: flex; flex-direction: column; gap: 14px; }
         .vm-cal-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
         .vm-cal-stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; text-align: center; }

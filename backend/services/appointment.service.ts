@@ -318,29 +318,72 @@ export const getAvailableSlots = async (
     throw new AppointmentServiceError("Doctor not found", "NOT_FOUND", 404);
   }
 
-  const targetDate = new Date(date);
+  const targetDate = new Date(date + "T00:00:00");
   const dayNames = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
   const dayName = dayNames[targetDate.getDay()];
 
-  // Find availability for this day
-  const dayAvailability = doctor.availability?.find(
-    (a: any) => a.day === dayName && a.isActive
-  );
+  // ── Check for a date-specific override FIRST ─────────────────────────────
+  const dateOverride = await px.doctorDateOverride.findFirst({
+    where: {
+      doctorId,
+      hospitalId,
+      date: {
+        gte: new Date(date + "T00:00:00.000Z"),
+        lte: new Date(date + "T23:59:59.999Z"),
+      },
+    },
+  });
 
-  if (!dayAvailability) {
-    return { slots: [], bookedSlots: [], message: "Doctor is not available on this day" };
+  // Override says doctor is off → no slots
+  if (dateOverride && dateOverride.isOff) {
+    return { slots: [], bookedSlots: [], allSlots: [], message: "Doctor is not available on this date" };
   }
 
-  // Generate time slots
-  const slots = generateSlots(
-    dayAvailability.startTime,
-    dayAvailability.endTime,
-    dayAvailability.slotDuration || 30
-  );
+  // Determine effective schedule: override wins over weekly
+  let effectiveStart: string;
+  let effectiveEnd: string;
+  let effectiveDuration: number;
+
+  if (dateOverride && dateOverride.startTime && dateOverride.endTime) {
+    effectiveStart    = dateOverride.startTime;
+    effectiveEnd      = dateOverride.endTime;
+    effectiveDuration = dateOverride.slotDuration || 30;
+  } else {
+    // Fall back to weekly DoctorAvailability
+    const dayAvailability = doctor.availability?.find(
+      (a: any) => a.day === dayName && a.isActive
+    );
+    if (!dayAvailability) {
+      return { slots: [], bookedSlots: [], allSlots: [], message: "Doctor is not available on this day" };
+    }
+    effectiveStart    = dayAvailability.startTime;
+    effectiveEnd      = dayAvailability.endTime;
+    effectiveDuration = dayAvailability.slotDuration || 30;
+  }
+
+  // Generate time slots from effective schedule
+  let slots = generateSlots(effectiveStart, effectiveEnd, effectiveDuration);
+
+  // Remove break slots if the override has breaks defined
+  if (dateOverride?.breaks) {
+    try {
+      const breaks: { start: string; end: string }[] = typeof dateOverride.breaks === "string"
+        ? JSON.parse(dateOverride.breaks)
+        : dateOverride.breaks;
+      slots = slots.filter(slot => {
+        const [sh, sm] = slot.split(":").map(Number);
+        const slotMin = sh * 60 + sm;
+        return !breaks.some(br => {
+          const [bsh, bsm] = br.start.split(":").map(Number);
+          const [beh, bem] = br.end.split(":").map(Number);
+          return slotMin >= bsh * 60 + bsm && slotMin < beh * 60 + bem;
+        });
+      });
+    } catch { /* ignore malformed breaks */ }
+  }
 
   // Get already-booked slots
   const bookedSlots = await getBookedSlots(hospitalId, doctorId, targetDate);
-
   const availableSlots = slots.filter((s) => !bookedSlots.includes(s));
 
   return {
@@ -348,9 +391,10 @@ export const getAvailableSlots = async (
     bookedSlots,
     allSlots: slots,
     availability: {
-      startTime: dayAvailability.startTime,
-      endTime: dayAvailability.endTime,
-      slotDuration: dayAvailability.slotDuration || 30,
+      startTime: effectiveStart,
+      endTime: effectiveEnd,
+      slotDuration: effectiveDuration,
+      isOverride: !!dateOverride,
     },
   };
 };

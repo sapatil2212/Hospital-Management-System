@@ -3,8 +3,15 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Plus, Pencil, Trash2, Search, X, Loader2, Check, AlertTriangle,
   ChevronLeft, ChevronRight, Building2, DollarSign, MapPin, User,
-  Settings2, ToggleLeft, ToggleRight, Filter
+  Settings2, ToggleLeft, ToggleRight, Filter, Eye, Download,
+  ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, FileType,
+  ShieldAlert, Users, Layers, Info
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Document, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel, BorderStyle, AlignmentType } from "docx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -190,88 +197,140 @@ function DeleteConfirmDialog({
   department: Department | null;
   loading?: boolean;
 }) {
+  const [mode, setMode] = useState<"force" | "cascade">("force");
   if (!open || !department) return null;
-  
-  const hasDeps = (department._count?.doctors || 0) > 0 || 
-                  (department._count?.staff || 0) > 0 || 
-                  (department._count?.subDepartments || 0) > 0;
-  
+
+  const doctorCount = department._count?.doctors || 0;
+  const staffCount = department._count?.staff || 0;
+  const subDeptCount = department._count?.subDepartments || 0;
+  const totalDeps = doctorCount + staffCount + subDeptCount;
+  const hasDeps = totalDeps > 0;
+
   return (
     <div className="dept-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="dept-modal dept-modal-md">
-        <div className="dept-confirm-icon">
-          <AlertTriangle size={32} color="#ef4444" />
+      <div className="del-dialog">
+        {/* Header */}
+        <div className="del-header">
+          <div className="del-header-icon">
+            <ShieldAlert size={20} />
+          </div>
+          <div className="del-header-text">
+            <h3>Delete Department</h3>
+            <p>This action cannot be undone</p>
+          </div>
+          <button className="dept-icon-btn" onClick={onClose} style={{marginLeft:"auto"}}><X size={16}/></button>
         </div>
-        <h3 className="dept-confirm-title">Delete Department: {department.name}?</h3>
-        
-        {hasDeps ? (
-          <>
-            <p className="dept-confirm-msg">
-              This department has the following related items:
-            </p>
-            <div className="dept-deps-list">
-              {(department._count?.doctors || 0) > 0 && (
-                <div className="dept-dep-item">
-                  <User size={16} />
-                  <span><strong>{department._count?.doctors}</strong> Doctor{department._count?.doctors !== 1 ? 's' : ''}</span>
-                </div>
-              )}
-              {(department._count?.staff || 0) > 0 && (
-                <div className="dept-dep-item">
-                  <User size={16} />
-                  <span><strong>{department._count?.staff}</strong> Staff member{department._count?.staff !== 1 ? 's' : ''}</span>
-                </div>
-              )}
-              {(department._count?.subDepartments || 0) > 0 && (
-                <div className="dept-dep-item">
-                  <Building2 size={16} />
-                  <span><strong>{department._count?.subDepartments}</strong> Sub-department{department._count?.subDepartments !== 1 ? 's' : ''}</span>
-                </div>
-              )}
+
+        {/* Body */}
+        <div className="del-body">
+          {/* Department Info Card */}
+          <div className="del-dept-card">
+            <div className="del-dept-card-icon">
+              <Building2 size={18} />
             </div>
-            <p className="dept-confirm-msg" style={{marginTop:12}}>
-              How would you like to proceed?
-            </p>
-            <div className="dept-delete-actions">
-              <button className="dept-btn-ghost" onClick={onClose} disabled={loading}>
-                Cancel
-              </button>
-              <button 
-                className="dept-btn-warning" 
-                onClick={() => onConfirm("force")} 
-                disabled={loading}
-                title="Delete department only, keep related items"
-              >
-                {loading && <Loader2 size={14} className="dept-spin" />}
-                Keep Related Items
-              </button>
-              <button 
-                className="dept-btn-danger" 
-                onClick={() => onConfirm("cascade")} 
-                disabled={loading}
-                title="Delete department and all related items"
-              >
-                {loading && <Loader2 size={14} className="dept-spin" />}
-                Delete All
-              </button>
+            <div>
+              <div className="del-dept-card-name">{department.name}</div>
+              <div className="del-dept-card-meta">
+                <span className="dept-dept-code">{department.code}</span>
+                <span className={`dept-badge ${TYPE_COLORS[department.type] || "gray"}`} style={{marginLeft:6}}>
+                  {department.type === "CUSTOM" && department.customTypeName ? department.customTypeName : department.type}
+                </span>
+              </div>
             </div>
-          </>
-        ) : (
-          <>
-            <p className="dept-confirm-msg">
-              This department has no related items. Are you sure you want to delete it?
-            </p>
-            <div className="dept-confirm-actions">
-              <button className="dept-btn-ghost" onClick={onClose} disabled={loading}>
-                Cancel
-              </button>
-              <button className="dept-btn-danger" onClick={() => onConfirm("force")} disabled={loading}>
-                {loading && <Loader2 size={14} className="dept-spin" />}
-                Delete Department
-              </button>
+          </div>
+
+          {hasDeps ? (
+            <>
+              {/* Impact Summary */}
+              <div className="del-impact">
+                <div className="del-impact-header">
+                  <AlertTriangle size={14} />
+                  <span>Impact Analysis</span>
+                </div>
+                <div className="del-impact-body">
+                  <p>Deleting this department will affect the following linked resources:</p>
+                  <div className="del-impact-grid">
+                    {doctorCount > 0 && (
+                      <div className="del-impact-item">
+                        <div className="del-impact-item-icon blue"><User size={14}/></div>
+                        <div className="del-impact-item-info">
+                          <span className="del-impact-item-count">{doctorCount}</span>
+                          <span className="del-impact-item-label">Doctor{doctorCount !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                    )}
+                    {staffCount > 0 && (
+                      <div className="del-impact-item">
+                        <div className="del-impact-item-icon purple"><Users size={14}/></div>
+                        <div className="del-impact-item-info">
+                          <span className="del-impact-item-count">{staffCount}</span>
+                          <span className="del-impact-item-label">Staff member{staffCount !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                    )}
+                    {subDeptCount > 0 && (
+                      <div className="del-impact-item">
+                        <div className="del-impact-item-icon teal"><Layers size={14}/></div>
+                        <div className="del-impact-item-info">
+                          <span className="del-impact-item-count">{subDeptCount}</span>
+                          <span className="del-impact-item-label">Sub-dept{subDeptCount !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Deletion Mode Selection */}
+              <div className="del-modes">
+                <div className="del-modes-label">Choose deletion strategy:</div>
+                <button
+                  className={`del-mode-option ${mode === "force" ? "selected" : ""}`}
+                  onClick={() => setMode("force")}
+                >
+                  <div className={`del-mode-radio ${mode === "force" ? "on" : ""}`}>
+                    {mode === "force" && <div className="del-mode-radio-dot" />}
+                  </div>
+                  <div className="del-mode-content">
+                    <div className="del-mode-title">Remove Department Only</div>
+                    <div className="del-mode-desc">Delete the department but keep all linked doctors, staff, and sub-departments intact.</div>
+                  </div>
+                </button>
+                <button
+                  className={`del-mode-option ${mode === "cascade" ? "selected danger" : ""}`}
+                  onClick={() => setMode("cascade")}
+                >
+                  <div className={`del-mode-radio ${mode === "cascade" ? "on danger" : ""}`}>
+                    {mode === "cascade" && <div className="del-mode-radio-dot" />}
+                  </div>
+                  <div className="del-mode-content">
+                    <div className="del-mode-title">Delete Everything</div>
+                    <div className="del-mode-desc">Permanently remove the department and all {totalDeps} linked resource{totalDeps !== 1 ? "s" : ""}. This is irreversible.</div>
+                  </div>
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="del-no-deps">
+              <Info size={16} color="#0E898F" />
+              <span>This department has no linked resources. It can be safely removed.</span>
             </div>
-          </>
-        )}
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="del-footer">
+          <button className="dept-btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
+          <button
+            className={`del-confirm-btn ${mode === "cascade" && hasDeps ? "cascade" : ""}`}
+            onClick={() => onConfirm(hasDeps ? mode : "force")}
+            disabled={loading}
+          >
+            {loading && <Loader2 size={14} className="dept-spin" />}
+            <Trash2 size={14} />
+            {hasDeps ? (mode === "cascade" ? "Delete All Permanently" : "Delete Department Only") : "Delete Department"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -329,6 +388,19 @@ export default function DepartmentPanel() {
   const [deleteItem, setDeleteItem] = useState<Department | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Select checkboxes
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // View details modal
+  const [viewItem, setViewItem] = useState<Department | null>(null);
+
+  // Sort
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Export dropdown
+  const [showExport, setShowExport] = useState(false);
+
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
   const addToast = (type: Toast["type"], message: string) => {
@@ -347,6 +419,8 @@ export default function DepartmentPanel() {
     if (filterStatus) params.append("isActive", filterStatus);
     params.append("page", pagination.page.toString());
     params.append("limit", pagination.limit.toString());
+    params.append("sortBy", sortBy);
+    params.append("sortOrder", sortOrder);
 
     const res = await api(`/api/config/departments?${params.toString()}`);
     if (res.success && res.data) {
@@ -356,7 +430,7 @@ export default function DepartmentPanel() {
       }
     }
     setLoading(false);
-  }, [search, filterType, filterStatus, pagination.page, pagination.limit]);
+  }, [search, filterType, filterStatus, pagination.page, pagination.limit, sortBy, sortOrder]);
 
   // Load all users for HOD dropdown
   const loadUsers = async () => {
@@ -520,14 +594,113 @@ export default function DepartmentPanel() {
     setPagination((p) => ({ ...p, page }));
   };
 
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === data.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(data.map((d) => d.id)));
+  };
+  const allSelected = data.length > 0 && selectedIds.size === data.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < data.length;
+
+  // Sort handler
+  const handleSort = (col: string) => {
+    if (sortBy === col) setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    else { setSortBy(col); setSortOrder("asc"); }
+    setPagination((p) => ({ ...p, page: 1 }));
+  };
+
+  // Export helpers
+  const getExportData = () => {
+    const rows = (selectedIds.size > 0 ? data.filter((d) => selectedIds.has(d.id)) : data);
+    return rows.map((d) => ({
+      Name: d.name,
+      Code: d.code,
+      Type: d.type === "CUSTOM" && d.customTypeName ? d.customTypeName : d.type,
+      Status: d.isActive ? "Active" : "Inactive",
+      "Consultation Fee": d.consultationFee ? `₹${d.consultationFee}` : "—",
+      Doctors: d._count?.doctors || 0,
+      Description: d.description || "—",
+      Location: d.location || "—",
+    }));
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Departments Report", 14, 16);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 23);
+    const rows = getExportData();
+    autoTable(doc, {
+      startY: 28,
+      head: [["Name", "Code", "Type", "Status", "Fee", "Doctors"]],
+      body: rows.map((r) => [r.Name, r.Code, r.Type, r.Status, r["Consultation Fee"], String(r.Doctors)]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [14, 137, 143] },
+    });
+    doc.save(`departments-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setShowExport(false);
+  };
+
+  const exportExcel = () => {
+    const rows = getExportData();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Departments");
+    XLSX.writeFile(wb, `departments-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setShowExport(false);
+  };
+
+  const exportWord = async () => {
+    const rows = getExportData();
+    const keys = ["Name", "Code", "Type", "Status", "Consultation Fee", "Doctors"] as const;
+    const headerRow = new TableRow({
+      children: keys.map((k) => new TableCell({
+        width: { size: 100 / keys.length, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, size: 20, font: "Calibri" })] })],
+      })),
+    });
+    const dataRows = rows.map((r) => new TableRow({
+      children: keys.map((k) => new TableCell({
+        width: { size: 100 / keys.length, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ children: [new TextRun({ text: String(r[k] ?? "—"), size: 20, font: "Calibri" })] })],
+      })),
+    }));
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ text: "Departments Report", heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-IN")}`, size: 18, color: "888888" })] }),
+          new Paragraph({ text: "" }),
+          new DocxTable({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `departments-${new Date().toISOString().slice(0, 10)}.docx`);
+    setShowExport(false);
+  };
+
   return (
     <>
       <style>{`
-        .dept-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+        .dept-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+        .dept-toolbar-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+        .dept-toolbar-left h2{margin:0;font-size:22px;font-weight:800;color:#1e293b;line-height:1.2}
+        .dept-toolbar-left p{margin:0;font-size:13px;color:#94a3b8;line-height:1.3}
         .dept-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px}
         .dept-search-input{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
         .dept-search-input::placeholder{color:#94a3b8}
-        .dept-toolbar-right{display:flex;align-items:center;gap:10px}
+        .dept-toolbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .dept-filter-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:500;cursor:pointer}
         .dept-filter-btn:hover{border-color:#cbd5e1}
         .dept-filter-btn.active{background:#E6F4F4;border-color:#0E898F;color:#0E898F}
@@ -609,17 +782,51 @@ export default function DepartmentPanel() {
         .dept-toggle.disabled{opacity:.5;cursor:not-allowed}
         .dept-toggle-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
         .dept-toggle.on .dept-toggle-thumb{transform:translateX(20px)}
-        .dept-confirm-icon{margin-bottom:16px}
-        .dept-confirm-title{font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px}
-        .dept-confirm-msg{font-size:14px;color:#64748b;margin-bottom:20px;line-height:1.5}
-        .dept-confirm-actions{display:flex;gap:10px;justify-content:center}
-        .dept-deps-list{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin:12px 0;display:flex;flex-direction:column;gap:8px}
-        .dept-dep-item{display:flex;align-items:center;gap:8px;font-size:13px;color:#334155}
-        .dept-dep-item strong{color:#1e293b;font-weight:600}
-        .dept-delete-actions{display:flex;gap:8px;justify-content:center;margin-top:20px}
-        .dept-btn-warning{padding:10px 20px;border-radius:9px;border:none;background:#f59e0b;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
-        .dept-btn-warning:hover{background:#d97706}
-        .dept-btn-warning:disabled{opacity:.55;cursor:not-allowed}
+        .del-dialog{background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 48px rgba(0,0,0,.16);overflow:hidden;display:flex;flex-direction:column;animation:delFadeIn .2s ease}
+        @keyframes delFadeIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .del-header{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid #f1f5f9}
+        .del-header-icon{width:40px;height:40px;border-radius:10px;background:#fff5f5;color:#ef4444;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .del-header-text h3{margin:0;font-size:16px;font-weight:700;color:#1e293b}
+        .del-header-text p{margin:0;font-size:12px;color:#94a3b8;margin-top:1px}
+        .del-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+        .del-dept-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+        .del-dept-card-icon{width:36px;height:36px;border-radius:9px;background:#E6F4F4;color:#0E898F;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .del-dept-card-name{font-size:14px;font-weight:700;color:#1e293b}
+        .del-dept-card-meta{display:flex;align-items:center;gap:4px;margin-top:4px}
+        .del-impact{border:1px solid #fde68a;border-radius:12px;overflow:hidden}
+        .del-impact-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em}
+        .del-impact-body{padding:14px 16px}
+        .del-impact-body p{margin:0 0 12px;font-size:13px;color:#64748b;line-height:1.5}
+        .del-impact-grid{display:flex;gap:10px;flex-wrap:wrap}
+        .del-impact-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;flex:1;min-width:120px}
+        .del-impact-item-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .del-impact-item-icon.blue{background:#E6F4F4;color:#0E898F}
+        .del-impact-item-icon.purple{background:#f5f3ff;color:#7c3aed}
+        .del-impact-item-icon.teal{background:#f0fdfa;color:#0d9488}
+        .del-impact-item-info{display:flex;flex-direction:column}
+        .del-impact-item-count{font-size:16px;font-weight:800;color:#1e293b;line-height:1}
+        .del-impact-item-label{font-size:11px;color:#94a3b8;margin-top:2px}
+        .del-modes{display:flex;flex-direction:column;gap:8px}
+        .del-modes-label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+        .del-mode-option{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;text-align:left;transition:all .15s;width:100%}
+        .del-mode-option:hover{border-color:#cbd5e1;background:#fafbfc}
+        .del-mode-option.selected{border-color:#0E898F;background:#f0fdfa}
+        .del-mode-option.selected.danger{border-color:#ef4444;background:#fff5f5}
+        .del-mode-radio{width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s}
+        .del-mode-radio.on{border-color:#0E898F}
+        .del-mode-radio.on.danger{border-color:#ef4444}
+        .del-mode-radio-dot{width:8px;height:8px;border-radius:50%;background:#0E898F}
+        .del-mode-radio.on.danger .del-mode-radio-dot{background:#ef4444}
+        .del-mode-content{flex:1;min-width:0}
+        .del-mode-title{font-size:13px;font-weight:700;color:#1e293b}
+        .del-mode-desc{font-size:12px;color:#94a3b8;margin-top:3px;line-height:1.4}
+        .del-no-deps{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#E6F4F4;border:1px solid #B3E0E0;border-radius:10px;font-size:13px;color:#0A6B70;font-weight:500}
+        .del-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #f1f5f9;background:#fafbfc}
+        .del-confirm-btn{padding:10px 20px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+        .del-confirm-btn:hover{background:#dc2626;transform:translateY(-1px)}
+        .del-confirm-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+        .del-confirm-btn.cascade{background:#991b1b;box-shadow:0 4px 12px rgba(239,68,68,.3)}
+        .del-confirm-btn.cascade:hover{background:#7f1d1d}
         .dept-toast-container{position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
         .dept-toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .3s ease}
         @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -631,28 +838,38 @@ export default function DepartmentPanel() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .dept-spin{animation:spin .7s linear infinite}
         .dept-fee{font-weight:600;color:#16a34a}
+        .dept-checkbox{width:16px;height:16px;accent-color:#0E898F;cursor:pointer}
+        .dept-view{background:#f0f9ff;color:#2563eb}.dept-view:hover{background:#dbeafe}
+        .dept-sort-icon{display:inline-flex;margin-left:4px;vertical-align:middle;color:#cbd5e1;cursor:pointer}
+        .dept-sort-icon.active{color:#0E898F}
+        .dept-th-sort{cursor:pointer;user-select:none;white-space:nowrap}
+        .dept-th-sort:hover{color:#0E898F}
+        .dept-export-wrap{position:relative}
+        .dept-export-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:500;cursor:pointer}
+        .dept-export-btn:hover{border-color:#cbd5e1;background:#f8fafc}
+        .dept-export-dd{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;min-width:180px;padding:6px}
+        .dept-export-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:none;background:none;width:100%;cursor:pointer;font-size:13px;color:#334155;font-weight:500}
+        .dept-export-item:hover{background:#f1f5f9}
+        .dept-export-item .eicon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+        .dept-export-item .eicon.pdf{background:#fff5f5;color:#ef4444}
+        .dept-export-item .eicon.xls{background:#f0fdf4;color:#16a34a}
+        .dept-export-item .eicon.doc{background:#eff6ff;color:#2563eb}
+        .dept-view-modal-body{padding:24px;overflow-y:auto}
+        .dept-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .dept-view-item{display:flex;flex-direction:column;gap:3px}
+        .dept-view-item.full{grid-column:1/-1}
+        .dept-view-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8}
+        .dept-view-value{font-size:14px;color:#1e293b;font-weight:500}
+        .dept-selected-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#E6F4F4;border:1px solid #B3E0E0;border-radius:10px;margin-bottom:12px;font-size:13px;color:#0A6B70;font-weight:600}
       `}</style>
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       {/* Toolbar */}
       <div className="dept-toolbar">
-        <div className="dept-search-wrap">
-          <Search size={14} color="#94a3b8" />
-          <input
-            className="dept-search-input"
-            placeholder="Search departments..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPagination((p) => ({ ...p, page: 1 }));
-            }}
-          />
-          {search && (
-            <button className="dept-icon-btn" onClick={() => setSearch("")}>
-              <X size={14} />
-            </button>
-          )}
+        <div className="dept-toolbar-left">
+          <h2>Departments</h2>
+          <p>Manage your hospital departments configuration</p>
         </div>
         <div className="dept-toolbar-right">
           <button
@@ -662,6 +879,42 @@ export default function DepartmentPanel() {
             <Filter size={14} />
             Filters
           </button>
+          <div className="dept-search-wrap">
+            <Search size={14} color="#94a3b8" />
+            <input
+              className="dept-search-input"
+              placeholder="Search departments..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPagination((p) => ({ ...p, page: 1 }));
+              }}
+            />
+            {search && (
+              <button className="dept-icon-btn" onClick={() => setSearch("")}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <div className="dept-export-wrap">
+            <button className="dept-export-btn" onClick={() => setShowExport(!showExport)}>
+              <Download size={14} />
+              Export{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+            </button>
+            {showExport && (
+              <div className="dept-export-dd">
+                <button className="dept-export-item" onClick={exportPDF}>
+                  <span className="eicon pdf"><FileText size={13} /></span>Export as PDF
+                </button>
+                <button className="dept-export-item" onClick={exportExcel}>
+                  <span className="eicon xls"><FileSpreadsheet size={13} /></span>Export as Excel
+                </button>
+                <button className="dept-export-item" onClick={exportWord}>
+                  <span className="eicon doc"><FileType size={13} /></span>Export as Word
+                </button>
+              </div>
+            )}
+          </div>
           <button className="dept-btn-primary" onClick={openAdd}>
             <Plus size={14} />
             Add Department
@@ -725,22 +978,56 @@ export default function DepartmentPanel() {
           No departments found. Click "+ Add Department" to create one.
         </div>
       ) : (
+        <>
+        {selectedIds.size > 0 && (
+          <div className="dept-selected-bar">
+            <Check size={14} />
+            {selectedIds.size} department{selectedIds.size > 1 ? "s" : ""} selected
+            <button className="dept-btn-ghost" style={{padding:"4px 10px",fontSize:12,marginLeft:"auto"}} onClick={() => setSelectedIds(new Set())}>Clear</button>
+          </div>
+        )}
         <div className="dept-tbl-wrap">
           <table className="dept-tbl">
             <thead>
               <tr>
-                <th>Department</th>
-                <th>Code</th>
-                <th>Type</th>
+                <th style={{width:40}}>
+                  <input type="checkbox" className="dept-checkbox" checked={allSelected} ref={(el)=>{if(el) el.indeterminate = someSelected;}} onChange={toggleSelectAll} />
+                </th>
+                <th className="dept-th-sort" onClick={()=>handleSort("name")}>
+                  Department
+                  <span className={`dept-sort-icon ${sortBy==="name"?"active":""}`}>
+                    {sortBy==="name"?(sortOrder==="asc"?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUpDown size={12}/>}
+                  </span>
+                </th>
+                <th className="dept-th-sort" onClick={()=>handleSort("code")}>
+                  Code
+                  <span className={`dept-sort-icon ${sortBy==="code"?"active":""}`}>
+                    {sortBy==="code"?(sortOrder==="asc"?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUpDown size={12}/>}
+                  </span>
+                </th>
+                <th className="dept-th-sort" onClick={()=>handleSort("type")}>
+                  Type
+                  <span className={`dept-sort-icon ${sortBy==="type"?"active":""}`}>
+                    {sortBy==="type"?(sortOrder==="asc"?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUpDown size={12}/>}
+                  </span>
+                </th>
                 <th>Status</th>
-                <th>Consultation Fee</th>
+                <th className="dept-th-sort" onClick={()=>handleSort("consultationFee")}>
+                  Consultation Fee
+                  <span className={`dept-sort-icon ${sortBy==="consultationFee"?"active":""}`}>
+                    {sortBy==="consultationFee"?(sortOrder==="asc"?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUpDown size={12}/>}
+                  </span>
+                </th>
                 <th>Doctors</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.map((row) => (
-                <tr key={row.id}>
+                <tr key={row.id} style={selectedIds.has(row.id)?{background:"#f0fdfa"}:undefined}>
+                  <td>
+                    <input type="checkbox" className="dept-checkbox" checked={selectedIds.has(row.id)} onChange={()=>toggleSelect(row.id)} />
+                  </td>
                   <td>
                     <div className="dept-dept-name">{row.name}</div>
                     {row.description && (
@@ -776,6 +1063,9 @@ export default function DepartmentPanel() {
                   <td>{row._count?.doctors || 0}</td>
                   <td>
                     <div className="dept-actions">
+                      <button className="dept-icon-btn dept-view" onClick={() => setViewItem(row)} title="View details">
+                        <Eye size={13} />
+                      </button>
                       <button className="dept-icon-btn dept-edit" onClick={() => openEdit(row)}>
                         <Pencil size={13} />
                       </button>
@@ -826,6 +1116,7 @@ export default function DepartmentPanel() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* Add/Edit Modal */}
@@ -1087,6 +1378,78 @@ export default function DepartmentPanel() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Details Modal */}
+      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="Department Details" size="md">
+        {viewItem && (
+          <div className="dept-view-modal-body">
+            <div className="dept-view-grid">
+              <div className="dept-view-item">
+                <span className="dept-view-label">Department Name</span>
+                <span className="dept-view-value">{viewItem.name}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Code</span>
+                <span className="dept-view-value"><span className="dept-dept-code">{viewItem.code}</span></span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Type</span>
+                <span className="dept-view-value"><span className={`dept-badge ${TYPE_COLORS[viewItem.type]||"gray"}`}>{viewItem.type==="CUSTOM"&&viewItem.customTypeName?viewItem.customTypeName:viewItem.type}</span></span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Status</span>
+                <span className="dept-view-value"><span className={`dept-badge ${viewItem.isActive?"green":"red"}`}>{viewItem.isActive?"Active":"Inactive"}</span></span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Consultation Fee</span>
+                <span className="dept-view-value">{viewItem.consultationFee?`₹${viewItem.consultationFee}`:"—"}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Billing Code</span>
+                <span className="dept-view-value">{viewItem.billingCode||"—"}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Appointments</span>
+                <span className="dept-view-value">{viewItem.allowAppointments?"Enabled":"Disabled"}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">IPD</span>
+                <span className="dept-view-value">{viewItem.isIPD?"Yes":"No"}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Location</span>
+                <span className="dept-view-value">{viewItem.location||"—"}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Head of Department</span>
+                <span className="dept-view-value">{viewItem.hodDoctor?.name||viewItem.hodUser?.name||"—"}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Doctors</span>
+                <span className="dept-view-value">{viewItem._count?.doctors||0}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Staff</span>
+                <span className="dept-view-value">{viewItem._count?.staff||0}</span>
+              </div>
+              <div className="dept-view-item">
+                <span className="dept-view-label">Sub-Departments</span>
+                <span className="dept-view-value">{viewItem._count?.subDepartments||0}</span>
+              </div>
+              {viewItem.description && (
+                <div className="dept-view-item full">
+                  <span className="dept-view-label">Description</span>
+                  <span className="dept-view-value">{viewItem.description}</span>
+                </div>
+              )}
+            </div>
+            <div style={{marginTop:20,display:"flex",justifyContent:"flex-end",gap:10}}>
+              <button className="dept-btn-ghost" onClick={()=>setViewItem(null)}>Close</button>
+              <button className="dept-btn-primary" onClick={()=>{openEdit(viewItem);setViewItem(null);}}>Edit Department</button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Delete Confirmation */}

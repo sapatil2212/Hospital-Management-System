@@ -47,6 +47,14 @@ export async function GET(req: NextRequest) {
       return errorResponse("Doctor profile not found", 404);
     }
 
+    let hospitalSettings: any = null;
+    if (doctor.hospitalId) {
+      hospitalSettings = await (prisma as any).hospitalSettings.findUnique({
+        where: { hospitalId: doctor.hospitalId },
+        select: { logo: true, hospitalName: true },
+      });
+    }
+
     return successResponse({
       id: doctor.id,
       doctorCode: doctor.doctorCode,
@@ -80,6 +88,7 @@ export async function GET(req: NextRequest) {
       user: doctor.user,
       createdAt: doctor.createdAt,
       updatedAt: doctor.updatedAt,
+      hospitalSettings,
     });
   } catch (error: any) {
     return errorResponse(error.message || "Failed to fetch doctor profile", 500);

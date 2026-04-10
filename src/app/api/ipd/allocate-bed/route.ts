@@ -6,6 +6,9 @@ import { z } from "zod";
 
 const schema = z.object({
   bedId: z.string().min(1),
+  patientId: z.string().optional(),
+  departmentId: z.string().optional(),
+  entryType: z.enum(["PATIENT", "MANUAL"]).optional(),
   patientName: z.string().min(2),
   patientAge: z.number().int().min(0).max(150).optional(),
   patientGender: z.enum(["Male","Female","Other"]).optional(),

@@ -358,6 +358,7 @@
 @media (max-width: 1024px) {
   .contactGrid { grid-template-columns: 1fr; }
   .formCard { padding: var(--space-6); }
+  .rightCol { display: none; }
 }
 @media (max-width: 640px) {
   .formRow { grid-template-columns: 1fr; }

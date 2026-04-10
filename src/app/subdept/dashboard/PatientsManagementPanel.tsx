@@ -1,14 +1,21 @@
 
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, UserRound, Settings, HelpCircle,
   LogOut, Search, Bell, MessageSquare, Building2, Stethoscope, ClipboardList,
   CreditCard, IndianRupee, Plus, Trash2, Eye, ChevronRight, ChevronLeft,
   Phone, Mail, Calendar, Droplet, User, Activity, RefreshCw, Loader2,
-  UserCircle, AlertTriangle, Pencil, X
+  UserCircle, AlertTriangle, Pencil, X, Download, FileText, FileSpreadsheet,
+  FileType, Upload, Image, FileIcon, Camera
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Document as DocxDocument, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel } from "docx";
+import { BookingWizard } from "@/components/AppointmentPanel";
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -35,6 +42,12 @@ export function PatientsManagementPanel() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [patientEditId, setPatientEditId] = useState<string | null>(null);
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [bookingPatient, setBookingPatient] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const itemsPerPage = 15;
 
   // Detail view state
@@ -46,6 +59,12 @@ export function PatientsManagementPanel() {
   const [bills, setBills] = useState<any[]>([]);
   const [procedures, setProcedures] = useState<any[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
+
+  // Upload state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
 
   const loadPatients = async () => {
     setLoading(true);
@@ -113,6 +132,133 @@ export function PatientsManagementPanel() {
     setDeleting(false);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
+  const toggleAll = () => {
+    if (selectedIds.size === patients.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(patients.map(p => p.id)));
+  };
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+    let ok = 0;
+    for (const id of ids) {
+      const r = await api(`/api/patients/${id}`, "DELETE");
+      if (r.success) ok++;
+    }
+    setSelectedIds(new Set());
+    setShowBulkConfirm(false);
+    setBulkDeleting(false);
+    loadPatients();
+    if (ok < ids.length) alert(`Deleted ${ok} of ${ids.length}. Some failed.`);
+  };
+
+  // ── Upload helpers ──
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("Only image files are allowed for profile photo."); return; }
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", "patient-photo");
+      const res = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
+      const data = await res.json();
+      if (data.success) {
+        const upd = await api(`/api/patients/${patientDetails.id}`, "PUT", { profilePhoto: data.data.url });
+        if (upd.success) setPatientDetails({ ...patientDetails, profilePhoto: data.data.url });
+        else alert(upd.message || "Failed to save photo");
+      } else alert(data.message || "Upload failed");
+    } catch { alert("Upload error"); }
+    setUploadingPhoto(false);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploadingDoc(true);
+    const currentDocs: { name: string; url: string; type: string; uploadedAt: string }[] = (() => {
+      try { return JSON.parse(patientDetails.documents || "[]"); } catch { return []; }
+    })();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const isImage = file.type.startsWith("image/");
+      const isPdf = file.type === "application/pdf";
+      if (!isImage && !isPdf) { alert(`"${file.name}" skipped — only images and PDFs allowed.`); continue; }
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("type", "patient-document");
+        const res = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
+        const data = await res.json();
+        if (data.success) {
+          currentDocs.push({ name: file.name, url: data.data.url, type: data.data.format || (isPdf ? "pdf" : "image"), uploadedAt: new Date().toISOString() });
+        } else alert(`Failed to upload ${file.name}`);
+      } catch { alert(`Error uploading ${file.name}`); }
+    }
+    const upd = await api(`/api/patients/${patientDetails.id}`, "PUT", { documents: JSON.stringify(currentDocs) });
+    if (upd.success) setPatientDetails({ ...patientDetails, documents: JSON.stringify(currentDocs) });
+    else alert("Failed to save documents");
+    setUploadingDoc(false);
+    if (docInputRef.current) docInputRef.current.value = "";
+  };
+
+  const handleDeleteDoc = async (idx: number) => {
+    const docs: any[] = (() => { try { return JSON.parse(patientDetails.documents || "[]"); } catch { return []; } })();
+    docs.splice(idx, 1);
+    const upd = await api(`/api/patients/${patientDetails.id}`, "PUT", { documents: JSON.stringify(docs) });
+    if (upd.success) setPatientDetails({ ...patientDetails, documents: JSON.stringify(docs) });
+    else alert("Failed to remove document");
+  };
+
+  // ── Export helpers ──
+  const getExportData = () => {
+    const rows = selectedIds.size > 0 ? patients.filter(p => selectedIds.has(p.id)) : patients;
+    return rows.map(p => ({
+      "Patient ID": p.patientId,
+      "Name": p.name,
+      "Phone": p.phone,
+      "Email": p.email || "—",
+      "Gender": p.gender || "—",
+      "Blood Group": p.bloodGroup || "—",
+      "Age": p.dateOfBirth ? String(Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / 31557600000)) : "—",
+      "Visits": String(p._count?.appointments || 0),
+      "Registered": new Date(p.createdAt).toLocaleDateString("en-IN"),
+    }));
+  };
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text("Patients Report", 14, 16);
+    doc.setFontSize(9); doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 23);
+    const rows = getExportData();
+    const keys = Object.keys(rows[0] || {});
+    autoTable(doc, { startY: 28, head: [keys], body: rows.map(r => keys.map(k => (r as any)[k])), styles: { fontSize: 8 }, headStyles: { fillColor: [14, 137, 143] } });
+    doc.save(`patients-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setShowExport(false);
+  };
+  const exportExcel = () => {
+    const rows = getExportData();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Patients");
+    XLSX.writeFile(wb, `patients-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setShowExport(false);
+  };
+  const exportWord = async () => {
+    const rows = getExportData();
+    const keys = Object.keys(rows[0] || {});
+    const headerRow = new TableRow({ children: keys.map(k => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, size: 18, font: "Calibri" })] })], width: { size: 100 / keys.length, type: WidthType.PERCENTAGE }, shading: { fill: "0E898F" } })) });
+    const dataRows = rows.map(r => new TableRow({ children: keys.map(k => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String((r as any)[k] ?? ""), size: 18, font: "Calibri" })] })] })) }));
+    const doc = new DocxDocument({ sections: [{ children: [new Paragraph({ text: "Patients Report", heading: HeadingLevel.HEADING_1 }), new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-IN")}`, size: 18, color: "888888" })] }), new Paragraph({ text: "" }), new DocxTable({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } })] }] });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `patients-${new Date().toISOString().slice(0, 10)}.docx`);
+    setShowExport(false);
+  };
+
   const age = (dob?: string) => {
     if (!dob) return "—";
     return Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000);
@@ -167,10 +313,31 @@ export function PatientsManagementPanel() {
         ) : (
           <>
             {/* Hero card */}
+            <input type="file" ref={photoInputRef} accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
+            <input type="file" ref={docInputRef} accept="image/*,.pdf" multiple style={{ display: "none" }} onChange={handleDocUpload} />
             <div style={{ background: "linear-gradient(135deg,#07595D 0%,#7c3aed 100%)", borderRadius: 16, padding: "28px 32px", marginBottom: 20, color: "#fff" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
-                <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", border: "2.5px solid rgba(255,255,255,0.35)", flexShrink: 0 }}>
-                  <UserCircle size={42} />
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div
+                    onClick={() => photoInputRef.current?.click()}
+                    style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", border: "2.5px solid rgba(255,255,255,0.35)", cursor: "pointer", overflow: "hidden" }}
+                    title="Click to upload photo"
+                  >
+                    {uploadingPhoto ? (
+                      <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
+                    ) : patientDetails.profilePhoto ? (
+                      <img src={patientDetails.profilePhoto} alt={patientDetails.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <UserCircle size={42} />
+                    )}
+                  </div>
+                  <div
+                    onClick={() => photoInputRef.current?.click()}
+                    style={{ position: "absolute", bottom: -2, right: -2, width: 24, height: 24, borderRadius: "50%", background: "#0E898F", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    title="Change photo"
+                  >
+                    <Camera size={12} color="#fff" />
+                  </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>{patientDetails.name}</div>
@@ -285,6 +452,77 @@ export function PatientsManagementPanel() {
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Documents section - full width */}
+                    <div style={{ gridColumn: "span 2", marginTop: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Documents & Files</div>
+                        <button
+                          onClick={() => docInputRef.current?.click()}
+                          disabled={uploadingDoc}
+                          style={{ padding: "7px 14px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                        >
+                          {uploadingDoc ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={13} />}
+                          {uploadingDoc ? "Uploading..." : "Upload Documents"}
+                        </button>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 12 }}>Accepted formats: Images (JPG, PNG, WEBP) and PDF files</div>
+                      {(() => {
+                        const docs: { name: string; url: string; type: string; uploadedAt: string }[] = (() => { try { return JSON.parse(patientDetails.documents || "[]"); } catch { return []; } })();
+                        if (docs.length === 0) return (
+                          <div style={{ padding: "36px 0", textAlign: "center", background: "#f8fafc", borderRadius: 12, border: "2px dashed #e2e8f0", cursor: "pointer" }}
+                            onClick={() => docInputRef.current?.click()}>
+                            <FileIcon size={28} style={{ margin: "0 auto 10px", display: "block", color: "#cbd5e1" }} />
+                            <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>No documents uploaded yet</div>
+                            <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>Click here or use the button above to upload</div>
+                          </div>
+                        );
+                        return (
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+                            {docs.map((doc, idx) => {
+                              const isPdf = doc.type === "pdf" || doc.url?.toLowerCase().endsWith(".pdf");
+                              return (
+                                <div key={idx} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", position: "relative" }}>
+                                  {/* Preview */}
+                                  <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "block", height: 120, background: "#f8fafc", overflow: "hidden" }}>
+                                    {isPdf ? (
+                                      <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                                        <FileText size={32} color="#ef4444" />
+                                        <span style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>PDF Document</span>
+                                      </div>
+                                    ) : (
+                                      <img src={doc.url} alt={doc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                    )}
+                                  </a>
+                                  {/* Info + delete */}
+                                  <div style={{ padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 11, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={doc.name}>{doc.name}</div>
+                                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : ""}</div>
+                                    </div>
+                                    <button
+                                      onClick={() => handleDeleteDoc(idx)}
+                                      style={{ background: "#fff5f5", border: "none", borderRadius: 6, padding: 4, cursor: "pointer", color: "#ef4444", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+                                      title="Remove document"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {/* Add more tile */}
+                            <div
+                              onClick={() => docInputRef.current?.click()}
+                              style={{ border: "2px dashed #e2e8f0", borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", minHeight: 156, background: "#fafbfc" }}
+                            >
+                              <Plus size={20} color="#94a3b8" />
+                              <span style={{ fontSize: 11, color: "#94a3b8", marginTop: 6, fontWeight: 500 }}>Add More</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -463,12 +701,44 @@ export function PatientsManagementPanel() {
             <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>{totalCount} registered patients</p>
           )}
         </div>
-        <button
-          onClick={() => router.push("/hospitaladmin/appointments")}
-          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#0E898F,#07595D)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(59,130,246,0.3)" }}
-        >
-          <Plus size={15} /> Register New Patient
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {selectedIds.size > 0 && (
+            <button onClick={() => setShowBulkConfirm(true)}
+              style={{ padding: "8px 16px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              <Trash2 size={14} /> Delete ({selectedIds.size})
+            </button>
+          )}
+          {/* Export dropdown */}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setShowExport(!showExport)}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+              <Download size={14} /> Export
+            </button>
+            {showExport && (
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 50, minWidth: 180, padding: 6 }}>
+                {[
+                  { label: "PDF Document", icon: <FileText size={14} />, bg: "#fff5f5", color: "#ef4444", fn: exportPDF },
+                  { label: "Excel Spreadsheet", icon: <FileSpreadsheet size={14} />, bg: "#f0fdf4", color: "#16a34a", fn: exportExcel },
+                  { label: "Word Document", icon: <FileType size={14} />, bg: "#eff6ff", color: "#2563eb", fn: exportWord },
+                ].map(item => (
+                  <button key={item.label} onClick={item.fn}
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                    <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: item.bg, color: item.color }}>{item.icon}</span>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAddPatient(true)}
+            style={{ padding: "8px 20px", background: "linear-gradient(135deg,#0E898F,#07595D)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+          >
+            <Plus size={15} /> Register New
+          </button>
+        </div>
       </div>
 
       {/* Search bar */}
@@ -504,6 +774,10 @@ export function PatientsManagementPanel() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                  <th style={{ padding: "13px 10px 13px 16px", width: 36 }}>
+                    <input type="checkbox" checked={patients.length > 0 && selectedIds.size === patients.length} onChange={toggleAll}
+                      style={{ width: 16, height: 16, accentColor: "#0E898F", cursor: "pointer" }} />
+                  </th>
                   {["Patient ID", "Patient", "Contact", "Gender", "Age", "Blood Group", "Visits", "Registered", "Actions"].map(h => (
                     <th key={h} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
@@ -511,16 +785,22 @@ export function PatientsManagementPanel() {
               </thead>
               <tbody>
                 {patients.map((p: any) => (
-                  <tr key={p.id} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.1s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#fafbfc")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  <tr key={p.id} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.1s", background: selectedIds.has(p.id) ? "#f0fdfa" : undefined }}
+                    onMouseEnter={e => { if (!selectedIds.has(p.id)) e.currentTarget.style.background = "#fafbfc"; }}
+                    onMouseLeave={e => { if (!selectedIds.has(p.id)) e.currentTarget.style.background = "transparent"; }}
                   >
+                    <td style={{ padding: "15px 10px 15px 16px", width: 36 }}>
+                      <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)}
+                        style={{ width: 16, height: 16, accentColor: "#0E898F", cursor: "pointer" }} />
+                    </td>
                     <td style={{ padding: "15px 16px" }}>
                       <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6 }}>{p.patientId}</span>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0ea5e9,#07595D)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0).toUpperCase()}</div>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0ea5e9,#07595D)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0, overflow: "hidden" }}>
+                          {p.profilePhoto ? <img src={p.profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : p.name.charAt(0).toUpperCase()}
+                        </div>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{p.name}</span>
                       </div>
                     </td>
@@ -545,6 +825,13 @@ export function PatientsManagementPanel() {
                           title="View Profile"
                         >
                           <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => setBookingPatient(p)}
+                          style={{ padding: "8px", background: "#f0fdf4", color: "#16a34a", border: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          title="Book Appointment"
+                        >
+                          <CalendarDays size={15} />
                         </button>
                         <button
                           onClick={() => setPatientEditId(p.id)}
@@ -635,6 +922,55 @@ export function PatientsManagementPanel() {
           onClose={() => setPatientEditId(null)} 
           onUpdate={loadPatients} 
         />
+      )}
+
+      {/* Add Patient Modal */}
+      {showAddPatient && (
+        <AddPatientModal
+          onClose={() => setShowAddPatient(false)}
+          onSuccess={() => { setShowAddPatient(false); loadPatients(); }}
+        />
+      )}
+
+      {/* Book Appointment Modal */}
+      {bookingPatient && (
+        <BookingWizard
+          initialPatient={bookingPatient}
+          onClose={() => setBookingPatient(null)}
+          onSuccess={() => { setBookingPatient(null); loadPatients(); }}
+        />
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setShowBulkConfirm(false)}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertTriangle size={22} color="#ef4444" />
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>Delete {selectedIds.size} Patients?</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                  This will permanently delete the selected patients and all their associated records. This action cannot be undone.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowBulkConfirm(false)}
+                style={{ padding: "9px 18px", border: "1px solid #e2e8f0", borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#64748b" }}>
+                Cancel
+              </button>
+              <button onClick={handleBulkDelete} disabled={bulkDeleting}
+                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 9, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
+                {bulkDeleting ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
+                {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} Patients`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -784,6 +1120,416 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Add Patient Modal Component (3-Step Wizard) ───
+function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Step 1: Basic + Contact
+  const [form, setForm] = useState({
+    name: "", phone: "", gender: "", dateOfBirth: "", bloodGroup: "",
+    email: "", address: "",
+  });
+
+  // Step 2: Visit + Appointment + Classification + Medical
+  const [visit, setVisit] = useState({
+    visitType: "OPD", customVisitType: "", departmentId: "", doctorId: "", complaint: "",
+    appointmentType: "WALK_IN", appointmentDate: "", timeSlot: "",
+    patientType: "NEW", allergies: "",
+  });
+
+  // Step 3: Billing + Emergency + Docs
+  const [billing, setBilling] = useState({
+    consultationFee: "", discount: "", paymentMode: "CASH", paymentStatus: "PENDING",
+  });
+  const [emergency, setEmergency] = useState({ name: "", relation: "", phone: "" });
+
+  // Lookups
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [slots, setSlots] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    api("/api/config/departments?simple=true").then(d => {
+      const EXCLUDE = ["ADMINISTRATIVE", "SUPPORT"];
+      setDepartments((d.data || []).filter((dp: any) => !dp.type || !EXCLUDE.includes(dp.type)));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!visit.departmentId) { setDoctors([]); return; }
+    api(`/api/config/doctors?simple=true&departmentId=${visit.departmentId}`).then(d => setDoctors(d.data || []));
+  }, [visit.departmentId]);
+
+  useEffect(() => {
+    if (!visit.doctorId || !visit.appointmentDate) { setSlots([]); return; }
+    setLoadingSlots(true);
+    api(`/api/appointments/slots?doctorId=${visit.doctorId}&date=${visit.appointmentDate}`)
+      .then(d => { setSlots(d.data?.slots || []); setBookedSlots(d.data?.bookedSlots || []); })
+      .finally(() => setLoadingSlots(false));
+  }, [visit.doctorId, visit.appointmentDate]);
+
+  useEffect(() => {
+    if (visit.doctorId) {
+      const doc = doctors.find((d: any) => d.id === visit.doctorId);
+      if (doc?.consultationFee) setBilling(b => ({ ...b, consultationFee: String(doc.consultationFee) }));
+    }
+  }, [visit.doctorId, doctors]);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const canGoStep2 = form.name.trim().length >= 2 && form.phone.trim().length >= 7 && !!form.gender;
+  const canGoStep3 = !!visit.departmentId && !!visit.doctorId;
+
+  const handleFinalSubmit = async () => {
+    setSaving(true); setMsg(null);
+    // 1) Register patient
+    const patientPayload: any = {
+      name: form.name.trim(), phone: form.phone.trim(),
+    };
+    if (form.gender) patientPayload.gender = form.gender;
+    if (form.dateOfBirth) patientPayload.dateOfBirth = form.dateOfBirth;
+    if (form.bloodGroup) patientPayload.bloodGroup = form.bloodGroup;
+    if (form.email) patientPayload.email = form.email;
+    if (form.address) patientPayload.address = form.address;
+
+    const pRes = await api("/api/patients", "POST", patientPayload);
+    if (!pRes.success) { setMsg({ type: "error", text: pRes.message || "Failed to register patient" }); setSaving(false); return; }
+    const patient = pRes.data?.patient || pRes.data;
+
+    // 2) Book appointment (only if date + slot + doctor provided)
+    if (visit.doctorId && visit.appointmentDate && visit.timeSlot) {
+      const resolvedType = visit.visitType === "OTHER" ? (visit.customVisitType || "OPD") : visit.visitType;
+      const apptType = ["EMERGENCY", "FOLLOW_UP", "OPD", "ONLINE"].includes(resolvedType) ? resolvedType : "OPD";
+      const apptPayload: any = {
+        patientId: patient.id, doctorId: visit.doctorId,
+        appointmentDate: visit.appointmentDate, timeSlot: visit.timeSlot,
+        type: apptType,
+        notes: visit.complaint || null,
+      };
+      if (visit.departmentId) apptPayload.departmentId = visit.departmentId;
+      if (billing.consultationFee) apptPayload.consultationFee = parseFloat(billing.consultationFee);
+
+      const aRes = await api("/api/appointments", "POST", apptPayload);
+      if (!aRes.success) { setMsg({ type: "error", text: `Patient registered but appointment failed: ${aRes.message}` }); setSaving(false); return; }
+    }
+
+    onSuccess();
+  };
+
+  const LBL: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" };
+  const INP: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, outline: "none" };
+  const SEL: React.CSSProperties = { ...INP, background: "#fff" };
+  const SECTION: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 10, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
+
+  const STEPS = [
+    { num: 1, label: "Patient Info" },
+    { num: 2, label: "Visit Details" },
+    { num: 3, label: "Payment & Confirm" },
+  ];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(3px)" }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 18, width: 680, maxHeight: "92vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,.18)", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <UserRound size={17} color="#fff" />
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Register New Patient</span>
+          </div>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", cursor: "pointer" }}><X size={14} /></button>
+        </div>
+
+        {/* Step Indicator */}
+        <div style={{ display: "flex", alignItems: "center", padding: "12px 24px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+          {STEPS.map((s, i) => (
+            <div key={s.num} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, background: step >= s.num ? "#0E898F" : "#e2e8f0", color: step >= s.num ? "#fff" : "#94a3b8", transition: "all .2s" }}>{s.num}</div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: step >= s.num ? "#0E898F" : "#94a3b8" }}>{s.label}</span>
+              </div>
+              {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: step > s.num ? "#0E898F" : "#e2e8f0", margin: "0 12px", transition: "all .2s" }} />}
+            </div>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflow: "auto", padding: "16px 24px 20px" }}>
+
+          {/* ═══ STEP 1: Patient Info ═══ */}
+          {step === 1 && (
+            <>
+              <div style={SECTION}><UserRound size={14} /> Basic Information (Quick Entry)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ gridColumn: "span 2" }}>
+                  <label style={LBL}>Full Name *</label>
+                  <input style={INP} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Patient's full name" required />
+                </div>
+                <div>
+                  <label style={LBL}>Mobile Number *</label>
+                  <input style={INP} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="9876543210" required />
+                </div>
+                <div>
+                  <label style={LBL}>Gender *</label>
+                  <select style={SEL} value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} required>
+                    <option value="">Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Date of Birth</label>
+                  <input type="date" style={INP} value={form.dateOfBirth} onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} />
+                </div>
+                <div>
+                  <label style={LBL}>Blood Group</label>
+                  <select style={SEL} value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
+                    <option value="">Select</option>
+                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={SECTION}><Phone size={14} /> Contact Details</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={LBL}>Email Address</label>
+                  <input type="email" style={INP} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="patient@email.com" />
+                </div>
+                <div style={{ gridColumn: "span 2" }}>
+                  <label style={LBL}>Address</label>
+                  <input style={INP} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Full address" />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ STEP 2: Visit Details ═══ */}
+          {step === 2 && (
+            <>
+              <div style={SECTION}><Stethoscope size={14} /> Visit Details</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={LBL}>Visit Type *</label>
+                  <select style={SEL} value={visit.visitType} onChange={e => setVisit({ ...visit, visitType: e.target.value, customVisitType: e.target.value === "OTHER" ? visit.customVisitType : "" })}>
+                    <option value="OPD">OPD</option>
+                    <option value="IPD">IPD</option>
+                    <option value="EMERGENCY">Emergency</option>
+                    <option value="FOLLOW_UP">Follow-up</option>
+                    <option value="CONSULTATION">Consultation</option>
+                    <option value="DAY_CARE">Day Care</option>
+                    <option value="SURGERY">Surgery</option>
+                    <option value="LAB_ONLY">Lab / Diagnostics Only</option>
+                    <option value="PHARMACY_ONLY">Pharmacy Only</option>
+                    <option value="VACCINATION">Vaccination</option>
+                    <option value="HEALTH_CHECKUP">Health Checkup</option>
+                    <option value="REFERRAL">Referral</option>
+                    <option value="TELEMEDICINE">Telemedicine</option>
+                    <option value="OTHER">Other (Custom)</option>
+                  </select>
+                </div>
+                {visit.visitType === "OTHER" && (
+                  <div>
+                    <label style={LBL}>Custom Visit Type *</label>
+                    <input style={INP} value={visit.customVisitType} onChange={e => setVisit({ ...visit, customVisitType: e.target.value })} placeholder="Enter visit type" />
+                  </div>
+                )}
+                <div>
+                  <label style={LBL}>Appointment Type</label>
+                  <select style={SEL} value={visit.appointmentType} onChange={e => setVisit({ ...visit, appointmentType: e.target.value })}>
+                    <option value="WALK_IN">Walk-in</option>
+                    <option value="PRE_BOOKED">Pre-booked</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Department *</label>
+                  <select style={SEL} value={visit.departmentId} onChange={e => setVisit({ ...visit, departmentId: e.target.value, doctorId: "", timeSlot: "" })}>
+                    <option value="">Select Department</option>
+                    {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Doctor *</label>
+                  <select style={SEL} value={visit.doctorId} onChange={e => setVisit({ ...visit, doctorId: e.target.value, timeSlot: "" })}>
+                    <option value="">Select Doctor</option>
+                    {doctors.map((d: any) => <option key={d.id} value={d.id}>{d.name}{d.specialization ? ` — ${d.specialization}` : ""}</option>)}
+                  </select>
+                </div>
+                <div style={{ gridColumn: "span 2" }}>
+                  <label style={LBL}>Reason for Visit / Chief Complaint</label>
+                  <input style={INP} value={visit.complaint} onChange={e => setVisit({ ...visit, complaint: e.target.value })} placeholder="e.g. Fever, Headache, Routine Checkup" />
+                </div>
+              </div>
+
+              <div style={SECTION}><Calendar size={14} /> Appointment Schedule (Optional)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
+                <div>
+                  <label style={LBL}>Appointment Date</label>
+                  <input type="date" style={INP} min={today} value={visit.appointmentDate} onChange={e => setVisit({ ...visit, appointmentDate: e.target.value, timeSlot: "" })} />
+                </div>
+                <div>
+                  <label style={LBL}>Selected Slot</label>
+                  <input style={{ ...INP, background: "#f8fafc", cursor: "default" }} readOnly value={visit.timeSlot || "Select from below"} />
+                </div>
+              </div>
+              {visit.doctorId && visit.appointmentDate && (
+                <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14, marginBottom: 12 }}>
+                  {loadingSlots ? (
+                    <div style={{ textAlign: "center", padding: 16 }}><Loader2 size={18} color="#0E898F" style={{ animation: "spin 1s linear infinite" }} /></div>
+                  ) : slots.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: 12, color: "#94a3b8", fontSize: 12 }}>No slots available for this date</div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {slots.map(s => {
+                        const booked = bookedSlots.includes(s);
+                        const selected = visit.timeSlot === s;
+                        return (
+                          <button key={s} type="button" disabled={booked}
+                            onClick={() => setVisit({ ...visit, timeSlot: s })}
+                            style={{ padding: "6px 12px", borderRadius: 7, border: selected ? "2px solid #0E898F" : "1px solid #e2e8f0", background: booked ? "#f1f5f9" : selected ? "#E6F4F4" : "#fff", color: booked ? "#cbd5e1" : selected ? "#0E898F" : "#334155", fontSize: 12, fontWeight: 600, cursor: booked ? "not-allowed" : "pointer", textDecoration: booked ? "line-through" : "none" }}>
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={SECTION}><ClipboardList size={14} /> Patient Classification</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={LBL}>Patient Type</label>
+                  <select style={SEL} value={visit.patientType} onChange={e => setVisit({ ...visit, patientType: e.target.value })}>
+                    <option value="NEW">New</option>
+                    <option value="EXISTING">Existing</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={SECTION}><Activity size={14} /> Medical Snapshot (Optional)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+                <div>
+                  <label style={LBL}>Allergies</label>
+                  <input style={INP} value={visit.allergies} onChange={e => setVisit({ ...visit, allergies: e.target.value })} placeholder="Penicillin, Dust..." />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ STEP 3: Payment & Confirm ═══ */}
+          {step === 3 && (
+            <>
+              <div style={SECTION}><IndianRupee size={14} /> Billing / Payment</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={LBL}>Consultation Fee</label>
+                  <input type="number" style={INP} value={billing.consultationFee} onChange={e => setBilling({ ...billing, consultationFee: e.target.value })} placeholder="Auto from doctor" />
+                </div>
+                <div>
+                  <label style={LBL}>Discount</label>
+                  <input type="number" style={INP} value={billing.discount} onChange={e => setBilling({ ...billing, discount: e.target.value })} placeholder="0" />
+                </div>
+                <div>
+                  <label style={LBL}>Payment Mode</label>
+                  <select style={SEL} value={billing.paymentMode} onChange={e => setBilling({ ...billing, paymentMode: e.target.value })}>
+                    <option value="CASH">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CARD">Card</option>
+                    <option value="ONLINE">Online</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Payment Status</label>
+                  <select style={SEL} value={billing.paymentStatus} onChange={e => setBilling({ ...billing, paymentStatus: e.target.value })}>
+                    <option value="PENDING">Pending</option>
+                    <option value="PAID">Paid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={SECTION}><Phone size={14} /> Emergency Contact (Optional)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={LBL}>Contact Person</label>
+                  <input style={INP} value={emergency.name} onChange={e => setEmergency({ ...emergency, name: e.target.value })} placeholder="Name" />
+                </div>
+                <div>
+                  <label style={LBL}>Relation</label>
+                  <select style={SEL} value={emergency.relation} onChange={e => setEmergency({ ...emergency, relation: e.target.value })}>
+                    <option value="">Select</option>
+                    {["Spouse", "Parent", "Sibling", "Child", "Friend", "Other"].map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Contact Number</label>
+                  <input style={INP} value={emergency.phone} onChange={e => setEmergency({ ...emergency, phone: e.target.value })} placeholder="Phone" />
+                </div>
+              </div>
+
+              {/* Confirmation Summary */}
+              <div style={SECTION}><Eye size={14} /> Booking Summary</div>
+              <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13 }}>
+                  {[
+                    ["Patient", form.name],
+                    ["Phone", form.phone],
+                    ["Gender", form.gender],
+                    ["Department", departments.find((d: any) => d.id === visit.departmentId)?.name || "—"],
+                    ["Doctor", doctors.find((d: any) => d.id === visit.doctorId)?.name || "—"],
+                    ["Date & Time", visit.appointmentDate && visit.timeSlot ? `${visit.appointmentDate} at ${visit.timeSlot}` : "Not scheduled"],
+                    ["Visit Type", visit.visitType === "OTHER" ? (visit.customVisitType || "Other") : visit.visitType],
+                    ["Complaint", visit.complaint || "—"],
+                    ["Fee", billing.consultationFee ? `₹${billing.consultationFee}` : "—"],
+                    ["Payment", `${billing.paymentMode} · ${billing.paymentStatus}`],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f1f5f9" }}>
+                      <span style={{ color: "#64748b" }}>{k}</span>
+                      <span style={{ fontWeight: 600, color: "#1e293b" }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {msg && (
+            <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, background: msg.type === "error" ? "#fff5f5" : "#f0fdf4", color: msg.type === "error" ? "#ef4444" : "#16a34a", fontSize: 12, fontWeight: 600 }}>
+              {msg.text}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Buttons */}
+        <div style={{ padding: "14px 24px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", background: "#fafbfc" }}>
+          <button onClick={step === 1 ? onClose : () => setStep(s => s - 1 as any)}
+            style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            {step === 1 ? "Cancel" : "← Back"}
+          </button>
+          {step < 3 ? (
+            <button
+              onClick={() => setStep(s => s + 1 as any)}
+              disabled={step === 1 ? !canGoStep2 : !canGoStep3}
+              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: (step === 1 ? canGoStep2 : canGoStep3) ? "#0E898F" : "#cbd5e1", color: "#fff", fontSize: 13, fontWeight: 700, cursor: (step === 1 ? canGoStep2 : canGoStep3) ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 8 }}>
+              Next Step →
+            </button>
+          ) : (
+            <button onClick={handleFinalSubmit} disabled={saving}
+              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+              {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <><CalendarDays size={15} /> Register & Book</>}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -34,7 +34,7 @@ export default function OncologyHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we provide comprehensive head, neck, and facial oncology care, focusing on early detection, accurate diagnosis, advanced surgical treatment, and holistic rehabilitation.
+                At Celeb Aesthetica, we provide comprehensive head, neck, and facial oncology care, focusing on early detection, accurate diagnosis, advanced surgical treatment, and holistic rehabilitation.
               </p>
 
            

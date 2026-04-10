@@ -117,8 +117,9 @@
 .ctaRow {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-3);
   padding-top: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .aboutCta {
@@ -126,19 +127,7 @@
 }
 
 .secondaryCta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--primary);
-  text-decoration: none;
-  transition: gap var(--transition-base), opacity var(--transition-base);
-}
-
-.secondaryCta:hover {
-  gap: 8px;
-  opacity: 0.85;
+  width: fit-content;
 }
 
 /* ── Right Visual ── */
@@ -239,15 +228,20 @@
   .ctaRow {
     flex-wrap: wrap;
     justify-content: center;
+    gap: var(--space-2);
   }
 
-  .aboutCta {
-    padding: var(--space-2) var(--space-5);
-    font-size: var(--font-size-sm);
+  .ctaRow .btn {
+    flex: 1;
+    max-width: 140px;
+    padding: 6px 10px;
+    font-size: 11px;
+    height: 34px;
   }
 
-  .secondaryCta {
-    font-size: var(--font-size-xs);
+  .ctaRow .btn svg {
+    width: 13px;
+    height: 13px;
   }
 
   /* Hide rating badge on mobile */

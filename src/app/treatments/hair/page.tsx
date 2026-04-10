@@ -23,9 +23,9 @@ import styles from "../treatments.module.css";
 import HairHero from "./HairHero";
 
 export const metadata: Metadata = {
-  title: "AI Hair Restoration & Advanced Trichology | Celeb Aesthecia",
+  title: "AI Hair Restoration & Advanced Trichology | Celeb Aesthetica",
   description:
-    "Advanced AI-based hair restoration, PRP therapy, and hair transplant services at Celeb Aesthecia. Personalized care for hair loss and scalp health.",
+    "Advanced AI-based hair restoration, PRP therapy, and hair transplant services at Celeb Aesthetica. Personalized care for hair loss and scalp health.",
   keywords: [
     "AI hair restoration",
     "trichology India",
@@ -79,7 +79,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dermatology.png" 
+                    src="/treatments/hair/1.png" 
                     alt="AI Hair Analysis" 
                     width={500} 
                     height={600} 
@@ -128,7 +128,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dermatology-2.png" 
+                    src="/treatments/hair/2.png" 
                     alt="Hair Loss Treatments" 
                     width={500} 
                     height={600} 
@@ -178,7 +178,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Hair.png" 
+                    src="/treatments/hair/3.png" 
                     alt="PRP GFC Therapy" 
                     width={500} 
                     height={600} 
@@ -228,7 +228,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dermatology.png" 
+                    src="/treatments/hair/4.png" 
                     alt="Mesotherapy Hair" 
                     width={500} 
                     height={600} 
@@ -278,7 +278,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Hair.png" 
+                    src="/treatments/hair/5.png" 
                     alt="Hair Transplant" 
                     width={500} 
                     height={600} 
@@ -327,7 +327,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dermatology-2.png" 
+                    src="/treatments/hair/6.png" 
                     alt="Beard Eyebrow Transplant" 
                     width={500} 
                     height={600} 
@@ -377,7 +377,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dermatology.png" 
+                    src="/treatments/hair/7.png" 
                     alt="Scalp Disorders" 
                     width={500} 
                     height={600} 
@@ -426,7 +426,7 @@ export default function HairTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Hair.png" 
+                    src="/treatments/hair/8.png" 
                     alt="Regenerative Hair Therapies" 
                     width={500} 
                     height={600} 
@@ -443,7 +443,7 @@ export default function HairTreatmentsPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Hair Treatments?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Hair Treatments?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Microscope size={24} />, text: "AI-based hair and scalp diagnosis" },
@@ -470,7 +470,7 @@ export default function HairTreatmentsPage() {
                 Book Your Hair Consultation Today
               </h2>
               <p className={styles.ctaDescription}>
-                Take the first step toward stronger, healthier, and fuller hair with expert care at Celeb Aesthecia. Start your hair restoration journey with confidence.
+                Take the first step toward stronger, healthier, and fuller hair with expert care at Celeb Aesthetica. Start your hair restoration journey with confidence.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>

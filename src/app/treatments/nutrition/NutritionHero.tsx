@@ -34,7 +34,7 @@ export default function NutritionHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we believe that true wellness begins from within. Our Clinical Nutrition & Metabolic Wellness programs are designed to help you achieve sustainable weight management, improved metabolism, and overall health transformation.
+                At Celeb Aesthetica, we believe that true wellness begins from within. Our Clinical Nutrition & Metabolic Wellness programs are designed to help you achieve sustainable weight management, improved metabolism, and overall health transformation.
               </p>
 
            

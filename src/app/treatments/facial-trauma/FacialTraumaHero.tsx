@@ -34,7 +34,7 @@ export default function FacialTraumaHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we specialize in comprehensive management of facial trauma and maxillofacial injuries, delivering rapid emergency care, advanced surgical treatment, and aesthetic rehabilitation.
+                At Celeb Aesthetica, we specialize in comprehensive management of facial trauma and maxillofacial injuries, delivering rapid emergency care, advanced surgical treatment, and aesthetic rehabilitation.
               </p>
 
            

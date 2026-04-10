@@ -34,7 +34,7 @@ export default function PremiumAestheticHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we offer a premium aesthetic experience where advanced medical science meets artistic precision. Our treatments enhance your natural features for subtle, elegant results.
+                At Celeb Aesthetica, we offer a premium aesthetic experience where advanced medical science meets artistic precision. Our treatments enhance your natural features for subtle, elegant results.
               </p>
 
            
@@ -72,7 +72,7 @@ export default function PremiumAestheticHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/Premiumaesthetic.png"
+                  src="/images/premium-aesthetic/hero.png"
                   alt="Premium Aesthetic Care"
                   width={580}
                   height={640}

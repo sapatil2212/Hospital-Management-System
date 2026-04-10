@@ -40,7 +40,7 @@ export const treatments = [
       "Orbital & Nasal Fractures",
       "Cosmetic Rehabilitation",
     ],
-    description: "At Celeb Aesthecia, we specialize in comprehensive management of facial trauma and maxillofacial injuries. Our approach combines precision surgical techniques and modular OT safety standards to restore function and confidence.",
+    description: "At Celeb Aesthetica, we specialize in comprehensive management of facial trauma and maxillofacial injuries. Our approach combines precision surgical techniques and modular OT safety standards to restore function and confidence.",
     stats: { doctors: 12, patients: "12K+", experience: "15 years" },
   },
   {
@@ -100,7 +100,7 @@ export const treatments = [
       "Stretch Mark Treatments",
       "Transformation Programs",
     ],
-    description: "At Celeb Aesthecia, we offer advanced body contouring treatments using AI-based analysis and cutting-edge technologies to target stubborn fat and reshape your body safely.",
+    description: "At Celeb Aesthetica, we offer advanced body contouring treatments using AI-based analysis and cutting-edge technologies to target stubborn fat and reshape your body safely.",
     stats: { doctors: 8, patients: "7K+", experience: "10 years" },
   },
   {
@@ -160,7 +160,7 @@ export const treatments = [
       "Virtual Consultations",
       "Cost-Effective Treatments",
     ],
-    description: "Celeb Aesthecia offers a seamless medical tourism experience, combining advanced treatments with premium hospitality for international patients.",
+    description: "Celeb Aesthetica offers a seamless medical tourism experience, combining advanced treatments with premium hospitality for international patients.",
     stats: { doctors: 15, patients: "Global", experience: "15 years" },
   },
   {

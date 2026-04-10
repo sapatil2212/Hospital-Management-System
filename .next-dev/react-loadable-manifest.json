@@ -16,19 +16,5 @@
     "files": [
       "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
     ]
-  },
-  "app\\hospitaladmin\\dashboard\\page.tsx -> ../../subdept/dashboard/PatientsManagementPanel": {
-    "id": "app\\hospitaladmin\\dashboard\\page.tsx -> ../../subdept/dashboard/PatientsManagementPanel",
-    "files": [
-      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx.js"
-    ]
-  },
-  "components\\BillingQueue.tsx -> jspdf": {
-    "id": "components\\BillingQueue.tsx -> jspdf",
-    "files": []
-  },
-  "components\\BillingQueue.tsx -> jspdf-autotable": {
-    "id": "components\\BillingQueue.tsx -> jspdf-autotable",
-    "files": []
   }
 }

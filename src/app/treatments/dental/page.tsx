@@ -10,7 +10,7 @@ import DentalHero from "./DentalHero";
 export const metadata: Metadata = {
   title: "Best Dental Clinic in India | Advanced Dental Care & Surgery",
   description:
-    "Get advanced dental treatments including implants, RCT, and cosmetic dentistry at Celeb Aesthecia. Safe procedures with modern technology and modular OT.",
+    "Get advanced dental treatments including implants, RCT, and cosmetic dentistry at Celeb Aesthetica. Safe procedures with modern technology and modular OT.",
   keywords: [
     "dental clinic India",
     "dental implants",

@@ -34,7 +34,7 @@ export default function SkinHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we offer comprehensive dermatology and aesthetic treatments designed to enhance skin health, restore confidence, and deliver natural, long-lasting results.
+                At Celeb Aesthetica, we offer comprehensive dermatology and aesthetic treatments designed to enhance skin health, restore confidence, and deliver natural, long-lasting results.
               </p>
 
            

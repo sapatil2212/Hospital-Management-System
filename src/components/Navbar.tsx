@@ -106,7 +106,7 @@ export default function Navbar() {
           <Link href="/" className={styles.logo}>
             <Image
               src="/logo/celeb-aesthecia-logo.png"
-              alt="Celeb Aesthecia"
+              alt="Celeb Aesthetica"
               width={160}
               height={48}
               className={styles.logoImage}

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createTreatmentPlanSchema = z.object({
-  patientId: z.string().min(1, "Patient ID is required"),
+  patientId: z.string().optional(),
   serviceId: z.string().optional(),
   procedureId: z.string().optional(),
   departmentId: z.string().optional(),

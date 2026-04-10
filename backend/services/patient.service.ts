@@ -56,6 +56,8 @@ export const registerPatient = async (
     dateOfBirth: input.dateOfBirth || null,
     bloodGroup: input.bloodGroup || null,
     address: input.address || null,
+    profilePhoto: input.profilePhoto || null,
+    documents: input.documents || null,
   });
 
   // Send welcome email asynchronously (fire-and-forget)
@@ -124,6 +126,8 @@ export const updatePatient = async (
   if (input.dateOfBirth !== undefined) updateData.dateOfBirth = input.dateOfBirth;
   if (input.bloodGroup !== undefined) updateData.bloodGroup = input.bloodGroup;
   if (input.address !== undefined) updateData.address = input.address;
+  if (input.profilePhoto !== undefined) updateData.profilePhoto = input.profilePhoto;
+  if (input.documents !== undefined) updateData.documents = input.documents;
 
   return updatePatientRepo(id, hospitalId, updateData);
 };

@@ -34,7 +34,7 @@ export default function HairHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we specialize in advanced hair restoration and scalp treatments using AI-based diagnostics, regenerative therapies, and modern transplant techniques.
+                At Celeb Aesthetica, we specialize in advanced hair restoration and scalp treatments using AI-based diagnostics, regenerative therapies, and modern transplant techniques.
               </p>
 
            
@@ -72,7 +72,7 @@ export default function HairHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/Hair.png"
+                  src="/treatments/hair/hair-hero.png"
                   alt="Advanced Hair Restoration"
                   width={580}
                   height={640}

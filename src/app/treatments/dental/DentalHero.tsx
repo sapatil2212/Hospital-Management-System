@@ -31,7 +31,7 @@ export default function DentalHero() {
               </h1>
 
               <p className={styles.heroDescription}>
-                At Celeb Aesthecia, we offer comprehensive dental care under one roof, combining AI-based diagnostics, 
+                At Celeb Aesthetica, we offer comprehensive dental care under one roof, combining AI-based diagnostics, 
                 robotic precision, and modern dental technologies to deliver safe, painless, and long-lasting results.
               </p>
           

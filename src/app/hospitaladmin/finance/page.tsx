@@ -468,16 +468,32 @@ export default function HospitalAdminFinancePage() {
                 <button type="button" className={`fin-tab${tab === "revenue" ? " on" : ""}`} onClick={() => setTab("revenue")}>Revenue</button>
               </div>
               <div className="fin-toolbar">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div className="fin-hint">{tab === "expenses" ? "Operational expenses + inventory purchase orders." : "Billing revenue (paid bills) + manually added revenue entries."}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "6px 12px" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input
+                      type="text"
+                      placeholder={tab === "expenses" ? "Search expenses..." : "Search revenue..."}
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      style={{ border: "none", background: "none", outline: "none", fontSize: 12, color: "#334155", width: 180, fontFamily: "inherit" }}
+                    />
+                    {search && <button type="button" onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}><X size={12} color="#94a3b8" /></button>}
+                  </div>
+                  <span className="fin-hint" style={{ display: "none" }}>{tab === "expenses" ? "Operational expenses + inventory purchase orders." : "Billing revenue (paid bills) + manually added revenue entries."}</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
                   {selectedExp.size > 0 && tab === "expenses" && (
-                    <button type="button" onClick={bulkDeleteExpenses} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                      <Trash2 size={11} /> Delete {selectedExp.size}
+                    <button type="button" onClick={bulkDeleteExpenses} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      <Trash2 size={12} /> Delete ({selectedExp.size})
                     </button>
                   )}
+                  {selectedRev.size > 0 && tab === "revenue" && (
+                    <button type="button" onClick={bulkDeleteRevenues} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      <Trash2 size={12} /> Delete ({selectedRev.size})
+                    </button>
+                  )}
+                  <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
                   {tab === "expenses" ? (
                     <>
                       {[{ k: "date", l: "Date" }, { k: "amount", l: "Amount" }, { k: "category", l: "Category" }].map(s => (
@@ -955,29 +971,37 @@ export default function HospitalAdminFinancePage() {
       {/* ═══ Delete Confirmation Modal ═══ */}
       {deleteConfirm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setDeleteConfirm(null)}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)" }} />
-          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 16, width: "95%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,.25)" }}>
-            <div style={{ padding: "24px 24px 20px", textAlign: "center" }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <AlertTriangle size={28} color="#dc2626" />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 18, width: "95%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,.25)", overflow: "hidden" }}>
+            <div style={{ padding: "28px 24px 24px", textAlign: "center" }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #fef2f2, #fee2e2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <Trash2 size={24} color="#ef4444" />
               </div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", marginBottom: 8 }}>Confirm Deletion</div>
-              <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
-                {deleteConfirm.type === "expense" && "Are you sure you want to delete this expense? This action cannot be undone."}
-                {deleteConfirm.type === "revenue" && "Are you sure you want to delete this revenue entry? This action cannot be undone."}
-                {deleteConfirm.type === "bulk-expense" && `Are you sure you want to delete ${deleteConfirm.count} selected expense${deleteConfirm.count === 1 ? "" : "s"}? This action cannot be undone.`}
-                {deleteConfirm.type === "bulk-revenue" && `Are you sure you want to delete ${deleteConfirm.count} selected revenue entr${deleteConfirm.count === 1 ? "y" : "ies"}? This action cannot be undone.`}
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 4 }}>
+                {deleteConfirm.type.includes("bulk") ? `Delete ${deleteConfirm.count} ${deleteConfirm.type === "bulk-expense" ? "Expenses" : "Revenue Entries"}` : "Delete Entry"}
               </div>
+              {deleteConfirm.type.includes("bulk") && (
+                <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, background: "#fef2f2", padding: "4px 12px", borderRadius: 100, display: "inline-block", marginTop: 4 }}>
+                  {deleteConfirm.count} selected
+                </div>
+              )}
             </div>
-            <div style={{ display: "flex", gap: 0, borderTop: "1px solid #f1f5f9" }}>
-              <button type="button" onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: "14px", border: "none", background: "none", color: "#64748b", fontSize: 14, fontWeight: 600, cursor: "pointer", borderRadius: "0 0 0 16px" }}>Cancel</button>
-              <div style={{ width: 1, background: "#f1f5f9" }} />
+            <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, padding: "0 24px 20px", textAlign: "center" }}>
+              {deleteConfirm.type === "expense" && "Are you sure you want to delete this expense? This action cannot be undone."}
+              {deleteConfirm.type === "revenue" && "Are you sure you want to delete this revenue entry? This action cannot be undone."}
+              {deleteConfirm.type === "bulk-expense" && `Are you sure you want to delete ${deleteConfirm.count} selected expense${deleteConfirm.count === 1 ? "" : "s"}? This action cannot be undone.`}
+              {deleteConfirm.type === "bulk-revenue" && `Are you sure you want to delete ${deleteConfirm.count} selected revenue entr${deleteConfirm.count === 1 ? "y" : "ies"}? Only manually-added revenue can be deleted.`}
+            </div>
+            <div style={{ display: "flex", gap: 10, padding: "16px 24px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", justifyContent: "center" }}>
+              <button type="button" onClick={() => setDeleteConfirm(null)} style={{ padding: "10px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
               <button type="button" onClick={() => {
                 if (deleteConfirm.type === "expense" && deleteConfirm.id) confirmDeleteExpense(deleteConfirm.id);
                 else if (deleteConfirm.type === "revenue" && deleteConfirm.id) confirmDeleteRevenue(deleteConfirm.id);
                 else if (deleteConfirm.type === "bulk-expense") confirmBulkDeleteExpenses();
                 else if (deleteConfirm.type === "bulk-revenue") confirmBulkDeleteRevenues();
-              }} style={{ flex: 1, padding: "14px", border: "none", background: "none", color: "#dc2626", fontSize: 14, fontWeight: 700, cursor: "pointer", borderRadius: "0 0 16px 0" }}>Delete</button>
+              }} style={{ padding: "10px 20px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trash2 size={13} /> Delete
+              </button>
             </div>
           </div>
         </div>

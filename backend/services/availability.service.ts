@@ -11,6 +11,8 @@ import {
   getWeeklySchedule,
 } from "../repositories/availability.repo";
 import { findDoctorById } from "../repositories/doctor.repo";
+import prisma from "../config/db";
+const px = prisma as any;
 import {
   AvailabilityInput,
   BulkAvailabilityInput,
@@ -295,51 +297,90 @@ export const getAvailableSlotsForDate = async (
 ) => {
   await validateDoctor(doctorId, hospitalId);
 
-  // Get day of week from date
   const dayNames: DayOfWeek[] = [
-    "SUNDAY",
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
+    "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY",
   ];
   const dayOfWeek = dayNames[date.getDay()];
+  const dateStr = date.toISOString().split("T")[0];
 
-  const availability = await findAvailabilityByDay(
-    doctorId,
-    hospitalId,
-    dayOfWeek as any
-  );
+  // ── Check for a date-specific override FIRST ─────────────────────────────
+  const dateOverride = await px.doctorDateOverride.findFirst({
+    where: {
+      doctorId,
+      hospitalId,
+      date: {
+        gte: new Date(dateStr + "T00:00:00.000Z"),
+        lte: new Date(dateStr + "T23:59:59.999Z"),
+      },
+    },
+  });
 
-  if (!availability || !availability.isActive) {
+  // Override says doctor is off
+  if (dateOverride && dateOverride.isOff) {
     return {
-      date: date.toISOString().split("T")[0],
+      date: dateStr,
       dayOfWeek,
       available: false,
-      message: "Doctor is not available on this day",
+      isOverride: true,
+      message: "Doctor is not available on this date (override)",
       slots: [],
     };
   }
 
-  const slots = generateTimeSlots(
-    availability.startTime,
-    availability.endTime,
-    availability.slotDuration || 30
-  );
+  // Use override times if present, else fall back to weekly
+  let effectiveStart: string;
+  let effectiveEnd: string;
+  let effectiveDuration: number;
+
+  if (dateOverride && dateOverride.startTime && dateOverride.endTime) {
+    effectiveStart    = dateOverride.startTime;
+    effectiveEnd      = dateOverride.endTime;
+    effectiveDuration = dateOverride.slotDuration || 30;
+  } else {
+    const availability = await findAvailabilityByDay(doctorId, hospitalId, dayOfWeek as any);
+    if (!availability || !availability.isActive) {
+      return {
+        date: dateStr,
+        dayOfWeek,
+        available: false,
+        message: "Doctor is not available on this day",
+        slots: [],
+      };
+    }
+    effectiveStart    = availability.startTime;
+    effectiveEnd      = availability.endTime;
+    effectiveDuration = availability.slotDuration || 30;
+  }
+
+  let slots = generateTimeSlots(effectiveStart, effectiveEnd, effectiveDuration);
+
+  // Remove break slots from override
+  if (dateOverride?.breaks) {
+    try {
+      const breaks: { start: string; end: string }[] = typeof dateOverride.breaks === "string"
+        ? JSON.parse(dateOverride.breaks)
+        : dateOverride.breaks;
+      slots = slots.filter(slot => {
+        const [sh, sm] = slot.split(":").map(Number);
+        const slotMin = sh * 60 + sm;
+        return !breaks.some(br => {
+          const [bsh, bsm] = br.start.split(":").map(Number);
+          const [beh, bem] = br.end.split(":").map(Number);
+          return slotMin >= bsh * 60 + bsm && slotMin < beh * 60 + bem;
+        });
+      });
+    } catch { /* ignore */ }
+  }
 
   return {
-    date: date.toISOString().split("T")[0],
+    date: dateStr,
     dayOfWeek,
     available: true,
-    startTime: availability.startTime,
-    endTime: availability.endTime,
-    slotDuration: availability.slotDuration,
-    slots: slots.map((time) => ({
-      time,
-      status: "available", // Can be enhanced later to check appointments
-    })),
+    isOverride: !!dateOverride,
+    startTime: effectiveStart,
+    endTime: effectiveEnd,
+    slotDuration: effectiveDuration,
+    slots: slots.map((time) => ({ time, status: "available" })),
     totalSlots: slots.length,
   };
 };

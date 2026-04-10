@@ -132,7 +132,7 @@ export default function HospitalSignupPage() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
 
@@ -143,7 +143,7 @@ export default function HospitalSignupPage() {
 
         .sp { font-family: 'Inter', sans-serif; min-height:100vh; display:grid; grid-template-columns:1fr 1fr; overflow:hidden; background: var(--bg); transition: background 0.3s; }
 
-        @media (max-width:768px) { .sp { grid-template-columns:1fr; } .sp-brand { display:none; } }
+        @media (max-width:768px) { .sp { grid-template-columns:1fr !important; } .sp-brand { display:none !important; } .sp-form-side { min-height:100vh; padding:24px 16px; } .sp-toggle { top:14px; right:14px; } .sp-heading{ font-size:20px; margin-bottom:4px; } .sp-sub{ font-size:12px; } .sp-step-badge{ font-size:9px; padding:3px 10px; margin-bottom:8px; } .sp-progress{ margin:14px 0 18px; } .sp-label{ font-size:10px; margin-bottom:5px; } .sp-input{ font-size:13px; padding:10px 38px 10px 12px; border-radius:9px; } .sp-field{ margin-bottom:12px; } .sp-ferr{ font-size:11px; } .sp-grid2{ gap:10px; } .sp-btn{ padding:12px; font-size:14px; border-radius:10px; } .sp-err{ font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:14px; } .sp-str-label{ font-size:10px; } .sp-footer{ font-size:12px; margin-top:16px; } .sp-otp-in{ font-size:16px; padding:10px 0; border-radius:9px; } .sp-otp-grid{ gap:6px; } .sp-otp-hint{ font-size:11px; margin-bottom:14px; } .sp-resend{ font-size:12px; margin-top:12px; } .sp-back{ font-size:12px; margin-bottom:16px; } .sp-suc-title{ font-size:20px; } .sp-suc-sub{ font-size:13px; } }
 
         /* ── THEME TOGGLE ── */
         .sp-toggle {
@@ -282,7 +282,7 @@ export default function HospitalSignupPage() {
         .sp-footer { text-align:center; margin-top:22px; font-size:13px; color:var(--footer-color); }
         .sp-footer a { color:var(--footer-link); text-decoration:none; font-weight:600; }
         .sp-footer a:hover { opacity:0.8; }
-      `}</style>
+      `}} />
 
       {/* ─── THEME TOGGLE ─── */}
       <button className="sp-toggle" onClick={() => setDark(!dark)} title={dark ? "Switch to Light Mode" : "Switch to Dark Mode"}>

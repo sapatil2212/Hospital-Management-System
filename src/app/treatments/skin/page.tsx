@@ -22,9 +22,9 @@ import styles from "../treatments.module.css";
 import SkinHero from "./SkinHero";
 
 export const metadata: Metadata = {
-  title: "AI Skin Treatment & Advanced Dermatology | Celeb Aesthecia",
+  title: "AI Skin Treatment & Advanced Dermatology | Celeb Aesthetica",
   description:
-    "Advanced AI-based skin treatments, laser therapy, and dermatology services at Celeb Aesthecia. Personalized care for acne, anti-aging, and skin rejuvenation.",
+    "Advanced AI-based skin treatments, laser therapy, and dermatology services at Celeb Aesthetica. Personalized care for acne, anti-aging, and skin rejuvenation.",
   keywords: [
     "AI skin treatment",
     "dermatology India",
@@ -488,7 +488,7 @@ export default function SkinTreatmentsPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Skin & Aesthetic Treatments?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Skin & Aesthetic Treatments?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Microscope size={24} />, text: "AI-based skin analysis for precise diagnosis" },
@@ -515,7 +515,7 @@ export default function SkinTreatmentsPage() {
                 Book Your Skin Consultation Today
               </h2>
               <p className={styles.ctaDescription}>
-                Take the first step toward healthy, glowing, and youthful skin with expert care at Celeb Aesthecia. Experience advanced dermatology like never before.
+                Take the first step toward healthy, glowing, and youthful skin with expert care at Celeb Aesthetica. Experience advanced dermatology like never before.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>

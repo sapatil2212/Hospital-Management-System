@@ -6,8 +6,15 @@ import {
   Activity, FlaskConical, Layers, Filter, Heart, Microscope,
   Stethoscope, Scissors, Receipt, Pill, Scan, TestTube2,
   Smile, Sparkles, Wind, Building2, Copy, RefreshCw, ExternalLink,
-  Lock, ShieldCheck, UserPlus, ChevronDown, Send, Users
+  Lock, ShieldCheck, UserPlus, ChevronDown, Send, Users,
+  Download, FileText, FileSpreadsheet, FileType, ShieldAlert, Info,
+  ArrowUpDown, ArrowUp, ArrowDown
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Document, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel } from "docx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,9 +76,10 @@ const SUB_DEPT_TYPES = [
   { value: "BILLING",     label: "Billing Dept",      Icon: Receipt,     color: "#f59e0b" },
   { value: "RADIOLOGY",   label: "Radiology",         Icon: Scan,        color: "#6366f1" },
   { value: "LABORATORY",  label: "Laboratory",        Icon: TestTube2,   color: "#14b8a6" },
-  { value: "PROCEDURE",   label: "Procedure Room",    Icon: Stethoscope, color: "#84cc16" },
-  { value: "RECEPTION",   label: "Reception",         Icon: Users,       color: "#3b82f6" },
-  { value: "OTHER",       label: "Other",             Icon: Layers,      color: "#94a3b8" },
+  { value: "PROCEDURE",          label: "Procedure Room",    Icon: Stethoscope, color: "#84cc16" },
+  { value: "CLINICAL_PROCEDURE",  label: "Clinical Procedure", Icon: Stethoscope, color: "#0ea5e9" },
+  { value: "RECEPTION",          label: "Reception",          Icon: Users,       color: "#3b82f6" },
+  { value: "OTHER",              label: "Other",              Icon: Layers,      color: "#94a3b8" },
 ];
 
 const DEPT_SUBDEPT_MAP: Record<string, Array<{value: string; label: string; color: string}>> = {
@@ -91,13 +99,14 @@ const DEPT_SUBDEPT_MAP: Record<string, Array<{value: string; label: string; colo
     { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
   ],
   PROCEDURE: [
-    { value: "OT",          label: "Operation Theatre (OT)",    color: "#ef4444" },
-    { value: "DIALYSIS",    label: "Dialysis Unit",             color: "#6366f1" },
-    { value: "PHYSIOTHERAPY",label: "Physiotherapy",            color: "#84cc16" },
-    { value: "DENTAL",      label: "Dental",                    color: "#06b6d4" },
-    { value: "COSMETIC",    label: "Cosmetic / Aesthetic",      color: "#ec4899" },
-    { value: "ENDOSCOPY",   label: "Endoscopy",                 color: "#f97316" },
-    { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
+    { value: "OT",                 label: "Operation Theatre (OT)",    color: "#ef4444" },
+    { value: "DIALYSIS",           label: "Dialysis Unit",             color: "#6366f1" },
+    { value: "PHYSIOTHERAPY",      label: "Physiotherapy",             color: "#84cc16" },
+    { value: "DENTAL",             label: "Dental",                    color: "#06b6d4" },
+    { value: "COSMETIC",           label: "Cosmetic / Aesthetic",      color: "#ec4899" },
+    { value: "ENDOSCOPY",          label: "Endoscopy",                 color: "#f97316" },
+    { value: "CLINICAL_PROCEDURE", label: "Clinical Procedure",        color: "#0ea5e9" },
+    { value: "CUSTOM",             label: "Custom",                    color: "#94a3b8" },
   ],
   DIAGNOSTIC: [
     { value: "PATHOLOGY",   label: "Pathology / Lab",           color: "#10b981" },
@@ -107,15 +116,16 @@ const DEPT_SUBDEPT_MAP: Record<string, Array<{value: string; label: string; colo
     { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
   ],
   CLINICAL: [
-    { value: "OPD",            label: "OPD (Outpatient Department)",  color: "#0ea5e9" },
-    { value: "IPD",            label: "IPD (Inpatient Department)",   color: "#8b5cf6" },
-    { value: "EMERGENCY",      label: "Emergency / Casualty",         color: "#ef4444" },
-    { value: "ICU",            label: "ICU / NICU",                   color: "#f97316" },
-    { value: "GENERAL_MEDICINE",label: "General Medicine",            color: "#10b981" },
-    { value: "SURGERY",        label: "Surgery",                      color: "#64748b" },
-    { value: "GYNECOLOGY",     label: "Gynecology",                   color: "#ec4899" },
-    { value: "PEDIATRICS",     label: "Pediatrics",                   color: "#06b6d4" },
-    { value: "CUSTOM",         label: "Custom",                       color: "#94a3b8" },
+    { value: "OPD",                label: "OPD (Outpatient Department)",  color: "#0ea5e9" },
+    { value: "IPD",                label: "IPD (Inpatient Department)",   color: "#8b5cf6" },
+    { value: "EMERGENCY",          label: "Emergency / Casualty",         color: "#ef4444" },
+    { value: "ICU",                label: "ICU / NICU",                   color: "#f97316" },
+    { value: "GENERAL_MEDICINE",   label: "General Medicine",             color: "#10b981" },
+    { value: "SURGERY",            label: "Surgery",                      color: "#64748b" },
+    { value: "GYNECOLOGY",         label: "Gynecology",                   color: "#ec4899" },
+    { value: "PEDIATRICS",         label: "Pediatrics",                   color: "#06b6d4" },
+    { value: "CLINICAL_PROCEDURE", label: "Clinical Procedure",           color: "#0ea5e9" },
+    { value: "CUSTOM",             label: "Custom",                       color: "#94a3b8" },
   ],
 };
 
@@ -145,7 +155,8 @@ const TYPE_EXTRA: Record<string, {label: string; Icon: any; color: string}> = {
   SURGERY:         { label: "Surgery",                Icon: Scissors,    color: "#64748b" },
   GYNECOLOGY:      { label: "Gynecology",             Icon: Heart,       color: "#ec4899" },
   PEDIATRICS:      { label: "Pediatrics",             Icon: Smile,       color: "#06b6d4" },
-  CUSTOM:          { label: "Custom",                 Icon: Layers,      color: "#94a3b8" },
+  CLINICAL_PROCEDURE: { label: "Clinical Procedure",  Icon: Stethoscope, color: "#0ea5e9" },
+  CUSTOM:              { label: "Custom",              Icon: Layers,      color: "#94a3b8" },
 };
 
 const PROCEDURE_TYPES = [
@@ -198,6 +209,7 @@ const PREDEFINED_ACCESS: Record<string, string[]> = {
   SURGERY:         ["procedures", "patients", "appointments"],
   GYNECOLOGY:      ["appointments", "procedures", "patients"],
   PEDIATRICS:      ["appointments", "procedures", "patients"],
+  CLINICAL_PROCEDURE: ["appointments", "procedures", "patients", "billing", "doctors"],
   CUSTOM:          ["appointments", "procedures", "patients", "billing", "doctors", "inventory", "reports"],
 };
 const FEATURE_LABELS: Record<string, string> = {
@@ -298,6 +310,19 @@ export default function SubDepartmentPanel() {
   const [deleteTarget, setDeleteTarget] = useState<SubDept | null>(null);
   const [deletingProc, setDeletingProc] = useState<Procedure | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // View details
+  const [viewItem, setViewItem] = useState<SubDept | null>(null);
+
+  // Sort
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Export
+  const [showExport, setShowExport] = useState(false);
 
   // Credentials
   const [sendingCreds, setSendingCreds] = useState<string | null>(null);
@@ -436,7 +461,7 @@ export default function SubDepartmentPanel() {
   const openAdd = () => {
     setEditItem(null);
     const pw = generatePassword("Dept");
-    setForm({ name: "", code: "", type: "RECEPTION", parentDeptType: "", description: "", color: "#3b82f6", flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true, accessFeatures: [], customName: "" });
+    setForm({ name: "", code: "", type: "RECEPTION", parentDeptType: "", description: "", color: "#3b82f6", flow: "", departmentId: "", hodName: "", hodEmail: "", hodPhone: "", hodStaffId: "", loginEmail: "", loginPassword: pw, isActive: true, accessFeatures: PREDEFINED_ACCESS["RECEPTION"] || [], customName: "" });
     setHodSearch(""); setHodResults([]); setHodDropdownOpen(false);
     setModal(true);
   };
@@ -487,7 +512,7 @@ export default function SubDepartmentPanel() {
       hodEmail: form.hodEmail || null,
       hodPhone: form.hodPhone || null,
       loginEmail: form.loginEmail || null,
-      accessFeatures: JSON.stringify(PREDEFINED_ACCESS[form.type] || []),
+      accessFeatures: JSON.stringify(form.accessFeatures || []),
       customName: form.type === "CUSTOM" ? form.customName || null : null,
     };
     let res;
@@ -578,6 +603,101 @@ export default function SubDepartmentPanel() {
     setDeleting(false);
     if (res.success) { addToast("success", "Procedure removed"); setDeletingProc(null); loadProcedures(selectedSubDept.id); load(); }
     else addToast("error", res.message || "Failed");
+  };
+
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === data.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(data.map(d => d.id)));
+  };
+
+  // Sort handler
+  const handleSort = (col: string) => {
+    if (sortBy === col) setSortOrder(o => o === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortOrder("asc"); }
+  };
+
+  // Export helpers
+  const getExportData = () => {
+    const rows = selectedIds.size > 0 ? data.filter(d => selectedIds.has(d.id)) : data;
+    return rows.map(d => {
+      const typeInfo = getTypeInfo(d.type);
+      return {
+        Name: d.name,
+        Code: d.code || "-",
+        Type: d.type === "CUSTOM" && d.customName ? d.customName : typeInfo.label,
+        Department: d.department?.name || "-",
+        Status: d.isActive ? "Active" : "Inactive",
+        HOD: d.hodName || "-",
+        Procedures: d._count?.procedures || 0,
+        Description: d.description || "-",
+      };
+    });
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Sub-Departments Report", 14, 16);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 23);
+    const rows = getExportData();
+    autoTable(doc, {
+      startY: 28,
+      head: [["Name", "Code", "Type", "Department", "Status", "HOD", "Procedures"]],
+      body: rows.map(r => [r.Name, r.Code, r.Type, r.Department, r.Status, r.HOD, String(r.Procedures)]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [14, 137, 143] },
+    });
+    doc.save(`sub-departments-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setShowExport(false);
+  };
+
+  const exportExcel = () => {
+    const rows = getExportData();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sub-Departments");
+    XLSX.writeFile(wb, `sub-departments-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setShowExport(false);
+  };
+
+  const exportWord = async () => {
+    const rows = getExportData();
+    const keys = ["Name", "Code", "Type", "Department", "Status", "HOD", "Procedures"] as const;
+    const headerRow = new TableRow({
+      children: keys.map(k => new TableCell({
+        width: { size: 100 / keys.length, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, size: 20, font: "Calibri" })] })],
+      })),
+    });
+    const dataRows = rows.map(r => new TableRow({
+      children: keys.map(k => new TableCell({
+        width: { size: 100 / keys.length, type: WidthType.PERCENTAGE },
+        children: [new Paragraph({ children: [new TextRun({ text: String(r[k] ?? "-"), size: 20, font: "Calibri" })] })],
+      })),
+    }));
+    const docx = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ text: "Sub-Departments Report", heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-IN")}`, size: 18, color: "888888" })] }),
+          new Paragraph({ text: "" }),
+          new DocxTable({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(docx);
+    saveAs(blob, `sub-departments-${new Date().toISOString().slice(0, 10)}.docx`);
+    setShowExport(false);
   };
 
   return (
@@ -693,22 +813,107 @@ export default function SubDepartmentPanel() {
         .sd-proc-form{background:#fff;border:1.5px solid #0E898F;border-radius:12px;padding:16px;margin-bottom:12px}
         .sd-flow-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600}
         .sd-creds-sent{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+        .sd-toolbar-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+        .sd-toolbar-left h2{margin:0;font-size:22px;font-weight:800;color:#1e293b;line-height:1.2}
+        .sd-toolbar-left p{margin:0;font-size:13px;color:#94a3b8;line-height:1.3}
+        .sd-checkbox{width:16px;height:16px;accent-color:#0E898F;cursor:pointer}
+        .sd-card-check{position:absolute;top:12px;left:12px;z-index:2}
+        .sd-card{position:relative}
+        .sd-card.selected{border-color:#0E898F;box-shadow:0 0 0 1px #0E898F}
+        .sd-view{background:#f0f9ff;color:#2563eb}.sd-view:hover{background:#dbeafe}
+        .sd-export-wrap{position:relative}
+        .sd-export-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:500;cursor:pointer}
+        .sd-export-btn:hover{border-color:#cbd5e1;background:#f8fafc}
+        .sd-export-dd{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;min-width:180px;padding:6px}
+        .sd-export-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:none;background:none;width:100%;cursor:pointer;font-size:13px;color:#334155;font-weight:500}
+        .sd-export-item:hover{background:#f1f5f9}
+        .sd-export-item .eicon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+        .sd-export-item .eicon.pdf{background:#fff5f5;color:#ef4444}
+        .sd-export-item .eicon.xls{background:#f0fdf4;color:#16a34a}
+        .sd-export-item .eicon.doc{background:#eff6ff;color:#2563eb}
+        .sd-selected-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#E6F4F4;border:1px solid #B3E0E0;border-radius:10px;margin-bottom:12px;font-size:13px;color:#0A6B70;font-weight:600}
+        .sd-tbl-wrap{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+        .sd-tbl{width:100%;border-collapse:collapse}
+        .sd-tbl th{text-align:left;font-size:11px;font-weight:600;color:#94a3b8;padding:12px 14px;border-bottom:2px solid #f1f5f9;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+        .sd-tbl td{padding:12px 14px;font-size:13px;color:#475569;border-bottom:1px solid #f8fafc}
+        .sd-tbl tr:last-child td{border-bottom:none}
+        .sd-tbl tbody tr:hover td{background:#fafbfc}
+        .sd-tbl-name{font-weight:600;color:#1e293b}
+        .sd-tbl-code{font-family:monospace;font-size:12px;background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#64748b}
+        .sd-th-sort{cursor:pointer;user-select:none;white-space:nowrap}
+        .sd-th-sort:hover{color:#0E898F}
+        .sd-sort-icon{display:inline-flex;margin-left:4px;vertical-align:middle;color:#cbd5e1;cursor:pointer}
+        .sd-sort-icon.active{color:#0E898F}
+        .sd-tbl-actions{display:flex;gap:6px;align-items:center}
+        .sd-view-modal-body{padding:24px;overflow-y:auto}
+        .sd-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .sd-view-item{display:flex;flex-direction:column;gap:3px}
+        .sd-view-item.full{grid-column:1/-1}
+        .sd-view-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8}
+        .sd-view-value{font-size:14px;color:#1e293b;font-weight:500}
+        .sd-del-dialog{background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 48px rgba(0,0,0,.16);overflow:hidden;display:flex;flex-direction:column;animation:sdDelFadeIn .2s ease}
+        @keyframes sdDelFadeIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .sd-del-header{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid #f1f5f9}
+        .sd-del-header-icon{width:40px;height:40px;border-radius:10px;background:#fff5f5;color:#ef4444;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .sd-del-header-text h3{margin:0;font-size:16px;font-weight:700;color:#1e293b}
+        .sd-del-header-text p{margin:0;font-size:12px;color:#94a3b8;margin-top:1px}
+        .sd-del-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+        .sd-del-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+        .sd-del-card-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .sd-del-card-name{font-size:14px;font-weight:700;color:#1e293b}
+        .sd-del-card-meta{display:flex;align-items:center;gap:4px;margin-top:4px}
+        .sd-del-impact{border:1px solid #fde68a;border-radius:12px;overflow:hidden}
+        .sd-del-impact-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fffbeb;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em}
+        .sd-del-impact-body{padding:14px 16px}
+        .sd-del-impact-body p{margin:0 0 12px;font-size:13px;color:#64748b;line-height:1.5}
+        .sd-del-impact-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px}
+        .sd-del-impact-item-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f5f3ff;color:#7c3aed}
+        .sd-del-impact-item-count{font-size:16px;font-weight:800;color:#1e293b;line-height:1}
+        .sd-del-impact-item-label{font-size:11px;color:#94a3b8;margin-top:2px}
+        .sd-del-info{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#E6F4F4;border:1px solid #B3E0E0;border-radius:10px;font-size:13px;color:#0A6B70;font-weight:500}
+        .sd-del-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #f1f5f9;background:#fafbfc}
+        .sd-del-confirm-btn{padding:10px 20px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+        .sd-del-confirm-btn:hover{background:#dc2626;transform:translateY(-1px)}
+        .sd-del-confirm-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
       `}</style>
 
       <ToastContainer toasts={toasts} onRemove={id => setToasts(t => t.filter(x => x.id !== id))} />
 
       {/* Toolbar */}
       <div className="sd-toolbar">
-        <div className="sd-search-wrap">
-          <Search size={14} color="#94a3b8" />
-          <input className="sd-search-input" placeholder="Search sub-departments..." value={search}
-            onChange={e => { setSearch(e.target.value); setPagination(p => ({ ...p, page: 1 })); }} />
-          {search && <button className="sd-icon-btn" onClick={() => setSearch("")}><X size={13} /></button>}
+        <div className="sd-toolbar-left">
+          <h2>Sub-Depts / Procedures</h2>
+          <p>Manage your hospital sub-departments configuration</p>
         </div>
         <div className="sd-toolbar-right">
           <button className={`sd-filter-btn ${showFilters ? "active" : ""}`} onClick={() => setShowFilters(!showFilters)}>
             <Filter size={13} />Filters
           </button>
+          <div className="sd-search-wrap">
+            <Search size={14} color="#94a3b8" />
+            <input className="sd-search-input" placeholder="Search sub-departments..." value={search}
+              onChange={e => { setSearch(e.target.value); setPagination(p => ({ ...p, page: 1 })); }} />
+            {search && <button className="sd-icon-btn" onClick={() => setSearch("")}><X size={13} /></button>}
+          </div>
+          <div className="sd-export-wrap">
+            <button className="sd-export-btn" onClick={() => setShowExport(!showExport)}>
+              <Download size={13} />
+              Export{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+            </button>
+            {showExport && (
+              <div className="sd-export-dd">
+                <button className="sd-export-item" onClick={exportPDF}>
+                  <span className="eicon pdf"><FileText size={13} /></span>Export as PDF
+                </button>
+                <button className="sd-export-item" onClick={exportExcel}>
+                  <span className="eicon xls"><FileSpreadsheet size={13} /></span>Export as Excel
+                </button>
+                <button className="sd-export-item" onClick={exportWord}>
+                  <span className="eicon doc"><FileType size={13} /></span>Export as Word
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={handleBulkSend}
             disabled={bulkSending}
@@ -739,72 +944,127 @@ export default function SubDepartmentPanel() {
         </div>
       )}
 
-      {/* Cards */}
+      {/* Table */}
       {loading ? (
         <div className="sd-loading"><Loader2 size={20} className="sd-spin" />Loading sub-departments...</div>
       ) : data.length === 0 ? (
         <div className="sd-empty">No sub-departments found. Click "+ Add Sub-Department" to create one.</div>
       ) : (
         <>
-          <div className="sd-grid">
-            {data.map(item => {
-              const typeInfo = getTypeInfo(item.type);
-              const hexColor = item.color || typeInfo.color;
-              const alpha = hexColor + "20";
-              return (
-                <div key={item.id} className="sd-card">
-                  <div className="sd-card-head">
-                    <div className="sd-card-icon" style={{ background: alpha }}>
-                      {(() => { const CardIcon = typeInfo.Icon; return <CardIcon size={20} style={{ color: hexColor }} />; })()}
-                    </div>
-                    <div className="sd-card-info">
-                      <div className="sd-card-name" title={item.name}>{item.name}</div>
-                      <div className="sd-card-type">{typeInfo.label}{item.department ? ` · ${item.department.name}` : ""}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                      <span className={`sd-badge ${item.isActive ? "green" : "red"}`}>{item.isActive ? "Active" : "Off"}</span>
-                      <button className="sd-icon-btn sd-edit" onClick={() => openEdit(item)}><Pencil size={12} /></button>
-                      <button className="sd-icon-btn sd-del" onClick={() => setDeleteTarget(item)}><Trash2 size={12} /></button>
-                    </div>
-                  </div>
-                  <div className="sd-card-body">
-                    {item.description && <div style={{ fontSize: 12, color: "#64748b" }}>{item.description.slice(0, 80)}{item.description.length > 80 ? "..." : ""}</div>}
-                    {item.hodName && (
-                      <div className="sd-card-row"><User size={12} /><span><strong>HOD:</strong> {item.hodName}{item.hodPhone ? ` · ${item.hodPhone}` : ""}</span></div>
-                    )}
-                    {item.loginEmail && (
-                      <div className="sd-card-row"><Mail size={12} /><span style={{ fontSize: 11 }}>{item.loginEmail}</span></div>
-                    )}
-                    {item.flow && <div className="sd-card-flow">→ {item.flow}</div>}
-                  </div>
-                  <div className="sd-card-foot">
-                    <div className="sd-card-actions">
-                      <button className="sd-proc-count" onClick={() => openProcModal(item)}>
-                        <Layers size={12} />{item._count?.procedures || item.procedures?.length || 0} Procedures
-                      </button>
-                    </div>
-                    <div className="sd-card-actions">
-                      {item.credentialsSent && <span className="sd-creds-sent"><Check size={10} />Sent</span>}
-                      {item.loginEmail && (
-                        <button
-                          className={`sd-btn-sm ${item.credentialsSent ? "sd-btn-resend" : "sd-btn-creds"}`}
-                          onClick={() => sendCredentials(item)}
-                          disabled={sendingCreds === item.id}
-                        >
-                          {sendingCreds === item.id ? <Loader2 size={11} className="sd-spin" /> : <Key size={11} />}
-                          {item.credentialsSent ? "Resend" : "Send Creds"}
+          {selectedIds.size > 0 && (
+            <div className="sd-selected-bar">
+              <Check size={14} />
+              {selectedIds.size} sub-department{selectedIds.size > 1 ? "s" : ""} selected
+              <button className="sd-btn-ghost" style={{padding:"4px 10px",fontSize:12,marginLeft:"auto"}} onClick={() => setSelectedIds(new Set())}>Clear</button>
+            </div>
+          )}
+          <div className="sd-tbl-wrap">
+            <table className="sd-tbl">
+              <thead>
+                <tr>
+                  <th style={{width:40}}>
+                    <input type="checkbox" className="sd-checkbox" checked={data.length > 0 && selectedIds.size === data.length} ref={(el:HTMLInputElement|null)=>{if(el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < data.length;}} onChange={toggleSelectAll} />
+                  </th>
+                  <th className="sd-th-sort" onClick={()=>handleSort("name")}>
+                    Sub-Department
+                    <span className={`sd-sort-icon ${sortBy==="name"?"active":""}`}>
+                      {sortBy==="name"?(sortOrder==="asc"?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUpDown size={12}/>}
+                    </span>
+                  </th>
+                  <th>Code</th>
+                  <th className="sd-th-sort" onClick={()=>handleSort("type")}>
+                    Type
+                    <span className={`sd-sort-icon ${sortBy==="type"?"active":""}`}>
+                      {sortBy==="type"?(sortOrder==="asc"?<ArrowUp size={12}/>:<ArrowDown size={12}/>):<ArrowUpDown size={12}/>}
+                    </span>
+                  </th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>HOD</th>
+                  <th>Procedures</th>
+                  <th>Credentials</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...data].sort((a,b)=>{
+                  let va:any=a[sortBy as keyof SubDept], vb:any=b[sortBy as keyof SubDept];
+                  if(typeof va==="string") va=va.toLowerCase();
+                  if(typeof vb==="string") vb=vb.toLowerCase();
+                  if(va<vb) return sortOrder==="asc"?-1:1;
+                  if(va>vb) return sortOrder==="asc"?1:-1;
+                  return 0;
+                }).map(item => {
+                  const typeInfo = getTypeInfo(item.type);
+                  const hexColor = item.color || typeInfo.color;
+                  return (
+                    <tr key={item.id} style={selectedIds.has(item.id)?{background:"#f0fdfa"}:undefined}>
+                      <td>
+                        <input type="checkbox" className="sd-checkbox" checked={selectedIds.has(item.id)} onChange={()=>toggleSelect(item.id)} />
+                      </td>
+                      <td>
+                        <div className="sd-tbl-name">{item.name}</div>
+                        {item.description && <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>{item.description.slice(0,50)}{item.description.length>50?"...":""}</div>}
+                      </td>
+                      <td>{item.code ? <span className="sd-tbl-code">{item.code}</span> : <span style={{color:"#94a3b8"}}>-</span>}</td>
+                      <td>
+                        <span className="sd-badge" style={{background:hexColor+"20",color:hexColor,border:`1px solid ${hexColor}40`}}>
+                          {item.type==="CUSTOM"&&item.customName?item.customName:typeInfo.label}
+                        </span>
+                      </td>
+                      <td>{item.department?.name||<span style={{color:"#94a3b8"}}>-</span>}</td>
+                      <td>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <span className={`sd-badge ${item.isActive?"green":"red"}`}>{item.isActive?"Active":"Inactive"}</span>
+                          <button type="button" className={`sd-toggle ${item.isActive?"on":""}`} onClick={()=>handleToggleStatus(item)} style={{width:36,height:20}}>
+                            <span className="sd-toggle-thumb" style={{width:16,height:16}} />
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        {item.hodName ? (
+                          <div>
+                            <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{item.hodName}</div>
+                            {item.hodPhone && <div style={{fontSize:11,color:"#94a3b8"}}>{item.hodPhone}</div>}
+                          </div>
+                        ) : <span style={{color:"#94a3b8"}}>-</span>}
+                      </td>
+                      <td>
+                        <button className="sd-proc-count" onClick={() => openProcModal(item)} style={{fontSize:12}}>
+                          <Layers size={12} />{item._count?.procedures || 0}
                         </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      </td>
+                      <td>
+                        <div style={{display:"flex",alignItems:"center",gap:4}}>
+                          {item.credentialsSent && <span className="sd-creds-sent"><Check size={10} />Sent</span>}
+                          {item.loginEmail && (
+                            <button
+                              className={`sd-btn-sm ${item.credentialsSent ? "sd-btn-resend" : "sd-btn-creds"}`}
+                              onClick={() => sendCredentials(item)}
+                              disabled={sendingCreds === item.id}
+                            >
+                              {sendingCreds === item.id ? <Loader2 size={11} className="sd-spin" /> : <Key size={11} />}
+                              {item.credentialsSent ? "Resend" : "Send"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="sd-tbl-actions">
+                          <button className="sd-icon-btn sd-view" onClick={() => setViewItem(item)} title="View details"><Eye size={13} /></button>
+                          <button className="sd-icon-btn sd-edit" onClick={() => openEdit(item)}><Pencil size={13} /></button>
+                          <button className="sd-icon-btn sd-del" onClick={() => setDeleteTarget(item)}><Trash2 size={13} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-          {pagination.totalPages > 1 && (
-            <div className="sd-pagination">
-              <div className="sd-pagination-info">Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}</div>
+            {/* Pagination */}
+            <div className="sd-pagination" style={{padding:"14px 16px",background:"#fff",borderTop:"1px solid #f1f5f9"}}>
+              <div className="sd-pagination-info">Showing {(pagination.page - 1) * pagination.limit + 1}\u2013{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}</div>
               <div className="sd-pagination-btns">
                 <button className="sd-page-btn" disabled={pagination.page === 1} onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}><ChevronLeft size={14} /></button>
                 {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
@@ -818,7 +1078,7 @@ export default function SubDepartmentPanel() {
                 <button className="sd-page-btn" disabled={pagination.page === pagination.totalPages} onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}><ChevronRight size={14} /></button>
               </div>
             </div>
-          )}
+          </div>
         </>
       )}
 
@@ -832,62 +1092,61 @@ export default function SubDepartmentPanel() {
             </div>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", minHeight: 0 }}>
               <div className="sd-modal-body">
-                {/* Section 1: Parent Department */}
+                {/* Section 1+2: Parent Department + Sub-Department Type side by side */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><Building2 size={14} />Parent Department</div>
-                  <select
-                    className="sd-select"
-                    value={form.departmentId}
-                    onChange={e => handleParentDeptChange(e.target.value)}
-                  >
-                    <option value="">— None / Independent —</option>
-                    {departments.map(d => (
-                      <option key={d.id} value={d.id}>{d.name}{d.type ? ` (${d.type.charAt(0) + d.type.slice(1).toLowerCase()})` : ""}</option>
-                    ))}
-                  </select>
-                  {!form.departmentId && (
-                    <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>
-                      Select a parent department to see relevant sub-department types.
-                    </p>
-                  )}
-                </div>
-
-                {/* Section 2: Sub-Department Type */}
-                <div className="sd-section">
-                  <div className="sd-section-title"><Layers size={14} />Sub-Department Type *</div>
-                  {(() => {
-                    const options = DEPT_SUBDEPT_MAP[form.parentDeptType] || ALL_SUBDEPT_OPTIONS;
-                    return (
-                      <>
-                        <select
-                          className="sd-select"
-                          value={form.type}
-                          onChange={e => {
-                            const t = options.find((o: any) => o.value === e.target.value);
-                            setForm((f: any) => ({ ...f, type: e.target.value, color: t?.color || f.color, customName: "" }));
-                          }}
-                          required
-                        >
-                          {options.map((t: any) => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
-                          ))}
-                        </select>
-                        {form.type === "CUSTOM" && (
-                          <div style={{ marginTop: 10 }}>
-                            <label className="sd-lbl">Custom Type Name *</label>
-                            <input
-                              className="sd-input"
-                              placeholder="e.g., Research Lab, ICU Step-Down..."
-                              value={form.customName}
-                              onChange={e => setForm((f: any) => ({ ...f, customName: e.target.value }))}
-                              style={{ marginTop: 4 }}
+                  <div className="sd-section-title"><Building2 size={14} />Department Setup</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <div className="sd-field">
+                      <label className="sd-lbl">Parent Department</label>
+                      <select
+                        className="sd-select"
+                        value={form.departmentId}
+                        onChange={e => handleParentDeptChange(e.target.value)}
+                      >
+                        <option value="">— None / Independent —</option>
+                        {departments.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}{d.type ? ` (${d.type.charAt(0) + d.type.slice(1).toLowerCase()})` : ""}</option>
+                        ))}
+                      </select>
+                      {!form.departmentId && (
+                        <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Optionally link to a parent department.</p>
+                      )}
+                    </div>
+                    <div className="sd-field">
+                      <label className="sd-lbl">Sub-Department Type *</label>
+                      {(() => {
+                        const options = DEPT_SUBDEPT_MAP[form.parentDeptType] || ALL_SUBDEPT_OPTIONS;
+                        return (
+                          <>
+                            <select
+                              className="sd-select"
+                              value={form.type}
+                              onChange={e => {
+                                const t = options.find((o: any) => o.value === e.target.value);
+                                setForm((f: any) => ({ ...f, type: e.target.value, color: t?.color || f.color, customName: "", accessFeatures: PREDEFINED_ACCESS[e.target.value] || [] }));
+                              }}
                               required
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                            >
+                              {options.map((t: any) => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                              ))}
+                            </select>
+                            {form.type === "CUSTOM" && (
+                              <div style={{ marginTop: 8 }}>
+                                <input
+                                  className="sd-input"
+                                  placeholder="e.g., Research Lab, ICU Step-Down..."
+                                  value={form.customName}
+                                  onChange={e => setForm((f: any) => ({ ...f, customName: e.target.value }))}
+                                  required
+                                />
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Section 3: Basic Info */}
@@ -926,17 +1185,30 @@ export default function SubDepartmentPanel() {
                   </div>
                 </div>
 
-                {/* Predefined Access */}
+                {/* Dashboard Access — manual selection */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><ShieldCheck size={14} />Dashboard Access (Auto-assigned)</div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>These features are automatically assigned based on the department type</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {(PREDEFINED_ACCESS[form.type] || []).map((f: string) => (
-                      <span key={f} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 8 }}>
-                        <Check size={12} color="#16a34a" />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>{FEATURE_LABELS[f] || f}</span>
-                      </span>
-                    ))}
+                  <div className="sd-section-title">
+                    <ShieldCheck size={14} />Dashboard Access
+                    <span style={{ marginLeft: "auto", fontSize: 10, background: "#eff6ff", color: "#2563eb", padding: "2px 8px", borderRadius: 100, fontWeight: 700, border: "1px solid #bfdbfe" }}>Manual</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>Select features this sub-department dashboard can access. <em style={{ color: "#0E898F" }}>Auto-tagged</em> ones are suggested based on type.</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                    {Object.entries(FEATURE_LABELS).map(([key, label]) => {
+                      const checked = (form.accessFeatures || []).includes(key);
+                      const isPredefined = (PREDEFINED_ACCESS[form.type] || []).includes(key);
+                      return (
+                        <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 11px", background: checked ? "#f0fdf4" : "#f8fafc", border: `1.5px solid ${checked ? "#bbf7d0" : "#e2e8f0"}`, borderRadius: 9, cursor: "pointer", transition: "all .15s" }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setForm((f: any) => ({ ...f, accessFeatures: checked ? f.accessFeatures.filter((x: string) => x !== key) : [...(f.accessFeatures || []), key] }))}
+                            style={{ width: 14, height: 14, accentColor: "#0E898F", cursor: "pointer", flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: checked ? "#16a34a" : "#64748b", flex: 1 }}>{label}</span>
+                          {isPredefined && <span style={{ fontSize: 9, background: "#E6F4F4", color: "#0A6B70", padding: "1px 5px", borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>Auto</span>}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1152,16 +1424,142 @@ export default function SubDepartmentPanel() {
         </div>
       )}
 
+      {/* View Details Modal */}
+      {viewItem && (
+        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewItem(null)}>
+          <div className="sd-modal">
+            <div className="sd-modal-head">
+              <span className="sd-modal-title">Sub-Department Details</span>
+              <button className="sd-icon-btn" onClick={() => setViewItem(null)}><X size={16} /></button>
+            </div>
+            <div className="sd-view-modal-body">
+              <div className="sd-view-grid">
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Name</span>
+                  <span className="sd-view-value">{viewItem.name}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Code</span>
+                  <span className="sd-view-value">{viewItem.code || "-"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Type</span>
+                  <span className="sd-view-value"><span className={`sd-badge`} style={{background:getTypeInfo(viewItem.type).color+"20",color:getTypeInfo(viewItem.type).color,border:`1px solid ${getTypeInfo(viewItem.type).color}40`}}>{viewItem.type==="CUSTOM"&&viewItem.customName?viewItem.customName:getTypeInfo(viewItem.type).label}</span></span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Status</span>
+                  <span className="sd-view-value"><span className={`sd-badge ${viewItem.isActive?"green":"red"}`}>{viewItem.isActive?"Active":"Inactive"}</span></span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Parent Department</span>
+                  <span className="sd-view-value">{viewItem.department?.name||"None / Independent"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Head of Department</span>
+                  <span className="sd-view-value">{viewItem.hodName||"-"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">HOD Email</span>
+                  <span className="sd-view-value">{viewItem.hodEmail||"-"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">HOD Phone</span>
+                  <span className="sd-view-value">{viewItem.hodPhone||"-"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Login Email</span>
+                  <span className="sd-view-value">{viewItem.loginEmail||"\u2014"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Credentials Sent</span>
+                  <span className="sd-view-value">{viewItem.credentialsSent?"Yes":"No"}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Procedures</span>
+                  <span className="sd-view-value">{viewItem._count?.procedures||viewItem.procedures?.length||0}</span>
+                </div>
+                <div className="sd-view-item">
+                  <span className="sd-view-label">Accent Color</span>
+                  <span className="sd-view-value" style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:14,height:14,borderRadius:4,background:viewItem.color||getTypeInfo(viewItem.type).color,display:"inline-block"}} />{viewItem.color||getTypeInfo(viewItem.type).color}</span>
+                </div>
+                {viewItem.description && (
+                  <div className="sd-view-item full">
+                    <span className="sd-view-label">Description</span>
+                    <span className="sd-view-value">{viewItem.description}</span>
+                  </div>
+                )}
+                {viewItem.flow && (
+                  <div className="sd-view-item full">
+                    <span className="sd-view-label">Patient Flow</span>
+                    <span className="sd-view-value">{viewItem.flow}</span>
+                  </div>
+                )}
+              </div>
+              <div style={{marginTop:20,display:"flex",justifyContent:"flex-end",gap:10}}>
+                <button className="sd-btn-ghost" onClick={()=>setViewItem(null)}>Close</button>
+                <button className="sd-btn-primary" onClick={()=>{openEdit(viewItem);setViewItem(null);}}>Edit Sub-Department</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirm */}
       {deleteTarget && (
         <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setDeleteTarget(null)}>
-          <div className="sd-modal sd-modal-sm">
-            <div className="sd-confirm-icon"><AlertTriangle size={32} color="#ef4444" /></div>
-            <div className="sd-confirm-title">Delete Sub-Department?</div>
-            <div className="sd-confirm-msg">This will permanently delete <strong>{deleteTarget.name}</strong> and all its procedures. This action cannot be undone.</div>
-            <div className="sd-confirm-actions">
+          <div className="sd-del-dialog">
+            <div className="sd-del-header">
+              <div className="sd-del-header-icon"><ShieldAlert size={20} /></div>
+              <div className="sd-del-header-text">
+                <h3>Delete Sub-Department</h3>
+                <p>This action cannot be undone</p>
+              </div>
+              <button className="sd-icon-btn" onClick={() => setDeleteTarget(null)} style={{marginLeft:"auto"}}><X size={16} /></button>
+            </div>
+            <div className="sd-del-body">
+              <div className="sd-del-card">
+                <div className="sd-del-card-icon" style={{background:(deleteTarget.color||getTypeInfo(deleteTarget.type).color)+"20"}}>
+                  {(()=>{const TI=getTypeInfo(deleteTarget.type);return <TI.Icon size={18} style={{color:deleteTarget.color||TI.color}} />;})()}
+                </div>
+                <div>
+                  <div className="sd-del-card-name">{deleteTarget.name}</div>
+                  <div className="sd-del-card-meta">
+                    {deleteTarget.code && <span style={{fontFamily:"monospace",fontSize:11,background:"#f1f5f9",padding:"2px 6px",borderRadius:4,color:"#64748b"}}>{deleteTarget.code}</span>}
+                    <span className={`sd-badge`} style={{background:getTypeInfo(deleteTarget.type).color+"20",color:getTypeInfo(deleteTarget.type).color,border:`1px solid ${getTypeInfo(deleteTarget.type).color}40`,marginLeft:4}}>
+                      {deleteTarget.type==="CUSTOM"&&deleteTarget.customName?deleteTarget.customName:getTypeInfo(deleteTarget.type).label}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {(deleteTarget._count?.procedures||0) > 0 ? (
+                <div className="sd-del-impact">
+                  <div className="sd-del-impact-header"><AlertTriangle size={14} /><span>Impact Analysis</span></div>
+                  <div className="sd-del-impact-body">
+                    <p>Deleting this sub-department will permanently remove all linked resources:</p>
+                    <div className="sd-del-impact-item">
+                      <div className="sd-del-impact-item-icon"><Layers size={14}/></div>
+                      <div style={{display:"flex",flexDirection:"column"}}>
+                        <span className="sd-del-impact-item-count">{deleteTarget._count?.procedures}</span>
+                        <span className="sd-del-impact-item-label">Procedure{(deleteTarget._count?.procedures||0)!==1?"s":""}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="sd-del-info">
+                  <Info size={16} />
+                  <span>This sub-department has no linked procedures. It can be safely removed.</span>
+                </div>
+              )}
+            </div>
+            <div className="sd-del-footer">
               <button className="sd-btn-ghost" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</button>
-              <button className="sd-btn-danger" onClick={handleDelete} disabled={deleting}>{deleting && <Loader2 size={14} className="sd-spin" />}Delete</button>
+              <button className="sd-del-confirm-btn" onClick={handleDelete} disabled={deleting}>
+                {deleting && <Loader2 size={14} className="sd-spin" />}
+                <Trash2 size={14} />
+                Delete Sub-Department
+              </button>
             </div>
           </div>
         </div>

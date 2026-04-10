@@ -1,43 +1,47 @@
 {
   "pages": {
+    "/doctor/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor/dashboard/page.js"
+    ],
+    "/doctor/dashboard/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor/dashboard/layout.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/blog/[slug]/page": [
+    "/hospitaladmin/appointments/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/blog/[slug]/page.css",
-      "static/chunks/app/blog/[slug]/page.js"
-    ],
-    "/blog/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/blog/page.css",
-      "static/chunks/app/blog/page.js"
-    ],
-    "/hospitaladmin/profile/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/hospitaladmin/profile/page.js"
+      "static/chunks/app/hospitaladmin/appointments/page.js"
     ],
     "/hospitaladmin/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/hospitaladmin/layout.js"
     ],
-    "/hospitaladmin/dashboard/page": [
+    "/treatments/body-shaping/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/hospitaladmin/dashboard/page.js"
+      "static/css/app/treatments/body-shaping/page.css",
+      "static/chunks/app/treatments/body-shaping/page.js"
     ],
-    "/treatments/medical-tourism/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/treatments/medical-tourism/page.css",
-      "static/chunks/app/treatments/medical-tourism/page.js"
+      "static/css/app/page.css",
+      "static/chunks/app/page.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

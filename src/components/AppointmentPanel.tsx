@@ -5,14 +5,20 @@ import {
   Building2, CheckCircle, XCircle, AlertCircle, RefreshCw, Hash,
   Phone, Mail, ChevronRight, Eye, ClipboardList, CalendarCheck,
   Edit, Trash2, FileText, AlertTriangle, Download, Bell,
+  ArrowLeft, Zap, Sun, Sunset, Moon, FileSpreadsheet, FileType,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Document as DocxDocument, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel, BorderStyle, AlignmentType } from "docx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 interface Patient { id: string; patientId: string; name: string; phone: string; email?: string; gender?: string; dateOfBirth?: string; bloodGroup?: string; }
 interface Doctor { id: string; name: string; specialization?: string; departmentId?: string; department?: { name: string }; consultationFee?: number; }
-interface Department { id: string; name: string; code: string; }
+interface Department { id: string; name: string; code: string; type?: string; }
 interface Appointment {
   id: string; patientId: string; doctorId: string; departmentId?: string;
   appointmentDate: string; timeSlot: string; type: string; status: string;
@@ -723,6 +729,10 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [page, setPage] = useState(1);
   const [reminderSending, setReminderSending] = useState<Set<string>>(new Set());
   const [reminderMsg, setReminderMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
+  const [showExport, setShowExport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -748,11 +758,37 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
     const d = await api(`/api/appointments/${deleteTarget.id}`, "DELETE");
     if (d.success) {
       setDeleteTarget(null);
+      selectedIds.delete(deleteTarget.id);
+      setSelectedIds(new Set(selectedIds));
       load();
     } else {
       alert(d.message || "Failed to delete appointment");
     }
     setDeleting(false);
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+    let ok = 0;
+    for (const id of ids) {
+      const d = await api(`/api/appointments/${id}`, "DELETE");
+      if (d.success) ok++;
+    }
+    setSelectedIds(new Set());
+    setShowBulkConfirm(false);
+    setBulkDeleting(false);
+    load();
+  };
+
+  const toggleSelect = (id: string) => {
+    const s = new Set(selectedIds);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setSelectedIds(s);
+  };
+  const toggleAll = () => {
+    if (selectedIds.size === appointments.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(appointments.map(a => a.id)));
   };
 
   const handleEdit = async (updatedData: any) => {
@@ -764,6 +800,77 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
     } else {
       alert(d.message || "Failed to update appointment");
     }
+  };
+
+  const getExportData = () => appointments.map(a => ({
+    Patient: a.patient?.name || "—",
+    "Patient ID": a.patient?.patientId || "—",
+    Doctor: a.doctor?.name || "—",
+    Department: a.department?.name || "—",
+    Date: new Date(a.appointmentDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    Time: fmt12(a.timeSlot),
+    Type: a.type,
+    Status: a.status,
+    Fee: a.consultationFee != null ? `₹${a.consultationFee}` : "—",
+    Token: a.tokenNumber ?? "—",
+  }));
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Appointments Report", 14, 16);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 23);
+    const rows = getExportData();
+    autoTable(doc, {
+      startY: 28,
+      head: [["Patient", "Patient ID", "Doctor", "Dept", "Date", "Time", "Type", "Status", "Fee"]],
+      body: rows.map(r => [r.Patient, r["Patient ID"], r.Doctor, r.Department, r.Date, r.Time, r.Type, r.Status, r.Fee]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [14, 137, 143] },
+    });
+    doc.save(`appointments-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setShowExport(false);
+  };
+
+  const exportExcel = () => {
+    const rows = getExportData();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Appointments");
+    XLSX.writeFile(wb, `appointments-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setShowExport(false);
+  };
+
+  const exportWord = async () => {
+    const rows = getExportData();
+    const keys = ["Patient", "Patient ID", "Doctor", "Department", "Date", "Time", "Type", "Status", "Fee"] as const;
+    const headerRow = new TableRow({
+      children: keys.map(k => new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, size: 18, font: "Calibri" })] })],
+        width: { size: 100 / keys.length, type: WidthType.PERCENTAGE },
+        shading: { fill: "0E898F" },
+      })),
+    });
+    const dataRows = rows.map(r => new TableRow({
+      children: keys.map(k => new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: String((r as any)[k] ?? ""), size: 18, font: "Calibri" })] })],
+      })),
+    }));
+    const doc = new DocxDocument({
+      sections: [{
+        children: [
+          new Paragraph({ text: "Appointments Report", heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-IN")}`, size: 18, color: "888888" })] }),
+          new Paragraph({ text: "" }),
+          new DocxTable({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `appointments-${new Date().toISOString().slice(0, 10)}.docx`);
+    setShowExport(false);
   };
 
   return (
@@ -792,10 +899,39 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
           <RefreshCw size={12} />Clear
         </button>
-        <a href={`/api/export/appointments${dateFilter ? `?dateFrom=${dateFilter}&dateTo=${dateFilter}` : ""}${statusFilter ? `${dateFilter ? "&" : "?"}status=${statusFilter}` : ""}`}
-          download style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", fontSize: 12, color: "#059669", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
-          <Download size={12} />Export CSV
-        </a>
+        {selectedIds.size > 0 && (
+          <button onClick={() => setShowBulkConfirm(true)}
+            style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #fecaca", background: "#fff5f5", fontSize: 12, color: "#ef4444", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            <Trash2 size={12} />Delete ({selectedIds.size})
+          </button>
+        )}
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowExport(!showExport)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.background = "#f8fafc"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#fff"; }}>
+            <Download size={14} />Export
+          </button>
+          {showExport && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 50, minWidth: 180, padding: 6 }}>
+              <button onClick={exportPDF}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff5f5", color: "#ef4444" }}><FileText size={13} /></span>Export as PDF
+              </button>
+              <button onClick={exportExcel}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0fdf4", color: "#16a34a" }}><FileSpreadsheet size={13} /></span>Export as Excel
+              </button>
+              <button onClick={exportWord}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#2563eb" }}><FileType size={13} /></span>Export as Word
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -813,6 +949,10 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: "12px 10px 12px 14px", borderBottom: "2px solid #f1f5f9", width: 36 }}>
+                  <input type="checkbox" checked={appointments.length > 0 && selectedIds.size === appointments.length}
+                    onChange={toggleAll} style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#0E898F" }} />
+                </th>
                 {["Token", "Patient", "Doctor", "Date & Time", "Type", "Fee", "Status", "Actions"].map(h => (
                   <th key={h} style={{ textAlign: "left", fontSize: 11, fontWeight: 600, color: "#94a3b8", padding: "12px 14px", borderBottom: "2px solid #f1f5f9", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
@@ -824,9 +964,13 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                 const date = new Date(appt.appointmentDate);
                 const isToday = date.toDateString() === new Date().toDateString();
                 return (
-                  <tr key={appt.id} style={{ borderBottom: "1px solid #f8fafc" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#fafbfc")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <tr key={appt.id} style={{ borderBottom: "1px solid #f8fafc", background: selectedIds.has(appt.id) ? "#f0fdfa" : "transparent" }}
+                    onMouseEnter={e => { if (!selectedIds.has(appt.id)) e.currentTarget.style.background = "#fafbfc"; }}
+                    onMouseLeave={e => { if (!selectedIds.has(appt.id)) e.currentTarget.style.background = "transparent"; }}>
+                    <td style={{ padding: "12px 10px 12px 14px", width: 36 }}>
+                      <input type="checkbox" checked={selectedIds.has(appt.id)} onChange={() => toggleSelect(appt.id)}
+                        style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#0E898F" }} />
+                    </td>
                     <td style={{ padding: "12px 14px" }}>
                       <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#7c3aed,#4c1d95)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13 }}>
                         {appt.tokenNumber || "—"}
@@ -1043,6 +1187,36 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           </div>
         </div>
       )}
+
+      {showBulkConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget && !bulkDeleting) setShowBulkConfirm(false); }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertTriangle size={20} color="#ef4444" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete {selectedIds.size} Appointments?</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                  Are you sure you want to delete <strong>{selectedIds.size}</strong> selected appointment(s)? This action cannot be undone.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowBulkConfirm(false)} disabled={bulkDeleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: bulkDeleting ? "not-allowed" : "pointer", opacity: bulkDeleting ? .5 : 1 }}>
+                Cancel
+              </button>
+              <button onClick={handleBulkDelete} disabled={bulkDeleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: bulkDeleting ? "not-allowed" : "pointer", opacity: bulkDeleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                {bulkDeleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+                {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} Appointments`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1081,24 +1255,551 @@ function StatsBar() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN PANEL
+// BOOKING WIZARD — Streamlined 4-step appointment booking
 // ─────────────────────────────────────────────────────────────────────────────
-export default function AppointmentPanel({ onViewPatient }: { onViewPatient?: (id: string) => void }) {
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [showBooking, setShowBooking] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [successMsg, setSuccessMsg] = useState("");
+type WizardStep = 1 | 2 | 3 | 4;
 
-  const handlePatientSelect = (p: Patient) => {
-    setSelectedPatient(p);
-    setShowBooking(true);
-    setSuccessMsg("");
+export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSuccess: (name: string) => void; onClose: () => void; initialPatient?: { id: string; patientId: string; name: string; phone: string; email?: string; gender?: string } | null }) {
+  const [step, setStep] = useState<WizardStep>(initialPatient ? 2 : 1);
+  const [patient, setPatient] = useState<Patient | null>(initialPatient ? { id: initialPatient.id, patientId: initialPatient.patientId, name: initialPatient.name, phone: initialPatient.phone, email: initialPatient.email, gender: initialPatient.gender } : null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [deptFilter, setDeptFilter] = useState("");
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [timeSlot, setTimeSlot] = useState("");
+  const [type, setType] = useState("OPD");
+  const [notes, setNotes] = useState("");
+  const [consultationFee, setConsultationFee] = useState("");
+  const [slots, setSlots] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
+  const [searchQ, setSearchQ] = useState("");
+  const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showNewPatient, setShowNewPatient] = useState(false);
+  const [newForm, setNewForm] = useState({ name: "", phone: "", email: "", gender: "" });
+  const [registerSaving, setRegisterSaving] = useState(false);
+  const [registerMsg, setRegisterMsg] = useState("");
+  const [dupPatient, setDupPatient] = useState<Patient | null>(null);
+  const debounce = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    api("/api/patients?limit=6&sortBy=createdAt&sortOrder=desc").then(d => setRecentPatients(d.data?.data || d.data || []));
+    api("/api/config/departments?simple=true").then(d => {
+      const EXCLUDE = ["ADMINISTRATIVE", "SUPPORT"];
+      setDepartments((d.data || []).filter((dp: Department) => !dp.type || !EXCLUDE.includes(dp.type)));
+    });
+  }, []);
+
+  useEffect(() => {
+    const url = deptFilter ? `/api/config/doctors?simple=true&departmentId=${deptFilter}` : `/api/config/doctors?simple=true`;
+    api(url).then(d => setDoctors(d.data || []));
+  }, [deptFilter]);
+
+  useEffect(() => {
+    if (!doctor?.id || !appointmentDate) { setSlots([]); return; }
+    setLoadingSlots(true);
+    api(`/api/appointments/slots?doctorId=${doctor.id}&date=${appointmentDate}`)
+      .then(d => { setSlots(d.data?.slots || []); setBookedSlots(d.data?.bookedSlots || []); })
+      .finally(() => setLoadingSlots(false));
+  }, [doctor?.id, appointmentDate]);
+
+  const searchPatients = useCallback((val: string) => {
+    if (debounce.current) clearTimeout(debounce.current);
+    if (!val.trim()) { setSearchResults([]); return; }
+    debounce.current = setTimeout(async () => {
+      setSearchLoading(true);
+      const d = await api(`/api/patients?q=${encodeURIComponent(val)}`);
+      setSearchResults(d.data || []);
+      setSearchLoading(false);
+    }, 300);
+  }, []);
+
+  const groupSlots = (allSlots: string[]) => {
+    const morning: string[] = [], afternoon: string[] = [], evening: string[] = [];
+    allSlots.forEach(s => {
+      const h = parseInt(s.split(":")[0]);
+      if (h < 12) morning.push(s);
+      else if (h < 17) afternoon.push(s);
+      else evening.push(s);
+    });
+    return { morning, afternoon, evening };
   };
 
-  const handleBookingSuccess = () => {
-    const name = selectedPatient?.name || "Patient";
-    setShowBooking(false);
-    setSelectedPatient(null);
+  const isSlotPassed = (dateStr: string, timeStr: string) => {
+    if (!dateStr || !timeStr) return false;
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [h, min] = timeStr.split(":").map(Number);
+    return new Date(y, m - 1, d, h, min) < new Date();
+  };
+
+  const today = new Date().toISOString().split("T")[0];
+  const tmrw = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+  const selectPatient = (p: Patient) => { setPatient(p); setStep(2); setMsg(""); };
+  const selectDoctor = (d: Doctor) => {
+    setDoctor(d);
+    setConsultationFee(d.consultationFee ? String(d.consultationFee) : "");
+    if (!deptFilter && d.departmentId) setDeptFilter(d.departmentId);
+    setStep(3);
+    if (!appointmentDate) setAppointmentDate(today);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault(); setRegisterSaving(true); setRegisterMsg(""); setDupPatient(null);
+    if (newForm.name.trim().length < 2) { setRegisterMsg("Name required (min 2 chars)"); setRegisterSaving(false); return; }
+    if (newForm.phone.trim().length < 7) { setRegisterMsg("Valid phone required"); setRegisterSaving(false); return; }
+    const payload: any = { name: newForm.name.trim(), phone: newForm.phone.trim() };
+    if (newForm.email.trim()) payload.email = newForm.email.trim();
+    if (newForm.gender) payload.gender = newForm.gender;
+    const d = await api("/api/patients", "POST", payload);
+    if (d.success) {
+      if (d.data.isNew) { selectPatient(d.data.patient); setShowNewPatient(false); setNewForm({ name: "", phone: "", email: "", gender: "" }); }
+      else setDupPatient(d.data.patient);
+    } else setRegisterMsg(d.message || "Error");
+    setRegisterSaving(false);
+  };
+
+  const handleBook = async () => {
+    if (!patient || !doctor || !timeSlot || !appointmentDate) return;
+    setSaving(true); setMsg("");
+    const [y, m, d] = appointmentDate.split("-").map(Number);
+    const [h, min] = timeSlot.split(":").map(Number);
+    if (new Date(y, m - 1, d, h, min) < new Date()) { setMsg("Selected time has passed"); setSaving(false); return; }
+    const payload: any = { patientId: patient.id, doctorId: doctor.id, appointmentDate, timeSlot, type, notes: notes || null };
+    if (deptFilter) payload.departmentId = deptFilter;
+    if (consultationFee) payload.consultationFee = parseFloat(consultationFee);
+    const res = await api("/api/appointments", "POST", payload);
+    if (res.success) { onSuccess(patient.name); reset(); }
+    else setMsg(res.message || "Failed to book");
+    setSaving(false);
+  };
+
+  const reset = () => {
+    setStep(1); setPatient(null); setDoctor(null); setDeptFilter("");
+    setAppointmentDate(""); setTimeSlot(""); setType("OPD");
+    setNotes(""); setConsultationFee(""); setMsg("");
+    setShowNewPatient(false); setSearchQ(""); setSearchResults([]);
+    setDupPatient(null); setRegisterMsg("");
+  };
+
+  const grouped = groupSlots(slots);
+
+  const STEPS = [
+    { num: 1, label: "Patient", icon: User },
+    { num: 2, label: "Doctor", icon: Stethoscope },
+    { num: 3, label: "Schedule", icon: Calendar },
+    { num: 4, label: "Confirm", icon: CheckCircle },
+  ];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,137,143,.08)", backdropFilter: "blur(2px)", animation: "fadeIn .2s ease" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.18)", width: "90%", maxWidth: 720, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#0E898F,#0A6B70)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Zap size={18} color="#fff" />
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Quick Book Appointment</span>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {step > 1 && (
+            <button onClick={reset} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, padding: "6px 14px", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+              <RefreshCw size={11} />Start Over
+            </button>
+          )}
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Step Indicator */}
+      <div style={{ display: "flex", alignItems: "center", padding: "14px 24px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+        {STEPS.map((s, i) => {
+          const Icon = s.icon;
+          const isActive = step === s.num;
+          const isDone = step > s.num;
+          return (
+            <div key={s.num} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : "none" }}>
+              <button onClick={() => { if (isDone) setStep(s.num as WizardStep); }}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 12px", borderRadius: 9, border: isActive ? "1.5px solid #0E898F" : isDone ? "1.5px solid #10b981" : "1.5px solid transparent", background: isActive ? "#E6F4F4" : isDone ? "#f0fdf4" : "transparent", cursor: isDone ? "pointer" : "default", transition: "all .15s" }}>
+                <div style={{ width: 24, height: 24, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: isActive ? "#0E898F" : isDone ? "#10b981" : "#e2e8f0", color: isActive || isDone ? "#fff" : "#94a3b8", fontSize: 11, fontWeight: 800 }}>
+                  {isDone ? <CheckCircle size={12} /> : <Icon size={12} />}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? "#0E898F" : isDone ? "#10b981" : "#94a3b8", whiteSpace: "nowrap" }}>{s.label}</span>
+              </button>
+              {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: isDone ? "#10b981" : "#e2e8f0", margin: "0 6px", borderRadius: 1 }} />}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
+        {/* ── STEP 1: Patient ── */}
+        {step === 1 && (
+          <div>
+            {recentPatients.length > 0 && !showNewPatient && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>
+                  Recent Patients — Quick Select
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(190px,1fr))", gap: 10 }}>
+                  {recentPatients.slice(0, 6).map(p => (
+                    <button key={p.id} onClick={() => selectPatient(p)}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 11, border: "1.5px solid #e2e8f0", background: "#fff", cursor: "pointer", transition: "all .15s", textAlign: "left" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#0E898F"; e.currentTarget.style.background = "#E6F4F4"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#fff"; }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                        <div style={{ fontSize: 10, color: "#94a3b8" }}>{p.patientId} · {p.phone}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!showNewPatient && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Search Patient</div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ position: "relative", flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "10px 14px" }}>
+                      <Search size={15} color="#94a3b8" />
+                      <input style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", flex: 1 }}
+                        placeholder="Search by name, phone, or Patient ID..." autoFocus
+                        value={searchQ} onChange={e => { setSearchQ(e.target.value); searchPatients(e.target.value); }} />
+                      {searchLoading && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} color="#94a3b8" />}
+                      {searchQ && <button onClick={() => { setSearchQ(""); setSearchResults([]); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 0 }}><X size={13} /></button>}
+                    </div>
+                    {searchResults.length > 0 && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 8px 30px rgba(0,0,0,.12)", zIndex: 100, maxHeight: 260, overflowY: "auto", marginTop: 4 }}>
+                        <div style={{ padding: "6px 14px 2px", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>
+                          {searchResults.length} found — click to select
+                        </div>
+                        {searchResults.map(p => (
+                          <button key={p.id} onClick={() => { selectPatient(p); setSearchResults([]); setSearchQ(""); }}
+                            style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", borderBottom: "1px solid #f1f5f9" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }}>{p.name.charAt(0).toUpperCase()}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{p.name}</div>
+                              <div style={{ fontSize: 11, color: "#94a3b8" }}>{p.patientId} · {p.phone}{p.email ? ` · ${p.email}` : ""}</div>
+                            </div>
+                            <ChevronRight size={13} color="#cbd5e1" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setShowNewPatient(true)}
+                    style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px dashed #0E898F", background: "#E6F4F4", color: "#0A6B70", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+                    <Plus size={14} />New Patient
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showNewPatient && (
+              <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>Quick Register</div>
+                    <div style={{ fontSize: 12, color: "#94a3b8" }}>Minimal info to get started. Full details can be added later.</div>
+                  </div>
+                  <button onClick={() => { setShowNewPatient(false); setDupPatient(null); setRegisterMsg(""); }}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={13} /></button>
+                </div>
+                {dupPatient && (
+                  <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>Phone already registered</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 9, padding: "10px 14px", border: "1px solid #fde68a", marginBottom: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12 }}>{dupPatient.name.charAt(0)}</div>
+                      <div><div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{dupPatient.name}</div><div style={{ fontSize: 11, color: "#94a3b8" }}>{dupPatient.patientId} · {dupPatient.phone}</div></div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button type="button" onClick={() => { selectPatient(dupPatient); setShowNewPatient(false); setDupPatient(null); }}
+                        style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Book for {dupPatient.name}</button>
+                      <button type="button" onClick={() => { setDupPatient(null); setNewForm(p => ({ ...p, phone: "" })); }}
+                        style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Change Phone</button>
+                    </div>
+                  </div>
+                )}
+                <form onSubmit={handleRegister} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Full Name *</label>
+                    <input required style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                      placeholder="e.g. Rahul Sharma" value={newForm.name} onChange={e => setNewForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Phone *</label>
+                    <input required style={{ background: "#fff", border: `1.5px solid ${dupPatient ? "#fde68a" : "#e2e8f0"}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                      placeholder="e.g. 9876543210" value={newForm.phone} onChange={e => { setNewForm(p => ({ ...p, phone: e.target.value })); setDupPatient(null); }} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Email</label>
+                    <input type="email" style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                      placeholder="Optional" value={newForm.email} onChange={e => setNewForm(p => ({ ...p, email: e.target.value }))} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Gender</label>
+                    <select style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                      value={newForm.gender} onChange={e => setNewForm(p => ({ ...p, gender: e.target.value }))}>
+                      <option value="">Select...</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  {registerMsg && <div style={{ gridColumn: "1/-1", fontSize: 12, color: "#ef4444", fontWeight: 600, background: "#fff5f5", padding: "8px 12px", borderRadius: 8, border: "1px solid #fecaca" }}><AlertCircle size={12} style={{ display: "inline", marginRight: 5 }} />{registerMsg}</div>}
+                  <div style={{ gridColumn: "1/-1", display: "flex", gap: 8, marginTop: 2 }}>
+                    <button type="submit" disabled={registerSaving || !!dupPatient}
+                      style={{ padding: "9px 20px", borderRadius: 9, border: "none", background: (registerSaving || dupPatient) ? "#e2e8f0" : "#0E898F", color: (registerSaving || dupPatient) ? "#94a3b8" : "#fff", fontSize: 13, fontWeight: 700, cursor: (registerSaving || dupPatient) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                      {registerSaving && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}Register & Continue
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 2: Doctor ── */}
+        {step === 2 && (
+          <div>
+            <div style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", borderRadius: 10, padding: "10px 16px", marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13 }}>{patient!.name.charAt(0)}</div>
+              <div><div style={{ fontWeight: 700, color: "#fff", fontSize: 13 }}>{patient!.name}</div><div style={{ fontSize: 11, color: "#bae6fd" }}>{patient!.patientId} · {patient!.phone}</div></div>
+              <button onClick={() => setStep(1)} style={{ marginLeft: "auto", background: "rgba(255,255,255,.2)", border: "none", borderRadius: 7, padding: "5px 12px", cursor: "pointer", color: "#fff", fontSize: 11, fontWeight: 600 }}>Change</button>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em" }}>Filter by Dept:</span>
+              <button onClick={() => setDeptFilter("")}
+                style={{ padding: "5px 12px", borderRadius: 8, border: `1.5px solid ${!deptFilter ? "#0E898F" : "#e2e8f0"}`, background: !deptFilter ? "#E6F4F4" : "#fff", color: !deptFilter ? "#0E898F" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all .1s" }}>All</button>
+              {departments.map(dp => (
+                <button key={dp.id} onClick={() => setDeptFilter(dp.id)}
+                  style={{ padding: "5px 12px", borderRadius: 8, border: `1.5px solid ${deptFilter === dp.id ? "#0E898F" : "#e2e8f0"}`, background: deptFilter === dp.id ? "#E6F4F4" : "#fff", color: deptFilter === dp.id ? "#0E898F" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all .1s" }}>{dp.name}</button>
+              ))}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 12 }}>
+              {doctors.map(d => (
+                <button key={d.id} onClick={() => selectDoctor(d)}
+                  style={{ textAlign: "left", padding: 16, borderRadius: 12, border: "1.5px solid #e2e8f0", background: "#fff", cursor: "pointer", transition: "all .15s", display: "flex", flexDirection: "column", gap: 8 }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#0E898F"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(14,137,143,.1)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.boxShadow = "none"; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#0E898F,#0A6B70)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 14 }}>{d.name.charAt(0)}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{d.name}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{d.specialization || d.department?.name || "General"}</div>
+                    </div>
+                  </div>
+                  {d.consultationFee != null && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70", background: "#E6F4F4", padding: "3px 10px", borderRadius: 6, width: "fit-content" }}>₹{d.consultationFee}</div>
+                  )}
+                </button>
+              ))}
+              {doctors.length === 0 && (
+                <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px 20px", color: "#94a3b8" }}>
+                  <Stethoscope size={28} style={{ marginBottom: 8, opacity: .4 }} />
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>No doctors found</div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>Try changing the department filter</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: Schedule ── */}
+        {step === 3 && (
+          <div>
+            <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 9, background: "#f0f9ff", border: "1px solid #bae6fd" }}>
+                <User size={12} color="#0369a1" /><span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1" }}>{patient!.name}</span>
+                <button onClick={() => setStep(1)} style={{ background: "none", border: "none", cursor: "pointer", color: "#93c5fd", display: "flex", padding: 0 }}><Edit size={10} /></button>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 9, background: "#E6F4F4", border: "1px solid #B3E0E0" }}>
+                <Stethoscope size={12} color="#0A6B70" /><span style={{ fontSize: 12, fontWeight: 600, color: "#0A6B70" }}>{doctor!.name}</span>
+                <button onClick={() => setStep(2)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6ee7b7", display: "flex", padding: 0 }}><Edit size={10} /></button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>Select Date</div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <button onClick={() => { setAppointmentDate(today); setTimeSlot(""); }}
+                  style={{ padding: "8px 20px", borderRadius: 9, border: `1.5px solid ${appointmentDate === today ? "#0E898F" : "#e2e8f0"}`, background: appointmentDate === today ? "#0E898F" : "#fff", color: appointmentDate === today ? "#fff" : "#64748b", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .12s" }}>Today</button>
+                <button onClick={() => { setAppointmentDate(tmrw); setTimeSlot(""); }}
+                  style={{ padding: "8px 20px", borderRadius: 9, border: `1.5px solid ${appointmentDate === tmrw ? "#0E898F" : "#e2e8f0"}`, background: appointmentDate === tmrw ? "#0E898F" : "#fff", color: appointmentDate === tmrw ? "#fff" : "#64748b", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .12s" }}>Tomorrow</button>
+                <input type="date" min={today} value={appointmentDate}
+                  onChange={e => { setAppointmentDate(e.target.value); setTimeSlot(""); }}
+                  style={{ padding: "8px 14px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#334155", outline: "none" }} />
+              </div>
+            </div>
+
+            {appointmentDate && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 12 }}>
+                  Available Slots {loadingSlots && <Loader2 size={11} style={{ marginLeft: 6, animation: "spin .7s linear infinite", display: "inline-block" }} />}
+                </div>
+                {loadingSlots ? (
+                  <div style={{ padding: "30px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                    <Loader2 size={20} style={{ animation: "spin .7s linear infinite", marginBottom: 8 }} /><br />Loading available time slots...
+                  </div>
+                ) : slots.length === 0 ? (
+                  <div style={{ padding: "16px", background: "#fff5f5", borderRadius: 10, border: "1px solid #fecaca", color: "#ef4444", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+                    <AlertCircle size={15} />No available slots. Doctor may be unavailable or fully booked for this date.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {[
+                      { label: "Morning", icon: Sun, slots: grouped.morning, color: "#f59e0b", bg: "#fffbeb" },
+                      { label: "Afternoon", icon: Sun, slots: grouped.afternoon, color: "#f97316", bg: "#fff7ed" },
+                      { label: "Evening", icon: Sunset, slots: grouped.evening, color: "#8b5cf6", bg: "#f5f3ff" },
+                    ].filter(g => g.slots.length > 0).map(group => {
+                      const GIcon = group.icon;
+                      const availCount = group.slots.filter(s => !bookedSlots.includes(s) && !isSlotPassed(appointmentDate, s)).length;
+                      return (
+                        <div key={group.label}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                            <div style={{ width: 22, height: 22, borderRadius: 6, background: group.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <GIcon size={12} color={group.color} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: group.color }}>{group.label}</span>
+                            <span style={{ fontSize: 11, color: "#cbd5e1" }}>({availCount} available)</span>
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {group.slots.map(slot => {
+                              const isBooked = bookedSlots.includes(slot);
+                              const isPast = isSlotPassed(appointmentDate, slot);
+                              const disabled = isBooked || isPast;
+                              const selected = timeSlot === slot;
+                              return (
+                                <button key={slot} disabled={disabled}
+                                  onClick={() => { setTimeSlot(slot); setStep(4); }}
+                                  title={isPast ? "Time has passed" : isBooked ? "Already booked" : `Select ${fmt12(slot)}`}
+                                  style={{
+                                    padding: "8px 16px", borderRadius: 9,
+                                    border: `1.5px solid ${selected ? "#0E898F" : disabled ? "#f1f5f9" : "#e2e8f0"}`,
+                                    background: selected ? "#0E898F" : disabled ? "#f8fafc" : "#fff",
+                                    color: selected ? "#fff" : disabled ? "#cbd5e1" : "#334155",
+                                    fontSize: 12, fontWeight: selected ? 700 : 500,
+                                    cursor: disabled ? "not-allowed" : "pointer",
+                                    textDecoration: disabled ? "line-through" : "none",
+                                    transition: "all .12s",
+                                  }}>
+                                  {fmt12(slot)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 4: Confirm ── */}
+        {step === 4 && (
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b", marginBottom: 18 }}>Review & Confirm</div>
+
+            <div style={{ background: "linear-gradient(135deg,#f8fafc,#f0f9ff)", borderRadius: 14, padding: 20, border: "1.5px solid #e2e8f0", marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Patient</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{patient!.name}</div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>{patient!.patientId} · {patient!.phone}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Doctor</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{doctor!.name}</div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>{doctor!.specialization || doctor!.department?.name || "—"}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date & Time</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0E898F" }}>
+                    {appointmentDate === today ? "Today" : appointmentDate === tmrw ? "Tomorrow" : new Date(appointmentDate + "T00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    {" · "}{fmt12(timeSlot)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Consultation Fee</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{consultationFee ? `₹${consultationFee}` : "As per doctor"}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Appointment Type</label>
+                <select style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                  value={type} onChange={e => setType(e.target.value)}>
+                  <option value="OPD">OPD</option><option value="ONLINE">Online</option><option value="FOLLOW_UP">Follow-up</option><option value="EMERGENCY">Emergency</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Fee Override (₹)</label>
+                <input type="number" min="0" style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                  placeholder={doctor?.consultationFee?.toString() || "0"} value={consultationFee} onChange={e => setConsultationFee(e.target.value)} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Chief Complaint / Notes</label>
+                <input style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                  placeholder="e.g. Fever, headache..." value={notes} onChange={e => setNotes(e.target.value)} />
+              </div>
+            </div>
+
+            {msg && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#ef4444", fontWeight: 600, background: "#fff5f5", padding: "10px 14px", borderRadius: 9, border: "1px solid #fecaca", marginBottom: 14 }}>
+                <AlertCircle size={14} />{msg}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setStep(3)}
+                style={{ padding: "10px 20px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <ArrowLeft size={14} />Back
+              </button>
+              <button onClick={handleBook} disabled={saving}
+                style={{ flex: 1, padding: "12px 24px", borderRadius: 10, border: "none", background: saving ? "#94a3b8" : "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: saving ? "none" : "0 4px 16px rgba(14,137,143,.3)", transition: "all .15s" }}>
+                {saving ? <Loader2 size={15} style={{ animation: "spin .7s linear infinite" }} /> : <CalendarCheck size={16} />}
+                {saving ? "Booking..." : "Confirm & Book Appointment"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+export default function AppointmentPanel({ onViewPatient, openTrigger }: { onViewPatient?: (id: string) => void; openTrigger?: number }) {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (openTrigger && openTrigger > 0) setShowModal(true);
+  }, [openTrigger]);
+
+  const handleBookingSuccess = (name: string) => {
+    setShowModal(false);
     setRefreshKey(k => k + 1);
     setSuccessMsg(`Appointment booked successfully for ${name}`);
     setTimeout(() => setSuccessMsg(""), 6000);
@@ -1110,7 +1811,6 @@ export default function AppointmentPanel({ onViewPatient }: { onViewPatient?: (i
 
       <StatsBar />
 
-      {/* Success Notification */}
       {successMsg && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "12px 18px", marginBottom: 16, animation: "fadeIn .3s ease" }}>
           <CheckCircle size={18} color="#059669" />
@@ -1119,37 +1819,24 @@ export default function AppointmentPanel({ onViewPatient }: { onViewPatient?: (i
         </div>
       )}
 
-      {/* Booking Area */}
-      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
-              <CalendarCheck size={18} color="#0ea5e9" />New Appointment
-            </div>
-            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Search existing patient or register new one to book</div>
-          </div>
-          {showBooking && (
-            <button onClick={() => { setShowBooking(false); setSelectedPatient(null); }}
-              style={{ padding: "7px 14px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-              <X size={12} />Clear
-            </button>
-          )}
+      {/* Book Appointment Trigger Button */}
+      <button onClick={() => setShowModal(true)}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "16px 24px", borderRadius: 14, border: "1.5px dashed #0E898F", background: "#E6F4F4", cursor: "pointer", transition: "all .15s", marginBottom: 24 }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#D4EDED"; e.currentTarget.style.borderColor = "#0A6B70"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "#E6F4F4"; e.currentTarget.style.borderColor = "#0E898F"; }}>
+        <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,#0E898F,#0A6B70)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(14,137,143,.25)" }}>
+          <Plus size={20} color="#fff" />
         </div>
+        <div style={{ textAlign: "left" }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#0A6B70" }}>Book New Appointment</div>
+          <div style={{ fontSize: 12, color: "#0E898F", opacity: .7 }}>Click to open the quick booking wizard</div>
+        </div>
+        <ChevronRight size={18} color="#0E898F" style={{ marginLeft: "auto", opacity: .5 }} />
+      </button>
 
-        {!showBooking ? (
-          <PatientSearchBox onSelect={handlePatientSelect} />
-        ) : (
-          selectedPatient && (
-            <BookingForm
-              patient={selectedPatient}
-              onSuccess={handleBookingSuccess}
-              onCancel={() => { setShowBooking(false); setSelectedPatient(null); }}
-            />
-          )
-        )}
-      </div>
+      {/* Booking Modal */}
+      {showModal && <BookingWizard onSuccess={handleBookingSuccess} onClose={() => setShowModal(false)} />}
 
-      {/* Today's/All Appointments */}
       <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
           <ClipboardList size={18} color="#0E898F" />Appointments

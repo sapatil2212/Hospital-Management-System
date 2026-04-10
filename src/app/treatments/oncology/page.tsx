@@ -22,9 +22,9 @@ import styles from "../treatments.module.css";
 import OncologyHero from "./OncologyHero";
 
 export const metadata: Metadata = {
-  title: "Head, Neck & Facial (HNF) Oncology | Celeb Aesthecia",
+  title: "Head, Neck & Facial (HNF) Oncology | Celeb Aesthetica",
   description:
-    "Comprehensive head, neck, and facial oncology care at Celeb Aesthecia. Early detection, advanced surgical oncology, and holistic rehabilitation.",
+    "Comprehensive head, neck, and facial oncology care at Celeb Aesthetica. Early detection, advanced surgical oncology, and holistic rehabilitation.",
   keywords: [
     "HNF oncology",
     "head and neck cancer treatment",
@@ -78,7 +78,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-cancer.png" 
+                    src="/treatments/hnf/2.png" 
                     alt="Oral Cancer Screening" 
                     width={500} 
                     height={600} 
@@ -439,7 +439,7 @@ export default function OncologyPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for HNF Oncology?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for HNF Oncology?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Microscope size={24} />, text: "AI-assisted early detection and diagnosis" },
@@ -466,7 +466,7 @@ export default function OncologyPage() {
                 Book a Cancer Screening Consultation
               </h2>
               <p className={styles.ctaDescription}>
-                Early detection can make a life-saving difference. Take the first step toward timely diagnosis and expert care at Celeb Aesthecia.
+                Early detection can make a life-saving difference. Take the first step toward timely diagnosis and expert care at Celeb Aesthetica.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>

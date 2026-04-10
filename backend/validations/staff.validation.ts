@@ -24,6 +24,14 @@ export const createStaffSchema = z.object({
   salary: z.number().min(0, "Salary cannot be negative").default(0),
   joinDate: z.coerce.date().optional(),
   isActive: z.boolean().default(true),
+  workingDays: z.number().min(1).max(31).default(26).optional(),
+  dateOfBirth: z.coerce.date().optional().nullable(),
+  bankName: z.string().max(100).optional().nullable(),
+  bankAccountNo: z.string().max(50).optional().nullable(),
+  panNo: z.string().max(20).optional().nullable(),
+  pfAccountNo: z.string().max(50).optional().nullable(),
+  pfUan: z.string().max(30).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
 });
 
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
@@ -38,6 +46,14 @@ export const updateStaffSchema = z.object({
   salary: z.number().min(0, "Salary cannot be negative").optional(),
   joinDate: z.coerce.date().optional(),
   isActive: z.boolean().optional(),
+  workingDays: z.number().min(1).max(31).optional(),
+  dateOfBirth: z.coerce.date().optional().nullable(),
+  bankName: z.string().max(100).optional().nullable(),
+  bankAccountNo: z.string().max(50).optional().nullable(),
+  panNo: z.string().max(20).optional().nullable(),
+  pfAccountNo: z.string().max(50).optional().nullable(),
+  pfUan: z.string().max(30).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
 });
 
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
@@ -49,7 +65,7 @@ export const queryStaffSchema = z.object({
   departmentId: z.string().uuid().optional(),
   isActive: z.enum(["true", "false"]).optional().transform(v => v === "true" ? true : v === "false" ? false : undefined),
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  limit: z.coerce.number().min(1).max(500).default(20),
   sortBy: z.enum(["name", "email", "role", "joinDate", "createdAt"]).default("name"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });

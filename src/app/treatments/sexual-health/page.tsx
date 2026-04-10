@@ -24,9 +24,9 @@ import styles from "../treatments.module.css";
 import SexualHealthHero from "./SexualHealthHero";
 
 export const metadata: Metadata = {
-  title: "Sexual Health & Wellness | Celeb Aesthecia",
+  title: "Sexual Health & Wellness | Celeb Aesthetica",
   description:
-    "Confidential, compassionate, and result-oriented sexual health care for men and women at Celeb Aesthecia. Advanced medical and regenerative therapies.",
+    "Confidential, compassionate, and result-oriented sexual health care for men and women at Celeb Aesthetica. Advanced medical and regenerative therapies.",
   keywords: [
     "sexual health India",
     "erectile dysfunction treatment",
@@ -79,7 +79,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/ed.png" 
                     alt="Erectile Dysfunction Treatment" 
                     width={500} 
                     height={600} 
@@ -128,7 +128,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/pe.png" 
                     alt="Premature Ejaculation Management" 
                     width={500} 
                     height={600} 
@@ -177,7 +177,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/libido.png" 
                     alt="Libido Enhancement" 
                     width={500} 
                     height={600} 
@@ -226,7 +226,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/hormonal.png" 
                     alt="Hormonal Therapy" 
                     width={500} 
                     height={600} 
@@ -275,7 +275,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/counseling.png" 
                     alt="Couple Counseling" 
                     width={500} 
                     height={600} 
@@ -324,7 +324,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/wellness.png" 
                     alt="Female Sexual Wellness" 
                     width={500} 
                     height={600} 
@@ -373,7 +373,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/regenerative.png" 
                     alt="Regenerative Treatments" 
                     width={500} 
                     height={600} 
@@ -422,7 +422,7 @@ export default function SexualHealthPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Sexualhealth.png" 
+                    src="/images/sexual-health/confidential.png" 
                     alt="Confidential Care" 
                     width={500} 
                     height={600} 
@@ -439,7 +439,7 @@ export default function SexualHealthPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Sexual Wellness?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Sexual Wellness?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <ShieldCheck size={24} />, text: "Complete privacy and confidential consultations" },
@@ -476,7 +476,7 @@ export default function SexualHealthPage() {
             </div>
             <div className={styles.ctaImageWrapper}>
               <Image
-                src="/images/Quick-Treatments/Sexualhealth.png"
+                src="/images/sexual-health/hero.png"
                 alt="Expert Sexual Health Care"
                 width={500}
                 height={600}

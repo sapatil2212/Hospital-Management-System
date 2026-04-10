@@ -10,6 +10,7 @@ export const createSubDepartmentSchema = z.object({
     "OT", "DIALYSIS", "PHYSIOTHERAPY", "COSMETIC", "ENDOSCOPY",
     "BLOOD_BANK", "ECG",
     "OPD", "IPD", "EMERGENCY", "ICU", "GENERAL_MEDICINE", "SURGERY", "GYNECOLOGY", "PEDIATRICS",
+    "CLINICAL_PROCEDURE",
     "CUSTOM",
   ]),
   description: z.string().optional().nullable(),

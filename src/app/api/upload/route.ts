@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 export async function POST(req: NextRequest) {
-  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "DOCTOR"]);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "DOCTOR", "RECEPTIONIST", "STAFF", "SUB_DEPT_HEAD"]);
   if (auth.error) return auth.error;
 
   try {
@@ -20,9 +20,10 @@ export async function POST(req: NextRequest) {
 
     if (!file) return errorResponse("No file provided", 400);
 
-    const maxSize = uploadType === "document" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    const isDocType = uploadType === "document" || uploadType === "patient-document";
+    const maxSize = isDocType ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      return errorResponse(`File too large. Max size is ${uploadType === "document" ? "10MB" : "5MB"}`, 400);
+      return errorResponse(`File too large. Max size is ${isDocType ? "10MB" : "5MB"}`, 400);
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
     else if (uploadType === "signature") folder = `hms/doctors/${auth.user.userId}/signatures`;
     else if (uploadType === "stamp") folder = `hms/doctors/${auth.user.userId}/stamps`;
     else if (uploadType === "profile") folder = "hms/doctors/profiles";
+    else if (uploadType === "patient-photo") folder = "hms/patients/photos";
+    else if (uploadType === "patient-document") folder = "hms/patients/documents";
     else folder = "hms/doctors/images";
 
     const result: any = await new Promise((resolve, reject) => {

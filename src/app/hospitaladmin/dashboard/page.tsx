@@ -47,7 +47,7 @@ const mockAppointments = [
   { id: "A004", patient: "Kavita Singh", doctor: "Dr. Priya Sharma", dept: "Cardiology", time: "11:00 AM", status: "confirmed" },
   { id: "A005", patient: "Ankit Tiwari", doctor: "Dr. Rajan Mehta", dept: "Neurology", time: "11:30 AM", status: "cancelled" },
 ];
-const PatientsManagementPanelLazy = dynamic(() => import("../../subdept/dashboard/PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Patient Management...</span></div> });
+const PatientsManagementPanelLazy = dynamic(() => import("@/app/subdept/dashboard/PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Patient Management...</span></div> });
 const reports = [
   { icon: <Stethoscope size={14} />, msg: "Ventilator unit requires inspection in ICU", time: "5 minutes ago", highlight: true },
   { icon: <Settings size={14} />, msg: "Breakdown in elevator on 2nd floor", time: "18 minutes ago", highlight: false },
@@ -1676,7 +1676,7 @@ function DashboardContent() {
         </div>
       )}
 
-      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "reports" || tab === "enquiries" || tab === "blogs") ? { gridTemplateColumns: "1fr" } : undefined}>
+      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "reports" || tab === "enquiries" || tab === "blogs" || tab === "patients") ? { gridTemplateColumns: "1fr" } : undefined}>
     <div className="hd-center">
       {tab === "overview" && (<>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
@@ -2090,7 +2090,7 @@ function DashboardContent() {
       )}
     </div>
 
-    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && tab !== "enquiries" && tab !== "blogs" && (
+    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && tab !== "enquiries" && tab !== "blogs" && tab !== "patients" && (
       <div className="hd-right">
         <div className="hd-right-sec">
           <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>

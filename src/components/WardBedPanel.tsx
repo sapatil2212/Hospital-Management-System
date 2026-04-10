@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Plus, Pencil, Trash2, X, Loader2, Check, AlertTriangle,
   BedDouble, Building2, ChevronRight, ArrowLeft, Filter,
   Search, Users, Activity, Wrench, Lock, RefreshCw,
   LayoutGrid, List, Layers, UserPlus, LogOut, MoreVertical,
-  Zap, ClipboardList, Home
+  Zap, ClipboardList, Home, Download, FileText, CheckSquare,
+  ArrowUp, ArrowDown, Eye, MapPin, Calendar, IndianRupee
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -236,6 +237,50 @@ const CSS = `
   /* Allocate confirm */
   .wb-confirm{background:#fff;border-radius:18px;padding:28px 24px;width:100%;max-width:400px;text-align:center}
   .wb-divider{height:1px;background:#f1f5f9;margin:16px 0}
+
+  /* Toolbar heading */
+  .wb-toolbar-heading{font-size:18px;font-weight:800;color:#1e293b}
+  .wb-toolbar-subheading{font-size:12px;color:#94a3b8;margin-top:2px}
+  .wb-toolbar-left-col{display:flex;flex-direction:column;gap:2px}
+
+  /* Checkbox */
+  .wb-checkbox{width:16px;height:16px;border-radius:4px;border:1.5px solid #cbd5e1;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+  .wb-checkbox.checked{background:#10b981;border-color:#10b981}
+  .wb-checkbox:hover{border-color:#10b981}
+
+  /* Export Dropdown */
+  .wb-export-wrap{position:relative}
+  .wb-export-dd{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);border:1px solid #e2e8f0;min-width:160px;z-index:50;overflow:hidden}
+  .wb-export-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:#475569;cursor:pointer;transition:all .12s;font-weight:500}
+  .wb-export-item:hover{background:#f0fdf4;color:#059669}
+  .wb-export-item.disabled{opacity:.5;cursor:not-allowed}
+
+  /* Professional Delete Dialog */
+  .wb-pro-delete{max-width:420px;text-align:center;padding:0}
+  .wb-pro-delete-header{padding:24px 24px 20px}
+  .wb-pro-delete-icon{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#fef2f2,#fee2e2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .wb-pro-delete-title{font-size:17px;font-weight:800;color:#1e293b;margin-bottom:4px}
+  .wb-pro-delete-count{font-size:13px;color:#dc2626;font-weight:600;background:#fef2f2;padding:4px 12px;border-radius:100px;display:inline-block;margin-top:4px}
+  .wb-pro-delete-list{max-height:120px;overflow-y:auto;margin:0 24px 20px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0}
+  .wb-pro-delete-item{font-size:12px;color:#475569;padding:6px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+  .wb-pro-delete-item:last-child{border-bottom:none}
+  .wb-pro-delete-msg{font-size:13px;color:#64748b;line-height:1.5;margin:0 24px 20px}
+  .wb-pro-delete-footer{padding:16px 24px;background:#f8fafc;border-top:1px solid #f1f5f9;display:flex;gap:10px;justify-content:center;border-radius:0 0 18px 18px}
+
+  /* Ward card with checkbox */
+  .wb-ward-card-wrapper{position:relative}
+  .wb-ward-card-checkbox{position:absolute;top:12px;left:12px;z-index:10}
+  .wb-ward-card.selected{border-color:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.2)}
+
+  /* Room card with checkbox */
+  .wb-room-card-wrapper{position:relative}
+  .wb-room-card-checkbox{position:absolute;top:10px;left:10px;z-index:10}
+  .wb-room-card.selected{border-color:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.2)}
+
+  /* Bed card with checkbox */
+  .wb-bed-card-wrapper{position:relative}
+  .wb-bed-card-checkbox{position:absolute;top:10px;left:10px;z-index:10}
+  .wb-bed-card.selected{border-color:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.2)}
 `;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -266,6 +311,63 @@ function ModalWrap({ open, onClose, title, size, children }: {
           <button className="wb-icon-btn wb-icon-btn-gray" onClick={onClose}><X size={14} /></button>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── Checkbox Component ─────────────────────────────────────────────────────
+function WbCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <div className={`wb-checkbox${checked ? " checked" : ""}`} onClick={onChange}>
+      {checked && <Check size={10} color="#fff" />}
+    </div>
+  );
+}
+
+// ─── Professional Delete Dialog ──────────────────────────────────────────────
+function ProDeleteDialog({ open, type, items, onClose, onConfirm, loading }: {
+  open: boolean; type: "ward" | "room" | "bed"; items: any[];
+  onClose: () => void; onConfirm: () => void; loading: boolean;
+}) {
+  if (!open || !items.length) return null;
+  const isBulk = items.length > 1;
+  const getName = (item: any) => item.name || item.roomNumber || item.bedNumber;
+  const getIcon = (item: any) => {
+    if (type === "ward") return <BedDouble size={10} color={WARD_TYPE_COLOR[item.type] || "#0E898F"} />;
+    if (type === "room") return <Building2 size={10} color="#0E898F" />;
+    return <BedDouble size={10} color="#94a3b8" />;
+  };
+  return (
+    <div className="wb-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="wb-confirm wb-pro-delete">
+        <div className="wb-pro-delete-header">
+          <div className="wb-pro-delete-icon"><Trash2 size={24} color="#ef4444" /></div>
+          <div className="wb-pro-delete-title">{isBulk ? `Delete ${items.length} ${type}s` : `Delete ${type.charAt(0).toUpperCase() + type.slice(1)}`}</div>
+          {isBulk && <div className="wb-pro-delete-count">{items.length} selected</div>}
+        </div>
+        {isBulk && (
+          <div className="wb-pro-delete-list">
+            {items.map(item => (
+              <div key={item.id} className="wb-pro-delete-item">
+                <div style={{ width: 20, height: 20, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>{getIcon(item)}</div>
+                <span>{getName(item)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="wb-pro-delete-msg">
+          {isBulk
+            ? `Are you sure you want to delete these ${items.length} ${type}s? ${type === "ward" ? "All rooms and beds inside will also be deleted." : type === "room" ? "All beds inside will also be deleted." : ""} This action cannot be undone.`
+            : `Are you sure you want to delete "${getName(items[0])}"? ${type === "ward" ? "All rooms and beds inside will also be deleted." : type === "room" ? "All beds inside will also be deleted." : ""} This action cannot be undone.`}
+        </p>
+        <div className="wb-pro-delete-footer">
+          <button className="wb-btn wb-btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
+          <button className="wb-btn wb-btn-red" onClick={onConfirm} disabled={loading}>
+            {loading && <Loader2 size={13} className="wb-spin" />}
+            {loading ? "Deleting..." : isBulk ? `Delete ${items.length}` : "Delete"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -984,6 +1086,133 @@ export default function WardBedPanel() {
   // Search
   const [search, setSearch] = useState("");
 
+  // Selection & Sorting State
+  const [selectedWardIds, setSelectedWardIds] = useState<Set<string>>(new Set());
+  const [selectedRoomIds, setSelectedRoomIds] = useState<Set<string>>(new Set());
+  const [selectedBedIds, setSelectedBedIds] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Bulk delete state
+  const [bulkDelete, setBulkDelete] = useState<{ open: boolean; type: "ward" | "room" | "bed"; items: any[] }>({ open: false, type: "ward", items: [] });
+
+  // Click outside to close export dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(e.target as Node)) {
+        setShowExportDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ── Selection Helpers ──
+  const handleSelectAllWards = () => {
+    if (selectedWardIds.size === wards.length) setSelectedWardIds(new Set());
+    else setSelectedWardIds(new Set(wards.map(w => w.id)));
+  };
+
+  const handleSelectOneWard = (id: string) => {
+    const newSet = new Set(selectedWardIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedWardIds(newSet);
+  };
+
+  const handleSelectAllRooms = () => {
+    const roomList = rooms.filter(r => r.wardId === selectedWard?.id);
+    if (selectedRoomIds.size === roomList.length) setSelectedRoomIds(new Set());
+    else setSelectedRoomIds(new Set(roomList.map(r => r.id)));
+  };
+
+  const handleSelectOneRoom = (id: string) => {
+    const newSet = new Set(selectedRoomIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedRoomIds(newSet);
+  };
+
+  const handleSelectAllBeds = () => {
+    const bedList = beds.filter(b => b.roomId === selectedRoom?.id);
+    if (selectedBedIds.size === bedList.length) setSelectedBedIds(new Set());
+    else setSelectedBedIds(new Set(bedList.map(b => b.id)));
+  };
+
+  const handleSelectOneBed = (id: string) => {
+    const newSet = new Set(selectedBedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedBedIds(newSet);
+  };
+
+  // ── Sorting Helpers ──
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortDirection(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDirection("asc"); }
+  };
+
+  // Sorting will be applied inline where filtered data is rendered
+  const sortData = <T,>(data: T[], field: keyof T): T[] => {
+    return [...data].sort((a, b) => {
+      let aVal: any = a[field];
+      let bVal: any = b[field];
+      if (typeof aVal === "string") aVal = aVal.toLowerCase();
+      if (typeof bVal === "string") bVal = bVal.toLowerCase();
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // ── Export Helpers ──
+  const exportWardsToCSV = (data: Ward[]) => {
+    const headers = ["Name", "Type", "Floor", "Total Beds", "Available", "Occupied", "Status"];
+    const rows = data.map(w => [
+      w.name, w.type.replace("_", " "), w.floor || "",
+      w.stats?.total?.toString() || "0", w.stats?.available?.toString() || "0",
+      w.stats?.occupied?.toString() || "0", w.isActive ? "Active" : "Inactive"
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `wards_${new Date().toISOString().split("T")[0]}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportAllWards = () => {
+    exportWardsToCSV(wards);
+    setShowExportDropdown(false);
+  };
+
+  const handleExportSelectedWards = () => {
+    const selected = wards.filter(w => selectedWardIds.has(w.id));
+    exportWardsToCSV(selected);
+    setShowExportDropdown(false);
+  };
+
+  // ── Bulk Delete Handler ──
+  const handleBulkDelete = async () => {
+    const { type, items } = bulkDelete;
+    if (!items.length) return;
+    let successCount = 0;
+    for (const item of items) {
+      let res;
+      if (type === "ward") res = await api(`/api/config/wards/${item.id}`, "DELETE");
+      else if (type === "room") res = await api(`/api/config/rooms/${item.id}`, "DELETE");
+      else res = await api(`/api/config/beds/${item.id}`, "DELETE");
+      if (res?.success) successCount++;
+    }
+    setBulkDelete({ open: false, type: "ward", items: [] });
+    if (type === "ward") { setSelectedWardIds(new Set()); loadWards(); }
+    else if (type === "room") { setSelectedRoomIds(new Set()); loadRooms(selectedWard?.id); }
+    else { setSelectedBedIds(new Set()); loadBeds(selectedWard?.id, selectedRoom?.id); }
+    addToast("success", `${successCount} ${type}${successCount !== 1 ? "s" : ""} deleted`);
+  };
+
   // ── Load functions ──
   const loadWards = useCallback(async () => {
     setLoading(true);
@@ -1122,15 +1351,38 @@ export default function WardBedPanel() {
       {view === "wards" && (
         <>
           <div className="wb-toolbar">
-            <div className="wb-toolbar-left">
+            <div className="wb-toolbar-left-col">
+              <div className="wb-toolbar-heading">Wards</div>
+              <div className="wb-toolbar-subheading">Configure hospital wards, rooms, and beds</div>
+            </div>
+            <div className="wb-toolbar-right">
               <div className="wb-search">
                 <Search size={14} color="#94a3b8" />
                 <input placeholder="Search wards..." value={search} onChange={e => setSearch(e.target.value)} />
                 {search && <button style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, display: "flex" }} onClick={() => setSearch("")}><X size={13} /></button>}
               </div>
-            </div>
-            <div className="wb-toolbar-right">
+              <div className="wb-export-wrap" ref={exportDropdownRef}>
+                <button className="wb-btn wb-btn-ghost" onClick={() => setShowExportDropdown(d => !d)}>
+                  <Download size={13} /> Export
+                </button>
+                {showExportDropdown && (
+                  <div className="wb-export-dd">
+                    <div className="wb-export-item" onClick={handleExportAllWards}>
+                      <FileText size={13} /> Export All ({wards.length})
+                    </div>
+                    <div className={`wb-export-item${selectedWardIds.size === 0 ? " disabled" : ""}`}
+                      onClick={selectedWardIds.size > 0 ? handleExportSelectedWards : undefined}>
+                      <CheckSquare size={13} /> Export Selected ({selectedWardIds.size})
+                    </div>
+                  </div>
+                )}
+              </div>
               <button className="wb-btn wb-btn-ghost" onClick={loadWards} title="Refresh"><RefreshCw size={13} /></button>
+              {selectedWardIds.size > 0 && (
+                <button className="wb-btn wb-btn-red" onClick={() => setBulkDelete({ open: true, type: "ward", items: wards.filter(w => selectedWardIds.has(w.id)) })}>
+                  <Trash2 size={13} /> Delete ({selectedWardIds.size})
+                </button>
+              )}
               <button className="wb-btn wb-btn-primary" onClick={() => setWardModal({ open: true, item: null })}>
                 <Plus size={14} /> Add Ward
               </button>
@@ -1167,34 +1419,47 @@ export default function WardBedPanel() {
               </button>
             </div>
           ) : (
-            <div className="wb-ward-grid">
-              {filteredWards.map(ward => {
-                const s = ward.stats || { total: 0, available: 0, occupied: 0, maintenance: 0, reserved: 0 };
-                const color = WARD_TYPE_COLOR[ward.type] || "#0E898F";
-                return (
-                  <div key={ward.id} className="wb-ward-card" onClick={() => goToRooms(ward)}>
-                    <div className="wb-ward-card-head">
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <div className="wb-ward-icon" style={{ background: `${color}18`, color }}>
-                          <BedDouble size={20} />
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <WbCheckbox checked={selectedWardIds.size === wards.length && wards.length > 0} onChange={handleSelectAllWards} />
+                <span style={{ fontSize: 12, color: "#64748b" }}>Select All ({wards.length})</span>
+                {selectedWardIds.size > 0 && (
+                  <span style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>{selectedWardIds.size} selected</span>
+                )}
+              </div>
+              <div className="wb-ward-grid">
+                {filteredWards.map(ward => {
+                  const s = ward.stats || { total: 0, available: 0, occupied: 0, maintenance: 0, reserved: 0 };
+                  const color = WARD_TYPE_COLOR[ward.type] || "#0E898F";
+                  const isSelected = selectedWardIds.has(ward.id);
+                  return (
+                    <div key={ward.id} className={`wb-ward-card-wrapper`}>
+                      <div className={`wb-ward-card${isSelected ? " selected" : ""}`} onClick={() => goToRooms(ward)}>
+                        <div className="wb-ward-card-checkbox" onClick={e => e.stopPropagation()}>
+                          <WbCheckbox checked={isSelected} onChange={() => handleSelectOneWard(ward.id)} />
                         </div>
-                        <div>
-                          <div className="wb-ward-name">{ward.name}</div>
-                          <div className="wb-ward-meta">{ward.floor ? `Floor: ${ward.floor}` : "Floor not set"} · {ward._count?.rooms || 0} rooms</div>
+                        <div className="wb-ward-card-head">
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div className="wb-ward-icon" style={{ background: `${color}18`, color }}>
+                              <BedDouble size={20} />
+                            </div>
+                            <div>
+                              <div className="wb-ward-name">{ward.name}</div>
+                              <div className="wb-ward-meta">{ward.floor ? `Floor: ${ward.floor}` : "Floor not set"} · {ward._count?.rooms || 0} rooms</div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                            <span className="wb-ward-badge" style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
+                              {ward.type.replace("_", " ")}
+                            </span>
+                            <button className="wb-icon-btn wb-icon-btn-blue" onClick={e => { e.stopPropagation(); setWardModal({ open: true, item: ward }); }}>
+                              <Pencil size={12} />
+                            </button>
+                            <button className="wb-icon-btn wb-icon-btn-red" onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, type: "ward", item: ward }); }}>
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                        <span className="wb-ward-badge" style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
-                          {ward.type.replace("_", " ")}
-                        </span>
-                        <button className="wb-icon-btn wb-icon-btn-blue" onClick={e => { e.stopPropagation(); setWardModal({ open: true, item: ward }); }}>
-                          <Pencil size={12} />
-                        </button>
-                        <button className="wb-icon-btn wb-icon-btn-red" onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, type: "ward", item: ward }); }}>
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
                     {ward.description && (
                       <div style={{ padding: "0 18px 10px", fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>{ward.description}</div>
                     )}
@@ -1219,10 +1484,12 @@ export default function WardBedPanel() {
                         View Rooms <ChevronRight size={13} />
                       </span>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </>
       )}
@@ -1233,27 +1500,26 @@ export default function WardBedPanel() {
       {view === "rooms" && selectedWard && (
         <>
           <div className="wb-toolbar">
-            <div className="wb-toolbar-left">
+            <div className="wb-toolbar-left-col">
+              <div className="wb-toolbar-heading">Rooms</div>
+              <div className="wb-toolbar-subheading">{selectedWard.name} · {filteredRooms.length} rooms</div>
+            </div>
+            <div className="wb-toolbar-right">
               <button className="wb-btn wb-btn-ghost" onClick={goToWards}><ArrowLeft size={13} /> Wards</button>
               <div className="wb-search">
                 <Search size={14} color="#94a3b8" />
                 <input placeholder="Search rooms..." value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-            </div>
-            <div className="wb-toolbar-right">
               <button className="wb-btn wb-btn-ghost" onClick={() => loadRooms(selectedWard.id)}><RefreshCw size={13} /></button>
+              {selectedRoomIds.size > 0 && (
+                <button className="wb-btn wb-btn-red" onClick={() => setBulkDelete({ open: true, type: "room", items: wardRooms.filter(r => selectedRoomIds.has(r.id)) })}>
+                  <Trash2 size={13} /> Delete ({selectedRoomIds.size})
+                </button>
+              )}
               <button className="wb-btn wb-btn-primary" onClick={() => setRoomModal({ open: true, item: null })}>
                 <Plus size={14} /> Add Room
               </button>
             </div>
-          </div>
-
-          <div className="wb-sec-hd">
-            <div className="wb-sec-ic" style={{ background: `${WARD_TYPE_COLOR[selectedWard.type] || "#0E898F"}18`, color: WARD_TYPE_COLOR[selectedWard.type] || "#0E898F" }}>
-              <Building2 size={16} />
-            </div>
-            <div className="wb-sec-title">{selectedWard.name}</div>
-            <span className="wb-sec-count">{filteredRooms.length} rooms</span>
           </div>
 
           {loading ? (
@@ -1268,48 +1534,63 @@ export default function WardBedPanel() {
               </button>
             </div>
           ) : (
-            <div className="wb-room-grid">
-              {filteredRooms.map(room => {
-                const roomBedsData = room.beds || [];
-                const avail = roomBedsData.filter((b: any) => b.status === "AVAILABLE").length;
-                const occup = roomBedsData.filter((b: any) => b.status === "OCCUPIED").length;
-                return (
-                  <div key={room.id} className="wb-room-card" onClick={() => goToBeds(room)}>
-                    <div className="wb-room-head">
-                      <div>
-                        <div className="wb-room-no">Room {room.roomNumber}</div>
-                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Cap: {room.capacity} beds</div>
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <WbCheckbox checked={selectedRoomIds.size === wardRooms.length && wardRooms.length > 0} onChange={handleSelectAllRooms} />
+                <span style={{ fontSize: 12, color: "#64748b" }}>Select All ({wardRooms.length})</span>
+                {selectedRoomIds.size > 0 && (
+                  <span style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>{selectedRoomIds.size} selected</span>
+                )}
+              </div>
+              <div className="wb-room-grid">
+                {filteredRooms.map(room => {
+                  const roomBedsData = room.beds || [];
+                  const avail = roomBedsData.filter((b: any) => b.status === "AVAILABLE").length;
+                  const occup = roomBedsData.filter((b: any) => b.status === "OCCUPIED").length;
+                  const isSelected = selectedRoomIds.has(room.id);
+                  return (
+                    <div key={room.id} className="wb-room-card-wrapper">
+                      <div className={`wb-room-card${isSelected ? " selected" : ""}`} onClick={() => goToBeds(room)}>
+                        <div className="wb-room-card-checkbox" onClick={e => e.stopPropagation()}>
+                          <WbCheckbox checked={isSelected} onChange={() => handleSelectOneRoom(room.id)} />
+                        </div>
+                        <div className="wb-room-head">
+                          <div>
+                            <div className="wb-room-no">Room {room.roomNumber}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Cap: {room.capacity} beds</div>
+                          </div>
+                          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <span className="wb-room-type">{room.roomType.replace("_", " ")}</span>
+                            <button className="wb-icon-btn wb-icon-btn-blue" style={{ width: 24, height: 24 }} onClick={e => { e.stopPropagation(); setRoomModal({ open: true, item: room }); }}><Pencil size={11} /></button>
+                            <button className="wb-icon-btn wb-icon-btn-red" style={{ width: 24, height: 24 }} onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, type: "room", item: room }); }}><Trash2 size={11} /></button>
+                          </div>
+                        </div>
+                        <div className="wb-room-beds-strip">
+                          {roomBedsData.length === 0 ? (
+                            <span style={{ fontSize: 11, color: "#94a3b8" }}>No beds — click to add</span>
+                          ) : (
+                            roomBedsData.slice(0, 12).map((b: any) => {
+                              const sc = BED_STATUS_CONFIG[b.status] || BED_STATUS_CONFIG.AVAILABLE;
+                              return (
+                                <div key={b.id} className="wb-mini-bed" title={`${b.bedNumber}: ${b.status}`}
+                                  style={{ background: sc.bg, borderColor: sc.border }}>
+                                  <BedDouble size={11} color={sc.text} />
+                                </div>
+                              );
+                            })
+                          )}
+                          {roomBedsData.length > 12 && <span style={{ fontSize: 10, color: "#94a3b8" }}>+{roomBedsData.length - 12}</span>}
+                        </div>
+                        <div className="wb-room-foot">
+                          <span>{roomBedsData.length} beds · <span style={{ color: "#16a34a", fontWeight: 600 }}>{avail} free</span></span>
+                          <span style={{ color: occup > 0 ? "#b91c1c" : "#94a3b8", fontWeight: occup > 0 ? 600 : 400 }}>{occup} occupied</span>
+                        </div>
                       </div>
-                      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                        <span className="wb-room-type">{room.roomType.replace("_", " ")}</span>
-                        <button className="wb-icon-btn wb-icon-btn-blue" style={{ width: 24, height: 24 }} onClick={e => { e.stopPropagation(); setRoomModal({ open: true, item: room }); }}><Pencil size={11} /></button>
-                        <button className="wb-icon-btn wb-icon-btn-red" style={{ width: 24, height: 24 }} onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, type: "room", item: room }); }}><Trash2 size={11} /></button>
-                      </div>
                     </div>
-                    <div className="wb-room-beds-strip">
-                      {roomBedsData.length === 0 ? (
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>No beds — click to add</span>
-                      ) : (
-                        roomBedsData.slice(0, 12).map((b: any) => {
-                          const sc = BED_STATUS_CONFIG[b.status] || BED_STATUS_CONFIG.AVAILABLE;
-                          return (
-                            <div key={b.id} className="wb-mini-bed" title={`${b.bedNumber}: ${b.status}`}
-                              style={{ background: sc.bg, borderColor: sc.border }}>
-                              <BedDouble size={11} color={sc.text} />
-                            </div>
-                          );
-                        })
-                      )}
-                      {roomBedsData.length > 12 && <span style={{ fontSize: 10, color: "#94a3b8" }}>+{roomBedsData.length - 12}</span>}
-                    </div>
-                    <div className="wb-room-foot">
-                      <span>{roomBedsData.length} beds · <span style={{ color: "#16a34a", fontWeight: 600 }}>{avail} free</span></span>
-                      <span style={{ color: occup > 0 ? "#b91c1c" : "#94a3b8", fontWeight: occup > 0 ? 600 : 400 }}>{occup} occupied</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </>
       )}
@@ -1320,18 +1601,25 @@ export default function WardBedPanel() {
       {view === "beds" && selectedRoom && (
         <>
           <div className="wb-toolbar">
-            <div className="wb-toolbar-left">
+            <div className="wb-toolbar-left-col">
+              <div className="wb-toolbar-heading">Beds</div>
+              <div className="wb-toolbar-subheading">Room {selectedRoom.roomNumber} · {roomBeds.length} beds</div>
+            </div>
+            <div className="wb-toolbar-right">
               <button className="wb-btn wb-btn-ghost" onClick={goBackToRooms}><ArrowLeft size={13} /> Rooms</button>
               <div className="wb-search">
                 <Search size={14} color="#94a3b8" />
                 <input placeholder="Search beds or status..." value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-            </div>
-            <div className="wb-toolbar-right">
               <button className="wb-btn wb-btn-ghost" onClick={() => loadBeds(selectedWard?.id, selectedRoom.id)}><RefreshCw size={13} /></button>
               <button className="wb-btn wb-btn-ghost" onClick={() => setBulkModal(true)}>
                 <Zap size={13} /> Bulk Add
               </button>
+              {selectedBedIds.size > 0 && (
+                <button className="wb-btn wb-btn-red" onClick={() => setBulkDelete({ open: true, type: "bed", items: roomBeds.filter(b => selectedBedIds.has(b.id)) })}>
+                  <Trash2 size={13} /> Delete ({selectedBedIds.size})
+                </button>
+              )}
               <button className="wb-btn wb-btn-primary" onClick={() => setBedModal({ open: true, item: null })}>
                 <Plus size={14} /> Add Bed
               </button>
@@ -1419,27 +1707,25 @@ export default function WardBedPanel() {
         onSuccess={() => { setDischargeModal({ open: false, bed: null }); loadBeds(selectedWard?.id, selectedRoom?.id); }}
       />
 
-      {/* ── DELETE CONFIRM ── */}
-      {deleteConfirm.open && (
-        <div className="wb-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirm({ open: false, type: "ward", item: null })}>
-          <div className="wb-confirm">
-            <div style={{ marginBottom: 14 }}><AlertTriangle size={36} color="#ef4444" /></div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 8 }}>
-              Delete {deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1)}
-            </h3>
-            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
-              Delete <strong>"{deleteConfirm.item?.name || deleteConfirm.item?.roomNumber || deleteConfirm.item?.bedNumber}"</strong>?
-              {deleteConfirm.type === "ward" && " All rooms and beds inside will also be deleted."}
-              {deleteConfirm.type === "room" && " All beds inside will also be deleted."}
-              {" This cannot be undone."}
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button className="wb-btn wb-btn-ghost" onClick={() => setDeleteConfirm({ open: false, type: "ward", item: null })}>Cancel</button>
-              <button className="wb-btn wb-btn-red" onClick={handleDelete}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── SINGLE DELETE CONFIRM ── */}
+      <ProDeleteDialog
+        open={deleteConfirm.open}
+        type={deleteConfirm.type}
+        items={deleteConfirm.item ? [deleteConfirm.item] : []}
+        onClose={() => setDeleteConfirm({ open: false, type: "ward", item: null })}
+        onConfirm={handleDelete}
+        loading={false}
+      />
+
+      {/* ── BULK DELETE DIALOG ── */}
+      <ProDeleteDialog
+        open={bulkDelete.open}
+        type={bulkDelete.type}
+        items={bulkDelete.items}
+        onClose={() => setBulkDelete({ open: false, type: "ward", items: [] })}
+        onConfirm={handleBulkDelete}
+        loading={false}
+      />
     </>
   );
 }

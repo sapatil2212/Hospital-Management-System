@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { 
-  CheckCircle, 
-  ArrowRight, 
-  Calendar, 
-  Zap, 
+import {
+  CheckCircle,
+  ArrowRight,
+  Calendar,
+  Zap,
   Target,
   Users,
   Activity,
@@ -20,9 +20,9 @@ import styles from "../treatments.module.css";
 import BodyShapingHero from "./BodyShapingHero";
 
 export const metadata: Metadata = {
-  title: "Body Shaping & Contouring Center | Celeb Aesthecia",
+  title: "Body Shaping & Contouring Center | Celeb Aesthetica",
   description:
-    "Advanced non-surgical body contouring, fat reduction, and skin tightening at Celeb Aesthecia. Sculpt your body with precision and no downtime.",
+    "Advanced non-surgical body contouring, fat reduction, and skin tightening at Celeb Aesthetica. Sculpt your body with precision and no downtime.",
   keywords: [
     "body shaping India",
     "fat reduction treatment",
@@ -74,11 +74,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Fat Reduction" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/1.png"
+                    alt="Fat Reduction"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -123,11 +123,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Body Sculpting" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/2.png"
+                    alt="Body Sculpting"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -172,11 +172,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Skin Tightening" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/3.png"
+                    alt="Skin Tightening"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -221,11 +221,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Cellulite Reduction" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/4.png"
+                    alt="Cellulite Reduction"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -270,11 +270,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Stretch Mark Treatment" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/5.png"
+                    alt="Stretch Mark Treatment"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -319,11 +319,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Transformation Programs" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/6.png"
+                    alt="Transformation Programs"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -368,11 +368,11 @@ export default function BodyShapingPage() {
               </div>
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
-                  <Image 
-                    src="/images/Quick-Treatments/BodyShaping.png" 
-                    alt="Post-Weight Loss Correction" 
-                    width={500} 
-                    height={600} 
+                  <Image
+                    src="/treatments/body-shaping/7.png"
+                    alt="Post-Weight Loss Correction"
+                    width={500}
+                    height={600}
                     className={styles.aboutImage}
                   />
                 </div>
@@ -386,7 +386,7 @@ export default function BodyShapingPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Body Contouring?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Body Contouring?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Microscope size={24} />, text: "AI-based body analysis for personalized treatments" },
@@ -413,7 +413,7 @@ export default function BodyShapingPage() {
                 Book Your Body Transformation Consultation
               </h2>
               <p className={styles.ctaDescription}>
-                Start your journey toward a more sculpted, confident, and healthier body with expert care at Celeb Aesthecia.
+                Start your journey toward a more sculpted, confident, and healthier body with expert care at Celeb Aesthetica.
               </p>
               <div className={styles.ctaBtnRow}>
                 <Link href="/contact" className={styles.ctaButtonWhite}>

@@ -201,7 +201,7 @@ function SubDeptDashboardContent() {
     setRecordsLoading(true);
     const url = `/api/subdept/records?limit=30${search ? `&search=${encodeURIComponent(search)}` : ""}`;
     const res = await fetch(url, { credentials: "include" }).then(r => r.json());
-    if (res.success) { setRecords(res.data?.records || []); setRecordsMeta(res.data?.stats || {}); }
+    if (res.success) { setRecords(res.data?.data || []); setRecordsMeta(res.data?.stats || {}); }
     setRecordsLoading(false);
   }, []);
 
@@ -401,8 +401,10 @@ function SubDeptDashboardContent() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .sd2{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
         .sd2-sb{width:224px;background:#fff;border-right:1px solid var(--bc);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
-        .sd2-logo{padding:20px 20px 16px;border-bottom:1px solid var(--bc);display:flex;align-items:center;gap:10px}
-        .sd2-logo-ic{width:38px;height:38px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15);flex-shrink:0}
+        .sd2-logo{padding:18px 20px 14px;border-bottom:1px solid var(--bc);display:flex;flex-direction:column;align-items:center;gap:8px}
+        .sd2-logo-ic{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.08);flex-shrink:0;overflow:hidden;background:#fff;border:1px solid #e2e8f0}
+        .sd2-logo-ic img{width:100%;height:100%;object-fit:contain}
+        .sd2-logo-ic.no-logo{background:var(--grad);border:none;box-shadow:0 4px 12px rgba(0,0,0,.15)}
         .sd2-nav{flex:1;padding:12px;overflow-y:auto}
         .sd2-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:10px 0 5px}
         .sd2-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
@@ -449,11 +451,13 @@ function SubDeptDashboardContent() {
         {/* ── Sidebar ── */}
         <aside className="sd2-sb">
           <div className="sd2-logo">
-            <div className="sd2-logo-ic"><DeptIcon size={18} color="#fff"/></div>
-            <div>
-              <div style={{fontSize:14,fontWeight:800,color:"#1e293b",lineHeight:1.2}}>{deptName}</div>
-              <div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>{profile?.type?.replace(/_/g," ")} Portal</div>
-            </div>
+            {profile?.hospitalSettings?.logo ? (
+              <img src={profile.hospitalSettings.logo} alt="Hospital Logo" style={{ width: "100%", maxHeight: 60, objectFit: "contain", display: "block" }} />
+            ) : (
+              <div className="sd2-logo-ic no-logo">
+                <DeptIcon size={22} color="#fff"/>
+              </div>
+            )}
           </div>
 
           <nav className="sd2-nav">

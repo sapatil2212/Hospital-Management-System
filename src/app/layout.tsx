@@ -1,14 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AppointmentProvider } from "@/components/AppointmentProvider";
 import MobileAppointment from "@/components/mobile-appointment";
 import WhatsAppWidget from "@/components/whatsapp-widget";
 import AIChatbot from "@/components/ai-chatbot";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "Celeb Aesthecia | Trusted Specialist for Every Medical Need",
+  title: "Celeb Aesthetica | Trusted Specialist for Every Medical Need",
   description:
-    "Experience world-class healthcare with Celeb Aesthecia. Schedule appointments with top specialists, access 24/7 care, and join 30M+ satisfied patients. Your health, our priority.",
+    "Experience world-class healthcare with Celeb Aesthetica. Schedule appointments with top specialists, access 24/7 care, and join 30M+ satisfied patients. Your health, our priority.",
   keywords: [
     "healthcare",
     "medical",
@@ -26,9 +31,9 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Celeb Aesthecia | Trusted Specialist for Every Medical Need",
+    title: "Celeb Aesthetica | Trusted Specialist for Every Medical Need",
     description:
-      "Experience world-class healthcare with Celeb Aesthecia. Schedule appointments with top specialists.",
+      "Experience world-class healthcare with Celeb Aesthetica. Schedule appointments with top specialists.",
     type: "website",
   },
 };

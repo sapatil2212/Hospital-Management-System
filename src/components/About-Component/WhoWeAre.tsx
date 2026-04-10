@@ -25,7 +25,7 @@ export default function WhoWeAre() {
           </h2>
 
           <p className={styles.description}>
-            Celeb Aesthecia is proudly recognized as India's first AI-based robotic aesthetic hospital, specializing in skin, hair, dental, and head & neck oncology (HNF oncology). We are at the forefront of modern healthcare, where advanced technology seamlessly integrates with ethical, patient-first care to deliver exceptional clinical outcomes.
+            Celeb Aesthetica is proudly recognized as India's first AI-based robotic aesthetic hospital, specializing in skin, hair, dental, and head & neck oncology (HNF oncology). We are at the forefront of modern healthcare, where advanced technology seamlessly integrates with ethical, patient-first care to deliver exceptional clinical outcomes.
           </p>
 
           <p className={styles.description}>

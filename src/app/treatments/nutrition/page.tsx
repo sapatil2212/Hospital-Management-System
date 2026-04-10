@@ -23,9 +23,9 @@ import styles from "../treatments.module.css";
 import NutritionHero from "./NutritionHero";
 
 export const metadata: Metadata = {
-  title: "Clinical Nutrition & Metabolic Wellness | Celeb Aesthecia",
+  title: "Clinical Nutrition & Metabolic Wellness | Celeb Aesthetica",
   description:
-    "Science-based nutrition and lifestyle care at Celeb Aesthecia. Personalized diet planning, weight management, and metabolic wellness for sustainable health transformation.",
+    "Science-based nutrition and lifestyle care at Celeb Aesthetica. Personalized diet planning, weight management, and metabolic wellness for sustainable health transformation.",
   keywords: [
     "clinical nutrition India",
     "metabolic wellness",
@@ -389,7 +389,7 @@ export default function NutritionPage() {
         {/* Why Choose Section */}
         <section className={styles.whyChooseSection}>
           <div className="container">
-            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthecia for Clinical Nutrition?</h2>
+            <h2 className={styles.sectionTitle}>Why Choose Celeb Aesthetica for Clinical Nutrition?</h2>
             <div className={styles.featuresGrid}>
               {[
                 { icon: <Microscope size={24} />, text: "Personalized, science-based diet plans" },

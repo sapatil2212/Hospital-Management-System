@@ -99,25 +99,27 @@ export default function Hero() {
             <span>AI-Powered Aesthetic Care</span>
           </motion.div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`text-${current}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            >
-              <h1 className={styles.headline}>
-                {slide.headline}{" "}
-                <span className={styles.headlineAccent}>
-                  {slide.headlineAccent}
-                </span>{" "}
-                {slide.headlineSuffix}
-              </h1>
+          <div className={styles.textSlideWrap}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`text-${current}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                <h1 className={styles.headline}>
+                  {slide.headline}{" "}
+                  <span className={styles.headlineAccent}>
+                    {slide.headlineAccent}
+                  </span>{" "}
+                  {slide.headlineSuffix}
+                </h1>
 
-              <p className={styles.subtext}>{slide.subtext}</p>
-            </motion.div>
-          </AnimatePresence>
+                <p className={styles.subtext}>{slide.subtext}</p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
           <motion.div
             className={styles.ctaGroup}

@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   BedDouble, Plus, Search, RefreshCw, Loader2, X, CheckCircle2,
-  User, Phone, Stethoscope, Calendar, Clock, AlertTriangle, LogOut, Download
+  User, Phone, Stethoscope, Calendar, Clock, AlertTriangle, LogOut, Download,
+  ArrowUpDown, Filter
 } from "lucide-react";
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -49,6 +50,22 @@ const CSS = `
   .ipd-btn-sm:hover{background:#f8fafc}
   .ipd-btn-sm.teal{background:#E6F4F4;border-color:#B3E0E0;color:#0A6B70}
   .ipd-btn-sm.red{background:#fff5f5;border-color:#fecaca;color:#dc2626}
+  .ipd-search-wrap{display:flex;align-items:center;gap:8;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 12px}
+  .ipd-search-input{border:none;background:none;outline:none;font-size:12px;color:#334155;width:180;font-family:inherit}
+  .ipd-filter-btn{display:flex;align-items:center;gap:5;padding:6px 14px;border-radius:8;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;transition:all .12s}
+  .ipd-filter-btn:hover{background:#f8fafc}
+  .ipd-filter-btn.active{background:#E6F4F4;border-color:#B3E0E0;color:#0A6B70}
+  .ipd-sort-btn{display:flex;align-items:center;gap:3;padding:4px 8px;border-radius:6;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:11px;font-weight:700;cursor:pointer;transition:all .12s}
+  .ipd-sort-btn:hover{background:#fff}
+  .ipd-sort-btn.active{background:#E6F4F4;border-color:#B3E0E0;color:#0A6B70}
+  .ipd-patient-search{position:relative}
+  .ipd-patient-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:9px;box-shadow:0 12px 32px rgba(0,0,0,.12);max-height:200px;overflow-y:auto;z-index:10}
+  .ipd-patient-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9;transition:background .1s}
+  .ipd-patient-item:hover{background:#f8fafc}
+  .ipd-patient-item:last-child{border-bottom:none}
+  .ipd-entry-type{display:flex;background:#f1f5f9;border-radius:8px;padding:3px;margin-bottom:16px}
+  .ipd-entry-type-btn{flex:1;padding:7px 12px;border-radius:6;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;background:transparent;color:#64748b}
+  .ipd-entry-type-btn.active{background:#fff;color:#0E898F;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 `;
 
 interface BedOverview {
@@ -91,25 +108,68 @@ const BED_STATUS_CFG: Record<string, { bg: string; color: string; border: string
   RESERVED:    { bg: "#f0f9ff", color: "#0369a1", border: "#bae6fd", label: "Reserved" },
 };
 
-function AllocateModal({ bed, onClose, onDone }: { bed: Bed; onClose: () => void; onDone: () => void }) {
+function AllocateModal({ bed, ward, onClose, onDone }: { bed: Bed; ward?: { id: string; name: string }; onClose: () => void; onDone: () => void }) {
+  const [entryType, setEntryType] = useState<"search" | "manual">("search");
   const [form, setForm] = useState({
-    patientName: "", patientAge: "", patientGender: "Male", patientPhone: "",
+    patientId: "", patientName: "", patientAge: "", patientGender: "Male", patientPhone: "",
     attendantName: "", attendantPhone: "", diagnosis: "", admittingDoctorName: "",
     admissionDate: new Date().toISOString().split("T")[0],
-    expectedDischargeDate: "", notes: "",
+    expectedDischargeDate: "", notes: "", departmentId: "",
   });
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientResults, setPatientResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    api("/api/departments").then(d => {
+      if (d.success) setDepartments(d.data?.departments || d.data || []);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (entryType === "search" && patientSearch.length >= 2) {
+      setSearching(true);
+      api(`/api/patients?q=${encodeURIComponent(patientSearch)}&limit=10`)
+        .then(d => {
+          const results = d.data?.data || d.data || [];
+          setPatientResults(results);
+          setShowDropdown(true);
+        })
+        .finally(() => setSearching(false));
+    } else {
+      setPatientResults([]);
+      setShowDropdown(false);
+    }
+  }, [patientSearch, entryType]);
+
+  const selectPatient = (patient: any) => {
+    setForm({
+      ...form,
+      patientId: patient.id,
+      patientName: patient.name || "",
+      patientAge: patient.age ? String(patient.age) : "",
+      patientGender: patient.gender || "Male",
+      patientPhone: patient.phone || "",
+    });
+    setPatientSearch("");
+    setShowDropdown(false);
+  };
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.patientName.trim()) { setError("Patient name is required"); return; }
+    if (!form.departmentId) { setError("Please select a department"); return; }
     setSaving(true);
     setError("");
     const payload: any = {
       bedId: bed.id,
+      patientId: entryType === "search" && form.patientId ? form.patientId : undefined,
       patientName: form.patientName.trim(),
       patientAge: form.patientAge ? parseInt(form.patientAge) : undefined,
       patientGender: form.patientGender || undefined,
@@ -121,6 +181,8 @@ function AllocateModal({ bed, onClose, onDone }: { bed: Bed; onClose: () => void
       admissionDate: form.admissionDate || undefined,
       expectedDischargeDate: form.expectedDischargeDate || undefined,
       notes: form.notes || undefined,
+      departmentId: form.departmentId || undefined,
+      entryType: entryType === "manual" ? "MANUAL" : "PATIENT",
     };
     const res = await api("/api/ipd/allocate-bed", "POST", payload);
     setSaving(false);
@@ -134,17 +196,48 @@ function AllocateModal({ bed, onClose, onDone }: { bed: Bed; onClose: () => void
         <div className="ipd-modal-hd">
           <div>
             <div className="ipd-modal-title">Admit Patient — Bed {bed.bedNumber}</div>
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Fill patient admission details</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{ward ? ward.name : ""} · Fill patient admission details</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={18} /></button>
         </div>
         <form onSubmit={submit}>
           <div className="ipd-modal-body">
+            {/* Entry Type Toggle */}
+            <div className="ipd-entry-type">
+              <button type="button" className={`ipd-entry-type-btn ${entryType === "search" ? "active" : ""}`} onClick={() => setEntryType("search")}>
+                <User size={11} style={{ display: "inline", marginRight: 4 }} /> Search Patient
+              </button>
+              <button type="button" className={`ipd-entry-type-btn ${entryType === "manual" ? "active" : ""}`} onClick={() => setEntryType("manual")}>
+                <Plus size={11} style={{ display: "inline", marginRight: 4 }} /> Manual Entry
+              </button>
+            </div>
+
             {error && <div style={{ background: "#fff5f5", color: "#dc2626", padding: "10px 14px", borderRadius: 9, fontSize: 13, border: "1px solid #fecaca" }}>{error}</div>}
+
+            {entryType === "search" && (
+              <div className="ipd-field ipd-patient-search">
+                <label className="ipd-lbl">Search Existing Patient</label>
+                <input className="ipd-input" value={patientSearch} onChange={e => setPatientSearch(e.target.value)} placeholder="Type patient name or phone..." />
+                {searching && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}><Loader2 size={11} className="ipd-spin" style={{ display: "inline", marginRight: 4 }} />Searching...</div>}
+                {showDropdown && patientResults.length > 0 && (
+                  <div className="ipd-patient-dropdown">
+                    {patientResults.map((p: any) => (
+                      <div key={p.id} className="ipd-patient-item" onClick={() => selectPatient(p)}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                          {p.age ? `${p.age}y` : ""} {p.gender || ""} {p.phone ? `· ${p.phone}` : ""}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="ipd-grid-2">
               <div className="ipd-field" style={{ gridColumn: "1/-1" }}>
-                <label className="ipd-lbl">Patient Name *</label>
-                <input className="ipd-input" value={form.patientName} onChange={e => set("patientName", e.target.value)} placeholder="Full name" required />
+                <label className="ipd-lbl">Patient Name * {entryType === "manual" && <span style={{ color: "#dc2626", fontSize: 10 }}>(Manual Entry)</span>}</label>
+                <input className="ipd-input" value={form.patientName} onChange={e => set("patientName", e.target.value)} placeholder={entryType === "manual" ? "Enter patient full name" : "Select from search or enter manually"} required />
               </div>
               <div className="ipd-field">
                 <label className="ipd-lbl">Age</label>
@@ -159,6 +252,13 @@ function AllocateModal({ bed, onClose, onDone }: { bed: Bed; onClose: () => void
               <div className="ipd-field">
                 <label className="ipd-lbl">Patient Phone</label>
                 <input className="ipd-input" value={form.patientPhone} onChange={e => set("patientPhone", e.target.value)} placeholder="Phone number" />
+              </div>
+              <div className="ipd-field">
+                <label className="ipd-lbl">Department *</label>
+                <select className="ipd-select" value={form.departmentId} onChange={e => set("departmentId", e.target.value)} required>
+                  <option value="">Select Department</option>
+                  {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
               </div>
               <div className="ipd-field">
                 <label className="ipd-lbl">Admitting Doctor</label>
@@ -268,9 +368,21 @@ export default function IPDPanel() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"beds" | "admissions">("beds");
   const [search, setSearch] = useState("");
-  const [allocateBed, setAllocateBed] = useState<Bed | null>(null);
+  const [allocateBed, setAllocateBed] = useState<{ bed: Bed; ward?: { id: string; name: string } } | null>(null);
   const [dischargingAlloc, setDischargingAlloc] = useState<{ allocation: Allocation; bedNumber: string } | null>(null);
   const [updatingBedId, setUpdatingBedId] = useState<string | null>(null);
+
+  // Sorting & Filtering
+  const [deptFilter, setDeptFilter] = useState("");
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [allocSort, setAllocSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "admissionDate", dir: "desc" });
+  const [bedSort, setBedSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "bedNumber", dir: "asc" });
+
+  useEffect(() => {
+    api("/api/departments").then(d => {
+      if (d.success) setDepartments(d.data?.departments || d.data || []);
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -292,18 +404,50 @@ export default function IPDPanel() {
     load();
   };
 
-  const filteredWards = overview?.wards?.filter(w =>
-    !search || w.name.toLowerCase().includes(search.toLowerCase()) ||
-    w.beds.some(b => b.bedNumber.toLowerCase().includes(search.toLowerCase()) ||
-      b.activeAllocation?.patientName?.toLowerCase().includes(search.toLowerCase()))
-  ) || [];
+  const toggleAllocSort = (key: string) => setAllocSort(prev => ({ key, dir: prev.key === key && prev.dir === "desc" ? "asc" : "desc" }));
+  const toggleBedSort = (key: string) => setBedSort(prev => ({ key, dir: prev.key === key && prev.dir === "desc" ? "asc" : "desc" }));
 
-  const filteredAllocations = allocations.filter(a =>
+  const filteredWards = overview?.wards?.filter(w => {
+    if (search) {
+      const q = search.toLowerCase();
+      return w.name.toLowerCase().includes(q) ||
+        w.beds.some(b => b.bedNumber.toLowerCase().includes(q) ||
+          b.activeAllocation?.patientName?.toLowerCase().includes(q));
+    }
+    return true;
+  }) || [];
+
+  const sortedWards = filteredWards.sort((a, b) => {
+    const dir = bedSort.dir === "asc" ? 1 : -1;
+    if (bedSort.key === "name") return dir * a.name.localeCompare(b.name);
+    if (bedSort.key === "available") return dir * (a.availableBeds - b.availableBeds);
+    if (bedSort.key === "occupied") return dir * (a.occupiedBeds - b.occupiedBeds);
+    return 0;
+  });
+
+  const deptAllocations = allocations.filter(a => {
+    if (deptFilter && a.departmentId !== deptFilter) return false;
+    return true;
+  });
+
+  const filteredAllocations = deptAllocations.filter(a =>
     !search ||
     a.patientName?.toLowerCase().includes(search.toLowerCase()) ||
     a.bed?.bedNumber?.toLowerCase().includes(search.toLowerCase()) ||
     a.bed?.ward?.name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const sortedAllocations = [...filteredAllocations].sort((a, b) => {
+    const dir = allocSort.dir === "asc" ? 1 : -1;
+    if (allocSort.key === "admissionDate") return dir * (new Date(a.admissionDate).getTime() - new Date(b.admissionDate).getTime());
+    if (allocSort.key === "patientName") return dir * (a.patientName || "").localeCompare(b.patientName || "");
+    if (allocSort.key === "days") {
+      const daysA = daysSince(a.admissionDate);
+      const daysB = daysSince(b.admissionDate);
+      return dir * (daysA - daysB);
+    }
+    return 0;
+  });
 
   const summary = overview?.summary;
 
@@ -312,7 +456,7 @@ export default function IPDPanel() {
       <style>{CSS}</style>
 
       {allocateBed && (
-        <AllocateModal bed={allocateBed} onClose={() => setAllocateBed(null)} onDone={load} />
+        <AllocateModal bed={allocateBed.bed} ward={allocateBed.ward} onClose={() => setAllocateBed(null)} onDone={load} />
       )}
       {dischargingAlloc && (
         <DischargeModal
@@ -386,13 +530,26 @@ export default function IPDPanel() {
       ) : view === "beds" ? (
         /* ── BED MAP VIEW ── */
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {filteredWards.length === 0 ? (
+          {/* Toolbar */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
+              {[{ k: "name", l: "Name" }, { k: "available", l: "Available" }, { k: "occupied", l: "Occupied" }].map(s => (
+                <button key={s.k} type="button" onClick={() => toggleBedSort(s.k)} className={`ipd-sort-btn ${bedSort.key === s.k ? "active" : ""}`}>
+                  {s.l} <ArrowUpDown size={10} />
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{sortedWards.length} ward{sortedWards.length !== 1 ? "s" : ""}</div>
+          </div>
+
+          {sortedWards.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
               <BedDouble size={36} style={{ margin: "0 auto 12px", display: "block", opacity: .3 }} />
               <div style={{ fontWeight: 600, fontSize: 14 }}>No wards configured</div>
               <div style={{ fontSize: 12, marginTop: 4 }}>Add wards & beds in Configure → Ward & Bed Setup</div>
             </div>
-          ) : filteredWards.map(ward => (
+          ) : sortedWards.map(ward => (
             <div key={ward.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -420,7 +577,7 @@ export default function IPDPanel() {
                       </div>
 
                       {bed.status === "AVAILABLE" && (
-                        <button className="ipd-btn-sm teal" onClick={() => setAllocateBed(bed)} style={{ width: "100%", justifyContent: "center" }}>
+                        <button className="ipd-btn-sm teal" onClick={() => setAllocateBed({ bed, ward: { id: ward.id, name: ward.name } })} style={{ width: "100%", justifyContent: "center" }}>
                           <Plus size={11} /> Admit Patient
                         </button>
                       )}
@@ -472,10 +629,34 @@ export default function IPDPanel() {
       ) : (
         /* ── ADMISSIONS LIST VIEW ── */
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>Active Admissions ({filteredAllocations.length})</div>
+          {/* Toolbar */}
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
+              {[{ k: "admissionDate", l: "Date" }, { k: "patientName", l: "Patient" }, { k: "days", l: "Days" }].map(s => (
+                <button key={s.k} type="button" onClick={() => toggleAllocSort(s.k)} className={`ipd-sort-btn ${allocSort.key === s.k ? "active" : ""}`}>
+                  {s.l} <ArrowUpDown size={10} />
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {departments.length > 0 && (
+                <>
+                  <Filter size={13} color="#64748b" />
+                  <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="ipd-select" style={{ width: "auto", padding: "6px 10px", fontSize: 12 }}>
+                    <option value="">All Departments</option>
+                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </>
+              )}
+              <span style={{ fontSize: 12, color: "#64748b", marginLeft: 8 }}>{sortedAllocations.length} admission{sortedAllocations.length !== 1 ? "s" : ""}</span>
+            </div>
           </div>
-          {filteredAllocations.length === 0 ? (
+
+          <div style={{ padding: "12px 20px", borderBottom: "1px solid #f1f5f9" }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>Active Admissions</div>
+          </div>
+          {sortedAllocations.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8" }}>
               <User size={32} style={{ margin: "0 auto 10px", display: "block", opacity: .3 }} />
               <div style={{ fontWeight: 600, fontSize: 14 }}>No active admissions</div>
@@ -485,13 +666,13 @@ export default function IPDPanel() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                    {["Bed", "Patient", "Age/Gender", "Diagnosis", "Doctor", "Admitted", "Days", "Exp. Discharge", "Action"].map(h => (
+                    {["Bed", "Patient", "Department", "Age/Gender", "Diagnosis", "Doctor", "Admitted", "Days", "Exp. Discharge", "Action"].map(h => (
                       <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAllocations.map((a: any) => {
+                  {sortedAllocations.map((a: any) => {
                     const days = daysSince(a.admissionDate);
                     const overdue = a.expectedDischargeDate && new Date(a.expectedDischargeDate) < new Date();
                     return (
@@ -503,6 +684,14 @@ export default function IPDPanel() {
                         <td style={{ padding: "13px 14px" }}>
                           <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{a.patientName}</div>
                           {a.patientPhone && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}><Phone size={9} />{a.patientPhone}</div>}
+                          {a.entryType === "MANUAL" && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>Manual Entry</div>}
+                        </td>
+                        <td style={{ padding: "13px 14px" }}>
+                          {a.department?.name ? (
+                            <span style={{ padding: "3px 9px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700 }}>{a.department.name}</span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
+                          )}
                         </td>
                         <td style={{ padding: "13px 14px", fontSize: 12, color: "#64748b" }}>
                           {a.patientAge ? `${a.patientAge}y` : "—"} {a.patientGender || ""}

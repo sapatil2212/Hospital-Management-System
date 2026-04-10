@@ -3,9 +3,15 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Plus, Pencil, Trash2, Search, X, Loader2, Check, AlertTriangle,
   ChevronLeft, ChevronRight, User, DollarSign, Briefcase, Calendar,
-  Clock, Filter, Stethoscope, Upload, FileText, ArrowLeft, Send, Download
+  Clock, Filter, Stethoscope, Upload, FileText, ArrowLeft, Send, Download,
+  Eye, ArrowUpDown, ArrowUp, ArrowDown, FileSpreadsheet, FileType, ShieldAlert, Info
 } from "lucide-react";
-import ScheduleModal from "./ScheduleModal";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { Document as DocxDocument, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel } from "docx";
+import ScheduleBuilder from "./ScheduleBuilder";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -496,6 +502,14 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
   const [deletingSchedule, setDeletingSchedule] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [bulkSending, setBulkSending] = useState(false);
+  // Enhanced state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [showExport, setShowExport] = useState(false);
+  const [viewItem, setViewItem] = useState<Doctor | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
   const handleBulkSendCredentials = async () => {
     if (!confirm("Send credentials to all doctors who haven't received them yet?")) return;
@@ -584,6 +598,73 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     setSendingCreds(null);
     if (res.success) { addToast("success", `Credentials sent to ${doctor.email}`); load(); }
     else addToast("error", res.message || "Failed to send credentials");
+  };
+
+  // Selection
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => prev.size === data.length ? new Set() : new Set(data.map(d => d.id)));
+  };
+
+  // Sort
+  const handleSort = (col: string) => {
+    if (sortBy === col) setSortOrder(o => o === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortOrder("asc"); }
+  };
+  const sorted = [...data].sort((a: any, b: any) => {
+    let va = a[sortBy], vb = b[sortBy];
+    if (sortBy === "department") { va = a.department?.name || ""; vb = b.department?.name || ""; }
+    if (typeof va === "string") va = va.toLowerCase();
+    if (typeof vb === "string") vb = vb.toLowerCase();
+    if (va < vb) return sortOrder === "asc" ? -1 : 1;
+    if (va > vb) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Export
+  const getExportData = () => {
+    const src = selectedIds.size > 0 ? data.filter(d => selectedIds.has(d.id)) : data;
+    return src.map(d => ({
+      Name: d.name, Email: d.email, Phone: d.phone || "-",
+      Department: d.department?.name || "-", Specialization: d.specialization || "-",
+      Qualification: d.qualification || "-", Experience: `${d.experience} yrs`,
+      "Consultation Fee": `₹${d.consultationFee}`, "Follow-up Fee": d.followUpFee ? `₹${d.followUpFee}` : "-",
+      Status: d.isActive ? "Active" : "Inactive", Available: d.isAvailable ? "Yes" : "No",
+    }));
+  };
+  const exportPDF = () => {
+    const doc = new jsPDF("landscape"); const rows = getExportData(); const keys = Object.keys(rows[0] || {});
+    doc.setFontSize(16); doc.text("Doctors Report", 14, 16);
+    doc.setFontSize(9); doc.setTextColor(100); doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 23);
+    autoTable(doc, { startY: 28, head: [keys], body: rows.map(r => keys.map(k => (r as any)[k])), styles: { fontSize: 7 }, headStyles: { fillColor: [14, 137, 143] } });
+    doc.save(`doctors-${new Date().toISOString().slice(0, 10)}.pdf`); setShowExport(false);
+  };
+  const exportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Doctors");
+    XLSX.writeFile(wb, `doctors-${new Date().toISOString().slice(0, 10)}.xlsx`); setShowExport(false);
+  };
+  const exportWord = async () => {
+    const rows = getExportData(); const keys = Object.keys(rows[0] || {});
+    const headerRow = new TableRow({ children: keys.map(k => new TableCell({ width: { size: 100 / keys.length, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: k, bold: true, size: 18, font: "Calibri" })] })] })) });
+    const dataRows = rows.map(r => new TableRow({ children: keys.map(k => new TableCell({ width: { size: 100 / keys.length, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: String((r as any)[k] ?? "-"), size: 18, font: "Calibri" })] })] })) }));
+    const doc = new DocxDocument({ sections: [{ children: [new Paragraph({ text: "Doctors Report", heading: HeadingLevel.HEADING_1 }), new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-IN")}`, size: 18, color: "888888" })] }), new DocxTable({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } })] }] });
+    const blob = await Packer.toBlob(doc); saveAs(blob, `doctors-${new Date().toISOString().slice(0, 10)}.docx`); setShowExport(false);
+  };
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await api(`/api/config/doctors/${id}`, "DELETE");
+    }
+    setSelectedIds(new Set());
+    setShowBulkConfirm(false);
+    setBulkDeleting(false);
+    load();
   };
 
   const goToPage = (page: number) => setPagination(p => ({ ...p, page }));
@@ -697,6 +778,33 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
     .dp-upload-doc-prev{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#64748b;font-size:12px}
     .dp-upload-view-link{font-size:11px;color:#0E898F;text-decoration:none;font-weight:600}
     .dp-upload-remove{position:absolute;top:7px;right:7px;background:rgba(239,68,68,.9);border:none;border-radius:6px;color:#fff;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .dp-toolbar-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+    .dp-toolbar-left h2{margin:0;font-size:22px;font-weight:800;color:#1e293b;line-height:1.2}
+    .dp-toolbar-left p{margin:0;font-size:13px;color:#94a3b8;line-height:1.3}
+    .dp-export-wrap{position:relative}
+    .dp-export-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:500;cursor:pointer}
+    .dp-export-btn:hover{border-color:#cbd5e1;background:#f8fafc}
+    .dp-export-dd{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;min-width:180px;padding:6px}
+    .dp-export-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:none;background:none;width:100%;cursor:pointer;font-size:13px;color:#334155;font-weight:500}
+    .dp-export-item:hover{background:#f1f5f9}
+    .dp-export-item .eicon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
+    .dp-export-item .eicon.pdf{background:#fff5f5;color:#ef4444}
+    .dp-export-item .eicon.xls{background:#f0fdf4;color:#16a34a}
+    .dp-export-item .eicon.doc{background:#eff6ff;color:#2563eb}
+    .dp-export-item .eicon.csv{background:#fefce8;color:#ca8a04}
+    .dp-th-sort{cursor:pointer;user-select:none}
+    .dp-th-sort:hover{color:#0E898F}
+    .dp-sort-icon{display:inline-flex;margin-left:4px;vertical-align:middle;color:#cbd5e1}
+    .dp-sort-icon.active{color:#0E898F}
+    .dp-checkbox{width:16px;height:16px;accent-color:#0E898F;cursor:pointer}
+    .dp-selected-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#E6F4F4;border:1px solid #B3E0E0;border-radius:10px;margin-bottom:12px;font-size:13px;color:#0A6B70;font-weight:600}
+    .dp-view{background:#f0f9ff;color:#2563eb}
+    .dp-view:hover{background:#dbeafe}
+    .dp-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:4px 0}
+    .dp-view-item{display:flex;flex-direction:column;gap:3px}
+    .dp-view-item.full{grid-column:1/-1}
+    .dp-view-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8}
+    .dp-view-value{font-size:14px;color:#1e293b;font-weight:500}
     @keyframes dpSpin{to{transform:rotate(360deg)}}
     .dp-spin{animation:dpSpin .7s linear infinite}
   `;
@@ -728,24 +836,39 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
 
       {/* Toolbar */}
       <div className="dp-toolbar">
-        <div className="dp-search-wrap">
-          <Search size={14} color="#94a3b8" />
-          <input className="dp-search-input" placeholder="Search doctors..." value={search}
-            onChange={e => { setSearch(e.target.value); setPagination(p => ({ ...p, page: 1 })); }} />
-          {search && <button className="dp-icon-btn" onClick={() => setSearch("")}><X size={14} /></button>}
+        <div className="dp-toolbar-left">
+          <h2>Doctors</h2>
+          <p>Manage doctor profiles, schedules and credentials</p>
         </div>
         <div className="dp-toolbar-right">
           <button className={`dp-filter-btn${showFilters ? " active" : ""}`} onClick={() => setShowFilters(!showFilters)}>
-            <Filter size={14} /> Filters
+            <Filter size={14} />{showFilters ? "Hide" : "Filters"}
           </button>
-          <a
-            href={`/api/export/doctors${[search && `search=${encodeURIComponent(search)}`, filterDept && `departmentId=${filterDept}`, filterStatus && `isActive=${filterStatus}`].filter(Boolean).join("&") ? `?${[search && `search=${encodeURIComponent(search)}`, filterDept && `departmentId=${filterDept}`, filterStatus && `isActive=${filterStatus}`].filter(Boolean).join("&")}` : ""}`}
-            download
-            title="Export CSV"
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
-          >
-            <Download size={14} />Export CSV
-          </a>
+          <div className="dp-search-wrap">
+            <Search size={14} color="#94a3b8" />
+            <input className="dp-search-input" placeholder="Search doctors..." value={search}
+              onChange={e => { setSearch(e.target.value); setPagination(p => ({ ...p, page: 1 })); }} />
+            {search && <button className="dp-icon-btn" onClick={() => setSearch("")}><X size={14} /></button>}
+          </div>
+          {selectedIds.size > 0 && (
+            <button onClick={() => setShowBulkConfirm(true)}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 10, border: "1px solid #fecaca", background: "#fff5f5", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+              <Trash2 size={12} />Delete ({selectedIds.size})
+            </button>
+          )}
+          <div className="dp-export-wrap">
+            <button className="dp-export-btn" onClick={() => setShowExport(e => !e)}>
+              <Download size={13} />Export
+            </button>
+            {showExport && (
+              <div className="dp-export-dd">
+                <button className="dp-export-item" onClick={exportPDF}><span className="eicon pdf"><FileText size={13} /></span>PDF Document</button>
+                <button className="dp-export-item" onClick={exportExcel}><span className="eicon xls"><FileSpreadsheet size={13} /></span>Excel Spreadsheet</button>
+                <button className="dp-export-item" onClick={exportWord}><span className="eicon doc"><FileType size={13} /></span>Word Document</button>
+                <a className="dp-export-item" href={`/api/export/doctors${[search && `search=${encodeURIComponent(search)}`, filterDept && `departmentId=${filterDept}`, filterStatus && `isActive=${filterStatus}`].filter(Boolean).join("&") ? `?${[search && `search=${encodeURIComponent(search)}`, filterDept && `departmentId=${filterDept}`, filterStatus && `isActive=${filterStatus}`].filter(Boolean).join("&")}` : ""}`} download style={{ textDecoration: "none" }}><span className="eicon csv"><Download size={13} /></span>CSV Export</a>
+              </div>
+            )}
+          </div>
           <button
             onClick={handleBulkSendCredentials}
             disabled={bulkSending}
@@ -779,6 +902,15 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
         </div>
       )}
 
+      {/* Selected bar */}
+      {selectedIds.size > 0 && (
+        <div className="dp-selected-bar">
+          <Check size={14} />
+          {selectedIds.size} doctor{selectedIds.size > 1 ? "s" : ""} selected
+          <button className="dp-btn-ghost" style={{ padding: "4px 10px", fontSize: 12, marginLeft: "auto" }} onClick={() => setSelectedIds(new Set())}>Clear</button>
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <div className="dp-loading"><Loader2 size={20} className="dp-spin" /> Loading doctors...</div>
@@ -789,18 +921,22 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
           <table className="dp-tbl">
             <thead>
               <tr>
-                <th>Doctor</th>
-                <th>Department</th>
+                <th style={{ width: 40 }}>
+                  <input type="checkbox" className="dp-checkbox" checked={data.length > 0 && selectedIds.size === data.length} ref={(el: HTMLInputElement | null) => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < data.length; }} onChange={toggleSelectAll} />
+                </th>
+                <th className="dp-th-sort" onClick={() => handleSort("name")}>Doctor<span className={`dp-sort-icon ${sortBy === "name" ? "active" : ""}`}>{sortBy === "name" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}</span></th>
+                <th className="dp-th-sort" onClick={() => handleSort("department")}>Department<span className={`dp-sort-icon ${sortBy === "department" ? "active" : ""}`}>{sortBy === "department" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}</span></th>
                 <th>Specialization</th>
-                <th>Exp / Fee</th>
+                <th className="dp-th-sort" onClick={() => handleSort("experience")}>Exp / Fee<span className={`dp-sort-icon ${sortBy === "experience" ? "active" : ""}`}>{sortBy === "experience" ? (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}</span></th>
                 <th>Status</th>
                 <th>Credentials</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {data.map(row => (
-                <tr key={row.id}>
+              {sorted.map(row => (
+                <tr key={row.id} style={selectedIds.has(row.id) ? { background: "#f0fdfa" } : undefined}>
+                  <td><input type="checkbox" className="dp-checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} /></td>
                   <td>
                     <div className="dp-doc-info">
                       <div className="dp-avatar">
@@ -813,9 +949,9 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
                       </div>
                     </div>
                   </td>
-                  <td>{row.department?.name || <span style={{ color: "#94a3b8" }}>—</span>}</td>
+                  <td>{row.department?.name || <span style={{ color: "#94a3b8" }}>-</span>}</td>
                   <td>
-                    {row.specialization || <span style={{ color: "#94a3b8" }}>—</span>}
+                    {row.specialization || <span style={{ color: "#94a3b8" }}>-</span>}
                     {row.qualification && <div className="dp-doc-meta">{row.qualification}</div>}
                   </td>
                   <td>
@@ -852,29 +988,18 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
                   </td>
                   <td>
                     <div className="dp-actions">
+                      <button className="dp-icon-btn dp-view" title="Quick View" onClick={() => setViewItem(row)}>
+                        <Eye size={13} />
+                      </button>
                       <button className="dp-icon-btn dp-edit" title="Edit Profile" onClick={() => { setEditItem(row); setView("edit"); }}>
                         <Pencil size={13} />
                       </button>
                       <button className="dp-icon-btn dp-del" title="Delete" onClick={() => setDeleteItem(row)}>
                         <Trash2 size={13} />
                       </button>
-                      {(row._count?.availability || 0) === 0 ? (
-                        <button className="dp-btn-sm blue" title="Create Schedule" onClick={() => setScheduleModal({ open: true, doctor: row, mode: "create" })}>
-                          <Clock size={11} /> Create Schedule
-                        </button>
-                      ) : (
-                        <>
-                          <button className="dp-btn-sm gray" title="View Schedule" onClick={() => setScheduleModal({ open: true, doctor: row, mode: "view" })}>
-                            <Calendar size={11} /> View
-                          </button>
-                          <button className="dp-btn-sm blue" title="Edit Schedule" onClick={() => setScheduleModal({ open: true, doctor: row, mode: "edit" })}>
-                            <Clock size={11} /> Edit
-                          </button>
-                          <button className="dp-btn-sm red" title="Delete Schedule" disabled={deletingSchedule === row.id} onClick={() => handleDeleteSchedule(row)}>
-                            <Trash2 size={11} />
-                          </button>
-                        </>
-                      )}
+                      <button className="dp-btn-sm blue" title="Manage Schedule" onClick={() => setScheduleModal({ open: true, doctor: row, mode: "edit" })}>
+                        <Clock size={11} /> Schedule
+                      </button>
                       {onOpenLeave && (
                         <button className="dp-btn-sm green" onClick={() => onOpenLeave(row)}>
                           <Calendar size={11} /> Leave
@@ -923,19 +1048,113 @@ export default function DoctorPanel({ onOpenAvailability, onOpenLeave }: DoctorP
         loading={deleting}
       />
 
-      {scheduleModal.doctor && (
-        <ScheduleModal
-          open={scheduleModal.open}
-          mode={scheduleModal.mode}
-          onClose={() => setScheduleModal({ open: false, doctor: null, mode: "create" })}
-          doctorId={scheduleModal.doctor.id}
-          doctorName={scheduleModal.doctor.name}
-          onSuccess={() => {
-            addToast("success", scheduleModal.mode === "create" ? "Schedule created successfully" : "Schedule updated successfully");
-            setScheduleModal({ open: false, doctor: null, mode: "create" });
-            load();
-          }}
-        />
+      {scheduleModal.open && scheduleModal.doctor && (
+        <div className="dp-overlay" onClick={e => { if (e.target === e.currentTarget) setScheduleModal({ open: false, doctor: null, mode: "create" }); }}>
+          <div style={{ background: "#fff", borderRadius: 18, width: "95%", maxWidth: 1100, maxHeight: "92vh", overflow: "auto", position: "relative", boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}>
+            <button onClick={() => setScheduleModal({ open: false, doctor: null, mode: "create" })} style={{ position: "absolute", top: 14, right: 14, zIndex: 10, width: 32, height: 32, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}><X size={16} /></button>
+            <ScheduleBuilder
+              doctorId={scheduleModal.doctor.id}
+              doctorName={scheduleModal.doctor.name}
+              accent="#0E898F"
+              apiBase={`/api/config/doctors/${scheduleModal.doctor.id}`}
+              onSuccess={() => { load(); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
+      {viewItem && (
+        <div className="dp-overlay" onClick={e => e.target === e.currentTarget && setViewItem(null)}>
+          <div className="dp-confirm" style={{ maxWidth: 560, textAlign: "left" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <span style={{ fontSize: 17, fontWeight: 800, color: "#1e293b" }}>Doctor Details</span>
+              <button className="dp-icon-btn" onClick={() => setViewItem(null)}><X size={16} /></button>
+            </div>
+            <div className="dp-view-grid">
+              <div className="dp-view-item">
+                <span className="dp-view-label">Name</span>
+                <span className="dp-view-value">{viewItem.name}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Email</span>
+                <span className="dp-view-value">{viewItem.email}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Phone</span>
+                <span className="dp-view-value">{viewItem.phone || "-"}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Gender</span>
+                <span className="dp-view-value">{viewItem.gender || "-"}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Department</span>
+                <span className="dp-view-value">{viewItem.department?.name || "-"}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Specialization</span>
+                <span className="dp-view-value">{viewItem.specialization || "-"}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Qualification</span>
+                <span className="dp-view-value">{viewItem.qualification || "-"}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Experience</span>
+                <span className="dp-view-value">{viewItem.experience} years</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Consultation Fee</span>
+                <span className="dp-view-value">₹{viewItem.consultationFee}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Follow-up Fee</span>
+                <span className="dp-view-value">{viewItem.followUpFee ? `₹${viewItem.followUpFee}` : "-"}</span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Status</span>
+                <span className="dp-view-value"><span className={`dp-badge ${viewItem.isActive ? "green" : "red"}`}>{viewItem.isActive ? "Active" : "Inactive"}</span></span>
+              </div>
+              <div className="dp-view-item">
+                <span className="dp-view-label">Available</span>
+                <span className="dp-view-value"><span className={`dp-badge ${viewItem.isAvailable ? "blue" : "gray"}`}>{viewItem.isAvailable ? "Yes" : "No"}</span></span>
+              </div>
+            </div>
+            <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+              <button className="dp-btn-primary" onClick={() => { setEditItem(viewItem); setView("edit"); setViewItem(null); }}>
+                <Pencil size={13} />Edit Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirm */}
+      {showBulkConfirm && (
+        <div className="dp-overlay" onClick={e => e.target === e.currentTarget && !bulkDeleting && setShowBulkConfirm(false)}>
+          <div className="dp-confirm" style={{ maxWidth: 440 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertTriangle size={20} color="#ef4444" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete {selectedIds.size} Doctors?</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                  Are you sure you want to delete <strong>{selectedIds.size}</strong> selected doctor(s)? This action cannot be undone.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="dp-btn-ghost" onClick={() => setShowBulkConfirm(false)} disabled={bulkDeleting}>Cancel</button>
+              <button onClick={handleBulkDelete} disabled={bulkDeleting}
+                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: bulkDeleting ? "not-allowed" : "pointer", opacity: bulkDeleting ? 0.7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                {bulkDeleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+                {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} Doctors`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -303,6 +303,7 @@ export default function PrescriptionPage() {
         }
         .printonly { display: none; }
         input, select, textarea, button { font-family: 'Inter', sans-serif; }
+        .doc-center { overflow: visible !important; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       `}</style>
@@ -317,7 +318,7 @@ export default function PrescriptionPage() {
       ) : (
         <>
           {/* Topbar */}
-          <div className="noprint" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 3px rgba(0,0,0,.05)" }}>
+          <div className="noprint" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 64, zIndex: 100, boxShadow: "0 1px 3px rgba(0,0,0,.05)", margin: "-22px -20px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}><ArrowLeft size={13} /> Back</button>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -454,14 +455,17 @@ export default function PrescriptionPage() {
               style={{ display: "flex", alignItems: "center", gap: 4, padding: "7px 12px", borderRadius: 7, border: "1.5px dashed #fde68a", background: "#fffbeb", color: "#92400e", fontSize: 11, fontWeight: 600, cursor: "pointer" }}><Plus size={12} /> Add Medication</button>}
           </SectionCard>
 
-          {/* Lab Tests */}
+          {/* Lab Tests + Sub-Dept Referrals — side by side */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
           <SectionCard title={`Lab Tests (${tests.length})`} icon={<FlaskConical size={14} />} accent="#8b5cf6" expanded={sections.tests} onToggle={() => tog("tests")}>
             {tests.map((t, i) => (
-              <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                <input value={t.name} onChange={e => { const n = [...tests]; n[i] = { ...n[i], name: e.target.value }; setTests(n); }} placeholder="Test name" disabled={locked} style={{ flex: 2, padding: "7px 9px", borderRadius: 7, border: "1px solid #e2e8f0", fontSize: 12, outline: "none" }} />
-                <select value={t.urgency} onChange={e => { const n = [...tests]; n[i] = { ...n[i], urgency: e.target.value }; setTests(n); }} disabled={locked} style={{ padding: "7px 9px", borderRadius: 7, border: "1px solid #e2e8f0", fontSize: 11, outline: "none" }}><option>Routine</option><option>Urgent</option><option>STAT</option></select>
-                <input value={t.notes} onChange={e => { const n = [...tests]; n[i] = { ...n[i], notes: e.target.value }; setTests(n); }} placeholder="Notes" disabled={locked} style={{ flex: 1, padding: "7px 9px", borderRadius: 7, border: "1px solid #e2e8f0", fontSize: 12, outline: "none" }} />
-                {!locked && <button onClick={() => setTests(p => p.filter((_, j) => j !== i))} style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 size={12} /></button>}
+              <div key={i} style={{ background: "#faf5ff", borderRadius: 9, padding: 10, marginBottom: 6, border: "1px solid #ddd6fe" }}>
+                <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                  <input value={t.name} onChange={e => { const n = [...tests]; n[i] = { ...n[i], name: e.target.value }; setTests(n); }} placeholder="Test name" disabled={locked} style={{ flex: 1, padding: "7px 9px", borderRadius: 7, border: "1px solid #ddd6fe", fontSize: 12, outline: "none", background: "#fff" }} />
+                  <select value={t.urgency} onChange={e => { const n = [...tests]; n[i] = { ...n[i], urgency: e.target.value }; setTests(n); }} disabled={locked} style={{ padding: "7px 9px", borderRadius: 7, border: "1px solid #ddd6fe", fontSize: 11, outline: "none", background: "#fff" }}><option>Routine</option><option>Urgent</option><option>STAT</option></select>
+                  {!locked && <button onClick={() => setTests(p => p.filter((_, j) => j !== i))} style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 size={12} /></button>}
+                </div>
+                <input value={t.notes} onChange={e => { const n = [...tests]; n[i] = { ...n[i], notes: e.target.value }; setTests(n); }} placeholder="Notes" disabled={locked} style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: "1px solid #ddd6fe", fontSize: 12, outline: "none", background: "#fff" }} />
               </div>
             ))}
             {!locked && <button onClick={() => setTests(p => [...p, { name: "", urgency: "Routine", notes: "" }])}
@@ -490,8 +494,10 @@ export default function PrescriptionPage() {
             {!locked && <button onClick={() => setRefs(p => [...p, { subDeptId: "", subDeptName: "", reason: "", priority: "Normal", notes: "" }])}
               style={{ display: "flex", alignItems: "center", gap: 4, padding: "7px 12px", borderRadius: 7, border: "1.5px dashed #7dd3fc", background: "#f0f9ff", color: "#0369a1", fontSize: 11, fontWeight: 600, cursor: "pointer" }}><Plus size={12} /> Add Referral</button>}
           </SectionCard>
+          </div>
 
-          {/* Advice */}
+          {/* Advice & Instructions + Follow-up — side by side */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
           <SectionCard title="Advice & Instructions" icon={<FileText size={14} />} accent="#10b981" expanded={sections.advice} onToggle={() => tog("advice")}>
             <textarea value={advice} onChange={e => setAdvice(e.target.value)} placeholder="Diet, lifestyle, precautions..." rows={3} disabled={locked}
               style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, color: "#334155", outline: "none", resize: "vertical", background: locked ? "#f8fafc" : "#fff" }} />
@@ -506,8 +512,10 @@ export default function PrescriptionPage() {
                 <input value={fuNotes} onChange={e => setFuNotes(e.target.value)} placeholder="Follow-up instructions" disabled={locked} style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none" }} /></div>
             </div>
           </SectionCard>
+          </div>
 
-          {/* Consultation Fee */}
+          {/* Consultation Fee + Doctor's Private Notes — side by side */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
           <SectionCard title="Consultation Fee" icon={<FileText size={14} />} accent="#059669" expanded={sections.fee} onToggle={() => tog("fee")}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: "#059669" }}>₹</span>
@@ -518,16 +526,17 @@ export default function PrescriptionPage() {
           </SectionCard>
 
           {/* Doctor Notes */}
-          <div style={{ background: "#fff", borderRadius: 14, padding: "14px 18px", marginBottom: 14, border: "1px solid #e2e8f0" }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: "14px 18px", marginBottom: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,.03)" }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", marginBottom: 6, display: "block" }}>Doctor&apos;s Private Notes</label>
             <textarea value={docNotes} onChange={e => setDocNotes(e.target.value)} placeholder="Internal notes (not shown on prescription)..." rows={2} disabled={locked}
               style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, color: "#334155", outline: "none", resize: "vertical", background: locked ? "#f8fafc" : "#fff" }} />
+          </div>
           </div>
         </div>
 
         {/* Right Panel: History or AI */}
         {(showHist || showAi) && (
-          <div className="noprint" style={{ background: "#fff", borderLeft: "1px solid #e2e8f0", padding: "16px", overflowY: "auto", maxHeight: "calc(100vh - 52px)", position: "sticky", top: 52 }}>
+          <div className="noprint" style={{ background: "#fff", borderLeft: "1px solid #e2e8f0", padding: "16px", overflowY: "auto", maxHeight: "calc(100vh - 116px)", position: "sticky", top: 116 }}>
             {showHist && <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>Patient History</div>

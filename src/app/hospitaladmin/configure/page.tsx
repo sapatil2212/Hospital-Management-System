@@ -18,10 +18,9 @@ import TreatmentPlanPanel from "@/components/TreatmentPlanPanel";
 import DynamicDashboard from "@/components/DynamicDashboard";
 import PermissionPanel from "@/components/PermissionPanel";
 
-type Tab = "overview"|"settings"|"departments"|"subdepts"|"services"|"treatments"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory"|"permissions";
+type Tab = "settings"|"departments"|"subdepts"|"services"|"treatments"|"clinical"|"doctors"|"staff"|"wards"|"billing"|"inventory"|"permissions";
 
 const TABS:{id:Tab;label:string;icon:any}[] = [
-  {id:"overview",label:"Overview",icon:BarChart2},
   {id:"settings",label:"General Settings",icon:Settings},
   {id:"departments",label:"Departments",icon:Building2},
   {id:"subdepts",label:"Sub-Depts / Procedures",icon:Layers},
@@ -52,156 +51,170 @@ function Modal({open,onClose,title,children}:{open:boolean;onClose:()=>void;titl
 }
 
 /* ─── SETTINGS PANEL ─── */
+function SectionCard({icon,title,desc,children}:{icon:React.ReactNode;title:string;desc:string;children:React.ReactNode}){
+  return(
+    <div style={{background:"#fff",border:"1px solid #e8edf2",borderRadius:16,overflow:"hidden",marginBottom:18}}>
+      <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 22px",borderBottom:"1px solid #f1f5f9",background:"#fafbfc"}}>
+        <div style={{width:36,height:36,borderRadius:10,background:"#E6F4F4",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
+        <div><div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{title}</div><div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{desc}</div></div>
+      </div>
+      <div style={{padding:"20px 22px"}}>{children}</div>
+    </div>
+  );
+}
+
 function SettingsPanel({hospitalId}:{hospitalId:string}){
   const [f,setF]=useState({hospitalName:"",address:"",phone:"",email:"",website:"",timezone:"Asia/Kolkata",currency:"INR",gstNumber:"",registrationNo:"",letterhead:"",letterheadType:"IMAGE",letterheadSize:"A4",logo:""});
   const [saving,setSaving]=useState(false);
   const [uploading,setUploading]=useState(false);
   const [uploadingLogo,setUploadingLogo]=useState(false);
   const [msg,setMsg]=useState("");
-  const [progress,setProgress]=useState<any>(null);
 
   useEffect(()=>{
     api("/api/config/settings").then(d=>{
       if(d.data?.settings){
         const s=d.data.settings;
         setF({
-          hospitalName:s.hospitalName||"",
-          address:s.address||"",
-          phone:s.phone||"",
-          email:s.email||"",
-          website:s.website||"",
-          timezone:s.timezone||"Asia/Kolkata",
-          currency:s.currency||"INR",
-          gstNumber:s.gstNumber||"",
-          registrationNo:s.registrationNo||"",
-          letterhead:s.letterhead||"",
-          letterheadType:s.letterheadType||"IMAGE",
-          letterheadSize:s.letterheadSize||"A4",
-          logo:s.logo||""
+          hospitalName:s.hospitalName||"",address:s.address||"",phone:s.phone||"",email:s.email||"",
+          website:s.website||"",timezone:s.timezone||"Asia/Kolkata",currency:s.currency||"INR",
+          gstNumber:s.gstNumber||"",registrationNo:s.registrationNo||"",letterhead:s.letterhead||"",
+          letterheadType:s.letterheadType||"IMAGE",letterheadSize:s.letterheadSize||"A4",logo:s.logo||""
         });
       }
-      if(d.data?.progress) setProgress(d.data.progress);
     });
   },[]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("type", file.type.includes("pdf") ? "document" : "image");
+    const fd = new FormData(); fd.append("file", file); fd.append("type", file.type.includes("pdf") ? "document" : "image");
     try {
-      const r = await fetch("/api/upload", { method: "POST", body: fd });
-      const d = await r.json();
-      if (d.success) {
-        setF(p => ({ ...p, letterhead: d.data.url, letterheadType: file.type.includes("pdf") ? "PDF" : "IMAGE" }));
-        setMsg("✓ Letterhead uploaded!");
-      } else {
-        setMsg("Error: " + d.message);
-      }
-    } catch (err) {
-      setMsg("Upload failed");
-    } finally {
-      setUploading(false);
-    }
+      const r = await fetch("/api/upload", { method: "POST", body: fd }); const d = await r.json();
+      if (d.success) { setF(p => ({ ...p, letterhead: d.data.url, letterheadType: file.type.includes("pdf") ? "PDF" : "IMAGE" })); setMsg("✓ Letterhead uploaded!"); }
+      else setMsg("Error: " + d.message);
+    } catch { setMsg("Upload failed"); } finally { setUploading(false); }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setMsg("Please upload an image file for the logo");
-      return;
-    }
+    const file = e.target.files?.[0]; if (!file) return;
+    if (!file.type.startsWith("image/")) { setMsg("Please upload an image file for the logo"); return; }
     setUploadingLogo(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("type", "logo");
+    const fd = new FormData(); fd.append("file", file); fd.append("type", "logo");
     try {
-      const r = await fetch("/api/upload", { method: "POST", body: fd });
-      const d = await r.json();
-      if (d.success) {
-        setF(p => ({ ...p, logo: d.data.url }));
-        setMsg("✓ Logo uploaded!");
-      } else {
-        setMsg("Error: " + d.message);
-      }
-    } catch (err) {
-      setMsg("Upload failed");
-    } finally {
-      setUploadingLogo(false);
-    }
+      const r = await fetch("/api/upload", { method: "POST", body: fd }); const d = await r.json();
+      if (d.success) { setF(p => ({ ...p, logo: d.data.url })); setMsg("✓ Logo uploaded!"); }
+      else setMsg("Error: " + d.message);
+    } catch { setMsg("Upload failed"); } finally { setUploadingLogo(false); }
   };
 
-  const save=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);setMsg("");
+  const save=async(e:React.FormEvent)=>{
+    e.preventDefault(); setSaving(true); setMsg("");
     const d=await api("/api/config/settings","POST",f);
-    setMsg(d.success?"✓ Settings saved!":d.message||"Error");setSaving(false);
-    if(d.success){const r=await api("/api/config/settings");if(r.data?.progress)setProgress(r.data.progress);}
+    setMsg(d.success?"✓ Settings saved successfully!":d.message||"Error saving settings");
+    setSaving(false);
   };
 
-  return(<div>
-    {progress&&!progress.isComplete&&(
-      <div className="cfg-onboard">
-        <div className="cfg-onboard-head"><AlertTriangle size={18} color="#f59e0b"/><div><div style={{fontWeight:700,color:"#1e293b"}}>Complete Your Hospital Setup</div><div style={{fontSize:12,color:"#64748b"}}>Configure all modules to unlock all features</div></div></div>
-        <div className="cfg-progress-bar"><div className="cfg-progress-fill" style={{width:`${progress.percentage}%`}}/></div>
-        <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>{progress.percentage}% complete — {progress.completed}/{progress.total} steps</div>
-        <div className="cfg-steps">{progress.steps.map((s:any,i:number)=>(<div key={i} className={`cfg-step${s.done?" done":""}`}>{s.done?<Check size={13}/>:<span className="cfg-step-num">{i+1}</span>}{s.name}</div>))}</div>
-      </div>
-    )}
-    <form onSubmit={save} className="cfg-form">
-      <div className="cfg-field" style={{gridColumn:"1/-1",marginBottom:16}}>
-        <label className="cfg-lbl" style={{color:"#0E898F",fontSize:13,marginBottom:12,display:"block"}}>Hospital Logo</label>
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          {f.logo && (
-            <div style={{width:80,height:80,borderRadius:12,border:"2px solid #e2e8f0",padding:8,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff"}}>
-              <img src={f.logo} alt="Hospital Logo" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>
+  const field=(k:string,l:string,ph:string,req?:boolean,type?:string)=>(
+    <div className="cfg-field" key={k}>
+      <label className="cfg-lbl">{l}</label>
+      <input className="cfg-input" type={type||"text"} placeholder={ph} value={(f as any)[k]} onChange={e=>setF(p=>({...p,[k]:e.target.value}))} required={!!req}/>
+    </div>
+  );
+
+  return(
+    <form onSubmit={save} style={{maxWidth:860,margin:"0 auto"}}>
+
+      {/* Identity & Branding */}
+      <SectionCard icon={<Building2 size={17} color="#0E898F"/>} title="Identity & Branding" desc="Hospital name, logo and public-facing details">
+        <div style={{display:"flex",alignItems:"flex-start",gap:20,marginBottom:18}}>
+          <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+            <div style={{width:76,height:76,borderRadius:14,border:"2px dashed #cbd5e1",display:"flex",alignItems:"center",justifyContent:"center",background:"#f8fafc",overflow:"hidden"}}>
+              {f.logo?<img src={f.logo} alt="logo" style={{width:"100%",height:"100%",objectFit:"contain"}}/>:<Building2 size={28} color="#cbd5e1"/>}
             </div>
-          )}
-          <div style={{flex:1}}>
-            <label className="cfg-lbl">Upload Hospital Logo (PNG, JPG, SVG)</label>
-            <input type="file" accept="image/*" className="cfg-input" onChange={handleLogoUpload} style={{marginBottom:4}}/>
-            {uploadingLogo && <span style={{fontSize:11,color:"#0E898F",display:"block"}}>Uploading logo...</span>}
-            {f.logo && <a href={f.logo} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#10b981",display:"block",marginTop:4}}>View current logo</a>}
-            <p style={{fontSize:11,color:"#94a3b8",marginTop:6}}>Recommended: Square image, transparent background, min 200x200px</p>
+            <label style={{fontSize:10,color:"#0E898F",fontWeight:700,cursor:"pointer",textAlign:"center",letterSpacing:".05em"}}>
+              {uploadingLogo?"Uploading...":"CHANGE LOGO"}
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={handleLogoUpload} disabled={uploadingLogo}/>
+            </label>
+            {f.logo&&<a href={f.logo} target="_blank" rel="noreferrer" style={{fontSize:10,color:"#94a3b8"}}>Preview</a>}
+          </div>
+          <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            {field("hospitalName","Hospital Name *","City General Hospital",true)}
+            {field("website","Website","https://hospital.com")}
+            <div className="cfg-field" style={{gridColumn:"1/-1"}}>
+              <label className="cfg-lbl">Address</label>
+              <input className="cfg-input" placeholder="123 Medical Lane, City" value={f.address} onChange={e=>setF(p=>({...p,address:e.target.value}))}/>
+            </div>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      {[{k:"hospitalName",l:"Hospital Name *",ph:"City General Hospital"},{k:"email",l:"Email",ph:"info@hospital.com"},{k:"phone",l:"Phone",ph:"+91 98765 43210"},{k:"address",l:"Address",ph:"123 Medical Lane"},{k:"website",l:"Website",ph:"https://hospital.com"},{k:"gstNumber",l:"GST Number",ph:"22AAAAA0000A1Z5"},{k:"registrationNo",l:"Registration No",ph:"HOSP/2026/001"},{k:"timezone",l:"Timezone",ph:"Asia/Kolkata"},{k:"currency",l:"Currency",ph:"INR"}].map(x=>(
-        <div key={x.k} className="cfg-field"><label className="cfg-lbl">{x.l}</label><input className="cfg-input" placeholder={x.ph} value={(f as any)[x.k]} onChange={e=>setF(p=>({...p,[x.k]:e.target.value}))} required={x.k==="hospitalName"}/></div>
-      ))}
-      
-      <div className="cfg-field" style={{gridColumn:"1/-1",marginTop:10,paddingTop:10,borderTop:"1px solid #f1f5f9"}}>
-        <label className="cfg-lbl" style={{color:"#0E898F",fontSize:12,marginBottom:10}}>Prescription Letterhead Settings</label>
+      {/* Contact Information */}
+      <SectionCard icon={<MessageSquare size={17} color="#0E898F"/>} title="Contact Information" desc="Phone, email and regional preferences">
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+          {field("phone","Phone Number","+91 98765 43210")}
+          {field("email","Email Address","info@hospital.com",false,"email")}
+          <div className="cfg-field" style={{gridColumn:"1/-1"}}>
+            <label className="cfg-lbl">Timezone</label>
+            <select className="cfg-input" value={f.timezone} onChange={e=>setF(p=>({...p,timezone:e.target.value}))}>
+              <option value="Asia/Kolkata">Asia/Kolkata (IST, UTC+5:30)</option>
+              <option value="UTC">UTC</option>
+              <option value="America/New_York">America/New_York (EST)</option>
+              <option value="Europe/London">Europe/London (GMT)</option>
+              <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
+            </select>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Legal & Compliance */}
+      <SectionCard icon={<Shield size={17} color="#0E898F"/>} title="Legal & Compliance" desc="GST number, registration and statutory identifiers">
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          {field("gstNumber","GST Number","22AAAAA0000A1Z5")}
+          {field("registrationNo","Registration No","HOSP/2026/001")}
+        </div>
+      </SectionCard>
+
+      {/* Prescription Letterhead */}
+      <SectionCard icon={<ClipboardList size={17} color="#0E898F"/>} title="Prescription Letterhead" desc="Letterhead template used when printing prescriptions">
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
           <div className="cfg-field">
-            <label className="cfg-lbl">Upload Letterhead (Image/PDF)</label>
-            <input type="file" accept="image/*,application/pdf" className="cfg-input" onChange={handleUpload}/>
-            {uploading && <span style={{fontSize:11,color:"#0E898F"}}>Uploading...</span>}
-            {f.letterhead && <a href={f.letterhead} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#10b981",marginTop:4}}>View current letterhead</a>}
+            <label className="cfg-lbl">Upload Letterhead</label>
+            <input type="file" accept="image/*,application/pdf" className="cfg-input" onChange={handleUpload} disabled={uploading}/>
+            {uploading&&<span style={{fontSize:11,color:"#0E898F",marginTop:4,display:"block"}}>Uploading…</span>}
+            {f.letterhead&&<a href={f.letterhead} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#10b981",marginTop:4,display:"block"}}>View current</a>}
+            <span style={{fontSize:10,color:"#94a3b8",marginTop:3,display:"block"}}>Image or PDF accepted</span>
           </div>
           <div className="cfg-field">
-            <label className="cfg-lbl">Letterhead Size</label>
+            <label className="cfg-lbl">Page Size</label>
             <select className="cfg-input" value={f.letterheadSize} onChange={e=>setF(p=>({...p,letterheadSize:e.target.value}))}>
-              <option value="A4">A4 Size</option>
-              <option value="A5">A5 Size</option>
-              <option value="Letter">Letter Size</option>
+              <option value="A4">A4</option>
+              <option value="A5">A5</option>
+              <option value="Letter">Letter</option>
             </select>
           </div>
           <div className="cfg-field">
-            <label className="cfg-lbl">Letterhead Type</label>
-            <input className="cfg-input" value={f.letterheadType} disabled style={{background:"#f1f5f9",cursor:"not-allowed"}}/>
+            <label className="cfg-lbl">Format (auto-detected)</label>
+            <div style={{display:"flex",alignItems:"center",height:42,padding:"0 13px",background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:9,fontSize:13,color:"#94a3b8",gap:6}}>
+              <Check size={13} color="#10b981"/>{f.letterheadType}
+            </div>
           </div>
         </div>
+      </SectionCard>
+
+      {/* Save Bar */}
+      <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 22px",background:"#fff",border:"1px solid #e8edf2",borderRadius:14}}>
+        <button type="submit" className="cfg-btn-primary" disabled={saving||uploading||uploadingLogo} style={{minWidth:140}}>
+          {saving?<Loader2 size={14} className="cfg-spin"/>:<Check size={14}/>}
+          {saving?"Saving…":"Save Settings"}
+        </button>
+        {msg&&<span style={{fontSize:13,fontWeight:600,color:msg.startsWith("✓")?"#10b981":"#ef4444",display:"flex",alignItems:"center",gap:6}}>
+          {msg.startsWith("✓")?<Check size={13}/>:<AlertTriangle size={13}/>}{msg}
+        </span>}
+        <span style={{marginLeft:"auto",fontSize:11,color:"#94a3b8"}}>Changes apply immediately across the platform</span>
       </div>
 
-      <div className="cfg-field" style={{gridColumn:"1/-1",display:"flex",alignItems:"center",gap:12}}>
-        <button type="submit" className="cfg-btn-primary" disabled={saving || uploading || uploadingLogo}>{saving?<Loader2 size={14} className="cfg-spin"/>:null}Save Settings</button>
-        {msg&&<span style={{fontSize:13,color:msg.startsWith("✓")?"#10b981":"#ef4444",fontWeight:600}}>{msg}</span>}
-      </div>
     </form>
-  </div>);
+  );
 }
 
 /* ─── GENERIC CRUD PANEL ─── */
@@ -290,8 +303,8 @@ function ConfigureContent(){
   const searchParams=useSearchParams();
   const [user,setUser]=useState<any>(null);
   const [loading,setLoading]=useState(true);
-  const initialTab=(searchParams.get("tab") as Tab)||"overview";
-  const [tab,setTabState]=useState<Tab>(TABS.some(t=>t.id===initialTab)?initialTab:"overview");
+  const initialTab=(searchParams.get("tab") as Tab)||"settings";
+  const [tab,setTabState]=useState<Tab>(TABS.some(t=>t.id===initialTab)?initialTab:"settings");
   const setTab=(t:Tab)=>{setTabState(t);router.replace(`?tab=${t}`,{scroll:false});};
 
   // Doctor modals state (must be before any conditional returns)
@@ -376,8 +389,9 @@ function ConfigureContent(){
       @keyframes spin{to{transform:rotate(360deg)}}
       .cfg-spin{animation:spin .7s linear infinite}
       .cfg-wrap{display:contents}
-      .cfg-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:#fff;border-bottom:1px solid #e2e8f0;margin-bottom:20px;max-width:100%}
-      .cfg-tab{padding:10px 16px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:8px;flex-shrink:0}
+      .cfg-tabs{display:flex;flex-wrap:wrap;gap:0;padding:6px 8px;background:#fff;border-bottom:1px solid #e2e8f0;margin-bottom:20px;max-width:100%}
+      .cfg-tab{padding:7px 13px;border-radius:8px;border:none;background:none;color:#64748b;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;position:relative}
+      .cfg-tab+.cfg-tab::before{content:"";position:absolute;left:0;top:20%;height:60%;width:1px;background:#e2e8f0}
       .cfg-tab:hover{background:#f8fafc;color:#334155}
       .cfg-tab.on{background:#E6F4F4;color:#0A6B70}
       .cfg-onboard{background:#fff;border:1px solid #fde68a;border-radius:16px;padding:22px;margin-bottom:22px;box-shadow:0 1px 4px rgba(234,179,8,.1)}
@@ -429,16 +443,12 @@ function ConfigureContent(){
         <div className="cfg-tabs">
           {TABS.map(t=>{const Icon=t.icon;return(
             <button key={t.id} className={`cfg-tab${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>
-              <Icon size={16}/>{t.label}
+              <Icon size={13}/>{t.label}
             </button>
           );})}
         </div>
 
         <div className="hd-center">
-          <div style={{fontSize:22,fontWeight:800,color:"#1e293b",marginBottom:4}}>{TABS.find(t=>t.id===tab)?.label}</div>
-          <div style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>Manage your hospital {tab} configuration</div>
-
-          {tab==="overview"&&<DynamicDashboard/>}
           {tab==="settings"&&<SettingsPanel hospitalId={user?.hospitalId||""}/>}
           {tab==="departments"&&<DepartmentPanel/>}
           {tab==="subdepts"&&<SubDepartmentPanel/>}
