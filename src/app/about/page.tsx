@@ -28,9 +28,9 @@ const doctors = [
   {
     name: "Dr Rutuja Borde",
     role: "Chief Executive Officer I co-founder",
-    specialty: "Dental & Aesthetic Expert",
+    specialty: "Chief Executive Director & Cofounder",
     experience: "6+ Years",
-    qualifications: "BDS, MDS (Prosthodontics)",
+    qualifications: "",
     expertise: [
       "Advanced Implantology",
       "Full mouth rehabilitation and reconstruction",
@@ -48,9 +48,9 @@ const doctors = [
   {
     name: "Dr Sandiip Jaibhave",
     role: "Managing Director I founder",
-    specialty: "Oncology & Aesthetic Medicine",
+    specialty: "Managing Director & Founder",
     experience: "9+ Years",
-    qualifications: "MBBS, MD (Oncology)",
+    qualifications: "",
     expertise: [
       "Head and neck oncology",
       "Preventive oral, Head, neck, face cancer care",
@@ -162,7 +162,7 @@ export default function AboutPage() {
                     
                     <div className={styles.doctorMeta}>
                       <span className={styles.experienceBadge}>{doctor.experience}</span>
-                      <span className={styles.qualificationBadge}>{doctor.qualifications}</span>
+                      {doctor.qualifications && <span className={styles.qualificationBadge}>{doctor.qualifications}</span>}
                     </div>
 
                     <ul className={styles.expertiseList}>
