@@ -37,12 +37,12 @@ export const getSuperAdminDashboardStats = async () => {
     },
   });
 
-  const totalPatients = hospitals.reduce((sum, h) => sum + h._count.patients, 0);
-  const totalDoctors = hospitals.reduce((sum, h) => sum + h._count.doctors, 0);
-  const totalStaff = hospitals.reduce((sum, h) => sum + h._count.staffMembers, 0);
-  const totalAppointments = hospitals.reduce((sum, h) => sum + h._count.appointments, 0);
-  const verifiedCount = hospitals.filter(h => h.isVerified).length;
-  const pendingCount = hospitals.filter(h => !h.isVerified).length;
+  const totalPatients = hospitals.reduce((sum: number, h: any) => sum + h._count.patients, 0);
+  const totalDoctors = hospitals.reduce((sum: number, h: any) => sum + h._count.doctors, 0);
+  const totalStaff = hospitals.reduce((sum: number, h: any) => sum + h._count.staffMembers, 0);
+  const totalAppointments = hospitals.reduce((sum: number, h: any) => sum + h._count.appointments, 0);
+  const verifiedCount = hospitals.filter((h: any) => h.isVerified).length;
+  const pendingCount = hospitals.filter((h: any) => !h.isVerified).length;
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -52,7 +52,7 @@ export const getSuperAdminDashboardStats = async () => {
   for (let i = 8; i >= 0; i--) {
     const targetDate = new Date(currentYear, currentMonth - i, 1);
     const nextMonth = new Date(currentYear, currentMonth - i + 1, 1);
-    const count = hospitals.filter(h => {
+    const count = hospitals.filter((h: any) => {
       const createdDate = new Date(h.createdAt);
       return createdDate >= targetDate && createdDate < nextMonth;
     }).length;
@@ -106,7 +106,7 @@ export const getSuperAdminDashboardStats = async () => {
     };
   });
 
-  const hospitalsWithStats = hospitals.map(h => ({
+  const hospitalsWithStats = hospitals.map((h: any) => ({
     id: h.id,
     name: h.name,
     email: h.email,
