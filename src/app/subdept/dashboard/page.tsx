@@ -511,7 +511,7 @@ function SubDeptDashboardContent() {
                   <RefreshCw size={14} color={queueLoading?"#94a3b8":meta.accent} style={queueLoading?{animation:"spin .7s linear infinite"}:{}}/>
                 </button>
               )}
-              <NotificationBell accentColor={meta.accent} bgColor={meta.lightBg} borderColor={meta.borderColor} />
+              <NotificationBell accentColor={meta.accent} bgColor={meta.lightBg} borderColor={meta.borderColor} types={["PROCEDURE_COMPLETED","APPOINTMENT_UPDATED"]} />
               <div 
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,cursor:"pointer",position:"relative"}}
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}

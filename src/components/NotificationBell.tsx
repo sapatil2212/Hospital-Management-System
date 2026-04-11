@@ -50,13 +50,16 @@ interface Props {
   accentColor?: string;
   bgColor?: string;
   borderColor?: string;
+  types?: string[];
 }
 
 export default function NotificationBell({
   accentColor  = "#0E898F",
   bgColor      = "#f8fafc",
   borderColor  = "#e2e8f0",
+  types,
 }: Props) {
+  const typesQuery = types && types.length > 0 ? `&types=${types.join(",")}` : "";
   const [open, setOpen]         = useState(false);
   const [unread, setUnread]     = useState(0);
   const [items, setItems]       = useState<Notification[]>([]);
@@ -68,10 +71,11 @@ export default function NotificationBell({
 
   // SSE connection for real-time badge
   useEffect(() => {
-    const es = new EventSource("/api/notifications/stream", { withCredentials: true });
+    const sseUrl = `/api/notifications/stream?t=1${typesQuery}`;
+    const es = new EventSource(sseUrl, { withCredentials: true });
     esRef.current = es;
 
-    es.onmessage = (e) => {
+    const onMessage = (e: MessageEvent) => {
       try {
         const d = JSON.parse(e.data);
         if (typeof d.unread === "number") {
@@ -82,24 +86,26 @@ export default function NotificationBell({
       } catch {}
     };
 
+    es.onmessage = onMessage;
+
     es.onerror = () => {
       es.close();
       // Retry after 10s
       setTimeout(() => {
-        const es2 = new EventSource("/api/notifications/stream", { withCredentials: true });
+        const es2 = new EventSource(sseUrl, { withCredentials: true });
         esRef.current = es2;
-        es2.onmessage = es.onmessage;
+        es2.onmessage = onMessage;
       }, 10000);
     };
 
     return () => { es.close(); esRef.current = null; };
-  }, []);
+  }, [typesQuery]);
 
   // Fetch notifications list
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/notifications?limit=20", { credentials: "include" });
+      const r = await fetch(`/api/notifications?limit=20${typesQuery}`, { credentials: "include" });
       const d = await r.json();
       if (d.success) {
         setItems(d.data.data || []);
@@ -108,7 +114,7 @@ export default function NotificationBell({
       }
     } catch {}
     setLoading(false);
-  }, []);
+  }, [typesQuery]);
 
   // Open → fetch list + mark read
   const handleOpen = useCallback(async () => {

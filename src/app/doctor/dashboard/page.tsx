@@ -741,6 +741,16 @@ function DoctorDashboardContent() {
   };
   const [localSchedule, setLocalSchedule] = useState<Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>>(initLocalSchedule);
 
+  const [showAddPlan, setShowAddPlan] = useState(false);
+  const [addPlanForm, setAddPlanForm] = useState({ planName:"", totalSessions:1, totalCost:0, startDate:"", endDate:"", notes:"" });
+  const [addPlanSaving, setAddPlanSaving] = useState(false);
+  const [addPlanErr, setAddPlanErr] = useState("");
+  const [editPlan, setEditPlan] = useState<any>(null);
+  const [editPlanForm, setEditPlanForm] = useState({ planName:"", status:"ACTIVE", totalSessions:1, completedSessions:0, totalCost:0, paidAmount:0, startDate:"", endDate:"", notes:"" });
+  const [editPlanSaving, setEditPlanSaving] = useState(false);
+  const [editPlanErr, setEditPlanErr] = useState("");
+  const [deletingPlanId, setDeletingPlanId] = useState<string|null>(null);
+
   const isToday = isSameDay(selectedDate, new Date());
   const goDate = (offset: number) => setSelectedDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + offset); return d; });
 
@@ -936,7 +946,7 @@ function DoctorDashboardContent() {
         .doc-critical-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
       `}</style>
 
-      <div style={{ display: "grid", gridTemplateColumns: tab === "schedule-mgmt" ? "1fr" : "1fr 260px", gap: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: tab === "schedule" ? "1fr 260px" : "1fr", gap: 0 }}>
         <div>
           {selectedPatientId ? (
             <PatientProfilePanel 
@@ -945,11 +955,14 @@ function DoctorDashboardContent() {
             />
           ) : (
             <>
+              {tab === "schedule" && (
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
                 <div className="doc-pg-title" style={{marginBottom:0}}>Good morning, Dr. {doctorName.split(" ").slice(-1)[0]} 👋</div>
                 <span style={{fontSize:12,color:"#64748b",background:"#f0fdf4",border:"1px solid #d1fae5",padding:"5px 12px",borderRadius:8,fontWeight:500}}>{new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long"})}</span>
               </div>
+              )}
 
+              {tab === "schedule" && (
               <div className="doc-stats">
                 {[
                   {icon:<CalendarDays size={20} color="#fff"/>, label:isToday?"Today's Appointments":"Appointments", val:todayTotal, sub:`${todayRemaining} remaining`, bg:"#E6F4F4", iconBg:"#0E898F"},
@@ -964,6 +977,7 @@ function DoctorDashboardContent() {
                   </div>
                 ))}
               </div>
+              )}
 
               {inProgress && (
                 <div style={{background:"linear-gradient(135deg,#0E898F,#07595D)",borderRadius:14,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
@@ -1115,6 +1129,89 @@ function DoctorDashboardContent() {
               {tab==="prescription-settings" && <PrescriptionSettingsPanel />}
 
               {tab==="treatment-plans" && (
+                <>
+                {/* Add Plan Modal */}
+                {showAddPlan && (
+                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px"}}>
+                    <div style={{background:"#fff",borderRadius:18,width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.18)",border:"1px solid #d1fae5"}}>
+                      <div style={{padding:"20px 24px",borderBottom:"1px solid #ecfdf5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>New Treatment Plan</div>
+                          <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Create a reusable plan template — assign to patients later</div>
+                        </div>
+                        <button onClick={()=>{setShowAddPlan(false);setAddPlanErr("");}} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={15} color="#64748b"/></button>
+                      </div>
+                      <form onSubmit={async(e)=>{
+                        e.preventDefault();
+                        if(!addPlanForm.planName.trim()){setAddPlanErr("Plan name is required");return;}
+                        if(!doctor){return;}
+                        setAddPlanSaving(true);setAddPlanErr("");
+                        const body:any={planName:addPlanForm.planName.trim(),doctorId:doctor.id,departmentId:doctor.department?.id,totalSessions:addPlanForm.totalSessions,totalCost:addPlanForm.totalCost};
+                        if(addPlanForm.startDate) body.startDate=addPlanForm.startDate;
+                        if(addPlanForm.endDate) body.endDate=addPlanForm.endDate;
+                        if(addPlanForm.notes.trim()) body.notes=addPlanForm.notes.trim();
+                        const r=await api("/api/treatment-plans","POST",body);
+                        setAddPlanSaving(false);
+                        if(r.success){
+                          setShowAddPlan(false);
+                          setAddPlanForm({planName:"",totalSessions:1,totalCost:0,startDate:"",endDate:"",notes:""});
+                          fetchMyPlans(doctor.id,plansFilter);
+                          api(`/api/treatment-plans?doctorId=${doctor.id}&status=ACTIVE&limit=1`).then(res=>{if(res.success)setActivePlansCount(res.data?.total??res.data?.plans?.length??0);}).catch(()=>{});
+                        } else {
+                          setAddPlanErr(r.message||"Failed to create plan");
+                        }
+                      }} style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
+
+                        {/* Plan Name */}
+                        <div>
+                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Plan Name <span style={{color:"#ef4444"}}>*</span></label>
+                          <input value={addPlanForm.planName} onChange={e=>setAddPlanForm(p=>({...p,planName:e.target.value}))} placeholder="e.g. 6-Week Physiotherapy Program"
+                            style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                        </div>
+
+                        {/* Sessions + Cost */}
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Sessions</label>
+                            <input type="number" min={1} value={addPlanForm.totalSessions} onChange={e=>setAddPlanForm(p=>({...p,totalSessions:Math.max(1,parseInt(e.target.value)||1)}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Cost (₹)</label>
+                            <input type="number" min={0} step={0.01} value={addPlanForm.totalCost} onChange={e=>setAddPlanForm(p=>({...p,totalCost:parseFloat(e.target.value)||0}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                          </div>
+                        </div>
+
+                        {/* Start + End Date */}
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Start Date</label>
+                            <input type="date" value={addPlanForm.startDate} onChange={e=>setAddPlanForm(p=>({...p,startDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>End Date</label>
+                            <input type="date" value={addPlanForm.endDate} onChange={e=>setAddPlanForm(p=>({...p,endDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        <div>
+                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Clinical Notes</label>
+                          <textarea value={addPlanForm.notes} onChange={e=>setAddPlanForm(p=>({...p,notes:e.target.value}))} rows={3} placeholder="Diagnosis, treatment protocol, goals…"
+                            style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",resize:"vertical",fontFamily:"'Inter',sans-serif"}}/>
+                        </div>
+
+                        {addPlanErr&&<div style={{padding:"9px 13px",borderRadius:9,background:"#fff5f5",color:"#dc2626",fontSize:13,fontWeight:600,border:"1px solid #fecaca"}}>{addPlanErr}</div>}
+
+                        <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:4}}>
+                          <button type="button" onClick={()=>{setShowAddPlan(false);setAddPlanErr("");}} style={{padding:"10px 20px",borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+                          <button type="submit" disabled={addPlanSaving} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 24px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:13,fontWeight:700,cursor:addPlanSaving?"not-allowed":"pointer",opacity:addPlanSaving?.7:1}}>
+                            {addPlanSaving?<><Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>Creating…</>:<>+ Create Plan</>}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
                 <div className="doc-card">
                   <div className="doc-card-head">
                     <div>
@@ -1132,6 +1229,10 @@ function DoctorDashboardContent() {
                       <button onClick={()=>doctor&&fetchMyPlans(doctor.id,plansFilter)}
                         style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
                         <RefreshCw size={11}/>Refresh
+                      </button>
+                      <button onClick={()=>setShowAddPlan(true)}
+                        style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(16,185,129,0.25)"}}>
+                        + Add Plan
                       </button>
                     </div>
                   </div>
@@ -1157,12 +1258,35 @@ function DoctorDashboardContent() {
                               <div>
                                 <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{plan.planName}</div>
                                 <div style={{fontSize:12,color:"#64748b",marginTop:2}}>
-                                  {plan.patient?.name} · {plan.service?.name||""}
+                                  {plan.patient?.name ? plan.patient.name : "No patient assigned"}{plan.service?.name ? " · "+plan.service.name : ""}
                                 </div>
                               </div>
                               <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
                                 <span style={{...sc,padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,border:`1px solid ${sc.c}33`}}>{plan.status}</span>
                                 {bal>0&&<span style={{fontSize:11,color:"#ef4444",fontWeight:600}}>₹{bal.toLocaleString()} due</span>}
+                                <button
+                                  onClick={()=>{
+                                    setEditPlan(plan);
+                                    const toDate=(v:any)=>v?new Date(v).toISOString().slice(0,10):"";
+                                    setEditPlanForm({planName:plan.planName||"...",status:plan.status||"ACTIVE",totalSessions:plan.totalSessions||1,completedSessions:plan.completedSessions||0,totalCost:plan.totalCost||0,paidAmount:plan.paidAmount||0,startDate:toDate(plan.startDate),endDate:toDate(plan.endDate),notes:plan.notes||"",});
+                                    setEditPlanErr("");
+                                  }}
+                                  style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:7,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                                  <Pencil size={11}/>Edit
+                                </button>
+                                <button
+                                  disabled={deletingPlanId===plan.id}
+                                  onClick={async()=>{
+                                    if(!confirm(`Delete "${plan.planName}"? This cannot be undone.`)) return;
+                                    setDeletingPlanId(plan.id);
+                                    await api(`/api/treatment-plans/${plan.id}`,"DELETE");
+                                    setDeletingPlanId(null);
+                                    if(doctor) fetchMyPlans(doctor.id,plansFilter);
+                                    api(`/api/treatment-plans?doctorId=${doctor?.id}&status=ACTIVE&limit=1`).then(res=>{if(res.success)setActivePlansCount(res.data?.total??res.data?.plans?.length??0);}).catch(()=>{});
+                                  }}
+                                  style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:7,border:"1px solid #fecaca",background:"#fff5f5",color:"#ef4444",fontSize:11,fontWeight:600,cursor:deletingPlanId===plan.id?"not-allowed":"pointer",opacity:deletingPlanId===plan.id?.6:1}}>
+                                  {deletingPlanId===plan.id?<Loader2 size={11} style={{animation:"spin .7s linear infinite"}}/>:<X size={11}/>}Delete
+                                </button>
                               </div>
                             </div>
                             <div style={{height:5,background:"#e2e8f0",borderRadius:100,overflow:"hidden",marginBottom:6}}>
@@ -1178,6 +1302,100 @@ function DoctorDashboardContent() {
                     </div>
                   )}
                 </div>
+
+                {/* Edit Plan Modal */}
+                {editPlan && (
+                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px"}}>
+                    <div style={{background:"#fff",borderRadius:18,width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.18)",border:"1px solid #d1fae5"}}>
+                      <div style={{padding:"20px 24px",borderBottom:"1px solid #ecfdf5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>Edit Treatment Plan</div>
+                          <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{editPlan.planName}</div>
+                        </div>
+                        <button onClick={()=>{setEditPlan(null);setEditPlanErr("");}} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={15} color="#64748b"/></button>
+                      </div>
+                      <form onSubmit={async(e)=>{
+                        e.preventDefault();
+                        if(!editPlanForm.planName.trim()){setEditPlanErr("Plan name is required");return;}
+                        setEditPlanSaving(true);setEditPlanErr("");
+                        const body:any={planName:editPlanForm.planName.trim(),status:editPlanForm.status,totalSessions:editPlanForm.totalSessions,completedSessions:editPlanForm.completedSessions,totalCost:editPlanForm.totalCost,paidAmount:editPlanForm.paidAmount};
+                        if(editPlanForm.startDate) body.startDate=editPlanForm.startDate;
+                        if(editPlanForm.endDate) body.endDate=editPlanForm.endDate;
+                        if(editPlanForm.notes.trim()) body.notes=editPlanForm.notes.trim();
+                        const r=await api(`/api/treatment-plans/${editPlan.id}`,"PUT",body);
+                        setEditPlanSaving(false);
+                        if(r.success){
+                          setEditPlan(null);
+                          if(doctor) fetchMyPlans(doctor.id,plansFilter);
+                          api(`/api/treatment-plans?doctorId=${doctor?.id}&status=ACTIVE&limit=1`).then(res=>{if(res.success)setActivePlansCount(res.data?.total??res.data?.plans?.length??0);}).catch(()=>{});
+                        } else {
+                          setEditPlanErr(r.message||"Failed to update plan");
+                        }
+                      }} style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
+
+                        <div>
+                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Plan Name <span style={{color:"#ef4444"}}>*</span></label>
+                          <input value={editPlanForm.planName} onChange={e=>setEditPlanForm(p=>({...p,planName:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                        </div>
+
+                        <div>
+                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Status</label>
+                          <select value={editPlanForm.status} onChange={e=>setEditPlanForm(p=>({...p,status:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",background:"#fff",cursor:"pointer"}}>
+                            {["ACTIVE","ON_HOLD","COMPLETED","CANCELLED"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
+                          </select>
+                        </div>
+
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Sessions</label>
+                            <input type="number" min={1} value={editPlanForm.totalSessions} onChange={e=>setEditPlanForm(p=>({...p,totalSessions:Math.max(1,parseInt(e.target.value)||1)}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Completed Sessions</label>
+                            <input type="number" min={0} value={editPlanForm.completedSessions} onChange={e=>setEditPlanForm(p=>({...p,completedSessions:Math.max(0,parseInt(e.target.value)||0)}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                          </div>
+                        </div>
+
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Cost (₹)</label>
+                            <input type="number" min={0} step={0.01} value={editPlanForm.totalCost} onChange={e=>setEditPlanForm(p=>({...p,totalCost:parseFloat(e.target.value)||0}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Paid Amount (₹)</label>
+                            <input type="number" min={0} step={0.01} value={editPlanForm.paidAmount} onChange={e=>setEditPlanForm(p=>({...p,paidAmount:parseFloat(e.target.value)||0}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
+                          </div>
+                        </div>
+
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Start Date</label>
+                            <input type="date" value={editPlanForm.startDate} onChange={e=>setEditPlanForm(p=>({...p,startDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>End Date</label>
+                            <input type="date" value={editPlanForm.endDate} onChange={e=>setEditPlanForm(p=>({...p,endDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Clinical Notes</label>
+                          <textarea value={editPlanForm.notes} onChange={e=>setEditPlanForm(p=>({...p,notes:e.target.value}))} rows={3} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",resize:"vertical",fontFamily:"'Inter',sans-serif"}}/>
+                        </div>
+
+                        {editPlanErr&&<div style={{padding:"9px 13px",borderRadius:9,background:"#fff5f5",color:"#dc2626",fontSize:13,fontWeight:600,border:"1px solid #fecaca"}}>{editPlanErr}</div>}
+
+                        <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:4}}>
+                          <button type="button" onClick={()=>{setEditPlan(null);setEditPlanErr("");}} style={{padding:"10px 20px",borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+                          <button type="submit" disabled={editPlanSaving} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 24px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:13,fontWeight:700,cursor:editPlanSaving?"not-allowed":"pointer",opacity:editPlanSaving?.7:1}}>
+                            {editPlanSaving?<><Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>Saving…</>:<>Save Changes</>}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </>
           )}
@@ -1285,7 +1503,7 @@ function DoctorDashboardContent() {
         </div>
 
         {/* Right Sidebar */}
-        {tab !== "schedule-mgmt" && (
+        {tab === "schedule" && (
           <div className="doc-right">
           <div style={{marginBottom:22}}>
             <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>

@@ -88,6 +88,9 @@ export default function PrescriptionPage() {
   const [histLoaded, setHistLoaded] = useState(false);
   const [subDeptsLoaded, setSubDeptsLoaded] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [myPlans, setMyPlans] = useState<any[]>([]);
+  const [plansLoaded, setPlansLoaded] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const tog = (s: string) => setSections(p => ({ ...p, [s]: !p[s] }));
   const saveTimer = useRef<any>(null);
 
@@ -151,6 +154,14 @@ export default function PrescriptionPage() {
           setHistLoaded(true);
         }).catch(() => {});
       }
+
+      // Load doctor's active treatment plans for assignment
+      if (!viewOnly && me.data?.id) {
+        api(`/api/treatment-plans?doctorId=${me.data.id}&status=ACTIVE&limit=50`).then(r => {
+          if (r.success) setMyPlans(r.data?.plans || []);
+          setPlansLoaded(true);
+        }).catch(() => { setPlansLoaded(true); });
+      }
     })();
   }, [appointmentId, router, viewOnly]);
 
@@ -180,7 +191,8 @@ export default function PrescriptionPage() {
     medications: JSON.stringify(meds), labTests: JSON.stringify(tests), referrals: JSON.stringify(refs),
     advice, followUpDate: fuDate || null, followUpNotes: fuNotes, consultationFee: fee, doctorNotes: docNotes,
     aiSuggestions: aiData ? JSON.stringify(aiData) : undefined,
-  }), [vitals, complaint, diagnosis, icdCodes, meds, tests, refs, advice, fuDate, fuNotes, fee, docNotes, aiData]);
+    ...(selectedPlanId ? { treatmentPlanId: selectedPlanId } : {}),
+  }), [vitals, complaint, diagnosis, icdCodes, meds, tests, refs, advice, fuDate, fuNotes, fee, docNotes, aiData, selectedPlanId]);
 
   const finalized = rx?.status && rx.status !== "DRAFT";
   const locked = !!finalized && !editMode;
@@ -513,6 +525,57 @@ export default function PrescriptionPage() {
             </div>
           </SectionCard>
           </div>
+
+          {/* Treatment Plan Assignment */}
+          {!locked && (
+          <div style={{ background: "#fff", borderRadius: 14, marginBottom: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,.03)" }}>
+            <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: selectedPlanId ? "1px solid #e2e8f0" : "none" }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0E898F18", display: "flex", alignItems: "center", justifyContent: "center", color: "#0E898F" }}><Activity size={14} /></div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", flex: 1 }}>Assign Treatment Plan</span>
+              {selectedPlanId && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" }}>Plan Selected — will be assigned on Complete</span>}
+            </div>
+            <div style={{ padding: "14px 18px" }}>
+              {!plansLoaded ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}><Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} /> Loading plans...</div>
+              ) : myPlans.length === 0 ? (
+                <div style={{ fontSize: 12, color: "#94a3b8" }}>No active treatment plans found. Create plans in your dashboard first.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <select
+                    value={selectedPlanId}
+                    onChange={e => setSelectedPlanId(e.target.value)}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #B3E0E0", fontSize: 13, color: "#1e293b", outline: "none", background: "#fff", cursor: "pointer" }}
+                  >
+                    <option value="">— Select a treatment plan to assign —</option>
+                    {myPlans.map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.planName} ({p.totalSessions} sessions · ₹{(p.totalCost||0).toLocaleString()}){p.patient ? " — Already assigned" : ""}</option>
+                    ))}
+                  </select>
+                  {selectedPlanId && (() => {
+                    const plan = myPlans.find((p: any) => p.id === selectedPlanId);
+                    if (!plan) return null;
+                    return (
+                      <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "12px 14px", border: "1px solid #B3E0E0", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{plan.planName}</span>
+                          <button onClick={() => setSelectedPlanId("")} style={{ border: "none", background: "none", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}><X size={14} /></button>
+                        </div>
+                        <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#475569", flexWrap: "wrap" }}>
+                          <span><strong>Sessions:</strong> {plan.totalSessions}</span>
+                          <span><strong>Total Cost:</strong> ₹{(plan.totalCost||0).toLocaleString()}</span>
+                          {plan.startDate && <span><strong>Start:</strong> {new Date(plan.startDate).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</span>}
+                          {plan.endDate && <span><strong>End:</strong> {new Date(plan.endDate).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</span>}
+                        </div>
+                        {plan.notes && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{plan.notes}</div>}
+                        <div style={{ fontSize: 11, color: "#0E898F", fontWeight: 600, marginTop: 2 }}>✓ This plan will be assigned to {patient?.name} and ₹{(plan.totalCost||0).toLocaleString()} added to their bill on completion.</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+          )}
 
           {/* Consultation Fee + Doctor's Private Notes — side by side */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>

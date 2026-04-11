@@ -1,5 +1,7 @@
 "use client";
 import { X, Loader2, Save, ArrowRight, FileText, Pill, Activity } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // View Record Modal
 export function ViewRecordModal({ record, onClose, meta }: any) {
@@ -218,6 +220,7 @@ export function TransferPatientModal({ record, subDepts, onClose, onTransfer, me
 export function ViewPrescriptionModal({ appointment, onClose, meta }: any) {
   const [prescription, setPrescription] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const pdfRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (appointment?.id) {
@@ -275,13 +278,188 @@ export function ViewPrescriptionModal({ appointment, onClose, meta }: any) {
               </span>
             )}
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: "none", background: "#334155", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8" }}>
-            <X size={15} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={async () => {
+                if (!prescription) return;
+                const doc = new jsPDF({ unit: "pt", format: "a4" });
+                const pageWidth  = (doc.internal.pageSize as any).getWidth();
+                const pageHeight = (doc.internal.pageSize as any).getHeight();
+                const margin = 40;
+                let y = margin;
+
+                const text = (t: string, x: number, yy: number, size = 11, bold = false) => {
+                  doc.setFont("times", bold ? "bold" : "normal");
+                  doc.setFontSize(size);
+                  doc.text(String(t ?? ""), x, yy);
+                };
+                const rightText = (t: string, xx: number, yy: number, size = 11, bold = false) => {
+                  doc.setFont("times", bold ? "bold" : "normal");
+                  doc.setFontSize(size);
+                  const width = doc.getTextWidth(String(t ?? ""));
+                  doc.text(String(t ?? ""), xx - width, yy);
+                };
+                const sectionTitle = (t: string) => {
+                  doc.setDrawColor(14,137,143);
+                  doc.setFillColor(230,244,244);
+                  doc.roundedRect(margin, y, pageWidth - margin*2, 24, 6, 6, "F");
+                  doc.setTextColor(14,137,143);
+                  text(t, margin + 12, y + 16, 12, true);
+                  doc.setTextColor(0,0,0);
+                  y += 34;
+                };
+                const toDataUrl = async (url?: string) => {
+                  if (!url) return null;
+                  try {
+                    const res = await fetch(url);
+                    const blob = await res.blob();
+                    return await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => resolve(reader.result as string);
+                      reader.onerror = reject;
+                      reader.readAsDataURL(blob);
+                    });
+                  } catch { return null; }
+                };
+
+                const h = prescription?.doctor?.hospital;
+                const hs = h?.settings || {};
+                const logoData = await toDataUrl(hs?.logo);
+
+                if (logoData) {
+                  try { doc.addImage(logoData, "PNG", margin, y, 80, 50); } catch {}
+                }
+                text(String(hs?.hospitalName || h?.name || "Medical Center"), margin + (logoData ? 90 : 0), y + 18, 18, true);
+                if (hs?.address) text(String(hs.address), margin + (logoData ? 90 : 0), y + 36, 11);
+                const contacts: string[] = [];
+                if (hs?.phone || h?.mobile) contacts.push(`Tel: ${hs?.phone || h?.mobile}`);
+                if (hs?.email) contacts.push(`Email: ${hs.email}`);
+                if (contacts.length) text(contacts.join("   "), margin + (logoData ? 90 : 0), y + 52, 10);
+                y += 60;
+                doc.setDrawColor(0,0,0);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 14;
+
+                rightText(`Prescription No: ${prescription.prescriptionNo || "—"}`, pageWidth - margin, y, 11, true);
+                rightText(`Date: ${new Date(prescription.createdAt || Date.now()).toLocaleDateString("en-IN")}`, pageWidth - margin, y + 14, 11);
+                text(`Doctor: Dr. ${prescription.doctor?.name || "—"}`, margin, y, 12, true);
+                if (prescription.doctor?.specialization) text(`Specialization: ${prescription.doctor.specialization}`, margin, y + 14, 11);
+                if (prescription.doctor?.registrationNo) text(`Reg No: ${prescription.doctor.registrationNo}`, margin, y + 28, 11);
+                y += 44;
+
+                doc.setDrawColor(226,232,240);
+                doc.roundedRect(margin, y, pageWidth - margin*2, 50, 8, 8);
+                text(`Patient: ${prescription.patient?.name || "—"}`, margin + 12, y + 18, 12, true);
+                const pid = prescription.patient?.patientId ? `ID: ${prescription.patient.patientId}` : "";
+                const pgender = prescription.patient?.gender ? ` | ${prescription.patient.gender}` : "";
+                const pageAge = prescription.patient?.dateOfBirth ? ` | ${Math.floor((Date.now() - new Date(prescription.patient.dateOfBirth).getTime())/31557600000)} yrs` : "";
+                text(`${pid}${pgender}${pageAge}`, margin + 12, y + 34, 11);
+                y += 70;
+
+                if (prescription.chiefComplaint) {
+                  sectionTitle("Chief Complaint");
+                  text(prescription.chiefComplaint, margin, y, 11);
+                  y += 22;
+                }
+
+                if (prescription.diagnosis) {
+                  sectionTitle("Diagnosis");
+                  text(prescription.diagnosis, margin, y, 11, true);
+                  if (Array.isArray(prescription.icdCodes) && prescription.icdCodes.length) {
+                    text(`ICD Codes: ${prescription.icdCodes.join(", ")}`, margin, y + 16, 10);
+                    y += 16;
+                  }
+                  y += 10;
+                }
+
+                const vitals: any = prescription.vitals || {};
+                const vitalEntries = Object.entries(vitals).filter(([_, v]) => v);
+                if (vitalEntries.length) {
+                  sectionTitle("Vitals");
+                  autoTable(doc, {
+                    head: [["Vital", "Value"]],
+                    body: vitalEntries.map(([k, v]) => [String(k).toUpperCase(), String(v)]),
+                    startY: y,
+                    styles: { fontSize: 10 },
+                    headStyles: { fillColor: [241,245,249], textColor: [51,65,85] },
+                    theme: "grid",
+                    margin: { left: margin, right: margin },
+                  });
+                  y = ((doc as any).lastAutoTable?.finalY || y) + 14;
+                }
+
+                const meds = Array.isArray(prescription.medications) ? prescription.medications : [];
+                if (meds.length) {
+                  sectionTitle("Medications");
+                  autoTable(doc, {
+                    head: [["Medication", "Dosage", "Frequency", "Duration", "Route", "Instructions"]],
+                    body: meds.map((m: any) => [m.name || "", m.dosage || "", m.frequency || "", m.duration || "", m.route || "", m.instructions || ""]),
+                    startY: y,
+                    styles: { fontSize: 9 },
+                    headStyles: { fillColor: [14, 137, 143], textColor: [255,255,255] },
+                    theme: "grid",
+                    margin: { left: margin, right: margin },
+                  });
+                  y = ((doc as any).lastAutoTable?.finalY || y) + 14;
+                }
+
+                const tests = Array.isArray(prescription.labTests) ? prescription.labTests : [];
+                if (tests.length) {
+                  sectionTitle("Lab Tests");
+                  autoTable(doc, {
+                    head: [["Test", "Urgency", "Notes"]],
+                    body: tests.map((t: any) => [t.name || "", t.urgency || "", t.notes || ""]),
+                    startY: y,
+                    styles: { fontSize: 9 },
+                    headStyles: { fillColor: [241,245,249], textColor: [51,65,85] },
+                    theme: "grid",
+                    margin: { left: margin, right: margin },
+                  });
+                  y = ((doc as any).lastAutoTable?.finalY || y) + 14;
+                }
+
+                if (prescription.advice) {
+                  sectionTitle("Advice / Instructions");
+                  text(prescription.advice, margin, y, 11);
+                  y += 24;
+                }
+                if (prescription.followUpDate) {
+                  sectionTitle("Next Follow-up");
+                  text(new Date(prescription.followUpDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), margin, y, 12, true);
+                  if (prescription.followUpNotes) text(prescription.followUpNotes, margin, y + 16, 10);
+                  y += 28;
+                }
+
+                const sigY = Math.max(y + 30, pageHeight - 140);
+                const stampData = await toDataUrl(prescription.doctor?.hospitalStamp);
+                const signData  = await toDataUrl(prescription.doctor?.signature);
+                if (stampData) {
+                  try { doc.addImage(stampData, "PNG", margin, sigY, 120, 90); } catch {}
+                }
+                if (signData) {
+                  try { doc.addImage(signData, "PNG", pageWidth - margin - 180, sigY, 160, 60); } catch {}
+                }
+                doc.setDrawColor(51,65,85);
+                doc.line(pageWidth - margin - 180, sigY + 72, pageWidth - margin, sigY + 72);
+                rightText(`Dr. ${prescription.doctor?.name || ""}`, pageWidth - margin, sigY + 90, 11, true);
+                if (prescription.doctor?.specialization) rightText(prescription.doctor.specialization, pageWidth - margin, sigY + 106, 10);
+
+                const fileName = `Prescription-${prescription.prescriptionNo || appointment?.id || "document"}.pdf`;
+                doc.save(fileName);
+              }}
+              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#1e293b", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              title="Download PDF"
+            >
+              <Save size={14} /> Download
+            </button>
+            <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: "none", background: "#334155", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8" }}>
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable prescription body */}
-        <div style={{ background: "#f1f5f9", overflowY: "auto", flex: 1, padding: "24px 20px" }}>
+        <div ref={pdfRef} style={{ background: "#f1f5f9", overflowY: "auto", flex: 1, padding: "24px 20px" }}>
           {loading ? (
             <div style={{ padding: "80px 0", textAlign: "center" }}>
               <Loader2 size={36} color={meta.accent} style={{ animation: "spin .7s linear infinite", marginBottom: 14 }} />

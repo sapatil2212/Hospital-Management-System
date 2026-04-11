@@ -5,30 +5,50 @@ import {
   LayoutDashboard, Building2, Activity, Settings, HelpCircle,
   LogOut, Search, Bell, MessageSquare, CheckCircle2, AlertTriangle,
   Plus, ChevronRight, Shield, TrendingUp, ServerCrash, Cpu, Database,
-  BarChart2, Filter, X, User, ChevronDown
+  BarChart2, Filter, X, User, ChevronDown, Eye, Power, Trash2, MoreVertical
 } from "lucide-react";
 
-const hospitals_mock = [
-  { id:"1", name:"Rajashree Hospital", email:"raj@hospital.com", mobile:"+91 98765 43210", isVerified:true, createdAt:"2026-01-10", patients:412 },
-  { id:"2", name:"Sunrise Clinic", email:"sunrise@clinic.com", mobile:"+91 90590 53938", isVerified:true, createdAt:"2026-02-14", patients:187 },
-  { id:"3", name:"Apollo Multispeciality", email:"apollo@health.com", mobile:"+91 77001 22334", isVerified:false, createdAt:"2026-03-01", patients:0 },
-];
-const activity_mock = [
-  { time:"2 min ago", msg:"New hospital 'Apollo Multispeciality' onboarded", type:"info" },
-  { time:"18 min ago", msg:"Sunrise Clinic admin changed password", type:"warn" },
-  { time:"1 hr ago", msg:"Rajashree Hospital verified", type:"success" },
-  { time:"3 hr ago", msg:"Failed login attempt on superadmin portal", type:"danger" },
-  { time:"5 hr ago", msg:"Prisma schema migrated successfully", type:"success" },
-];
+type Hospital = {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  isVerified: boolean;
+  createdAt: string;
+  patients: number;
+  doctors: number;
+  staff: number;
+  appointments: number;
+  departments: number;
+};
+
+type ActivityItem = {
+  time: string;
+  msg: string;
+  type: string;
+};
+
+type DashboardStats = {
+  totalHospitals: number;
+  verifiedHospitals: number;
+  pendingHospitals: number;
+  totalPatients: number;
+  totalDoctors: number;
+  totalStaff: number;
+  totalAppointments: number;
+};
+
+type MonthlyGrowth = {
+  month: string;
+  value: number;
+};
+
 const activityIcons: Record<string, React.ReactNode> = {
   info:    <Building2 size={13}/>,
   warn:    <AlertTriangle size={13}/>,
   success: <CheckCircle2 size={13}/>,
   danger:  <Shield size={13}/>,
 };
-const barData = [
-  {month:"Jan",val:1},{month:"Feb",val:2},{month:"Mar",val:3},{month:"Apr",val:2},{month:"May",val:1},{month:"Jun",val:2},{month:"Jul",val:3},{month:"Aug",val:2},{month:"Sep",val:1},
-];
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS_H = ["M","T","W","T","F","S","S"];
@@ -77,10 +97,28 @@ export default function SuperAdminDashboard() {
   const [tab, setTab] = useState<Tab>("overview");
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
-  const [newHospital, setNewHospital] = useState({name:"",email:"",mobile:"",adminName:"",password:""});
+  const [newHospital, setNewHospital] = useState({hospitalName:"",adminName:"",email:"",mobile:"",password:"",confirmPassword:""});
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalHospitals: 0,
+    verifiedHospitals: 0,
+    pendingHospitals: 0,
+    totalPatients: 0,
+    totalDoctors: 0,
+    totalStaff: 0,
+    totalAppointments: 0,
+  });
+  const [monthlyGrowth, setMonthlyGrowth] = useState<MonthlyGrowth[]>([]);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [viewHospital, setViewHospital] = useState<Hospital | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Hospital | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionMenu, setActionMenu] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(()=>{
     fetch("/api/auth/me",{credentials:"include"}).then(r=>r.json()).then(d=>{
@@ -89,15 +127,95 @@ export default function SuperAdminDashboard() {
     }).catch(()=>router.push("/superadmin/login"));
   },[router]);
 
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setDataLoading(true);
+        const res = await fetch("/api/superadmin/dashboard", { credentials: "include" });
+        const data = await res.json();
+        if (data.success) {
+          setHospitals(data.data.hospitals);
+          setStats(data.data.stats);
+          setMonthlyGrowth(data.data.monthlyGrowth);
+          setRecentActivity(data.data.recentActivity);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    if (!loading) {
+      fetchDashboardData();
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading) return;
+    const eventSource = new EventSource("/api/notifications/stream");
+    eventSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.unread !== undefined) setUnreadCount(data.unread);
+      } catch (err) {
+        console.error("SSE parse error:", err);
+      }
+    };
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+    return () => eventSource.close();
+  }, [loading]);
+
+  const handleToggleStatus = async (hospital: Hospital) => {
+    setActionLoading(hospital.id);
+    try {
+      const res = await fetch(`/api/superadmin/hospitals/${hospital.id}/toggle`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setHospitals(prev => prev.map(h => h.id === hospital.id ? { ...h, isVerified: !h.isVerified } : h));
+      }
+    } catch (error) {
+      console.error("Toggle failed:", error);
+    } finally {
+      setActionLoading(null);
+      setActionMenu(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    setActionLoading(deleteConfirm.id);
+    try {
+      const res = await fetch(`/api/superadmin/hospitals/${deleteConfirm.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setHospitals(prev => prev.filter(h => h.id !== deleteConfirm.id));
+        setDeleteConfirm(null);
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const logout = async()=>{await fetch("/api/auth/logout",{method:"POST",credentials:"include"});router.push("/superadmin/login");};
   const handleCreate = async(e:React.FormEvent)=>{
     e.preventDefault();setCreating(true);setCreateMsg("");
-    try{const res=await fetch("/api/hospital/create",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify(newHospital)});const d=await res.json();if(d.success){setCreateMsg("✓ Hospital created!");setTimeout(()=>setShowModal(false),1500);}else setCreateMsg(d.message||"Failed.");}
+    try{const res=await fetch("/api/hospital/create",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify(newHospital)});const d=await res.json();if(d.success){setCreateMsg("✓ Hospital created!");setTimeout(()=>{setShowModal(false);window.location.reload();},1500);}else setCreateMsg(d.message||"Failed.");}
     catch{setCreateMsg("Network error.");}finally{setCreating(false);}
   };
 
-  const filtered = hospitals_mock.filter(h=>h.name.toLowerCase().includes(search.toLowerCase())||h.email.toLowerCase().includes(search.toLowerCase()));
-  const maxPat = Math.max(...hospitals_mock.map(h=>h.patients),1);
+  const filtered = hospitals.filter(h=>h.name.toLowerCase().includes(search.toLowerCase())||h.email.toLowerCase().includes(search.toLowerCase()));
+  const maxPat = Math.max(...hospitals.map(h=>h.patients),1);
+  const maxGrowth = Math.max(...monthlyGrowth.map(m=>m.value),1);
 
   if(loading) return <div style={{minHeight:"100vh",background:"#fef2f2",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",color:"#64748b",fontSize:14,gap:14}}>
     <div style={{width:32,height:32,border:"3px solid #fee2e2",borderTop:"3px solid #dc2626",borderRadius:"50%",animation:"sp .8s linear infinite"}}/>
@@ -153,9 +271,8 @@ export default function SuperAdminDashboard() {
       .sad-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#dc2626,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
       .sad-profile-name{font-size:12px;font-weight:600;color:#1e293b}
       .sad-profile-role{font-size:10px;color:#dc2626}
-      .sad-body{display:grid;grid-template-columns:1fr 260px;flex:1}
-      .sad-center{padding:22px 20px;overflow-y:auto}
-      .sad-right{background:#fff;border-left:1px solid #fee2e2;padding:22px 18px;overflow-y:auto}
+      .sad-body{display:flex;flex:1}
+      .sad-center{padding:22px 20px;overflow-y:auto;flex:1}
       .sad-pg-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
       .sad-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
       .sad-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #fee2e2;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(220,38,38,0.05);transition:transform .2s,box-shadow .2s;cursor:default}
@@ -222,11 +339,30 @@ export default function SuperAdminDashboard() {
           <div className="sad-modal-title">Onboard New Hospital</div>
           <div className="sad-modal-sub">Create a hospital tenant and its first admin account.</div>
           <form onSubmit={handleCreate}>
-            {[{key:"name",lbl:"Hospital Name",ph:"e.g. Sunrise Clinic"},{key:"email",lbl:"Admin Email",ph:"admin@hospital.com"},{key:"mobile",lbl:"Mobile",ph:"+91 98765 43210"},{key:"adminName",lbl:"Admin Full Name",ph:"Dr. John Doe"},{key:"password",lbl:"Admin Password",ph:"Min 6 characters"}].map(f=>(
-              <div key={f.key} className="sad-mf"><label className="sad-ml">{f.lbl}</label>
-                <input type={f.key==="password"?"password":"text"} className="sad-mi" placeholder={f.ph} value={(newHospital as any)[f.key]} onChange={e=>setNewHospital(n=>({...n,[f.key]:e.target.value}))} required/>
-              </div>
-            ))}
+            <div className="sad-mf">
+              <label className="sad-ml">Hospital Name</label>
+              <input type="text" className="sad-mi" placeholder="Hospital Name" value={newHospital.hospitalName} onChange={e=>setNewHospital(n=>({...n,hospitalName:e.target.value}))} required/>
+            </div>
+            <div className="sad-mf">
+              <label className="sad-ml">Admin Full Name</label>
+              <input type="text" className="sad-mi" placeholder="Full Name" value={newHospital.adminName} onChange={e=>setNewHospital(n=>({...n,adminName:e.target.value}))} required/>
+            </div>
+            <div className="sad-mf">
+              <label className="sad-ml">Email Address</label>
+              <input type="email" className="sad-mi" placeholder="admin@hospital.com" value={newHospital.email} onChange={e=>setNewHospital(n=>({...n,email:e.target.value}))} required/>
+            </div>
+            <div className="sad-mf">
+              <label className="sad-ml">Mobile Number</label>
+              <input type="tel" className="sad-mi" placeholder="0123456789" value={newHospital.mobile} onChange={e=>setNewHospital(n=>({...n,mobile:e.target.value}))} required/>
+            </div>
+            <div className="sad-mf">
+              <label className="sad-ml">Password</label>
+              <input type="password" className="sad-mi" placeholder="Minimum 6 characters" value={newHospital.password} onChange={e=>setNewHospital(n=>({...n,password:e.target.value}))} required/>
+            </div>
+            <div className="sad-mf">
+              <label className="sad-ml">Confirm Password</label>
+              <input type="password" className="sad-mi" placeholder="Re-enter password" value={newHospital.confirmPassword} onChange={e=>setNewHospital(n=>({...n,confirmPassword:e.target.value}))} required/>
+            </div>
             {createMsg&&<div className={createMsg.startsWith("✓")?"sad-msg-ok":"sad-msg-err"}>{createMsg}</div>}
             <div className="sad-ma">
               <button type="button" className="sad-mcancel" onClick={()=>setShowModal(false)}>Cancel</button>
@@ -271,7 +407,16 @@ export default function SuperAdminDashboard() {
             <input className="sad-search" placeholder="Search hospitals, users..." value={search} onChange={e=>setSearch(e.target.value)}/>
           </div>
           <div className="sad-tb-right">
-            <div className="sad-notif"><Bell size={16} color="#64748b"/><span className="sad-notif-dot"/></div>
+            <div className="sad-notif" style={{position:"relative"}}>
+              <Bell size={16} color="#64748b"/>
+              {unreadCount > 0 && (
+                <span style={{
+                  position:"absolute",top:6,right:6,width:16,height:16,borderRadius:"50%",
+                  background:"#dc2626",color:"#fff",fontSize:9,fontWeight:700,
+                  display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #fff"
+                }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
+              )}
+            </div>
             <div className="sad-notif"><MessageSquare size={16} color="#64748b"/></div>
             <div className="sad-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative", cursor: "pointer" }}>
               <div className="sad-profile-av">SA</div>
@@ -334,7 +479,7 @@ export default function SuperAdminDashboard() {
         </header>
 
         <div className="sad-body">
-          <div className="sad-center">
+          <div className="sad-center" style={{maxWidth:"100%",width:"100%"}}>
             {tab==="overview"&&(<>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
                 <div className="sad-pg-title" style={{marginBottom:0}}>Dashboard</div>
@@ -342,10 +487,10 @@ export default function SuperAdminDashboard() {
               </div>
               <div className="sad-stats">
                 {[
-                  {icon:<Building2 size={20} color="#fff"/>,    label:"Total Hospitals",  val:hospitals_mock.length,                                    sub:"1 pending approval", bg:"#fff5f5", iconBg:"#dc2626"},
-                  {icon:<CheckCircle2 size={20} color="#fff"/>,  label:"Verified Tenants",  val:hospitals_mock.filter(h=>h.isVerified).length,            sub:"2 active",           bg:"#f0fdf4", iconBg:"#10b981"},
-                  {icon:<TrendingUp size={20} color="#fff"/>,    label:"Total Patients",   val:hospitals_mock.reduce((s,h)=>s+h.patients,0),             sub:"across all hospitals",bg:"#E6F4F4", iconBg:"#0E898F"},
-                  {icon:<AlertTriangle size={20} color="#fff"/>, label:"Pending",           val:hospitals_mock.filter(h=>!h.isVerified).length,            sub:"needs verification",  bg:"#fefce8", iconBg:"#ca8a04"},
+                  {icon:<Building2 size={20} color="#fff"/>,    label:"Total Hospitals",  val:stats.totalHospitals,                                    sub:`${stats.pendingHospitals} pending approval`, bg:"#fff5f5", iconBg:"#dc2626"},
+                  {icon:<CheckCircle2 size={20} color="#fff"/>,  label:"Verified Tenants",  val:stats.verifiedHospitals,            sub:`${stats.verifiedHospitals} active`,           bg:"#f0fdf4", iconBg:"#10b981"},
+                  {icon:<TrendingUp size={20} color="#fff"/>,    label:"Total Patients",   val:stats.totalPatients,             sub:"across all hospitals",bg:"#E6F4F4", iconBg:"#0E898F"},
+                  {icon:<AlertTriangle size={20} color="#fff"/>, label:"Pending",           val:stats.pendingHospitals,            sub:"needs verification",  bg:"#fefce8", iconBg:"#ca8a04"},
                 ].map((s,i)=>(
                   <div key={i} className="sad-sc" style={{background:s.bg}}>
                     <div className="sad-sc-icon" style={{background:s.iconBg}}>{s.icon}</div>
@@ -363,9 +508,9 @@ export default function SuperAdminDashboard() {
                         {[5,4,3,2,1,0].map(v=><span key={v} style={{fontSize:9,color:"#cbd5e1"}}>{v}</span>)}
                       </div>
                       <div className="sad-chart" style={{flex:1}}>
-                        {barData.map((b,i)=>(
+                        {monthlyGrowth.map((b,i)=>(
                           <div key={i} className="sad-bar-wrap">
-                            <div className="sad-bar" style={{height:`${(b.val/5)*90}px`,background:b.val>2?"linear-gradient(180deg,#dc2626,#ef4444)":"linear-gradient(180deg,#fecaca,#fee2e2)"}}/>
+                            <div className="sad-bar" style={{height:`${(b.value/(maxGrowth||1))*90}px`,background:b.value>1?"linear-gradient(180deg,#dc2626,#ef4444)":"linear-gradient(180deg,#fecaca,#fee2e2)"}}/>
                             <span className="sad-bar-lbl">{b.month}</span>
                           </div>
                         ))}
@@ -377,7 +522,7 @@ export default function SuperAdminDashboard() {
                 <div className="sad-card">
                   <div className="sad-card-head"><div className="sad-card-title">System Alerts</div></div>
                   <div className="sad-card-body" style={{padding:"12px 14px"}}>
-                    {activity_mock.slice(0,3).map((a,i)=>(
+                    {recentActivity.slice(0,3).map((a,i)=>(
                       <div key={i} style={{padding:"10px",borderRadius:10,background:i===0?"linear-gradient(135deg,#dc2626,#b91c1c)":"#fef7f7",border:i===0?"none":"1px solid #fef2f2",marginBottom:8}}>
                         <div style={{fontSize:12,color:i===0?"#fff":"#334155",fontWeight:500,lineHeight:1.4}}>{a.msg}</div>
                         <div style={{fontSize:10,color:i===0?"rgba(255,255,255,0.65)":"#94a3b8",marginTop:4}}>{a.time}</div>
@@ -389,57 +534,124 @@ export default function SuperAdminDashboard() {
 
               <div className="sad-card">
                 <div className="sad-card-head">
-                  <div><div className="sad-card-title">Registered Hospitals</div><div className="sad-card-sub">All tenants</div></div>
+                  <div><div className="sad-card-title">Registered Hospitals</div><div className="sad-card-sub">{hospitals.length} tenants</div></div>
                   <button className="sad-btn-red" onClick={()=>setShowModal(true)}><Plus size={14}/>Add Hospital</button>
                 </div>
-                <div className="sad-tbl-wrap">
-                  <table className="sad-tbl">
-                    <thead><tr><th>No</th><th>Hospital Name</th><th>Email</th><th>Mobile</th><th>Patients</th><th>Status</th><th>Joined</th></tr></thead>
-                    <tbody>
-                      {filtered.map((h,i)=>(
-                        <tr key={h.id}>
-                          <td style={{color:"#94a3b8",fontSize:12}}>0{i+1}</td>
-                          <td style={{fontWeight:600,color:"#1e293b"}}>{h.name}</td>
-                          <td>{h.email}</td>
-                          <td style={{fontSize:12}}>{h.mobile}</td>
-                          <td>{h.patients}</td>
-                          <td><span className="sad-badge" style={h.isVerified?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}}>{h.isVerified?"✓ Active":"⏳ Pending"}</span></td>
-                          <td style={{fontSize:12}}>{new Date(h.createdAt).toLocaleDateString("en-IN")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {dataLoading ? (
+                  <div style={{padding:40,textAlign:"center",color:"#94a3b8",fontSize:13}}>Loading hospitals...</div>
+                ) : (
+                  <div className="sad-tbl-wrap">
+                    <table className="sad-tbl">
+                      <thead><tr><th>No</th><th>Hospital Name</th><th>Email</th><th>Mobile</th><th>Patients</th><th>Doctors</th><th>Staff</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={10} style={{textAlign:"center",padding:30,color:"#94a3b8"}}>No hospitals found</td></tr>
+                        ) : (
+                          filtered.map((h,i)=>(
+                            <tr key={h.id}>
+                              <td style={{color:"#94a3b8",fontSize:12}}>{String(i+1).padStart(2,'0')}</td>
+                              <td style={{fontWeight:600,color:"#1e293b"}}>{h.name}</td>
+                              <td>{h.email}</td>
+                              <td style={{fontSize:12}}>{h.mobile}</td>
+                              <td>{h.patients}</td>
+                              <td>{h.doctors}</td>
+                              <td>{h.staff}</td>
+                              <td><span className="sad-badge" style={h.isVerified?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}}>{h.isVerified?"✓ Active":"⏳ Pending"}</span></td>
+                              <td style={{fontSize:12}}>{new Date(h.createdAt).toLocaleDateString("en-IN")}</td>
+                              <td>
+                                <div style={{display:"flex",gap:6,position:"relative"}}>
+                                  <button onClick={()=>setViewHospital(h)} style={{padding:"5px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4}} title="View Details">
+                                    <Eye size={14} color="#64748b"/>
+                                  </button>
+                                  <button onClick={()=>setActionMenu(actionMenu===h.id?null:h.id)} style={{padding:"5px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center"}} title="More Actions">
+                                    <MoreVertical size={14} color="#64748b"/>
+                                  </button>
+                                  {actionMenu===h.id&&(
+                                    <>
+                                      <div style={{position:"fixed",inset:0,zIndex:80}} onClick={()=>setActionMenu(null)}/>
+                                      <div style={{position:"absolute",top:"100%",right:0,marginTop:4,background:"#fff",borderRadius:8,border:"1px solid #e2e8f0",boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:90,minWidth:140,overflow:"hidden"}}>
+                                        <button onClick={()=>handleToggleStatus(h)} disabled={actionLoading===h.id} style={{width:"100%",padding:"8px 12px",border:"none",background:"transparent",textAlign:"left",cursor:"pointer",fontSize:12,fontWeight:500,color:h.isVerified?"#f59e0b":"#10b981",display:"flex",alignItems:"center",gap:8}}>
+                                          <Power size={13}/>{h.isVerified?"Disable":"Enable"}
+                                        </button>
+                                        <button onClick={()=>{setDeleteConfirm(h);setActionMenu(null);}} style={{width:"100%",padding:"8px 12px",border:"none",background:"transparent",textAlign:"left",cursor:"pointer",fontSize:12,fontWeight:500,color:"#ef4444",display:"flex",alignItems:"center",gap:8}}>
+                                          <Trash2 size={13}/>Delete
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>)}
 
             {tab==="hospitals"&&(
               <div className="sad-card">
                 <div className="sad-card-head">
-                  <div><div className="sad-card-title">All Hospitals</div><div className="sad-card-sub">{hospitals_mock.length} tenants</div></div>
+                  <div><div className="sad-card-title">All Hospitals</div><div className="sad-card-sub">{hospitals.length} tenants</div></div>
                   <div style={{display:"flex",gap:10}}>
                     <input className="sad-mi" style={{width:200,padding:"7px 12px",fontSize:12}} placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
                     <button className="sad-btn-red" onClick={()=>setShowModal(true)}>+ Add Hospital</button>
                   </div>
                 </div>
-                <div className="sad-tbl-wrap">
-                  <table className="sad-tbl">
-                    <thead><tr><th>No</th><th>Name</th><th>Email</th><th>Mobile</th><th>Patients</th><th>Status</th><th>Joined</th></tr></thead>
-                    <tbody>
-                      {filtered.map((h,i)=>(
-                        <tr key={h.id}>
-                          <td style={{color:"#94a3b8",fontSize:12}}>0{i+1}</td>
-                          <td style={{fontWeight:600,color:"#1e293b"}}>{h.name}</td>
-                          <td>{h.email}</td>
-                          <td style={{fontSize:12}}>{h.mobile}</td>
-                          <td>{h.patients}</td>
-                          <td><span className="sad-badge" style={h.isVerified?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}}>{h.isVerified?"✓ Active":"⏳ Pending"}</span></td>
-                          <td style={{fontSize:12}}>{new Date(h.createdAt).toLocaleDateString("en-IN")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {dataLoading ? (
+                  <div style={{padding:40,textAlign:"center",color:"#94a3b8",fontSize:13}}>Loading hospitals...</div>
+                ) : (
+                  <div className="sad-tbl-wrap">
+                    <table className="sad-tbl">
+                      <thead><tr><th>No</th><th>Name</th><th>Email</th><th>Mobile</th><th>Patients</th><th>Doctors</th><th>Staff</th><th>Depts</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={11} style={{textAlign:"center",padding:30,color:"#94a3b8"}}>No hospitals found</td></tr>
+                        ) : (
+                          filtered.map((h,i)=>(
+                            <tr key={h.id}>
+                              <td style={{color:"#94a3b8",fontSize:12}}>{String(i+1).padStart(2,'0')}</td>
+                              <td style={{fontWeight:600,color:"#1e293b"}}>{h.name}</td>
+                              <td>{h.email}</td>
+                              <td style={{fontSize:12}}>{h.mobile}</td>
+                              <td>{h.patients}</td>
+                              <td>{h.doctors}</td>
+                              <td>{h.staff}</td>
+                              <td>{h.departments}</td>
+                              <td><span className="sad-badge" style={h.isVerified?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}}>{h.isVerified?"✓ Active":"⏳ Pending"}</span></td>
+                              <td style={{fontSize:12}}>{new Date(h.createdAt).toLocaleDateString("en-IN")}</td>
+                              <td>
+                                <div style={{display:"flex",gap:6,position:"relative"}}>
+                                  <button onClick={()=>setViewHospital(h)} style={{padding:"5px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4}} title="View Details">
+                                    <Eye size={14} color="#64748b"/>
+                                  </button>
+                                  <button onClick={()=>setActionMenu(actionMenu===h.id?null:h.id)} style={{padding:"5px 8px",borderRadius:6,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",display:"flex",alignItems:"center"}} title="More Actions">
+                                    <MoreVertical size={14} color="#64748b"/>
+                                  </button>
+                                  {actionMenu===h.id&&(
+                                    <>
+                                      <div style={{position:"fixed",inset:0,zIndex:80}} onClick={()=>setActionMenu(null)}/>
+                                      <div style={{position:"absolute",top:"100%",right:0,marginTop:4,background:"#fff",borderRadius:8,border:"1px solid #e2e8f0",boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:90,minWidth:140,overflow:"hidden"}}>
+                                        <button onClick={()=>handleToggleStatus(h)} disabled={actionLoading===h.id} style={{width:"100%",padding:"8px 12px",border:"none",background:"transparent",textAlign:"left",cursor:"pointer",fontSize:12,fontWeight:500,color:h.isVerified?"#f59e0b":"#10b981",display:"flex",alignItems:"center",gap:8}}>
+                                          <Power size={13}/>{h.isVerified?"Disable":"Enable"}
+                                        </button>
+                                        <button onClick={()=>{setDeleteConfirm(h);setActionMenu(null);}} style={{width:"100%",padding:"8px 12px",border:"none",background:"transparent",textAlign:"left",cursor:"pointer",fontSize:12,fontWeight:500,color:"#ef4444",display:"flex",alignItems:"center",gap:8}}>
+                                          <Trash2 size={13}/>Delete
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -447,13 +659,19 @@ export default function SuperAdminDashboard() {
               <div className="sad-card">
                 <div className="sad-card-head"><div><div className="sad-card-title">System Activity</div><div className="sad-card-sub">All critical events</div></div></div>
                 <div className="sad-card-body">
-                  {activity_mock.map((a,i)=>(
-                    <div key={i} className="sad-act-item">
-                      <div className="sad-act-dot" style={{background:{info:"#0E898F",warn:"#f59e0b",success:"#10b981",danger:"#ef4444"}[a.type]}}/>
-                      <div><div className="sad-act-msg">{a.msg}</div><div className="sad-act-time">{a.time}</div></div>
-                      <span className="sad-badge" style={a.type==="success"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.type==="danger"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:a.type==="warn"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}}>{a.type}</span>
-                    </div>
-                  ))}
+                  {dataLoading ? (
+                    <div style={{padding:40,textAlign:"center",color:"#94a3b8",fontSize:13}}>Loading activity...</div>
+                  ) : recentActivity.length === 0 ? (
+                    <div style={{padding:40,textAlign:"center",color:"#94a3b8",fontSize:13}}>No recent activity</div>
+                  ) : (
+                    recentActivity.map((a,i)=>(
+                      <div key={i} className="sad-act-item">
+                        <div className="sad-act-dot" style={{background:{info:"#0E898F",warn:"#f59e0b",success:"#10b981",danger:"#ef4444"}[a.type]}}/>
+                        <div><div className="sad-act-msg">{a.msg}</div><div className="sad-act-time">{a.time}</div></div>
+                        <span className="sad-badge" style={a.type==="success"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.type==="danger"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:a.type==="warn"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}}>{a.type}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -474,26 +692,66 @@ export default function SuperAdminDashboard() {
               </div>
             )}
           </div>
+        </div>
+      </main>
 
-          <div className="sad-right">
-            <div style={{marginBottom:22}}>
-              <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>
-              <MiniCalendar/>
+      {/* View Hospital Modal */}
+      {viewHospital && (
+        <div className="sad-modal-bg" onClick={(e) => { if (e.target === e.currentTarget) setViewHospital(null); }}>
+          <div className="sad-modal" style={{maxWidth:600}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div className="sad-modal-title">Hospital Details</div>
+              <button onClick={() => setViewHospital(null)} style={{background:"none",border:"none",cursor:"pointer",padding:4}}>
+                <X size={20} color="#64748b"/>
+              </button>
             </div>
-            <div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                <div className="sad-right-title">System Health</div>
-              </div>
-              {[{key:"Database",val:"Online ✓",pct:100},{key:"API Server",val:"Healthy ✓",pct:100},{key:"Auth Service",val:"Online ✓",pct:100},{key:"Email",val:"Active ✓",pct:98},{key:"CPU Usage",val:"12%",pct:12},{key:"Memory",val:"43%",pct:43}].map(i=>(
-                <div key={i.key} className="sad-health-item">
-                  <div><div className="sad-health-key">{i.key}</div><div className="sad-hbar"><div className="sad-hfill" style={{width:`${i.pct}%`}}/></div></div>
-                  <div className="sad-health-val" style={{color:i.pct<50?"#ca8a04":"#16a34a"}}>{i.val}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+              {[
+                {label:"Hospital Name",value:viewHospital.name},
+                {label:"Email",value:viewHospital.email},
+                {label:"Mobile",value:viewHospital.mobile},
+                {label:"Status",value:viewHospital.isVerified?"✓ Active":"⏳ Pending"},
+                {label:"Total Patients",value:viewHospital.patients},
+                {label:"Total Doctors",value:viewHospital.doctors},
+                {label:"Total Staff",value:viewHospital.staff},
+                {label:"Departments",value:viewHospital.departments},
+                {label:"Joined Date",value:new Date(viewHospital.createdAt).toLocaleDateString("en-IN")},
+              ].map((item,i)=>(
+                <div key={i} style={{padding:"12px 14px",borderRadius:10,background:"#fef7f7",border:"1px solid #fee2e2"}}>
+                  <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>{item.label}</div>
+                  <div style={{fontSize:14,fontWeight:600,color:"#1e293b"}}>{item.value}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </main>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="sad-modal-bg" onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}>
+          <div className="sad-modal">
+            <div className="sad-modal-title">Delete Hospital</div>
+            <div className="sad-modal-sub">Are you sure you want to delete "{deleteConfirm.name}"? This action cannot be undone.</div>
+            <div style={{background:"#fff5f5",border:"1px solid #fecaca",borderRadius:10,padding:12,marginTop:16}}>
+              <div style={{fontSize:12,color:"#ef4444",fontWeight:500}}>⚠️ Warning: This will permanently delete:</div>
+              <ul style={{fontSize:11,color:"#64748b",marginTop:8,paddingLeft:20}}>
+                <li>{deleteConfirm.patients} patient records</li>
+                <li>{deleteConfirm.doctors} doctor accounts</li>
+                <li>{deleteConfirm.staff} staff members</li>
+                <li>All appointments and billing data</li>
+              </ul>
+            </div>
+            <div className="sad-ma" style={{marginTop:20}}>
+              <button type="button" className="sad-mcancel" onClick={() => setDeleteConfirm(null)}>Cancel</button>
+              <button type="button" onClick={handleDelete} disabled={actionLoading === deleteConfirm.id} style={{flex:2,padding:10,borderRadius:9,border:"none",background:"#ef4444",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                {actionLoading === deleteConfirm.id ? <span className="sad-spin"/> : <Trash2 size={14}/>}
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   </>);
 }

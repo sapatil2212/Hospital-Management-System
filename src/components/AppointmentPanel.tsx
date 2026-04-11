@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, Plus, X, Loader2, Calendar, Clock, User, Stethoscope,
   Building2, CheckCircle, XCircle, AlertCircle, RefreshCw, Hash,
@@ -714,6 +715,7 @@ function EditAppointmentModal({ appointment, onClose, onSave }: { appointment: A
 // APPOINTMENT TABLE
 // ─────────────────────────────────────────────────────────────────────────────
 function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onViewPatient: (id: string) => void }) {
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);

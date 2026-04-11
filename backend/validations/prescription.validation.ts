@@ -32,6 +32,7 @@ export const updatePrescriptionSchema = z.object({
   aiSuggestions: z.string().optional(),
   doctorNotes: z.string().optional(),
   status: z.enum(["DRAFT", "COMPLETED", "IN_WORKFLOW", "BILLING_PENDING", "BILLED", "CLOSED"]).optional(),
+  treatmentPlanId: z.string().optional(),
 });
 
 export const aiAssistSchema = z.object({

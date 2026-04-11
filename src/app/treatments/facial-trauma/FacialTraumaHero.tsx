@@ -37,7 +37,7 @@ export default function FacialTraumaHero() {
                 At Celeb Aesthetica, we specialize in comprehensive management of facial trauma and maxillofacial injuries, delivering rapid emergency care, advanced surgical treatment, and aesthetic rehabilitation.
               </p>
 
-           
+
             </motion.div>
 
             <motion.div
@@ -72,7 +72,7 @@ export default function FacialTraumaHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/Quick-Treatments/Trauma.png"
+                  src="/treatments/facial-trauma/facial-trauma-hero.png"
                   alt="Facial Trauma Care"
                   width={580}
                   height={640}

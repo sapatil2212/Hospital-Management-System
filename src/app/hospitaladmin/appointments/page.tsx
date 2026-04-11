@@ -259,7 +259,7 @@ function PatientsListPanel({ onSelectPatient }: { onSelectPatient: (id: string) 
                   <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#10b981" }}>{p._count?.followUps || 0}</td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={(e) => { e.stopPropagation(); onSelectPatient(p.id); }}
+                      <button onClick={(e) => { e.stopPropagation(); router.push(`/hospitaladmin/dashboard?tab=patients&patientId=${p.id}`); }}
                         style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#E6F4F4", color: "#0E898F", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         title="View Patient"><Eye size={13} /></button>
                       <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); }}

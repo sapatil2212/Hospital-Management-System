@@ -58,6 +58,11 @@ export const registerPatient = async (
     address: input.address || null,
     profilePhoto: input.profilePhoto || null,
     documents: input.documents || null,
+    patientType: input.patientType || null,
+    allergies: input.allergies || null,
+    emergencyName: input.emergencyName || null,
+    emergencyRelation: input.emergencyRelation || null,
+    emergencyPhone: input.emergencyPhone || null,
   });
 
   // Send welcome email asynchronously (fire-and-forget)
@@ -128,6 +133,11 @@ export const updatePatient = async (
   if (input.address !== undefined) updateData.address = input.address;
   if (input.profilePhoto !== undefined) updateData.profilePhoto = input.profilePhoto;
   if (input.documents !== undefined) updateData.documents = input.documents;
+  if (input.patientType !== undefined) updateData.patientType = input.patientType;
+  if (input.allergies !== undefined) updateData.allergies = input.allergies;
+  if (input.emergencyName !== undefined) updateData.emergencyName = input.emergencyName;
+  if (input.emergencyRelation !== undefined) updateData.emergencyRelation = input.emergencyRelation;
+  if (input.emergencyPhone !== undefined) updateData.emergencyPhone = input.emergencyPhone;
 
   return updatePatientRepo(id, hospitalId, updateData);
 };

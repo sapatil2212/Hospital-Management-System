@@ -9,7 +9,7 @@ const quickTreatments = [
   {
     id: "skin",
     title: "SKIN",
-    href: "/treatments/dermatology",
+    href: "/treatments/skin",
     image: "/images/Quick-Treatments/Skin.png",
   },
   {
@@ -33,7 +33,7 @@ const quickTreatments = [
   {
     id: "hnf-cancer",
     title: "HNF CANCER",
-    href: "/treatments/cancer",
+    href: "/treatments/oncology",
     image: "/images/Quick-Treatments/Hnfcancer.png",
   },
   {

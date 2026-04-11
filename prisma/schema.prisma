@@ -746,6 +746,11 @@ model Patient {
   address          String?           @db.Text
   profilePhoto     String?
   documents        String?           @db.Text
+  patientType      String?           @default("NEW")
+  allergies        String?           @db.Text
+  emergencyName    String?
+  emergencyRelation String?
+  emergencyPhone   String?
   isActive         Boolean           @default(true)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt

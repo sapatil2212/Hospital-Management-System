@@ -5,10 +5,11 @@
 
 .header {
   text-align: center;
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-12);
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--space-2);
 }
 
 .titleAccent {
@@ -42,7 +43,7 @@
   font-size: var(--font-size-base);
   font-weight: 600;
   text-decoration: none;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   transition: all var(--transition-base);
   box-shadow: var(--shadow-md);
 }

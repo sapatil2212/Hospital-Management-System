@@ -354,11 +354,24 @@
   box-shadow: 0 4px 14px rgba(14, 137, 143, 0.35);
 }
 
+/* Mobile Contact Info Card — hidden on desktop */
+.mobileInfoCard {
+  display: none;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .contactGrid { grid-template-columns: 1fr; }
   .formCard { padding: var(--space-6); }
   .rightCol { display: none; }
+  .mobileInfoCard { display: flex; }
 }
 @media (max-width: 640px) {
   .formRow { grid-template-columns: 1fr; }

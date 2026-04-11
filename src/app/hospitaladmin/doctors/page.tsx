@@ -62,10 +62,11 @@ export default function DoctorsPage() {
           );
         })}
       </div>
-      <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
-        {tab === "doctors"  && "Manage all registered doctors — add, edit, assign departments, set fees, and manage portal access"}
-        {tab === "overview" && "Summary of doctor distribution, department breakdown, on-duty stats, and recent additions"}
-      </div>
+      {tab === "overview" && (
+        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+          Summary of doctor distribution, department breakdown, on-duty stats, and recent additions
+        </div>
+      )}
       {tab === "doctors"  && <DoctorPanel />}
       {tab === "overview" && <DoctorsOverviewPanel onManageDoctors={() => setTab("doctors")} />}
     </div>

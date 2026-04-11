@@ -17,6 +17,7 @@ export const createTreatmentPlanSchema = z.object({
 
 export const updateTreatmentPlanSchema = z.object({
   id: z.string(),
+  patientId: z.string().optional(),
   planName: z.string().optional(),
   totalSessions: z.number().int().min(1).optional(),
   completedSessions: z.number().int().min(0).optional(),

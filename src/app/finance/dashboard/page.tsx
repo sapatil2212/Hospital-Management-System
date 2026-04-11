@@ -638,7 +638,7 @@ export default function FinanceDashboard() {
               <button onClick={() => { loadStats(); if (tab === "bills") loadBills(); if (tab === "expenses") loadExpenses(); }} style={{ width: 36, height: 36, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <RefreshCw size={15} color="#f59e0b" />
               </button>
-              <NotificationBell accentColor="#f59e0b" bgColor="#fffbeb" borderColor="#fde68a" />
+              <NotificationBell accentColor="#f59e0b" bgColor="#fffbeb" borderColor="#fde68a" types={["BILLING_TRANSFER","PAYMENT_RECEIVED"]} />
               <button onClick={() => setShowNewBill(true)} className="fin-primary"><Plus size={14} />New Bill</button>
               <div 
                 className="fin-av" 

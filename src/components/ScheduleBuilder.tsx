@@ -866,11 +866,11 @@ function scheduleBuilderStyles(accent: string) {
   .sb-section{margin-bottom:20px}.sb-section-head{font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:6px;margin-bottom:12px}
   .sb-section-head svg{color:${accent}}
 
-  .sb-presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
-  .sb-preset-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;text-align:left;transition:all .15s}
+  .sb-presets{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+  .sb-preset-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;text-align:center;transition:all .15s;min-width:140px;max-width:140px;flex-shrink:0}
   .sb-preset-btn:hover{border-color:${accent};background:${accent}06}
   .sb-preset-btn svg{color:${accent};flex-shrink:0}
-  .sb-preset-btn strong{font-size:12px;color:#1e293b;display:block}.sb-preset-btn span{font-size:10px;color:#94a3b8}
+  .sb-preset-btn strong{font-size:11px;color:#1e293b;display:block;white-space:nowrap}.sb-preset-btn span{font-size:9px;color:#94a3b8;line-height:1.3}
   .sb-preset-highlight{border-color:${accent}55;background:${accent}08}
   .sb-preset-highlight strong{color:${accent}}
 

@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const requestOTPSchema = z.object({
   email: z.string().email("Invalid email format"),
+  mobile: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
       return errorResponse("Validation Failed", 400, result.error.issues);
     }
 
-    const res = await requestOTP(result.data.email);
+    const res = await requestOTP(result.data.email, result.data.mobile);
     return successResponse(res, "OTP Request sent");
   } catch (error: any) {
     return errorResponse(error.message, 500);

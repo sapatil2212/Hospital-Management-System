@@ -159,6 +159,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 400px;
 }
 
 .imageWrapper {
@@ -167,6 +168,7 @@
   width: 100%;
   max-width: 500px;
   display: grid;
+  aspect-ratio: 580 / 640;
 }
 
 .imageSlide {
@@ -309,6 +311,7 @@
   .heroVisual {
     max-width: 400px;
     margin: 0 auto;
+    min-height: 360px;
   }
 
   .textSlideWrap {
@@ -375,6 +378,10 @@
     min-height: 100px;
   }
 
+  .heroVisual {
+    min-height: 300px;
+  }
+
   .imageWrapper {
     max-width: 320px;
   }
@@ -386,5 +393,8 @@
   }
   .hero {
     padding: var(--space-8) 0 var(--space-12);
+  }
+  .heroVisual {
+    min-height: 260px;
   }
 }

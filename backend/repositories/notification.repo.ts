@@ -14,7 +14,7 @@ export const createNotification = async (data: {
 
 export const getNotifications = async (
   hospitalId: string,
-  opts: { userId?: string; role?: string; limit?: number; offset?: number }
+  opts: { userId?: string; role?: string; limit?: number; offset?: number; types?: string[] }
 ) => {
   const where: any = {
     hospitalId,
@@ -23,6 +23,7 @@ export const getNotifications = async (
       { targetRole: opts.role || null },
       { userId: null, targetRole: null },
     ],
+    ...(opts.types && opts.types.length > 0 ? { type: { in: opts.types } } : {}),
   };
   const [data, total, unread] = await Promise.all([
     (prisma as any).notification.findMany({
@@ -39,7 +40,7 @@ export const getNotifications = async (
 
 export const getUnreadCount = async (
   hospitalId: string,
-  opts: { userId?: string; role?: string }
+  opts: { userId?: string; role?: string; types?: string[] }
 ) => {
   const where: any = {
     hospitalId,
@@ -49,6 +50,7 @@ export const getUnreadCount = async (
       { targetRole: opts.role || null },
       { userId: null, targetRole: null },
     ],
+    ...(opts.types && opts.types.length > 0 ? { type: { in: opts.types } } : {}),
   };
   return (prisma as any).notification.count({ where });
 };

@@ -98,7 +98,7 @@ function CountryDropdown({ value, onChange }: { value: string; onChange: (v: str
 /* ── Main Page ── */
 export default function ContactPage() {
   const [form, setForm] = useState({
-    fullName: "", mobile: "", altContact: "", email: "",
+    fullName: "", mobile: "", email: "",
     gender: "", city: "", state: "", country: "",
     pincode: "", department: "", enquiryType: "", details: "",
   });
@@ -120,7 +120,7 @@ export default function ContactPage() {
       if (data.success) {
         setSubmitStatus("success");
         setShowModal(true);
-        setForm({ fullName: "", mobile: "", altContact: "", email: "", gender: "", city: "", state: "", country: "", pincode: "", department: "", enquiryType: "", details: "" });
+        setForm({ fullName: "", mobile: "", email: "", gender: "", city: "", state: "", country: "", pincode: "", department: "", enquiryType: "", details: "" });
         setTimeout(() => { setShowModal(false); setSubmitStatus("idle"); }, 5000);
       } else {
         setSubmitStatus("error");
@@ -168,12 +168,8 @@ export default function ContactPage() {
                       </div>
                     </div>
 
-                    {/* Row 2: Alternate Contact & Email */}
+                    {/* Row 2: Email */}
                     <div className={styles.formRow}>
-                      <div className={styles.inputGroup}>
-                        <label htmlFor="altContact" className={styles.label}>Alternate Contact Number</label>
-                        <input type="tel" id="altContact" name="altContact" value={form.altContact} onChange={handleChange} placeholder="Optional" className={styles.input} />
-                      </div>
                       <div className={styles.inputGroup}>
                         <label htmlFor="email" className={styles.label}>Email Address</label>
                         <input type="email" id="email" name="email" value={form.email} onChange={handleChange} placeholder="your@email.com" className={styles.input} />
@@ -304,6 +300,46 @@ export default function ContactPage() {
                   </div>
                 </div>
               </motion.div>
+
+              {/* Mobile Contact Info */}
+              <div className={styles.mobileInfoCard}>
+                <a href="tel:+919059053938" className={styles.infoItem}>
+                  <div className={styles.infoIcon} style={{ background: "#D1FAE5", color: "#10B981" }}>
+                    <Phone size={16} />
+                  </div>
+                  <div>
+                    <p className={styles.infoLabel}>Phone</p>
+                    <p className={styles.infoValue}>+91 90590 53938</p>
+                  </div>
+                </a>
+                <div className={styles.infoItem}>
+                  <div className={styles.infoIcon} style={{ background: "#FEF3C7", color: "#F59E0B" }}>
+                    <Clock size={16} />
+                  </div>
+                  <div>
+                    <p className={styles.infoLabel}>Working Hours</p>
+                    <p className={styles.infoValue}>Mon – Sat: 8 AM – 8 PM</p>
+                  </div>
+                </div>
+                <a href="mailto:celebaesthecia666@gmail.com" className={styles.infoItem}>
+                  <div className={styles.infoIcon} style={{ background: "#EDE9FE", color: "#8B5CF6" }}>
+                    <Mail size={16} />
+                  </div>
+                  <div>
+                    <p className={styles.infoLabel}>Email</p>
+                    <p className={styles.infoValue}>celebaesthecia666@gmail.com</p>
+                  </div>
+                </a>
+                <a href="https://maps.google.com/?q=3+Alampat+Business+Centre+Krushi+Nagar+College+Road+Nashik+422001" target="_blank" rel="noopener noreferrer" className={styles.infoItem}>
+                  <div className={styles.infoIcon} style={{ background: "#E6F4F4", color: "#0E898F" }}>
+                    <MapPin size={16} />
+                  </div>
+                  <div>
+                    <p className={styles.infoLabel}>Address</p>
+                    <p className={styles.infoValue}>3/Alampat Business Centre, Near Cycle Circle, Krushi Nagar, College Road, Nashik 422001</p>
+                  </div>
+                </a>
+              </div>
             </div>
           </div>
         </section>

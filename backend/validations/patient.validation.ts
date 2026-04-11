@@ -14,6 +14,11 @@ export const createPatientSchema = z.object({
   address: z.string().max(500).optional().nullable(),
   profilePhoto: z.string().url().optional().nullable(),
   documents: z.string().optional().nullable(),
+  patientType: z.string().optional().nullable(),
+  allergies: z.string().optional().nullable(),
+  emergencyName: z.string().optional().nullable(),
+  emergencyRelation: z.string().optional().nullable(),
+  emergencyPhone: z.string().optional().nullable(),
 });
 
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;

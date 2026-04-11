@@ -27,12 +27,12 @@ const treatmentLinks = [
   { label: "Skin", href: "/treatments/skin" },
   { label: "Hair", href: "/treatments/hair" },
   { label: "HNF Cancer", href: "/treatments/oncology" },
-  { label: "Facial Trauma", href: "/treatments/general-opd" },
-  { label: "Body Shaping", href: "/treatments" },
-  { label: "Nutrition", href: "/treatments" },
-  { label: "Sexual Health", href: "/treatments" },
-  { label: "Premium Aesthetic", href: "/treatments" },
-  { label: "Dental and Medical Tourism", href: "/treatments" },
+  { label: "Facial Trauma", href: "/treatments/facial-trauma" },
+  { label: "Body Shaping", href: "/treatments/body-shaping" },
+  { label: "Nutrition", href: "/treatments/nutrition" },
+  { label: "Sexual Health", href: "/treatments/sexual-health" },
+  { label: "Premium Aesthetic", href: "/treatments/premium-aesthetic" },
+  { label: "Dental and Medical Tourism", href: "/treatments/medical-tourism" },
 ];
 
 const socialLinks = [

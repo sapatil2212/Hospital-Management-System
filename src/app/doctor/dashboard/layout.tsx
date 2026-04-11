@@ -144,7 +144,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <header className="doc-topbar">
             <div className="doc-search-wrap"><Search size={14} color="#94a3b8" /><input className="doc-search" placeholder="Search patients, prescriptions..." /></div>
             <div className="doc-tb-right">
-              <NotificationBell accentColor={accent} bgColor="#f0fdf4" borderColor="#d1fae5" />
+              <NotificationBell
+                accentColor={accent}
+                bgColor="#f0fdf4"
+                borderColor="#d1fae5"
+                types={["APPOINTMENT_BOOKED","APPOINTMENT_UPDATED","FOLLOW_UP_SCHEDULED","PROCEDURE_COMPLETED","TREATMENT_PLAN_CREATED","TREATMENT_SESSION_COMPLETED","TREATMENT_PLAN_COMPLETED"]}
+              />
               <div className="doc-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative", cursor: "pointer" }}>
                 {doctor?.profileImage
                   ? <img src={doctor.profileImage} alt={doctorName} style={{ width: 30, height: 30, borderRadius: 8, objectFit: "cover" }} />

@@ -27,7 +27,7 @@ export const notify = async (data: {
 
 export const listNotifications = async (
   hospitalId: string,
-  opts: { userId?: string; role?: string; limit?: number; offset?: number }
+  opts: { userId?: string; role?: string; limit?: number; offset?: number; types?: string[] }
 ) => {
   const result = await getNotifications(hospitalId, opts);
   return {
@@ -39,7 +39,7 @@ export const listNotifications = async (
   };
 };
 
-export const countUnread = (hospitalId: string, opts: { userId?: string; role?: string }) =>
+export const countUnread = (hospitalId: string, opts: { userId?: string; role?: string; types?: string[] }) =>
   getUnreadCount(hospitalId, opts);
 
 export const markNotificationsRead = (hospitalId: string, opts: { userId?: string; role?: string }) =>

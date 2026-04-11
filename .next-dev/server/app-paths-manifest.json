@@ -1,17 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/api/blogs/route": "app/api/blogs/route.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/doctors/me/route": "app/api/doctors/me/route.js",
-  "/api/appointments/route": "app/api/appointments/route.js",
-  "/api/patients/route": "app/api/patients/route.js",
-  "/api/notifications/stream/route": "app/api/notifications/stream/route.js",
-  "/api/doctor/attendance/route": "app/api/doctor/attendance/route.js",
-  "/api/treatment-plans/route": "app/api/treatment-plans/route.js",
-  "/api/doctor/availability/route": "app/api/doctor/availability/route.js",
-  "/api/doctor/schedule-templates/route": "app/api/doctor/schedule-templates/route.js",
-  "/treatments/body-shaping/page": "app/treatments/body-shaping/page.js",
-  "/doctor/dashboard/page": "app/doctor/dashboard/page.js",
-  "/hospitaladmin/appointments/page": "app/hospitaladmin/appointments/page.js"
+  "/about/page": "app/about/page.js",
+  "/doctor/dashboard/prescription/[appointmentId]/page": "app/doctor/dashboard/prescription/[appointmentId]/page.js",
+  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js",
+  "/hospitaladmin/configure/page": "app/hospitaladmin/configure/page.js"
 }

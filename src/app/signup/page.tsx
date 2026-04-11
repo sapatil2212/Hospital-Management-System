@@ -76,7 +76,7 @@ export default function HospitalSignupPage() {
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email }),
+        body: JSON.stringify({ email: form.email, mobile: form.mobile }),
       });
       const data = await res.json();
       if (res.ok && data.success) setStep("otp");
@@ -123,7 +123,7 @@ export default function HospitalSignupPage() {
   const handleResendOTP = async () => {
     setLoading(true); setApiError("");
     try {
-      await fetch("/api/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email }) });
+      await fetch("/api/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, mobile: form.mobile }) });
     } catch { setApiError("Network error."); }
     finally { setLoading(false); }
   };
@@ -355,14 +355,14 @@ export default function HospitalSignupPage() {
                     <div className="sp-field">
                       <label className="sp-label">Hospital Name</label>
                       <div className="sp-wrap">
-                        <input id="hospitalName" type="text" className={`sp-input${fieldErrors.hospitalName?" err":""}`} placeholder="e.g. Rajashree Hospital" value={form.hospitalName} onChange={e=>updateField("hospitalName",e.target.value)} autoComplete="organization"/>
+                        <input id="hospitalName" type="text" className={`sp-input${fieldErrors.hospitalName?" err":""}`} placeholder="Hospital Name" value={form.hospitalName} onChange={e=>updateField("hospitalName",e.target.value)} autoComplete="organization"/>
                       </div>
                       {fieldErrors.hospitalName && <span className="sp-ferr">{fieldErrors.hospitalName}</span>}
                     </div>
                     <div className="sp-field">
                       <label className="sp-label">Admin Full Name</label>
                       <div className="sp-wrap">
-                        <input id="adminName" type="text" className={`sp-input${fieldErrors.adminName?" err":""}`} placeholder="e.g. Dr. Swapnil" value={form.adminName} onChange={e=>updateField("adminName",e.target.value)} autoComplete="name"/>
+                        <input id="adminName" type="text" className={`sp-input${fieldErrors.adminName?" err":""}`} placeholder="Full Name" value={form.adminName} onChange={e=>updateField("adminName",e.target.value)} autoComplete="name"/>
                       </div>
                       {fieldErrors.adminName && <span className="sp-ferr">{fieldErrors.adminName}</span>}
                     </div>
@@ -382,7 +382,7 @@ export default function HospitalSignupPage() {
                     <div className="sp-field">
                       <label className="sp-label">Mobile Number</label>
                       <div className="sp-wrap">
-                        <input id="mobile" type="tel" className={`sp-input${fieldErrors.mobile?" err":""}`} placeholder="+91 98765 43210" value={form.mobile} onChange={e=>updateField("mobile",e.target.value)} autoComplete="tel"/>
+                        <input id="mobile" type="tel" className={`sp-input${fieldErrors.mobile?" err":""}`} placeholder="0123456789" value={form.mobile} onChange={e=>updateField("mobile",e.target.value)} autoComplete="tel"/>
                         <button type="button" className="sp-eye" tabIndex={-1}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.18 6.18l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                         </button>

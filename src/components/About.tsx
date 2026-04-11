@@ -70,8 +70,7 @@ export default function About() {
           <p className={styles.description}>
             India&apos;s first AI-based robotic aesthetic hospital, redefining
             modern healthcare with advanced technology and ethical, patient-first
-            care. We leverage AI diagnostics, robotic precision, and globally
-            approved technologies for accurate, safe, and personalized outcomes.
+            care.
           </p>
 
           {/* Features */}

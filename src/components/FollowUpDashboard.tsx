@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarCheck, Clock, CheckCircle, AlertCircle, Loader2,
   Search, Filter, User, Phone, Stethoscope, X, RefreshCw,
@@ -56,6 +57,7 @@ function StatsBar({ stats }: { stats: any }) {
 function FollowUpCard({
   fu, onStatusChange, onViewPatient, onRemind, reminding,
 }: { fu: FollowUp; onStatusChange: (id: string, status: string) => void; onViewPatient: (id: string) => void; onRemind?: (id: string) => void; reminding?: boolean }) {
+  const router = useRouter();
   const sc = STATUS_CFG[fu.status] || STATUS_CFG.PENDING;
   const fuDate = new Date(fu.followUpDate);
   const now = new Date();
@@ -148,8 +150,8 @@ function FollowUpCard({
           )}
 
           <button 
-            onClick={() => onViewPatient(fu.patientId)}
-            style={{ fontSize: 11, color: "#0E898F", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "right" }}
+            onClick={() => router.push(`/hospitaladmin/dashboard?tab=patients&patientId=${fu.patient?.id || fu.patientId}`)}
+            style={{ fontSize: 11, color: "#0E898F", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "right", marginTop: "auto" }}
           >
             View Profile →
           </button>

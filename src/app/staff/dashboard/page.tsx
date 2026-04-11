@@ -220,7 +220,7 @@ export default function StaffDashboard() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <NotificationBell accentColor={roleColors.accent} bgColor="#f8fafc" borderColor="#e2e8f0" />
+          <NotificationBell accentColor={roleColors.accent} bgColor="#f8fafc" borderColor="#e2e8f0" types={["APPOINTMENT_BOOKED","PATIENT_REGISTERED","BILLING_TRANSFER"]} />
           <div
             style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "4px 8px", borderRadius: 10, transition: "background 0.15s" }}
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}

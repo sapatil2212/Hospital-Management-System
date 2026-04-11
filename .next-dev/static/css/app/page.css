@@ -230,24 +230,28 @@
     max-width: 100%;
   }
 
-  /* Reduce button sizes on mobile */
+  /* Mobile buttons: side by side, equal size */
   .About_ctaRow__v3xRt {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
     gap: var(--space-2);
+    width: 100%;
   }
 
   .About_ctaRow__v3xRt .About_btn__yg2yd {
     flex: 1 1;
-    max-width: 140px;
-    padding: 6px 10px;
-    font-size: 11px;
-    height: 34px;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    height: 38px;
+    text-align: center;
+    justify-content: center;
   }
 
   .About_ctaRow__v3xRt .About_btn__yg2yd svg {
     width: 13px;
     height: 13px;
+    flex-shrink: 0;
   }
 
   /* Hide rating badge on mobile */
@@ -626,6 +630,12 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .Footer_bottomBar__TdDhH {
+    padding-bottom: 60px;
   }
 }
 
@@ -1575,6 +1585,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 400px;
 }
 
 .Hero_imageWrapper__s2c7t {
@@ -1583,6 +1594,7 @@
   width: 100%;
   max-width: 500px;
   display: grid;
+  aspect-ratio: 580 / 640;
 }
 
 .Hero_imageSlide__Xi3Cl {
@@ -1725,6 +1737,7 @@
   .Hero_heroVisual__65JDq {
     max-width: 400px;
     margin: 0 auto;
+    min-height: 360px;
   }
 
   .Hero_textSlideWrap__F57dG {
@@ -1791,6 +1804,10 @@
     min-height: 100px;
   }
 
+  .Hero_heroVisual__65JDq {
+    min-height: 300px;
+  }
+
   .Hero_imageWrapper__s2c7t {
     max-width: 320px;
   }
@@ -1802,6 +1819,9 @@
   }
   .Hero_hero__T3Fr4 {
     padding: var(--space-8) 0 var(--space-12);
+  }
+  .Hero_heroVisual__65JDq {
+    min-height: 260px;
   }
 }
 
@@ -2647,10 +2667,11 @@
 
 .Services_header__xPqpo {
   text-align: center;
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-12);
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--space-2);
 }
 
 .Services_titleAccent__q_3vT {
@@ -2685,7 +2706,7 @@
   font-size: var(--font-size-base);
   font-weight: 600;
   text-decoration: none;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   transition: all var(--transition-base);
   box-shadow: var(--shadow-md);
 }

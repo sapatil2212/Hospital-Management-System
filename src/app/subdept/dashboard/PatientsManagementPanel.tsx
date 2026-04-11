@@ -1,7 +1,7 @@
 
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, UserRound, Settings, HelpCircle,
   LogOut, Search, Bell, MessageSquare, Building2, Stethoscope, ClipboardList,
@@ -16,12 +16,26 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Document as DocxDocument, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel } from "docx";
 import { BookingWizard } from "@/components/AppointmentPanel";
+import { ViewPrescriptionModal } from "@/app/subdept/dashboard/modals";
 
 const api = async (url: string, method = "GET", body?: any) => {
-  const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  return r.json();
+  try {
+    const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(url, opts);
+    if (!r.ok) {
+      const errorText = await r.text();
+      try {
+        return JSON.parse(errorText);
+      } catch {
+        return { success: false, message: `Server error: ${r.status} ${r.statusText}` };
+      }
+    }
+    return r.json();
+  } catch (error: any) {
+    console.error("API call failed:", error);
+    return { success: false, message: error.message || "Network error" };
+  }
 };
 
 const initials = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
@@ -29,8 +43,19 @@ const initials = (name: string) => name.split(" ").map(n => n[0]).join("").slice
 // ─── Patient Management Panel ───
 export function PatientsManagementPanel() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlPatientId = searchParams.get("patientId");
 
   const [user, setUser] = useState<any>(null);
+
+  // ... (rest of the component)
+
+  useEffect(() => {
+    if (urlPatientId) {
+      loadPatientDetails(urlPatientId);
+      setSelectedPatient({ id: urlPatientId });
+    }
+  }, [urlPatientId]);
 
   // List view state
   const [patients, setPatients] = useState<any[]>([]);
@@ -59,6 +84,7 @@ export function PatientsManagementPanel() {
   const [bills, setBills] = useState<any[]>([]);
   const [procedures, setProcedures] = useState<any[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
+  const [selectedRxAppointment, setSelectedRxAppointment] = useState<any>(null);
 
   // Upload state
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -288,7 +314,11 @@ export function PatientsManagementPanel() {
         {/* Breadcrumb header */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
           <button
-            onClick={() => { setSelectedPatient(null); setPatientDetails(null); }}
+            onClick={() => { 
+              setSelectedPatient(null); 
+              setPatientDetails(null); 
+              router.push("/hospitaladmin/dashboard?tab=patients");
+            }}
             style={{ padding: "8px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#64748b" }}
           >
             <ChevronLeft size={15} /> All Patients
@@ -418,23 +448,37 @@ export function PatientsManagementPanel() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Personal Information</div>
-                      {[
-                        ["Patient ID", patientDetails.patientId],
-                        ["Full Name", patientDetails.name],
-                        ["Phone", patientDetails.phone],
-                        ["Email", patientDetails.email || "—"],
-                        ["Gender", patientDetails.gender || "—"],
-                        ["Date of Birth", patientDetails.dateOfBirth ? new Date(patientDetails.dateOfBirth).toLocaleDateString() : "—"],
-                        ["Age", `${age(patientDetails.dateOfBirth)} years`],
-                        ["Blood Group", patientDetails.bloodGroup || "—"],
-                        ["Address", patientDetails.address || "—"],
-                        ["Registered", new Date(patientDetails.createdAt).toLocaleDateString()],
-                      ].map(([k, v]) => (
-                        <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-                          <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
-                          <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
-                        </div>
-                      ))}
+                        {[
+                          ["Patient ID", patientDetails.patientId],
+                          ["Full Name", patientDetails.name],
+                          ["Phone", patientDetails.phone],
+                          ["Email", patientDetails.email || "—"],
+                          ["Gender", patientDetails.gender || "—"],
+                          ["Date of Birth", patientDetails.dateOfBirth ? new Date(patientDetails.dateOfBirth).toLocaleDateString() : "—"],
+                          ["Age", `${age(patientDetails.dateOfBirth)} years`],
+                          ["Blood Group", patientDetails.bloodGroup || "—"],
+                          ["Patient Type", patientDetails.patientType || "NEW"],
+                          ["Allergies", patientDetails.allergies || "None"],
+                          ["Address", patientDetails.address || "—"],
+                          ["Registered", new Date(patientDetails.createdAt).toLocaleDateString()],
+                        ].map(([k, v]) => (
+                          <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+                            <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
+                            <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
+                          </div>
+                        ))}
+
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14, marginTop: 24 }}>Emergency Contact</div>
+                        {[
+                          ["Contact Person", patientDetails.emergencyName || "—"],
+                          ["Relation", patientDetails.emergencyRelation || "—"],
+                          ["Contact Number", patientDetails.emergencyPhone || "—"],
+                        ].map(([k, v]) => (
+                          <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+                            <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
+                            <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
+                          </div>
+                        ))}
                     </div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Recent Appointments</div>
@@ -578,7 +622,7 @@ export function PatientsManagementPanel() {
                         <table style={{ width: "100%", borderCollapse: "collapse" }}>
                           <thead>
                             <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                              {["Date", "Procedure", "Department", "Type", "Amount", "Performed By", "Status"].map(h => (
+                              {["Date", "Procedure", "Department", "Type", "Amount", "Performed By", "Status", "Prescription"].map(h => (
                                 <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>
                               ))}
                             </tr>
@@ -593,6 +637,19 @@ export function PatientsManagementPanel() {
                                 <td style={{ padding: "14px", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>₹{(p.amount || 0).toLocaleString()}</td>
                                 <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>{p.performedBy || "—"}</td>
                                 <td style={{ padding: "14px" }}><span style={{ ...statusStyle(p.status), padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{p.status}</span></td>
+                                <td style={{ padding: "14px" }}>
+                                  {p.appointment?.id ? (
+                                    <button
+                                      onClick={() => setSelectedRxAppointment(p.appointment)}
+                                      style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#0E898F" }}
+                                      title="View Prescription"
+                                    >
+                                      <FileText size={14} />
+                                    </button>
+                                  ) : (
+                                    <span style={{ fontSize: 12, color: "#cbd5e1" }}>—</span>
+                                  )}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -686,6 +743,13 @@ export function PatientsManagementPanel() {
         )}
 
         {/* Delete confirm modal for patient inside detail view - not needed here */}
+        {selectedRxAppointment && (
+          <ViewPrescriptionModal
+            appointment={selectedRxAppointment}
+            meta={{ accent: "#0E898F" }}
+            onClose={() => setSelectedRxAppointment(null)}
+          />
+        )}
       </div>
     );
   }
@@ -988,13 +1052,17 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
       try {
         const d = await api(`/api/patients/${patientId}`);
         if (d.success) {
-          setForm(d.data);
+          const p = d.data;
+          setForm({
+            ...p,
+            dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split("T")[0] : "",
+          });
         } else {
           throw new Error(d.message || "Could not fetch patient details.");
         }
       } catch (error: any) {
         alert(`Failed to load patient for editing: ${error.message}`);
-        onClose(); // Close the modal if data loading fails
+        onClose();
       } finally {
         setLoading(false);
       }
@@ -1027,52 +1095,59 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
 
   if (!form) return null;
 
+  const LBL: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" };
+  const INP: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, outline: "none" };
+  const SEL: React.CSSProperties = { ...INP, background: "#fff" };
+  const SECTION: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 10, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: 0, width: 650, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px", borderBottom: "1px solid #f1f5f9" }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>Edit Patient Profile</div>
-            <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>Update basic information for {form.name}</div>
+            <div style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>Update complete information for {form.name}</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{ flex: 1, overflow: "auto", padding: "20px 28px" }}>
+          <div style={SECTION}><User size={14} /> Basic Information</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Full Name</label>
+              <label style={LBL}>Full Name *</label>
               <input 
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                style={INP}
                 value={form.name} 
                 onChange={e => setForm({ ...form, name: e.target.value })} 
                 required 
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Phone Number</label>
+              <label style={LBL}>Phone Number *</label>
               <input 
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                style={INP}
                 value={form.phone} 
                 onChange={e => setForm({ ...form, phone: e.target.value })} 
                 required 
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Email</label>
+              <label style={LBL}>Email Address</label>
               <input 
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                style={INP}
                 type="email" 
                 value={form.email || ""} 
                 onChange={e => setForm({ ...form, email: e.target.value })} 
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Gender</label>
+              <label style={LBL}>Gender *</label>
               <select 
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, background: "#fff" }}
+                style={SEL}
                 value={form.gender || ""} 
                 onChange={e => setForm({ ...form, gender: e.target.value })}
+                required
               >
                 <option value="">Select</option>
                 <option value="MALE">Male</option>
@@ -1081,9 +1156,18 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Blood Group</label>
+              <label style={LBL}>Date of Birth</label>
+              <input 
+                type="date"
+                style={INP}
+                value={form.dateOfBirth || ""} 
+                onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} 
+              />
+            </div>
+            <div>
+              <label style={LBL}>Blood Group</label>
               <select 
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, background: "#fff" }}
+                style={SEL}
                 value={form.bloodGroup || ""} 
                 onChange={e => setForm({ ...form, bloodGroup: e.target.value })}
               >
@@ -1092,18 +1176,52 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
               </select>
             </div>
             <div style={{ gridColumn: "span 2" }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>Address</label>
+              <label style={LBL}>Address</label>
               <input 
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13 }}
+                style={INP}
                 value={form.address || ""} 
                 onChange={e => setForm({ ...form, address: e.target.value })} 
               />
             </div>
           </div>
 
+          <div style={SECTION}><ClipboardList size={14} /> Medical Classification</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div>
+              <label style={LBL}>Patient Type</label>
+              <select style={SEL} value={form.patientType || "NEW"} onChange={e => setForm({ ...form, patientType: e.target.value })}>
+                <option value="NEW">New</option>
+                <option value="EXISTING">Existing</option>
+              </select>
+            </div>
+            <div>
+              <label style={LBL}>Allergies</label>
+              <input style={INP} value={form.allergies || ""} onChange={e => setForm({ ...form, allergies: e.target.value })} placeholder="e.g. Penicillin, Dust" />
+            </div>
+          </div>
+
+          <div style={SECTION}><Phone size={14} /> Emergency Contact</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={LBL}>Contact Person</label>
+              <input style={INP} value={form.emergencyName || ""} onChange={e => setForm({ ...form, emergencyName: e.target.value })} placeholder="Name" />
+            </div>
+            <div>
+              <label style={LBL}>Relation</label>
+              <select style={SEL} value={form.emergencyRelation || ""} onChange={e => setForm({ ...form, emergencyRelation: e.target.value })}>
+                <option value="">Select</option>
+                {["Spouse", "Parent", "Sibling", "Child", "Friend", "Other"].map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={LBL}>Contact Number</label>
+              <input style={INP} value={form.emergencyPhone || ""} onChange={e => setForm({ ...form, emergencyPhone: e.target.value })} placeholder="Phone" />
+            </div>
+          </div>
+
           {msg && <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 8, background: "#fff5f5", color: "#ef4444", fontSize: 12, fontWeight: 600 }}>{msg}</div>}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 32, paddingBottom: 10 }}>
             <button 
               type="button" 
               onClick={onClose}
@@ -1116,7 +1234,7 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
               disabled={saving}
               style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
             >
-              {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : "Save Changes"}
+              {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : "Save All Changes"}
             </button>
           </div>
         </form>
@@ -1200,6 +1318,11 @@ function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     if (form.bloodGroup) patientPayload.bloodGroup = form.bloodGroup;
     if (form.email) patientPayload.email = form.email;
     if (form.address) patientPayload.address = form.address;
+    if (visit.patientType) patientPayload.patientType = visit.patientType;
+    if (visit.allergies) patientPayload.allergies = visit.allergies;
+    if (emergency.name) patientPayload.emergencyName = emergency.name;
+    if (emergency.relation) patientPayload.emergencyRelation = emergency.relation;
+    if (emergency.phone) patientPayload.emergencyPhone = emergency.phone;
 
     const pRes = await api("/api/patients", "POST", patientPayload);
     if (!pRes.success) { setMsg({ type: "error", text: pRes.message || "Failed to register patient" }); setSaving(false); return; }

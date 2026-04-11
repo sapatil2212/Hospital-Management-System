@@ -2,6 +2,7 @@ import { createOTP, findLatestOTP, verifyOTPMark } from "../repositories/otp.rep
 import { generateOTP } from "../utils/otp";
 import nodemailer from "nodemailer";
 import { env } from "../config/env";
+import { sendOTPviaSMS } from "../utils/sms";
 
 const transporter = nodemailer.createTransport({
   host: env.EMAIL_HOST,
@@ -13,7 +14,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const requestOTP = async (email: string) => {
+export const requestOTP = async (email: string, mobile?: string) => {
   const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -90,6 +91,11 @@ export const requestOTP = async (email: string) => {
     });
   } catch (error) {
     console.error("Failed to send email", error);
+  }
+
+  // Send OTP via SMS if mobile number is provided
+  if (mobile) {
+    sendOTPviaSMS(mobile, otp).catch(() => {});
   }
 
   return { message: "OTP sent successfully" };

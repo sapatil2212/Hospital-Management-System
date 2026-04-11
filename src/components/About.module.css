@@ -224,24 +224,28 @@
     max-width: 100%;
   }
 
-  /* Reduce button sizes on mobile */
+  /* Mobile buttons: side by side, equal size */
   .ctaRow {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
     gap: var(--space-2);
+    width: 100%;
   }
 
   .ctaRow .btn {
-    flex: 1;
-    max-width: 140px;
-    padding: 6px 10px;
-    font-size: 11px;
-    height: 34px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    height: 38px;
+    text-align: center;
+    justify-content: center;
   }
 
   .ctaRow .btn svg {
     width: 13px;
     height: 13px;
+    flex-shrink: 0;
   }
 
   /* Hide rating badge on mobile */

@@ -234,3 +234,9 @@
     gap: var(--space-4);
   }
 }
+
+@media (max-width: 768px) {
+  .bottomBar {
+    padding-bottom: 60px;
+  }
+}

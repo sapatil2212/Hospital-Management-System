@@ -16,6 +16,10 @@ export async function GET(req: NextRequest) {
     return new Response("No hospital context", { status: 400 });
   }
 
+  const url = new URL(req.url);
+  const typesParam = url.searchParams.get("types");
+  const types = typesParam ? typesParam.split(",").filter(Boolean) : undefined;
+
   const encoder = new TextEncoder();
   let closed = false;
 
@@ -35,6 +39,7 @@ export async function GET(req: NextRequest) {
         const count = await getUnreadCount(hospitalId, {
           userId: user.userId,
           role: user.role,
+          types,
         });
         send({ unread: count });
       } catch {
@@ -48,6 +53,7 @@ export async function GET(req: NextRequest) {
           const count = await getUnreadCount(hospitalId, {
             userId: user.userId,
             role: user.role,
+            types,
           });
           send({ unread: count });
         } catch {

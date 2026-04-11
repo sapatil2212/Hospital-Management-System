@@ -216,10 +216,54 @@ export async function completePrescription(id: string, hospitalId: string, input
 
   // Generate bill from appointment automatically
   // This ensures OPD consultation fee is reflected instantly in billing
+  let generatedBill: any = null;
   try {
-    await generateBillFromAppointment(existing.appointmentId, hospitalId);
+    generatedBill = await generateBillFromAppointment(existing.appointmentId, hospitalId);
   } catch (billErr: any) {
     console.error("[completePrescription] Bill generation failed:", billErr?.message);
+  }
+
+  // If a treatment plan is assigned, link patient and add plan cost to bill
+  if (input.treatmentPlanId && existing.patientId) {
+    try {
+      const plan = await (prisma as any).treatmentPlan.findFirst({
+        where: { id: input.treatmentPlanId, hospitalId },
+        select: { id: true, planName: true, totalCost: true, patientId: true },
+      });
+      if (plan) {
+        // Assign patient to the plan (only if not already assigned)
+        await (prisma as any).treatmentPlan.update({
+          where: { id: plan.id },
+          data: { patientId: existing.patientId },
+        });
+        // Add plan cost as a bill item if cost > 0
+        const bill = generatedBill || await (prisma as any).bill.findFirst({
+          where: { visitId: existing.appointmentId, hospitalId },
+        });
+        if (bill && plan.totalCost > 0) {
+          const alreadyAdded = await (prisma as any).billItem.findFirst({
+            where: { billId: bill.id, type: "OTHER", referenceId: plan.id },
+          });
+          if (!alreadyAdded) {
+            await (prisma as any).billItem.create({
+              data: {
+                hospitalId,
+                billId: bill.id,
+                type: "OTHER",
+                referenceId: plan.id,
+                name: `Treatment Plan — ${plan.planName}`,
+                quantity: 1,
+                unitPrice: plan.totalCost,
+                amount: plan.totalCost,
+              },
+            });
+            await recalculateBill(bill.id, hospitalId);
+          }
+        }
+      }
+    } catch (planErr: any) {
+      console.error("[completePrescription] Treatment plan assignment failed:", planErr?.message);
+    }
   }
 
   // Create FollowUp record if follow-up date is set

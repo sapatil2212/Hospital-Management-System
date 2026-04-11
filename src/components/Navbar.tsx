@@ -344,11 +344,11 @@ export default function Navbar() {
               <div className={styles.mobileActions}>
                 <a
                   href="tel:+919059053938"
-                  className={`${styles.navBtn} ${styles.navEmergency} ${styles.mobileCta}`}
+                  className={`${styles.navBtn} ${styles.navContact} ${styles.mobileCta}`}
                   onClick={() => setIsMobileOpen(false)}
                 >
                   <PhoneCall size={14} />
-                  Emergency
+                  +91 90590 53938
                 </a>
                 <button
                   className={`${styles.navBtn} ${styles.navCta} ${styles.mobileCta}`}
