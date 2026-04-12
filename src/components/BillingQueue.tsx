@@ -43,6 +43,9 @@ interface HospitalInfo {
   logo?: string;
   gstNumber?: string;
   registrationNo?: string;
+  letterhead?: string;
+  letterheadType?: string;
+  letterheadSize?: string;
 }
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
@@ -90,7 +93,7 @@ export default function BillingQueue() {
   const [paidBill, setPaidBill] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>({ name: "Hospital", address: "", phone: "", email: "", logo: "", gstNumber: "", registrationNo: "" });
+  const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>({ name: "Hospital", address: "", phone: "", email: "", logo: "", gstNumber: "", registrationNo: "", letterhead: "", letterheadType: "IMAGE", letterheadSize: "A4" });
   const printRef = useRef<HTMLDivElement>(null);
 
   const loadQueue = useCallback(async () => {
@@ -120,6 +123,9 @@ export default function BillingQueue() {
             logo: s.logo || "",
             gstNumber: s.gstNumber || "",
             registrationNo: s.registrationNo || "",
+            letterhead: s.letterhead || "",
+            letterheadType: s.letterheadType || "IMAGE",
+            letterheadSize: s.letterheadSize || "A4",
           });
           return;
         }
@@ -138,6 +144,9 @@ export default function BillingQueue() {
             logo: s?.logo || "",
             gstNumber: s?.gstNumber || "",
             registrationNo: s?.registrationNo || "",
+            letterhead: s?.letterhead || "",
+            letterheadType: s?.letterheadType || "IMAGE",
+            letterheadSize: s?.letterheadSize || "A4",
           });
         }
       } catch {}
@@ -269,7 +278,7 @@ export default function BillingQueue() {
     if (!w) return;
     w.document.write(`<!DOCTYPE html><html><head><title>Bill ${billNo}</title><style>
       *{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;padding:32px;color:#1e293b;background:#fff}
-      .bill-print{max-width:780px;margin:0 auto}.bill-ph{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0ea5e9;margin-bottom:20px}
+      .bill-print{max-width:780px;margin:0 auto;background-size:100% 100%;background-position:center;background-repeat:no-repeat}.bill-ph{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0ea5e9;margin-bottom:20px}
       .bill-ph-left h1{font-size:22px;font-weight:800;color:#0ea5e9;margin-bottom:6px}.bill-ph-left p{font-size:12px;color:#64748b;margin-top:3px}
       .bill-ph-right{text-align:right}.bill-ph-right h2{font-size:18px;font-weight:700;color:#1e293b}.bill-ph-right p{font-size:11px;color:#64748b;margin-top:3px}
       .bill-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;padding:16px;border-radius:8px;margin-bottom:20px}
@@ -283,94 +292,125 @@ export default function BillingQueue() {
       .badge{display:inline-block;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700}
       .payment-strip{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:13px;color:#166534;display:flex;gap:20px}
       .footer{text-align:center;margin-top:28px;padding-top:16px;border-top:1px dashed #e2e8f0;color:#94a3b8;font-size:11px}
-      @media print{@page{margin:15mm}}
+      @media print{@page{margin:15mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.bill-print,.bill-print-wrap{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-size:100% 100%!important;background-position:center!important;background-repeat:no-repeat!important}}
     </style></head><body><div class="bill-print">${printContent}</div></body></html>`);
     w.document.close();
     setTimeout(() => { w.print(); }, 400);
   };
+
+  // ── Shared: load an image URL as base64 data URL via canvas ──
+  const loadImageAsBase64 = (url: string): Promise<string | null> =>
+    new Promise((resolve) => {
+      if (!url) return resolve(null);
+      // For Cloudinary PDF letterheads, convert to PNG via URL transformation
+      let imgUrl = url;
+      if (url.match(/\.pdf$/i) || url.includes('/raw/upload/')) {
+        imgUrl = url.replace('/upload/', '/upload/f_png,pg_1/').replace(/\.pdf$/i, '.png');
+      }
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const c = document.createElement('canvas');
+            c.width = img.naturalWidth;
+            c.height = img.naturalHeight;
+            const ctx = c.getContext('2d');
+            if (ctx) { ctx.drawImage(img, 0, 0); resolve(c.toDataURL('image/png')); return; }
+          } catch {}
+          resolve(null);
+        };
+        img.onerror = () => resolve(null);
+        img.src = imgUrl;
+      } catch { resolve(null); }
+    });
 
   const handleDownloadBillPDF = async (item: QueueItem) => {
     if (!item?.bill) return;
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageSize = (hospitalInfo.letterheadSize || 'A4').toLowerCase() as 'a4' | 'a5' | 'letter';
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize });
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
     const mx = 18;
     const cw = pw - mx * 2;
     const rs = (v: number) => `Rs. ${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    let y = 16;
 
-    // Load logo
-    let logoDataUrl: string | null = null;
-    if (hospitalInfo.logo) {
-      try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = hospitalInfo.logo;
-        await new Promise<void>((resolve) => {
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth;
-              canvas.height = img.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              if (ctx) { ctx.drawImage(img, 0, 0); logoDataUrl = canvas.toDataURL('image/png'); }
-            } catch {}
-            resolve();
-          };
-          img.onerror = () => resolve();
-        });
-      } catch {}
+    // ── Load letterhead (or logo as fallback) ──
+    const letterheadDataUrl = await loadImageAsBase64(hospitalInfo.letterhead || '');
+    const logoDataUrl = letterheadDataUrl ? null : await loadImageAsBase64(hospitalInfo.logo || '');
+    const hasLetterhead = !!letterheadDataUrl;
+
+    let y: number;
+
+    if (hasLetterhead) {
+      // ── Full-page letterhead background ──
+      try { doc.addImage(letterheadDataUrl!, 'PNG', 0, 0, pw, ph); } catch {}
+      y = 80; // content starts below letterhead header area
+
+      // Invoice badge + Bill No (overlaid on letterhead, top-right)
+      const rx = pw - mx;
+      doc.setFillColor(14, 137, 143);
+      doc.roundedRect(rx - 32, 52, 32, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('INVOICE', rx - 16, 57, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setTextColor(30, 41, 59);
+      doc.text(item.bill.billNo || 'BILL', rx, 68, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Date: ' + fmtDate(item.appointmentDate), rx, 74, { align: 'right' });
+    } else {
+      // ── Fallback: programmatic header ──
+      y = 16;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, 0, pw, 52, 'F');
+      doc.setDrawColor(14, 165, 233);
+      doc.setLineWidth(0.8);
+      doc.line(0, 52, pw, 52);
+
+      const infoX = logoDataUrl ? mx + 28 : mx;
+      if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {} }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(14, 165, 233);
+      doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      let hy = y + 12;
+      if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy += 4; }
+      if (hospitalInfo.phone) { doc.text('Phone: ' + hospitalInfo.phone, infoX, hy); hy += 4; }
+      if (hospitalInfo.email) { doc.text('Email: ' + hospitalInfo.email, infoX, hy); hy += 4; }
+      if (hospitalInfo.gstNumber) { doc.text('GSTIN: ' + hospitalInfo.gstNumber, infoX, hy); hy += 4; }
+      if (hospitalInfo.registrationNo) { doc.text('Reg: ' + hospitalInfo.registrationNo, infoX, hy); }
+
+      const rx = pw - mx;
+      doc.setFillColor(14, 165, 233);
+      doc.roundedRect(rx - 32, y, 32, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('INVOICE', rx - 16, y + 5, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setTextColor(30, 41, 59);
+      doc.text(item.bill.billNo || 'BILL', rx, y + 16, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Date: ' + fmtDate(item.appointmentDate), rx, y + 22, { align: 'right' });
+
+      y = 58;
     }
 
-    // Header
-    doc.setFillColor(248, 250, 252);
-    doc.rect(0, 0, pw, 52, 'F');
-    doc.setDrawColor(14, 165, 233);
-    doc.setLineWidth(0.8);
-    doc.line(0, 52, pw, 52);
-
-    const infoX = logoDataUrl ? mx + 28 : mx;
-    if (logoDataUrl) {
-      try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {}
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(14, 165, 233);
-    doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    let hy = y + 12;
-    if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy += 4; }
-    if (hospitalInfo.phone) { doc.text('Phone: ' + hospitalInfo.phone, infoX, hy); hy += 4; }
-    if (hospitalInfo.email) { doc.text('Email: ' + hospitalInfo.email, infoX, hy); hy += 4; }
-    if (hospitalInfo.gstNumber) { doc.text('GSTIN: ' + hospitalInfo.gstNumber, infoX, hy); hy += 4; }
-    if (hospitalInfo.registrationNo) { doc.text('Reg: ' + hospitalInfo.registrationNo, infoX, hy); }
-
-    const rx = pw - mx;
-    doc.setFillColor(14, 165, 233);
-    doc.roundedRect(rx - 32, y, 32, 7, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text('INVOICE', rx - 16, y + 5, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.setTextColor(30, 41, 59);
-    doc.text(item.bill.billNo || 'BILL', rx, y + 16, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('Date: ' + fmtDate(item.appointmentDate), rx, y + 22, { align: 'right' });
-
-    y = 58;
-
-    // Patient info
+    // ── Patient info ──
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(mx, y, cw, 24, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240);
@@ -403,13 +443,9 @@ export default function BillingQueue() {
 
     y += 30;
 
-    // Items table
+    // ── Items table ──
     const items = (item.bill.billItems || []).map((it: any, i: number) => [
-      String(i + 1),
-      it.name,
-      String(it.quantity),
-      rs(it.unitPrice),
-      rs(it.amount)
+      String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)
     ]);
 
     autoTable(doc, {
@@ -417,29 +453,16 @@ export default function BillingQueue() {
       head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
       body: items,
       theme: 'striped',
-      headStyles: {
-        fillColor: [14, 165, 233],
-        textColor: [255, 255, 255],
-        fontSize: 8,
-        fontStyle: 'bold',
-        halign: 'left',
-        cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
-      },
+      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
       bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
       alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 'auto' },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 30, halign: 'right' },
-        4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' }
-      },
+      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
       margin: { left: mx, right: mx },
     });
 
     y = (doc as any).lastAutoTable.finalY + 6;
 
-    // Summary
+    // ── Summary ──
     const sW = 78;
     const sX = pw - mx - sW;
     const summaryLines: Array<{ label: string; value: string; color?: number[] }> = [];
@@ -467,7 +490,7 @@ export default function BillingQueue() {
       sY += lineH;
     });
 
-    doc.setDrawColor(14, 165, 233);
+    doc.setDrawColor(14, 137, 143);
     doc.setLineWidth(0.4);
     doc.line(sX + 4, sY - 1, sX + sW - 4, sY - 1);
     sY += 4;
@@ -476,19 +499,18 @@ export default function BillingQueue() {
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
     doc.text('Total Amount', sX + 4, sY);
-    doc.setTextColor(14, 165, 233);
+    doc.setTextColor(14, 137, 143);
     doc.setFontSize(11);
     doc.text(rs(item.bill.total || 0), sX + sW - 4, sY, { align: 'right' });
 
     y += boxH + 8;
 
-    // Payment info (if paid)
+    // ── Payment info (if paid) ──
     if (item.bill.status === 'PAID') {
       doc.setFillColor(240, 253, 244);
       doc.setDrawColor(187, 247, 208);
       doc.setLineWidth(0.3);
       doc.roundedRect(mx, y, cw, 14, 2, 2, 'FD');
-
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(148, 163, 184);
@@ -496,30 +518,48 @@ export default function BillingQueue() {
       doc.setFontSize(8.5);
       doc.setTextColor(22, 101, 52);
       doc.text('PAID', mx + 4, y + 10);
-
       doc.setFontSize(6.5);
       doc.setTextColor(148, 163, 184);
       doc.text('AMOUNT PAID', mx + 40, y + 5);
       doc.setFontSize(8.5);
       doc.setTextColor(22, 101, 52);
       doc.text(rs(item.bill.total || 0), mx + 40, y + 10);
-
       y += 20;
     }
 
-    // Footer
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.15);
-    doc.line(mx, y, pw - mx, y);
-    y += 5;
+    // ── Signature section ──
+    const sigY = Math.max(y + 10, ph - (hasLetterhead ? 60 : 50));
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    // Patient signature (left)
+    doc.line(mx, sigY, mx + 55, sigY);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('Thank you for choosing ' + (hospitalInfo.name || 'our hospital'), pw / 2, y, { align: 'center' });
-    y += 4;
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text('This is a computer-generated invoice. No signature required.', pw / 2, y, { align: 'center' });
+    doc.text('Patient / Attendant Signature', mx, sigY + 5);
+    // Authorized signatory (right)
+    doc.line(pw - mx - 55, sigY, pw - mx, sigY);
+    doc.text('Authorized Signatory', pw - mx - 55, sigY + 5);
+
+    // ── Footer ──
+    const footerY = sigY + 14;
+    if (!hasLetterhead) {
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.15);
+      doc.line(mx, footerY, pw - mx, footerY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Thank you for choosing ' + (hospitalInfo.name || 'our hospital'), pw / 2, footerY + 5, { align: 'center' });
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text('This is a computer-generated invoice.', pw / 2, footerY + 9, { align: 'center' });
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text('This is a computer-generated invoice.', pw / 2, footerY + 3, { align: 'center' });
+    }
 
     const fileName = `Invoice_${(item.bill.billNo || 'BILL').replace(/\s+/g, '-')}_${item.patient.name.replace(/\s+/g, '_')}.pdf`;
     doc.save(fileName);
@@ -530,86 +570,84 @@ export default function BillingQueue() {
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pw = doc.internal.pageSize.getWidth();   // ~210
-    const ph = doc.internal.pageSize.getHeight();   // ~297
-    const mx = 18;                                  // left/right margin
-    const cw = pw - mx * 2;                         // content width
-    // PDF-safe currency formatter (no Unicode ₹)
+    const pageSize = (hospitalInfo.letterheadSize || 'A4').toLowerCase() as 'a4' | 'a5' | 'letter';
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize });
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    const mx = 18;
+    const cw = pw - mx * 2;
     const rs = (v: number) => `Rs. ${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    let y = 16;
 
-    // ── Load logo as base64 via canvas (avoids CORS issues) ──
-    let logoDataUrl: string | null = null;
-    if (hospitalInfo.logo) {
-      try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = hospitalInfo.logo;
-        await new Promise<void>((resolve) => {
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth;
-              canvas.height = img.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              if (ctx) { ctx.drawImage(img, 0, 0); logoDataUrl = canvas.toDataURL('image/png'); }
-            } catch {}
-            resolve();
-          };
-          img.onerror = () => resolve();
-        });
-      } catch {}
+    // ── Load letterhead (or logo as fallback) ──
+    const letterheadDataUrl = await loadImageAsBase64(hospitalInfo.letterhead || '');
+    const logoDataUrl = letterheadDataUrl ? null : await loadImageAsBase64(hospitalInfo.logo || '');
+    const hasLetterhead = !!letterheadDataUrl;
+
+    let y: number;
+
+    if (hasLetterhead) {
+      // ── Full-page letterhead background ──
+      try { doc.addImage(letterheadDataUrl!, 'PNG', 0, 0, pw, ph); } catch {}
+      y = 80;
+
+      const rx = pw - mx;
+      doc.setFillColor(14, 137, 143);
+      doc.roundedRect(rx - 32, 52, 32, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('INVOICE', rx - 16, 57, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setTextColor(30, 41, 59);
+      doc.text(paidBill?.billNo || selectedItem.bill?.billNo || 'BILL', rx, 68, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Date: ' + fmtDate(selectedItem.appointmentDate), rx, 74, { align: 'right' });
+    } else {
+      // ── Fallback: programmatic header ──
+      y = 16;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, 0, pw, 52, 'F');
+      doc.setDrawColor(14, 165, 233);
+      doc.setLineWidth(0.8);
+      doc.line(0, 52, pw, 52);
+
+      const infoX = logoDataUrl ? mx + 28 : mx;
+      if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {} }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(14, 165, 233);
+      doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      let hy = y + 12;
+      if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy += 4; }
+      if (hospitalInfo.phone) { doc.text('Phone: ' + hospitalInfo.phone, infoX, hy); hy += 4; }
+      if (hospitalInfo.email) { doc.text('Email: ' + hospitalInfo.email, infoX, hy); hy += 4; }
+      if (hospitalInfo.gstNumber) { doc.text('GSTIN: ' + hospitalInfo.gstNumber, infoX, hy); hy += 4; }
+      if (hospitalInfo.registrationNo) { doc.text('Reg: ' + hospitalInfo.registrationNo, infoX, hy); }
+
+      const rx = pw - mx;
+      doc.setFillColor(14, 165, 233);
+      doc.roundedRect(rx - 32, y, 32, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('INVOICE', rx - 16, y + 5, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setTextColor(30, 41, 59);
+      doc.text(paidBill?.billNo || selectedItem.bill?.billNo || 'BILL', rx, y + 16, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Date: ' + fmtDate(selectedItem.appointmentDate), rx, y + 22, { align: 'right' });
+
+      y = 58;
     }
 
-    // ── Header Background ──
-    doc.setFillColor(248, 250, 252);
-    doc.rect(0, 0, pw, 52, 'F');
-    doc.setDrawColor(14, 165, 233);
-    doc.setLineWidth(0.8);
-    doc.line(0, 52, pw, 52);
-
-    // ── Hospital Logo + Info (left) ──
-    const infoX = logoDataUrl ? mx + 28 : mx;
-    if (logoDataUrl) {
-      try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {}
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(14, 165, 233);
-    doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    let hy = y + 12;
-    if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy += 4; }
-    if (hospitalInfo.phone) { doc.text('Phone: ' + hospitalInfo.phone, infoX, hy); hy += 4; }
-    if (hospitalInfo.email) { doc.text('Email: ' + hospitalInfo.email, infoX, hy); hy += 4; }
-    if (hospitalInfo.gstNumber) { doc.text('GSTIN: ' + hospitalInfo.gstNumber, infoX, hy); hy += 4; }
-    if (hospitalInfo.registrationNo) { doc.text('Reg: ' + hospitalInfo.registrationNo, infoX, hy); }
-
-    // ── Invoice badge + Bill No (right) ──
-    const rx = pw - mx;
-    doc.setFillColor(14, 165, 233);
-    doc.roundedRect(rx - 32, y, 32, 7, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text('INVOICE', rx - 16, y + 5, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.setTextColor(30, 41, 59);
-    doc.text(paidBill?.billNo || selectedItem.bill?.billNo || 'BILL', rx, y + 16, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('Date: ' + fmtDate(selectedItem.appointmentDate), rx, y + 22, { align: 'right' });
-
-    y = 58;
-
-    // ── Patient & Consultation Info Table ──
+    // ── Patient & Consultation Info ──
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(mx, y, cw, 24, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240);
@@ -644,11 +682,7 @@ export default function BillingQueue() {
 
     // ── Itemised Table ──
     const items = (paidBill?.billItems || selectedItem.bill?.billItems || []).map((it: any, i: number) => [
-      String(i + 1),
-      it.name,
-      String(it.quantity),
-      rs(it.unitPrice),
-      rs(it.amount)
+      String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)
     ]);
 
     autoTable(doc, {
@@ -656,23 +690,10 @@ export default function BillingQueue() {
       head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
       body: items,
       theme: 'striped',
-      headStyles: {
-        fillColor: [14, 165, 233],
-        textColor: [255, 255, 255],
-        fontSize: 8,
-        fontStyle: 'bold',
-        halign: 'left',
-        cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
-      },
+      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
       bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
       alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 'auto' },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 30, halign: 'right' },
-        4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' }
-      },
+      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
       margin: { left: mx, right: mx },
     });
 
@@ -691,7 +712,7 @@ export default function BillingQueue() {
     }
 
     const lineH = 6;
-    const boxH = (summaryLines.length * lineH) + lineH + 14; // rows + divider + total
+    const boxH = (summaryLines.length * lineH) + lineH + 14;
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(sX, y, sW, boxH, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240);
@@ -708,18 +729,16 @@ export default function BillingQueue() {
       sY += lineH;
     });
 
-    // Divider
-    doc.setDrawColor(14, 165, 233);
+    doc.setDrawColor(14, 137, 143);
     doc.setLineWidth(0.4);
     doc.line(sX + 4, sY - 1, sX + sW - 4, sY - 1);
     sY += 4;
 
-    // Total
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
     doc.text('Total Amount', sX + 4, sY);
-    doc.setTextColor(14, 165, 233);
+    doc.setTextColor(14, 137, 143);
     doc.setFontSize(11);
     doc.text(rs(paidBill?.total ?? liveTotals.total), sX + sW - 4, sY, { align: 'right' });
 
@@ -751,21 +770,38 @@ export default function BillingQueue() {
 
     y += 20;
 
-    // ── Footer ──
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.15);
-    doc.line(mx, y, pw - mx, y);
-    y += 5;
+    // ── Signature section ──
+    const sigY = Math.max(y + 10, ph - (hasLetterhead ? 60 : 50));
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.line(mx, sigY, mx + 55, sigY);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('Thank you for choosing ' + (hospitalInfo.name || 'our hospital'), pw / 2, y, { align: 'center' });
-    y += 4;
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text('This is a computer-generated invoice. No signature required.', pw / 2, y, { align: 'center' });
+    doc.text('Patient / Attendant Signature', mx, sigY + 5);
+    doc.line(pw - mx - 55, sigY, pw - mx, sigY);
+    doc.text('Authorized Signatory', pw - mx - 55, sigY + 5);
 
-    // Save
+    // ── Footer ──
+    const footerY = sigY + 14;
+    if (!hasLetterhead) {
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.15);
+      doc.line(mx, footerY, pw - mx, footerY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Thank you for choosing ' + (hospitalInfo.name || 'our hospital'), pw / 2, footerY + 5, { align: 'center' });
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text('This is a computer-generated invoice.', pw / 2, footerY + 9, { align: 'center' });
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text('This is a computer-generated invoice.', pw / 2, footerY + 3, { align: 'center' });
+    }
+
     const fileName = `Invoice_${(paidBill?.billNo || selectedItem.bill?.billNo || 'BILL').replace(/\s+/g, '-')}_${selectedItem.patient.name.replace(/\s+/g, '_')}.pdf`;
     doc.save(fileName);
   };
@@ -938,8 +974,18 @@ export default function BillingQueue() {
                 </div>
               </div>
               <div className="bq-modal-body">
-                <div ref={printRef} className="bill-container">
-                  {/* Bill Header */}
+                <div ref={printRef} className="bill-container" style={hospitalInfo.letterhead ? {
+                  backgroundImage: `url(${hospitalInfo.letterhead.match(/\.pdf$/i) || hospitalInfo.letterhead.includes('/raw/upload/')
+                    ? hospitalInfo.letterhead.replace('/upload/', '/upload/f_png,pg_1/').replace(/\.pdf$/i, '.png')
+                    : hospitalInfo.letterhead})`,
+                  backgroundSize: "100% 100%",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  minHeight: "100vh",
+                } : undefined}>
+                  {/* Bill Header - only shown when no letterhead */}
+                  {!hospitalInfo.letterhead ? (
+                  <>
                   <div className="bill-header">
                     <div className="bill-logo">
                       {hospitalInfo.logo ? (
@@ -958,6 +1004,16 @@ export default function BillingQueue() {
                     </div>
                   </div>
                   <div className="bill-divider" />
+                  </>
+                  ) : (
+                  <div style={{display:"flex",justifyContent:"flex-end",padding:"70px 28px 0",marginBottom:20}}>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{display:"inline-block",padding:"4px 16px",borderRadius:6,background:"#0E898F",color:"#fff",fontSize:11,fontWeight:700,letterSpacing:"0.04em",marginBottom:6}}>INVOICE</div>
+                      <h2 style={{fontSize:18,fontWeight:700,color:"#1e293b",margin:"4px 0"}}>{selectedItem.bill?.billNo}</h2>
+                      <p style={{fontSize:12,color:"#64748b"}}>{fmtDate(selectedItem.appointmentDate)}</p>
+                    </div>
+                  </div>
+                  )}
                   
                   {/* Bill Info */}
                   <div className="bill-info-grid">
@@ -1285,8 +1341,16 @@ export default function BillingQueue() {
                     <span>Payment of <strong>{fmtCur(liveTotals.total)}</strong> collected via {collectForm.method}</span>
                   </div>
                   {/* ── Professional Bill ── */}
-                  <div ref={printRef} className="bill-print-wrap">
-                    {/* Hospital Header */}
+                  <div ref={printRef} className="bill-print-wrap" style={hospitalInfo.letterhead ? {
+                    backgroundImage: `url(${hospitalInfo.letterhead.match(/\.pdf$/i) || hospitalInfo.letterhead.includes('/raw/upload/')
+                      ? hospitalInfo.letterhead.replace('/upload/', '/upload/f_png,pg_1/').replace(/\.pdf$/i, '.png')
+                      : hospitalInfo.letterhead})`,
+                    backgroundSize: "100% 100%",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                  } : undefined}>
+                    {/* Hospital Header — only shown when no letterhead */}
+                    {!hospitalInfo.letterhead ? (
                     <div className="bill-ph">
                       <div className="bill-ph-left">
                         {hospitalInfo.logo
@@ -1302,6 +1366,15 @@ export default function BillingQueue() {
                         <p><Mail size={11} style={{display:"inline",marginRight:3}}/>{hospitalInfo.email || "—"}</p>
                       </div>
                     </div>
+                    ) : (
+                    <div style={{display:"flex",justifyContent:"flex-end",padding:"70px 28px 0"}}>
+                      <div style={{textAlign:"right"}}>
+                        <div className="bill-ph-badge">INVOICE</div>
+                        <h2 style={{fontSize:18,fontWeight:700,color:"#1e293b",margin:"4px 0"}}>{paidBill?.billNo || selectedItem.bill?.billNo}</h2>
+                        <p style={{fontSize:12,color:"#64748b"}}>{fmtDate(selectedItem.appointmentDate)}</p>
+                      </div>
+                    </div>
+                    )}
 
                     {/* Bill Meta */}
                     <div className="bill-meta-grid">

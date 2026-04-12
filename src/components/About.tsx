@@ -68,9 +68,7 @@ export default function About() {
           </h2>
 
           <p className={styles.description}>
-            India&apos;s first AI-based robotic aesthetic hospital, redefining
-            modern healthcare with advanced technology and ethical, patient-first
-            care.
+            India&apos;s first AI-based robotic aesthetic hospital, redefining modern healthcare with advanced technology and ethical, patient-first care.
           </p>
 
           {/* Features */}

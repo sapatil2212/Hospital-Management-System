@@ -20,8 +20,8 @@ const slides = [
     headlineAccent: "AI-Based Robotic",
     headlineSuffix: "Aesthetic Hospital",
     subtext:
-      "AI-powered diagnostics and robotic precision delivering safe, personalized, and result-driven care.",
-    image: "/images/treatment-opd-2.png",
+      "Experience the future of aesthetics with AI-powered diagnostics and robotic precision. We deliver highly personalized, safe, and result-driven treatments designed to enhance your natural beauty with minimal downtime and maximum accuracy.",
+    image: "/images/home-ai.png",
     imageAlt: "AI-Based Robotic Aesthetic Hospital",
   },
   {
@@ -29,8 +29,8 @@ const slides = [
     headlineAccent: "Skin",
     headlineSuffix: "Treatments",
     subtext:
-      "Precision-based skin analysis and treatments for safe, natural, and visible results.",
-    image: "/images/treatment-dermatology-2.png",
+      "Get flawless, radiant skin with intelligent AI-based analysis that understands your skin at a deeper level. Our treatments are tailored for precision, safety, and long-lasting visible results, ensuring natural enhancement without over-treatment.",
+    image: "/images/home-skin.png",
     imageAlt: "AI Skin Treatments",
   },
   {
@@ -38,8 +38,8 @@ const slides = [
     headlineAccent: "Hair",
     headlineSuffix: "Restoration",
     subtext:
-      "Smart diagnosis and advanced solutions for effective, long-lasting hair results.",
-    image: "/images/treatment-dermatology.png",
+      "Restore your confidence with AI-driven hair diagnostics and cutting-edge restoration techniques. From early-stage hair fall to advanced solutions, we provide customized treatments that ensure natural growth, density, and long-term results.",
+    image: "/images/home-hair.png",
     imageAlt: "AI Hair Restoration",
   },
   {
@@ -47,21 +47,11 @@ const slides = [
     headlineAccent: "Dental Care",
     headlineSuffix: "& Surgery",
     subtext:
-      "High-precision dental treatments with advanced imaging and modular OT safety.",
-    image: "/images/treatment-dental-2.png",
+      "Redefining dental care with next-generation technology, advanced imaging, and precision-driven procedures. Our modular OT setup ensures the highest standards of safety, hygiene, and comfort for every treatment and surgical need.",
+    image: "/images/home-dental.png",
     imageAlt: "Advanced Dental Care",
   },
-  {
-    headline: "Advanced Head & Neck",
-    headlineAccent: "Oncology",
-    headlineSuffix: "Care",
-    subtext:
-      "Expert-led, technology-driven care focused on accuracy, safety, and better outcomes.",
-    image: "/images/treatment-cancer-2.png",
-    imageAlt: "Head & Neck Oncology Care",
-  },
 ];
-
 
 
 export default function Hero() {

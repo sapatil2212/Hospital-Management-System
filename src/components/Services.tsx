@@ -25,32 +25,32 @@ const servicesList = [
     href: "/treatments/dental",
     icon: SmilePlus,
     image: "/images/Quick-Treatments/Dental.png",
-    description: "Advanced dental care with modern technology for healthy, confident smiles.",
-    features: ["Teeth Cleaning", "Root Canal", "Dental Implants"],
+    description: "Experience world-class dental care with AI-powered diagnostics, digital smile design, and pain-free procedures that restore your smile's natural beauty and strength.",
+    features: ["Teeth Cleaning", "Root Canal", "Dental Implants", "Smile Design"],
   },
   {
     label: "Skin",
     href: "/treatments/skin",
     icon: Sparkles,
     image: "/images/Quick-Treatments/Skin.png",
-    description: "Expert dermatology treatments for glowing, clear, and healthy skin.",
-    features: ["Acne Treatment", "Laser Therapy", "Anti-aging"],
+    description: "Our expert dermatologists combine AI skin analysis with advanced laser therapy and medical-grade treatments to deliver visible, long-lasting results for all skin types.",
+    features: ["Acne Treatment", "Laser Therapy", "Anti-aging", "Skin Brightening"],
   },
   {
     label: "Hair",
     href: "/treatments/hair",
     icon: Ribbon,
     image: "/images/Quick-Treatments/Hair.png",
-    description: "Advanced hair restoration and PRP treatments for natural hair regrowth.",
-    features: ["PRP Therapy", "Hair Transplant", "GFC Treatment"],
+    description: "Revitalize your hair with precision-based PRP therapy, GFC treatments, and advanced hair transplant procedures tailored to your unique hair restoration goals.",
+    features: ["PRP Therapy", "Hair Transplant", "GFC Treatment", "Trichology"],
   },
   {
     label: "HNF Cancer",
     href: "/treatments/oncology",
     icon: HeartPulse,
     image: "/images/Quick-Treatments/Hnfcancer.png",
-    description: "Comprehensive cancer care with early detection and advanced treatments.",
-    features: ["Early Screening", "Chemotherapy", "Immunotherapy"],
+    description: "Our specialist oncologists provide early detection screening, targeted therapies, and compassionate care for head, neck, and facial cancers with proven outcomes.",
+    features: ["Early Screening", "Targeted Therapy", "Immunotherapy", "Laser Care"],
   },
   {
     label: "Facial Trauma",
@@ -122,12 +122,10 @@ export default function Services() {
             Our Services
           </span>
           <h2 className="section-title">
-            Healthcare Services <br />
-            <span className={styles.titleAccent}>We Provide</span>
+            Healthcare Services <span className={styles.titleAccent}>We Provide</span>
           </h2>
           <p className="section-subtitle">
-            We offer a wide range of medical services designed to meet your
-            healthcare needs with the highest standards of medical excellence.
+            We offer a wide range of medical services designed to meet your healthcare needs with the highest standards of medical excellence.
           </p>
         </motion.div>
 

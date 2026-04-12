@@ -204,7 +204,7 @@ input, textarea {
 .section-subtitle {
   font-size: var(--font-size-base);
   color: var(--gray-500);
-  line-height: 1.8;
+  line-height: 1.5;
   max-width: 600px;
   margin: 0 auto;
 }

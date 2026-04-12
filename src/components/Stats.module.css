@@ -1,5 +1,5 @@
 .stats {
-  padding: var(--space-8) 0;
+  padding: var(--space-6) 0;
   background: var(--white);
   position: relative;
 }
@@ -98,7 +98,7 @@
 
 @media (max-width: 640px) {
   .stats {
-    padding: var(--space-4) 0;
+    padding: var(--space-3) 0;
   }
 
   .statsInner {

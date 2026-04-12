@@ -21,13 +21,20 @@ export async function GET(req: NextRequest) {
 
     const subDeptId = (profile as any).id;
 
-    // Show all appointments referred to THIS sub-department
-    // Referrals can be from any date - we show pending work regardless of original appointment date
+    // Get IDs of appointments that already have a procedure record in this sub-dept
+    const doneRecords = await (prisma as any).procedureRecord.findMany({
+      where: { hospitalId, subDepartmentId: subDeptId, appointmentId: { not: null } },
+      select: { appointmentId: true },
+    });
+    const doneAppointmentIds = new Set(doneRecords.map((r: any) => r.appointmentId));
+
+    // Show appointments referred to THIS sub-department that don't yet have a procedure recorded
     const appointments = await (prisma as any).appointment.findMany({
       where: {
         hospitalId,
         subDepartmentId: subDeptId,
         status: "COMPLETED",
+        ...(doneAppointmentIds.size > 0 ? { id: { notIn: Array.from(doneAppointmentIds) } } : {}),
       },
       include: {
         patient: {
@@ -90,7 +97,61 @@ export async function GET(req: NextRequest) {
       return apptDate.getTime() === today.getTime();
     }).length;
 
-    // Also fetch historical referrals (last 30 days, not today) for context
+    // Fetch completed appointments (ones that have a procedure record in this sub-dept)
+    let completedList: any[] = [];
+    if (doneAppointmentIds.size > 0) {
+      const completedAppts = await (prisma as any).appointment.findMany({
+        where: {
+          hospitalId,
+          subDepartmentId: subDeptId,
+          id: { in: Array.from(doneAppointmentIds) },
+        },
+        include: {
+          patient: { select: { id: true, name: true, patientId: true, phone: true, gender: true, dateOfBirth: true, bloodGroup: true } },
+          doctor: { select: { id: true, name: true, specialization: true, department: { select: { name: true } } } },
+          department: { select: { id: true, name: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 50,
+      });
+
+      // Also fetch the procedure records for these appointments to show what was done
+      const procRecords = await (prisma as any).procedureRecord.findMany({
+        where: { hospitalId, subDepartmentId: subDeptId, appointmentId: { in: Array.from(doneAppointmentIds) } },
+        include: { procedure: { select: { name: true, type: true } } },
+        orderBy: { performedAt: "desc" },
+      });
+      const recordsByAppt: Record<string, any[]> = {};
+      for (const r of procRecords) {
+        if (!recordsByAppt[r.appointmentId]) recordsByAppt[r.appointmentId] = [];
+        recordsByAppt[r.appointmentId].push(r);
+      }
+
+      completedList = completedAppts.map((a: any) => {
+        const age = a.patient?.dateOfBirth
+          ? Math.floor((Date.now() - new Date(a.patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+          : null;
+        const records = recordsByAppt[a.id] || [];
+        return {
+          id: a.id,
+          appointmentDate: a.appointmentDate,
+          tokenNumber: a.tokenNumber,
+          timeSlot: a.timeSlot,
+          type: a.type,
+          consultationFee: a.consultationFee,
+          subDeptNote: a.subDeptNote,
+          patient: { id: a.patient?.id, name: a.patient?.name || "Unknown", patientId: a.patient?.patientId, phone: a.patient?.phone, gender: a.patient?.gender, age },
+          doctor: { name: a.doctor?.name || "Unknown", specialization: a.doctor?.specialization, department: a.doctor?.department?.name },
+          procedureRecords: records.map((r: any) => ({
+            id: r.id, procedureName: r.procedure?.name, procedureType: r.procedure?.type,
+            amount: r.amount, status: r.status, performedBy: r.performedBy,
+            performedAt: r.performedAt, notes: r.notes,
+          })),
+        };
+      });
+    }
+
+    // Also fetch historical referrals (last 30 days) for context
     const recentTotal = await (prisma as any).appointment.count({
       where: {
         hospitalId,
@@ -102,15 +163,14 @@ export async function GET(req: NextRequest) {
     return successResponse(
       {
         queue,
+        completedList,
         date: today.toISOString(),
         subDeptName: (profile as any).name,
         subDeptId,
         flow: (profile as any).flow,
         total: queue.length,
         todayReferrals,
-        waiting: queue.filter((q: any) => !q.subDeptProcessed).length,
-        inProgress: 0,
-        completed: queue.length,
+        completedCount: completedList.length,
         recentTotal,
       },
       "Queue fetched"

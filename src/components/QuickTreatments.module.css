@@ -1,5 +1,5 @@
 .section {
-  padding: 1.5rem 0 2rem;
+  padding: 1rem 0 1.5rem;
   background: #ffffff;
 }
 
@@ -46,7 +46,7 @@
 
 @media (max-width: 480px) {
   .section {
-    padding: 1rem 16px 1.5rem;
+    padding: 0.75rem 16px 1rem;
   }
 
   .cardsContainer {

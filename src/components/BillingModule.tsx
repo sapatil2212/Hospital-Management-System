@@ -64,7 +64,17 @@ export default function BillingModule() {
   const [hospitalInfo, setHospitalInfo] = useState<any>(null);
 
   useEffect(() => {
-    apiFetch("/api/hospital/details").then(d => { if (d.success) setHospitalInfo(d.data); });
+    // Try settings first (has letterhead), fall back to hospital details
+    (async () => {
+      try {
+        const sr = await apiFetch("/api/config/settings");
+        if (sr.success && sr.data?.settings) {
+          setHospitalInfo({ settings: sr.data.settings });
+          return;
+        }
+      } catch {}
+      apiFetch("/api/hospital/details").then(d => { if (d.success) setHospitalInfo(d.data); });
+    })();
   }, []);
 
   const fetchBills = useCallback(async (page = 1) => {
@@ -824,7 +834,7 @@ function BillDetail({ bill, loading, hospitalInfo, onBack, onRefresh }:any) {
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:13px;color:#334155;background:#fff;padding:0}
-.print-wrap{max-width:800px;margin:0 auto;padding:32px 40px 40px;background:#fff}
+.print-wrap{max-width:800px;margin:0 auto;padding:32px 40px 40px;background:#fff;background-size:100% 100%;background-position:center;background-repeat:no-repeat}
 .hospital-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0E898F;padding-bottom:18px;margin-bottom:24px}
 .h-logo-img{width:70px;height:70px;object-fit:contain}
 .h-logo{width:70px;height:70px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:900;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
@@ -856,7 +866,7 @@ body{font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:13px;color:#33415
 .btn-download:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(59,130,246,0.4)}
 .btn-print{background:#fff;color:#475569;border:1.5px solid #e2e8f0}
 .btn-print:hover{background:#f8fafc;border-color:#cbd5e1}
-@media print{.action-bar{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{.action-bar{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-wrap{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-size:100% 100%!important;background-position:center!important;background-repeat:no-repeat!important}}
 </style></head><body>
 ${printContent}
 <div class="action-bar">
@@ -1226,10 +1236,26 @@ function PrintBill({ bill, hospitalInfo }:{ bill:any; hospitalInfo:any }) {
   const gst = hospitalInfo?.settings?.gstNumber || "";
   const regNo = hospitalInfo?.settings?.registrationNo || "";
   const logo = hospitalInfo?.settings?.logo || "";
+  const letterhead = hospitalInfo?.settings?.letterhead || "";
+  // For PDF letterheads on Cloudinary, convert to image via URL transformation
+  const letterheadImg = letterhead
+    ? (letterhead.match(/\.pdf$/i) || letterhead.includes('/raw/upload/'))
+      ? letterhead.replace('/upload/', '/upload/f_png,pg_1/').replace(/\.pdf$/i, '.png')
+      : letterhead
+    : "";
+  const hasLetterhead = !!letterheadImg;
 
   return (
-    <div className="print-wrap">
-      {/* Hospital Header */}
+    <div className="print-wrap" style={hasLetterhead ? {
+      backgroundImage: `url(${letterheadImg})`,
+      backgroundSize: "100% 100%",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      minHeight: "100vh",
+      padding: "0",
+    } : undefined}>
+      {/* Hospital Header — only shown when no letterhead */}
+      {!hasLetterhead && (
       <div className="hospital-header">
         <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
           {logo ? (
@@ -1260,6 +1286,20 @@ function PrintBill({ bill, hospitalInfo }:{ bill:any; hospitalInfo:any }) {
           </div>
         </div>
       </div>
+      )}
+      {/* When letterhead is used, add invoice badge + bill info overlaid on letterhead header area */}
+      {hasLetterhead && (
+        <div style={{display:"flex",justifyContent:"flex-end",padding:"70px 40px 0",marginBottom:20}}>
+          <div style={{textAlign:"right"}}>
+            <div style={{display:"inline-block",padding:"4px 16px",borderRadius:6,background:"#0E898F",color:"#fff",fontSize:11,fontWeight:700,letterSpacing:"0.04em",marginBottom:6}}>INVOICE</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#1e293b",fontFamily:"monospace"}}>{bill.billNo}</div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{fmtDate(bill.createdAt)}</div>
+            <div style={{marginTop:6,display:"inline-flex",padding:"3px 12px",borderRadius:100,background:sc.bg,border:`1.5px solid ${sc.color}`}}>
+              <span style={{fontSize:10,fontWeight:700,color:sc.color}}>{sc.label}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Patient & Bill Info */}
       <div className="bill-info-row">

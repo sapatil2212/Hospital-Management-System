@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import { useAppointment } from './AppointmentProvider';
 import styles from './Newsletter.module.css';
 
@@ -26,6 +27,7 @@ const Newsletter: React.FC = () => {
               onClick={openAppointment}
             >
               Book Appointment Now
+              <ArrowRight size={18} className={styles.buttonIcon} />
             </button>
           </div>
         </div>
