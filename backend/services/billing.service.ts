@@ -713,10 +713,10 @@ export async function getBillingQueue(
   const appointments = await (prisma as any).appointment.findMany({
     where,
     include: {
-      patient: { select: { id: true, name: true, patientId: true, phone: true } },
+      patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
       doctor: { select: { id: true, name: true, specialization: true, consultationFee: true } },
-      department: { select: { name: true } },
-      subDepartment: { select: { name: true } },
+      department: { select: { id: true, name: true } },
+      subDepartment: { select: { id: true, name: true } },
     },
     orderBy: { updatedAt: "desc" },
     take: 100,

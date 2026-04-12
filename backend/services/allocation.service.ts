@@ -3,6 +3,8 @@ import {
   findAllAllocations, updateAllocation, getBedStatusOverview,
 } from "../repositories/allocation.repo";
 import { findBedById, updateBed } from "../repositories/bed.repo";
+import { createPatient, findPatientById } from "../repositories/patient.repo";
+import { generatePatientId } from "../repositories/patient.repo";
 
 export class AllocationServiceError extends Error {
   constructor(public message: string, public code: string, public status: number = 400) {
@@ -13,6 +15,8 @@ export class AllocationServiceError extends Error {
 
 export const allocateBed = async (hospitalId: string, data: {
   bedId: string;
+  patientId?: string;
+  entryType?: "PATIENT" | "MANUAL";
   patientName: string;
   patientAge?: number;
   patientGender?: string;
@@ -24,7 +28,41 @@ export const allocateBed = async (hospitalId: string, data: {
   admissionDate?: string;
   expectedDischargeDate?: string;
   notes?: string;
+  departmentId?: string;
 }) => {
+  let patientId = data.patientId;
+
+  // If manual entry, create a new patient
+  if (data.entryType === "MANUAL") {
+    if (!data.patientPhone) {
+      throw new AllocationServiceError("Phone number is required for manual patient entry", "PHONE_REQUIRED", 400);
+    }
+    const patientIdGenerated = await generatePatientId(hospitalId);
+    const newPatient = await createPatient({
+      hospitalId,
+      patientId: patientIdGenerated,
+      name: data.patientName,
+      phone: data.patientPhone,
+      email: null,
+      gender: data.patientGender || null,
+      dateOfBirth: null, // Age will be stored in allocation
+      bloodGroup: null,
+      address: null,
+      profilePhoto: null,
+      documents: null,
+      patientType: "IPD",
+      allergies: null,
+      emergencyName: data.attendantName || null,
+      emergencyRelation: data.attendantName ? "Attendant" : null,
+      emergencyPhone: data.attendantPhone || null,
+    });
+    patientId = newPatient.id;
+  } else if (data.patientId) {
+    // Verify patient exists
+    const patient = await findPatientById(data.patientId, hospitalId);
+    if (!patient) throw new AllocationServiceError("Patient not found", "PATIENT_NOT_FOUND", 404);
+  }
+
   const bed = await findBedById(data.bedId, hospitalId) as any;
   if (!bed) throw new AllocationServiceError("Bed not found", "BED_NOT_FOUND", 404);
   if (bed.status !== "AVAILABLE") {
@@ -45,9 +83,21 @@ export const allocateBed = async (hospitalId: string, data: {
 
   return createAllocation({
     hospitalId,
-    ...data,
+    bedId: data.bedId,
+    patientId,
+    patientName: data.patientName,
+    patientAge: data.patientAge,
+    patientGender: data.patientGender,
+    patientPhone: data.patientPhone,
+    attendantName: data.attendantName,
+    attendantPhone: data.attendantPhone,
+    diagnosis: data.diagnosis,
+    admittingDoctorName: data.admittingDoctorName,
     admissionDate: data.admissionDate ? new Date(data.admissionDate) : new Date(),
     expectedDischargeDate: data.expectedDischargeDate ? new Date(data.expectedDischargeDate) : null,
+    notes: data.notes,
+    departmentId: data.departmentId,
+    entryType: data.entryType || "PATIENT",
     status: "ACTIVE",
   });
 };

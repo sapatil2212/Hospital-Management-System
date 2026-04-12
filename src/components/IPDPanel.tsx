@@ -108,7 +108,9 @@ const BED_STATUS_CFG: Record<string, { bg: string; color: string; border: string
   RESERVED:    { bg: "#f0f9ff", color: "#0369a1", border: "#bae6fd", label: "Reserved" },
 };
 
-function AllocateModal({ bed, ward, onClose, onDone }: { bed: Bed; ward?: { id: string; name: string }; onClose: () => void; onDone: () => void }) {
+function AllocateModal({ bed, ward, wards, onClose, onDone }: { bed?: Bed; ward?: { id: string; name: string }; wards?: Ward[]; onClose: () => void; onDone: () => void }) {
+  const [selectedWardId, setSelectedWardId] = useState("");
+  const [selectedBedId, setSelectedBedId] = useState("");
   const [entryType, setEntryType] = useState<"search" | "manual">("search");
   const [form, setForm] = useState({
     patientId: "", patientName: "", patientAge: "", patientGender: "Male", patientPhone: "",
@@ -163,12 +165,13 @@ function AllocateModal({ bed, ward, onClose, onDone }: { bed: Bed; ward?: { id: 
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!bed && !selectedBedId) { setError("Please select a bed"); return; }
     if (!form.patientName.trim()) { setError("Patient name is required"); return; }
     if (!form.departmentId) { setError("Please select a department"); return; }
     setSaving(true);
     setError("");
     const payload: any = {
-      bedId: bed.id,
+      bedId: bed ? bed.id : selectedBedId,
       patientId: entryType === "search" && form.patientId ? form.patientId : undefined,
       patientName: form.patientName.trim(),
       patientAge: form.patientAge ? parseInt(form.patientAge) : undefined,
@@ -195,8 +198,8 @@ function AllocateModal({ bed, ward, onClose, onDone }: { bed: Bed; ward?: { id: 
       <div className="ipd-modal" onClick={e => e.stopPropagation()}>
         <div className="ipd-modal-hd">
           <div>
-            <div className="ipd-modal-title">Admit Patient — Bed {bed.bedNumber}</div>
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{ward ? ward.name : ""} · Fill patient admission details</div>
+            <div className="ipd-modal-title">Admit Patient {bed ? `— Bed ${bed.bedNumber}` : ""}</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{ward ? ward.name : bed ? "" : "Select bed and fill patient details"}</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={18} /></button>
         </div>
@@ -234,7 +237,35 @@ function AllocateModal({ bed, ward, onClose, onDone }: { bed: Bed; ward?: { id: 
               </div>
             )}
 
+            {entryType === "manual" && (
+              <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 9, padding: "12px 14px", marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#0369a1", marginBottom: 4 }}>Manual Patient Entry</div>
+                <div style={{ fontSize: 11, color: "#64748b" }}>A new patient record will be created in the database with remark "Manual IPD entry".</div>
+              </div>
+            )}
+
             <div className="ipd-grid-2">
+              {!bed && (
+                <>
+                  <div className="ipd-field">
+                    <label className="ipd-lbl">Ward / Room *</label>
+                    <select className="ipd-select" value={selectedWardId} onChange={e => { setSelectedWardId(e.target.value); setSelectedBedId(""); }} required>
+                      <option value="">Select Ward</option>
+                      {wards?.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="ipd-field">
+                    <label className="ipd-lbl">Available Bed *</label>
+                    <select className="ipd-select" value={selectedBedId} onChange={e => setSelectedBedId(e.target.value)} required disabled={!selectedWardId}>
+                      <option value="">Select Bed</option>
+                      {wards?.find(w => w.id === selectedWardId)?.beds.filter(b => b.status === "AVAILABLE").map(b => (
+                        <option key={b.id} value={b.id}>Bed {b.bedNumber}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ gridColumn: "1/-1", height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+                </>
+              )}
               <div className="ipd-field" style={{ gridColumn: "1/-1" }}>
                 <label className="ipd-lbl">Patient Name * {entryType === "manual" && <span style={{ color: "#dc2626", fontSize: 10 }}>(Manual Entry)</span>}</label>
                 <input className="ipd-input" value={form.patientName} onChange={e => set("patientName", e.target.value)} placeholder={entryType === "manual" ? "Enter patient full name" : "Select from search or enter manually"} required />
@@ -250,8 +281,8 @@ function AllocateModal({ bed, ward, onClose, onDone }: { bed: Bed; ward?: { id: 
                 </select>
               </div>
               <div className="ipd-field">
-                <label className="ipd-lbl">Patient Phone</label>
-                <input className="ipd-input" value={form.patientPhone} onChange={e => set("patientPhone", e.target.value)} placeholder="Phone number" />
+                <label className="ipd-lbl">Patient Phone {entryType === "manual" && <span style={{ color: "#dc2626" }}>*</span>}</label>
+                <input className="ipd-input" value={form.patientPhone} onChange={e => set("patientPhone", e.target.value)} placeholder="Phone number" required={entryType === "manual"} />
               </div>
               <div className="ipd-field">
                 <label className="ipd-lbl">Department *</label>
@@ -368,7 +399,7 @@ export default function IPDPanel() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"beds" | "admissions">("beds");
   const [search, setSearch] = useState("");
-  const [allocateBed, setAllocateBed] = useState<{ bed: Bed; ward?: { id: string; name: string } } | null>(null);
+  const [allocateBed, setAllocateBed] = useState<{ bed?: Bed; ward?: { id: string; name: string }; isGlobal?: boolean } | null>(null);
   const [dischargingAlloc, setDischargingAlloc] = useState<{ allocation: Allocation; bedNumber: string } | null>(null);
   const [updatingBedId, setUpdatingBedId] = useState<string | null>(null);
 
@@ -422,6 +453,7 @@ export default function IPDPanel() {
     if (bedSort.key === "name") return dir * a.name.localeCompare(b.name);
     if (bedSort.key === "available") return dir * (a.availableBeds - b.availableBeds);
     if (bedSort.key === "occupied") return dir * (a.occupiedBeds - b.occupiedBeds);
+    if (bedSort.key === "type") return dir * (a.type || "").localeCompare(b.type || "");
     return 0;
   });
 
@@ -446,6 +478,7 @@ export default function IPDPanel() {
       const daysB = daysSince(b.admissionDate);
       return dir * (daysA - daysB);
     }
+    if (allocSort.key === "wardType") return dir * ((a.bed?.ward?.type || "").localeCompare(b.bed?.ward?.type || ""));
     return 0;
   });
 
@@ -456,7 +489,7 @@ export default function IPDPanel() {
       <style>{CSS}</style>
 
       {allocateBed && (
-        <AllocateModal bed={allocateBed.bed} ward={allocateBed.ward} onClose={() => setAllocateBed(null)} onDone={load} />
+        <AllocateModal bed={allocateBed.bed} ward={allocateBed.ward} wards={overview?.wards} onClose={() => setAllocateBed(null)} onDone={load} />
       )}
       {dischargingAlloc && (
         <DischargeModal
@@ -484,6 +517,9 @@ export default function IPDPanel() {
               </button>
             ))}
           </div>
+          <button onClick={() => setAllocateBed({ isGlobal: true })} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#0E898F,#07595D)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(14,137,143,.28)", whiteSpace: "nowrap" }}>
+            <Plus size={13} /> Admit Patient
+          </button>
           <a href="/api/export/ipd" download title="Export IPD admissions as CSV"
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 12, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>
             <Download size={13} />Export CSV
@@ -534,7 +570,7 @@ export default function IPDPanel() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
-              {[{ k: "name", l: "Name" }, { k: "available", l: "Available" }, { k: "occupied", l: "Occupied" }].map(s => (
+              {[{ k: "name", l: "Name" }, { k: "type", l: "Type" }, { k: "available", l: "Available" }, { k: "occupied", l: "Occupied" }].map(s => (
                 <button key={s.k} type="button" onClick={() => toggleBedSort(s.k)} className={`ipd-sort-btn ${bedSort.key === s.k ? "active" : ""}`}>
                   {s.l} <ArrowUpDown size={10} />
                 </button>
@@ -633,7 +669,7 @@ export default function IPDPanel() {
           <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
-              {[{ k: "admissionDate", l: "Date" }, { k: "patientName", l: "Patient" }, { k: "days", l: "Days" }].map(s => (
+              {[{ k: "admissionDate", l: "Date" }, { k: "patientName", l: "Patient" }, { k: "days", l: "Days" }, { k: "wardType", l: "Ward Type" }].map(s => (
                 <button key={s.k} type="button" onClick={() => toggleAllocSort(s.k)} className={`ipd-sort-btn ${allocSort.key === s.k ? "active" : ""}`}>
                   {s.l} <ArrowUpDown size={10} />
                 </button>
@@ -666,7 +702,7 @@ export default function IPDPanel() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                    {["Bed", "Patient", "Department", "Age/Gender", "Diagnosis", "Doctor", "Admitted", "Days", "Exp. Discharge", "Action"].map(h => (
+                    {["Bed", "Patient", "Department", "Ward Type", "Age/Gender", "Diagnosis", "Doctor", "Admitted", "Days", "Exp. Discharge", "Action"].map(h => (
                       <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -692,6 +728,9 @@ export default function IPDPanel() {
                           ) : (
                             <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
                           )}
+                        </td>
+                        <td style={{ padding: "13px 14px", fontSize: 12, color: "#64748b" }}>
+                          {a.bed?.ward?.type || "—"}
                         </td>
                         <td style={{ padding: "13px 14px", fontSize: 12, color: "#64748b" }}>
                           {a.patientAge ? `${a.patientAge}y` : "—"} {a.patientGender || ""}

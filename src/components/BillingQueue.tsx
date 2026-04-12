@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Search, RefreshCw, Loader2, CreditCard,
   Receipt, CheckCircle2, Clock, Building2, Eye, X, Plus, Trash2,
-  Printer, Phone, Mail, MapPin, IndianRupee, ChevronRight,
+  Printer, Phone, Mail, MapPin, IndianRupee, ChevronRight, ChevronDown, ArrowUpDown,
   Stethoscope, CheckCircle, Tag, PercentIcon, Download,
-  Banknote, Smartphone, ShieldCheck, Settings2
+  Banknote, Smartphone, ShieldCheck, Settings2, Send, XCircle, AlertTriangle
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -69,8 +69,17 @@ const fmtTime = (t: string) => {
 };
 
 const api = async (url: string, opts?: RequestInit) => {
-  const r = await fetch(url, { credentials: "include", ...opts });
-  return r.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const r = await fetch(url, { credentials: "include", signal: controller.signal, ...opts });
+    clearTimeout(timer);
+    const text = await r.text();
+    try { return JSON.parse(text); } catch { return { success: false, message: text || "Invalid response" }; }
+  } catch (e: any) {
+    clearTimeout(timer);
+    return { success: false, message: e.name === "AbortError" ? "Request timed out" : (e.message || "Network error") };
+  }
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -93,8 +102,47 @@ export default function BillingQueue() {
   const [paidBill, setPaidBill] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>({ name: "Hospital", address: "", phone: "", email: "", logo: "", gstNumber: "", registrationNo: "", letterhead: "", letterheadType: "IMAGE", letterheadSize: "A4" });
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Caches for PDF generation performance
+  const imgCache = useRef<Record<string, string | null>>({});
+  const jsPdfCache = useRef<{ jsPDF: any; autoTable: any } | null>(null);
+
+  // Toast notification state
+  const [toast, setToast] = useState<{ show: boolean; type: "success" | "error" | "warning"; title: string; message: string } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (type: "success" | "error" | "warning", title: string, message: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ show: true, type, title, message });
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  };
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
+
+  // Sort state
+  const [sortBy, setSortBy] = useState<string>("newest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  const selectableItems = useMemo(() => queue.filter(q => q.bill), [queue]);
+  const emailableItems = useMemo(() => queue.filter(q => q.bill && q.patient.email), [queue]);
+  const toggleSelect = (id: string) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleSelectAll = () => {
+    const allIds = selectableItems.map(q => q.id);
+    setSelectedIds(prev => allIds.every(id => prev.has(id)) ? new Set() : new Set(allIds));
+  };
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -178,7 +226,7 @@ export default function BillingQueue() {
     setDeleting(billId);
     const d = await api(`/api/billing/${billId}`, { method: "DELETE" });
     if (d.success) loadQueue();
-    else alert(d.message || "Failed to delete bill");
+    else showToast("error", "Delete Failed", d.message || "Failed to delete bill");
     setDeleting(null);
   };
 
@@ -195,6 +243,218 @@ export default function BillingQueue() {
 
   const handleRemoveCharge = (idx: number) => {
     setCollectForm(f => ({ ...f, addedCharges: f.addedCharges.filter((_, i) => i !== idx) }));
+  };
+
+  const generateBillPDFBase64 = async (item: QueueItem): Promise<string | null> => {
+    if (!item?.bill) return null;
+    const { jsPDF, autoTable } = await getJsPdf();
+
+    const pageSize = (hospitalInfo.letterheadSize || 'A4').toLowerCase() as 'a4' | 'a5' | 'letter';
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize });
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    const mx = 18;
+    const cw = pw - mx * 2;
+    const rs = (v: number) => `Rs. ${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const letterheadDataUrl = await loadImageAsBase64(hospitalInfo.letterhead || '');
+    const logoDataUrl = letterheadDataUrl ? null : await loadImageAsBase64(hospitalInfo.logo || '');
+    const hasLetterhead = !!letterheadDataUrl;
+
+    let y: number;
+    if (hasLetterhead) {
+      try { doc.addImage(letterheadDataUrl!, 'PNG', 0, 0, pw, ph); } catch {}
+      y = 80;
+      const rx = pw - mx;
+      doc.setFillColor(14, 137, 143);
+      doc.roundedRect(rx - 32, 52, 32, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+      doc.text('INVOICE', rx - 16, 57, { align: 'center' });
+      doc.setFontSize(12); doc.setTextColor(30, 41, 59);
+      doc.text(item.bill.billNo || 'BILL', rx, 68, { align: 'right' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('Date: ' + fmtDate(item.appointmentDate), rx, 74, { align: 'right' });
+    } else {
+      y = 16;
+      doc.setFillColor(248, 250, 252); doc.rect(0, 0, pw, 52, 'F');
+      doc.setDrawColor(14, 165, 233); doc.setLineWidth(0.8); doc.line(0, 52, pw, 52);
+      const infoX = logoDataUrl ? mx + 28 : mx;
+      if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {} }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(14, 165, 233);
+      doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      let hy = y + 12;
+      if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy += 4; }
+      if (hospitalInfo.phone) { doc.text('Phone: ' + hospitalInfo.phone, infoX, hy); hy += 4; }
+      if (hospitalInfo.email) { doc.text('Email: ' + hospitalInfo.email, infoX, hy); hy += 4; }
+      if (hospitalInfo.gstNumber) { doc.text('GSTIN: ' + hospitalInfo.gstNumber, infoX, hy); hy += 4; }
+      if (hospitalInfo.registrationNo) { doc.text('Reg: ' + hospitalInfo.registrationNo, infoX, hy); }
+      const rx = pw - mx;
+      doc.setFillColor(14, 165, 233); doc.roundedRect(rx - 32, y, 32, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+      doc.text('INVOICE', rx - 16, y + 5, { align: 'center' });
+      doc.setFontSize(12); doc.setTextColor(30, 41, 59);
+      doc.text(item.bill.billNo || 'BILL', rx, y + 16, { align: 'right' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('Date: ' + fmtDate(item.appointmentDate), rx, y + 22, { align: 'right' });
+      y = 58;
+    }
+
+    // Patient info
+    doc.setFillColor(248, 250, 252); doc.roundedRect(mx, y, cw, 24, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2); doc.roundedRect(mx, y, cw, 24, 2, 2, 'S');
+    const metaItems = [
+      { label: 'Patient Name', value: item.patient.name },
+      { label: 'Patient ID', value: item.patient.patientId },
+      { label: 'Date & Time', value: fmtDate(item.appointmentDate) + ' | ' + fmtTime(item.timeSlot) },
+      { label: 'Consultation By', value: 'Dr. ' + item.doctor.name + (item.doctor.specialization ? ' - ' + item.doctor.specialization : '') },
+      { label: 'Department', value: item.department?.name || item.subDepartment?.name || '-' },
+    ];
+    const metaCols = 3; const mColW = cw / metaCols;
+    metaItems.forEach((m, i) => {
+      const col = i % metaCols; const row = Math.floor(i / metaCols);
+      const mX = mx + 4 + col * mColW; const mY = y + 5 + row * 11;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+      doc.text(m.label.toUpperCase(), mX, mY);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30, 41, 59);
+      doc.text(m.value, mX, mY + 4.5);
+    });
+    y += 30;
+
+    // Items table
+    const items = (item.bill.billItems || []).map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
+      body: items,
+      theme: 'striped',
+      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+      bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
+      margin: { left: mx, right: mx },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+
+    // Summary
+    const sW = 78; const sX = pw - mx - sW;
+    const summaryLines: Array<{ label: string; value: string; color?: number[] }> = [];
+    summaryLines.push({ label: 'Subtotal', value: rs(item.bill.subtotal || 0) });
+    if (item.bill.isGst && item.bill.cgst > 0) summaryLines.push({ label: `CGST (${item.bill.cgst}%)`, value: rs((item.bill.subtotal * item.bill.cgst) / 100) });
+    if (item.bill.isGst && item.bill.sgst > 0) summaryLines.push({ label: `SGST (${item.bill.sgst}%)`, value: rs((item.bill.subtotal * item.bill.sgst) / 100) });
+    if (item.bill.isGst && item.bill.igst > 0) summaryLines.push({ label: `IGST (${item.bill.igst}%)`, value: rs((item.bill.subtotal * item.bill.igst) / 100) });
+    if (item.bill.discount > 0) summaryLines.push({ label: 'Discount', value: '- ' + rs(item.bill.discount), color: [5, 150, 105] });
+    const lineH = 6; const boxH = (summaryLines.length * lineH) + lineH + 14;
+    doc.setFillColor(248, 250, 252); doc.roundedRect(sX, y, sW, boxH, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2); doc.roundedRect(sX, y, sW, boxH, 2, 2, 'S');
+    let sY = y + 6;
+    summaryLines.forEach(row => {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+      doc.setTextColor(...(row.color || [71, 85, 105]) as [number, number, number]);
+      doc.text(row.label, sX + 4, sY); doc.text(row.value, sX + sW - 4, sY, { align: 'right' }); sY += lineH;
+    });
+    doc.setDrawColor(14, 137, 143); doc.setLineWidth(0.4); doc.line(sX + 4, sY - 1, sX + sW - 4, sY - 1); sY += 4;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
+    doc.text('Total Amount', sX + 4, sY);
+    doc.setTextColor(14, 137, 143); doc.setFontSize(11);
+    doc.text(rs(item.bill.total || 0), sX + sW - 4, sY, { align: 'right' });
+    y += boxH + 8;
+
+    // Payment info
+    if (item.bill.status === 'PAID') {
+      doc.setFillColor(240, 253, 244); doc.setDrawColor(187, 247, 208); doc.setLineWidth(0.3);
+      doc.roundedRect(mx, y, cw, 14, 2, 2, 'FD');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(148, 163, 184);
+      doc.text('STATUS', mx + 4, y + 5);
+      doc.setFontSize(8.5); doc.setTextColor(22, 101, 52); doc.text('PAID', mx + 4, y + 10);
+      doc.setFontSize(6.5); doc.setTextColor(148, 163, 184); doc.text('AMOUNT PAID', mx + 40, y + 5);
+      doc.setFontSize(8.5); doc.setTextColor(22, 101, 52); doc.text(rs(item.bill.total || 0), mx + 40, y + 10);
+      y += 20;
+    }
+
+    // Signature
+    const sigY = Math.max(y + 10, ph - (hasLetterhead ? 60 : 50));
+    doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.3);
+    doc.line(mx, sigY, mx + 55, sigY);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+    doc.text('Patient / Attendant Signature', mx, sigY + 5);
+    doc.line(pw - mx - 55, sigY, pw - mx, sigY);
+    doc.text('Authorized Signatory', pw - mx - 55, sigY + 5);
+
+    // Footer
+    const footerY = sigY + 14;
+    if (!hasLetterhead) {
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.15); doc.line(mx, footerY, pw - mx, footerY);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('Thank you for choosing ' + (hospitalInfo.name || 'our hospital'), pw / 2, footerY + 5, { align: 'center' });
+      doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+      doc.text('This is a computer-generated invoice.', pw / 2, footerY + 9, { align: 'center' });
+    } else {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+      doc.text('This is a computer-generated invoice.', pw / 2, footerY + 3, { align: 'center' });
+    }
+
+    // Return base64 string (strip data URI prefix)
+    const dataUri = doc.output('datauristring');
+    return dataUri.split(',')[1];
+  };
+
+  const handleSendEmail = async (item: QueueItem) => {
+    if (!item?.bill) return;
+    setSendingEmail(item.bill.id);
+    try {
+      const pdfBase64 = await generateBillPDFBase64(item);
+      if (!pdfBase64) { showToast("error", "PDF Error", "Failed to generate PDF for email attachment."); setSendingEmail(null); return; }
+
+      const res = await api(`/api/billing/${item.bill.id}/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64 }),
+      });
+      console.log("[send-email client] Response:", res);
+      if (res.success) {
+        showToast("success", "Email Sent!", `Invoice emailed to ${res.data?.email || item.patient.email}`);
+      } else {
+        showToast("error", "Send Failed", res.message || "Failed to send email");
+      }
+    } catch (err) {
+      console.error('Send email error:', err);
+      showToast("error", "Send Failed", "Failed to send email. Please try again.");
+    }
+    setSendingEmail(null);
+  };
+
+  const handleBulkSendEmail = async () => {
+    const items = queue.filter(q => selectedIds.has(q.id) && q.bill && q.patient.email);
+    if (items.length === 0) { showToast("warning", "No Selection", "Select bills with patient emails to send."); return; }
+
+    setBulkSending(true);
+    setBulkProgress({ current: 0, total: items.length, success: 0, failed: 0 });
+
+    let success = 0, failed = 0;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      setBulkProgress(p => ({ ...p, current: i + 1 }));
+      try {
+        const pdfBase64 = await generateBillPDFBase64(item);
+        if (!pdfBase64) { failed++; continue; }
+        const res = await api(`/api/billing/${item.bill!.id}/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pdfBase64 }),
+        });
+        if (res.success) success++; else failed++;
+      } catch { failed++; }
+      setBulkProgress(p => ({ ...p, success, failed }));
+    }
+
+    setBulkSending(false);
+    setSelectedIds(new Set());
+    if (failed === 0) {
+      showToast("success", "Bulk Send Complete!", `Successfully emailed ${success} invoice${success > 1 ? "s" : ""}.`);
+    } else {
+      showToast("warning", "Bulk Send Done", `${success} sent, ${failed} failed out of ${items.length} invoices.`);
+    }
   };
 
   const liveTotals = useMemo(() => {
@@ -260,12 +520,31 @@ export default function BillingQueue() {
         setPaidBill(billRes.data || billRes);
         setCollectStep("receipt");
         loadQueue();
+        
+        // Auto-send email after successful payment (generate PDF client-side, then send)
+        if (selectedItem?.patient?.email && selectedItem?.bill) {
+          // Re-fetch bill to get updated data after payment
+          const freshBillRes = await api(`/api/billing/${billId}`);
+          const freshBill = freshBillRes?.data || freshBillRes;
+          if (freshBill) {
+            const emailItem = { ...selectedItem, bill: { ...selectedItem.bill, ...freshBill, status: 'PAID', paidAmount: freshBill.total } };
+            generateBillPDFBase64(emailItem).then(pdfBase64 => {
+              if (pdfBase64) {
+                api(`/api/billing/${billId}/send-email`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ pdfBase64 }),
+                }).catch(() => {});
+              }
+            }).catch(() => {});
+          }
+        }
       } else {
-        alert(payRes.message || "Payment failed");
+        showToast("error", "Payment Failed", payRes.message || "Payment failed");
       }
     } catch (err) {
       console.error('Billing error:', err);
-      alert("Something went wrong. Please try again.");
+      showToast("error", "Error", "Something went wrong. Please try again.");
     }
     setProcessing(false);
   };
@@ -298,11 +577,11 @@ export default function BillingQueue() {
     setTimeout(() => { w.print(); }, 400);
   };
 
-  // ── Shared: load an image URL as base64 data URL via canvas ──
-  const loadImageAsBase64 = (url: string): Promise<string | null> =>
-    new Promise((resolve) => {
-      if (!url) return resolve(null);
-      // For Cloudinary PDF letterheads, convert to PNG via URL transformation
+  // ── Shared: load an image URL as base64 data URL via canvas (cached) ──
+  const loadImageAsBase64 = (url: string): Promise<string | null> => {
+    if (!url) return Promise.resolve(null);
+    if (imgCache.current[url] !== undefined) return Promise.resolve(imgCache.current[url]);
+    return new Promise((resolve) => {
       let imgUrl = url;
       if (url.match(/\.pdf$/i) || url.includes('/raw/upload/')) {
         imgUrl = url.replace('/upload/', '/upload/f_png,pg_1/').replace(/\.pdf$/i, '.png');
@@ -316,19 +595,27 @@ export default function BillingQueue() {
             c.width = img.naturalWidth;
             c.height = img.naturalHeight;
             const ctx = c.getContext('2d');
-            if (ctx) { ctx.drawImage(img, 0, 0); resolve(c.toDataURL('image/png')); return; }
+            if (ctx) { ctx.drawImage(img, 0, 0); const d = c.toDataURL('image/png'); imgCache.current[url] = d; resolve(d); return; }
           } catch {}
-          resolve(null);
+          imgCache.current[url] = null; resolve(null);
         };
-        img.onerror = () => resolve(null);
+        img.onerror = () => { imgCache.current[url] = null; resolve(null); };
         img.src = imgUrl;
-      } catch { resolve(null); }
+      } catch { imgCache.current[url] = null; resolve(null); }
     });
+  };
+
+  const getJsPdf = async () => {
+    if (jsPdfCache.current) return jsPdfCache.current;
+    const { jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
+    jsPdfCache.current = { jsPDF, autoTable };
+    return jsPdfCache.current;
+  };
 
   const handleDownloadBillPDF = async (item: QueueItem) => {
     if (!item?.bill) return;
-    const { jsPDF } = await import('jspdf');
-    const autoTable = (await import('jspdf-autotable')).default;
+    const { jsPDF, autoTable } = await getJsPdf();
 
     const pageSize = (hospitalInfo.letterheadSize || 'A4').toLowerCase() as 'a4' | 'a5' | 'letter';
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize });
@@ -567,8 +854,7 @@ export default function BillingQueue() {
 
   const handleDownloadPDF = async () => {
     if (!selectedItem) return;
-    const { jsPDF } = await import('jspdf');
-    const autoTable = (await import('jspdf-autotable')).default;
+    const { jsPDF, autoTable } = await getJsPdf();
 
     const pageSize = (hospitalInfo.letterheadSize || 'A4').toLowerCase() as 'a4' | 'a5' | 'letter';
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: pageSize });
@@ -812,28 +1098,72 @@ export default function BillingQueue() {
     totalCollected: queue.reduce((sum, q) => sum + (q.bill?.status === "PAID" ? (q.bill?.total || 0) : 0), 0),
   };
 
+  const SORT_OPTIONS = [
+    { value: "newest", label: "Newest First", icon: "↓" },
+    { value: "oldest", label: "Oldest First", icon: "↑" },
+    { value: "name_asc", label: "Patient A → Z", icon: "A" },
+    { value: "name_desc", label: "Patient Z → A", icon: "Z" },
+    { value: "total_high", label: "Amount: High → Low", icon: "₹" },
+    { value: "total_low", label: "Amount: Low → High", icon: "₹" },
+    { value: "status_paid", label: "Status: Paid First", icon: "✓" },
+    { value: "status_pending", label: "Status: Pending First", icon: "○" },
+  ];
+
+  const sortedQueue = useMemo(() => {
+    const sorted = [...queue];
+    switch (sortBy) {
+      case "oldest": sorted.sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime()); break;
+      case "newest": sorted.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()); break;
+      case "name_asc": sorted.sort((a, b) => a.patient.name.localeCompare(b.patient.name)); break;
+      case "name_desc": sorted.sort((a, b) => b.patient.name.localeCompare(a.patient.name)); break;
+      case "total_high": sorted.sort((a, b) => (b.bill?.total || 0) - (a.bill?.total || 0)); break;
+      case "total_low": sorted.sort((a, b) => (a.bill?.total || 0) - (b.bill?.total || 0)); break;
+      case "status_paid": sorted.sort((a, b) => (a.bill?.status === "PAID" ? -1 : 1) - (b.bill?.status === "PAID" ? -1 : 1)); break;
+      case "status_pending": sorted.sort((a, b) => (a.bill?.status === "PENDING" ? -1 : 1) - (b.bill?.status === "PENDING" ? -1 : 1)); break;
+    }
+    return sorted;
+  }, [queue, sortBy]);
+
+  const handleBulkDelete = async () => {
+    const billIds = queue.filter(q => selectedIds.has(q.id) && q.bill).map(q => q.bill!.id);
+    if (billIds.length === 0) { showToast("warning", "No Selection", "Select bills to delete."); return; }
+    if (!confirm(`Are you sure you want to delete ${billIds.length} bill${billIds.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+
+    let success = 0, failed = 0;
+    for (const id of billIds) {
+      try {
+        const r = await api(`/api/billing/${id}`, { method: "DELETE" });
+        if (r.success) success++; else failed++;
+      } catch { failed++; }
+    }
+    setSelectedIds(new Set());
+    loadQueue();
+    if (failed === 0) showToast("success", "Deleted!", `${success} bill${success > 1 ? "s" : ""} deleted successfully.`);
+    else showToast("warning", "Partial Delete", `${success} deleted, ${failed} failed (may have payments).`);
+  };
+
   return (
     <>
       <style>{BQ_CSS}</style>
       <div className="bq-wrap">
         {/* Stats Bar */}
         <div className="bq-stats">
-          <div className="bq-stat-card" style={{ background: "linear-gradient(135deg,#0ea5e9,#0284c7)" }}>
-            <div className="bq-stat-icon"><Receipt size={20} color="#fff" /></div>
+          <div className="bq-stat-card bq-stat-blue">
+            <div className="bq-stat-icon"><Receipt size={20} /></div>
             <div>
               <div className="bq-stat-value">{stats.queueCount}</div>
               <div className="bq-stat-label">In Queue</div>
             </div>
           </div>
-          <div className="bq-stat-card" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-            <div className="bq-stat-icon"><Clock size={20} color="#fff" /></div>
+          <div className="bq-stat-card bq-stat-amber">
+            <div className="bq-stat-icon"><Clock size={20} /></div>
             <div>
               <div className="bq-stat-value">{fmtCur(stats.totalPending)}</div>
               <div className="bq-stat-label">Pending Collection</div>
             </div>
           </div>
-          <div className="bq-stat-card" style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}>
-            <div className="bq-stat-icon"><CheckCircle2 size={20} color="#fff" /></div>
+          <div className="bq-stat-card bq-stat-green">
+            <div className="bq-stat-icon"><CheckCircle2 size={20} /></div>
             <div>
               <div className="bq-stat-value">{fmtCur(stats.totalCollected)}</div>
               <div className="bq-stat-label">Collected Today</div>
@@ -848,14 +1178,63 @@ export default function BillingQueue() {
             <input placeholder="Search patient, doctor..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <input type="date" className="bq-date-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
-          <button className="bq-btn-secondary" onClick={() => { setSearch(""); setDateFilter(""); }}>
+          {/* Custom Sort Dropdown */}
+          <div className="bq-sort-wrap" ref={sortRef}>
+            <button className="bq-sort-trigger" onClick={() => setSortOpen(o => !o)}>
+              <ArrowUpDown size={14} />
+              <span>{SORT_OPTIONS.find(o => o.value === sortBy)?.label || "Sort"}</span>
+              <ChevronDown size={14} className={`bq-sort-chevron ${sortOpen ? "bq-sort-chevron-open" : ""}`} />
+            </button>
+            {sortOpen && (
+              <div className="bq-sort-dropdown">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    className={`bq-sort-option ${sortBy === opt.value ? "bq-sort-option-active" : ""}`}
+                    onClick={() => { setSortBy(opt.value); setSortOpen(false); }}
+                  >
+                    <span className="bq-sort-option-icon">{opt.icon}</span>
+                    <span>{opt.label}</span>
+                    {sortBy === opt.value && <CheckCircle size={14} className="bq-sort-check" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button className="bq-btn-secondary" onClick={() => { setSearch(""); setDateFilter(""); setSortBy("newest"); }}>
             <X size={14} />Clear
           </button>
-          <button className="bq-btn-primary" onClick={loadQueue}>
-            <RefreshCw size={14} style={loading ? { animation: "spin .7s linear infinite" } : {}} />
-            Refresh
-          </button>
         </div>
+
+        {/* Bulk Action Bar */}
+        {selectedIds.size > 0 && (
+          <div className="bq-bulk-bar">
+            <div className="bq-bulk-info">
+              <CheckCircle size={16} />
+              <span><strong>{selectedIds.size}</strong> bill{selectedIds.size > 1 ? "s" : ""} selected</span>
+            </div>
+            {bulkSending ? (
+              <div className="bq-bulk-progress">
+                <div className="bq-bulk-progress-bar">
+                  <div className="bq-bulk-progress-fill" style={{ width: `${bulkProgress.total > 0 ? (bulkProgress.current / bulkProgress.total) * 100 : 0}%` }} />
+                </div>
+                <span className="bq-bulk-progress-text">Sending {bulkProgress.current}/{bulkProgress.total} — {bulkProgress.success} sent{bulkProgress.failed > 0 ? `, ${bulkProgress.failed} failed` : ""}</span>
+              </div>
+            ) : (
+              <div className="bq-bulk-actions">
+                <button className="bq-btn-bulk-email" onClick={handleBulkSendEmail}>
+                  <Send size={14} /> Send {selectedIds.size} Email{selectedIds.size > 1 ? "s" : ""}
+                </button>
+                <button className="bq-btn-bulk-delete" onClick={handleBulkDelete}>
+                  <Trash2 size={14} /> Delete {selectedIds.size}
+                </button>
+                <button className="bq-btn-secondary" onClick={() => setSelectedIds(new Set())} style={{padding: "6px 12px", fontSize: 12}}>
+                  <X size={14} /> Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Queue Table */}
         <div className="bq-card">
@@ -864,7 +1243,7 @@ export default function BillingQueue() {
               <Loader2 size={24} style={{ animation: "spin .7s linear infinite" }} />
               <span>Loading billing queue...</span>
             </div>
-          ) : queue.length === 0 ? (
+          ) : sortedQueue.length === 0 ? (
             <div className="bq-empty">
               <Receipt size={40} color="#cbd5e1" />
               <div className="bq-empty-title">No bills in queue</div>
@@ -874,6 +1253,9 @@ export default function BillingQueue() {
             <table className="bq-table">
               <thead>
                 <tr>
+                  <th style={{width: 36, textAlign: "center"}}>
+                    <input type="checkbox" className="bq-checkbox" checked={selectableItems.length > 0 && selectableItems.every(q => selectedIds.has(q.id))} onChange={toggleSelectAll} title="Select all" />
+                  </th>
                   <th>Patient</th>
                   <th>Doctor</th>
                   <th>Date & Time</th>
@@ -885,10 +1267,15 @@ export default function BillingQueue() {
                 </tr>
               </thead>
               <tbody>
-                {queue.map(item => {
+                {sortedQueue.map(item => {
                   const sc = item.bill ? STATUS_COLORS[item.bill.status] || STATUS_COLORS.PENDING : STATUS_COLORS.DRAFT;
                   return (
-                    <tr key={item.id}>
+                    <tr key={item.id} className={selectedIds.has(item.id) ? "bq-row-selected" : ""}>
+                      <td style={{textAlign: "center"}}>
+                        {item.bill ? (
+                          <input type="checkbox" className="bq-checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} />
+                        ) : <span style={{color: "#cbd5e1"}}>—</span>}
+                      </td>
                       <td>
                         <div className="bq-patient">
                           <div className="bq-patient-avatar">{(item.patient.name || "?")[0].toUpperCase()}</div>
@@ -929,6 +1316,15 @@ export default function BillingQueue() {
                               </button>
                               <button className="bq-action-btn bq-action-download" onClick={() => handleDownloadBillPDF(item)} title="Download PDF">
                                 <Download size={14} />
+                              </button>
+                              <button 
+                                className="bq-action-btn bq-action-email" 
+                                onClick={() => item.patient.email ? handleSendEmail(item) : showToast("warning", "No Email", "Patient does not have an email address on file.")} 
+                                disabled={sendingEmail === item.bill.id}
+                                title={item.patient.email ? `Send Invoice to ${item.patient.email}` : "No patient email on file"}
+                                style={{background: item.patient.email ? "#f0f9ff" : "#f8fafc", color: item.patient.email ? "#0369a1" : "#94a3b8", border: `1px solid ${item.patient.email ? "#bae6fd" : "#e2e8f0"}`}}
+                              >
+                                {sendingEmail === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Send size={14} />}
                               </button>
                               {item.bill.status !== "PAID" && (
                                 <button className="bq-action-btn bq-action-collect" onClick={() => handleCollect(item)} title="Collect & Generate Bill">
@@ -1484,6 +1880,28 @@ export default function BillingQueue() {
           </div>
         )}
       </div>
+
+      {/* Animated Toast Notification */}
+      {toast && (
+        <div className={`bq-toast bq-toast-${toast.type}`}>
+          <div className="bq-toast-icon-wrap">
+            {toast.type === "success" && (
+              <svg className="bq-toast-checkmark" viewBox="0 0 52 52" width="32" height="32">
+                <circle className="bq-toast-circle" cx="26" cy="26" r="24" fill="none" stroke="currentColor" strokeWidth="3" />
+                <path className="bq-toast-check" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" d="M14 27l8 8 16-16" />
+              </svg>
+            )}
+            {toast.type === "error" && <XCircle size={32} />}
+            {toast.type === "warning" && <AlertTriangle size={32} />}
+          </div>
+          <div className="bq-toast-content">
+            <div className="bq-toast-title">{toast.title}</div>
+            <div className="bq-toast-msg">{toast.message}</div>
+          </div>
+          <button className="bq-toast-close" onClick={() => setToast(null)}><X size={16} /></button>
+          <div className="bq-toast-timer" />
+        </div>
+      )}
     </>
   );
 }
@@ -1493,18 +1911,36 @@ const BQ_CSS = `
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Layout ── */
-.bq-wrap{font-family:'Inter',system-ui,sans-serif;padding:20px;background:#f8fafc;min-height:100vh}
-.bq-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px}
-.bq-stat-card{padding:20px;border-radius:14px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.bq-stat-icon{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bq-stat-value{font-size:24px;font-weight:800;color:#fff;line-height:1}
-.bq-stat-label{font-size:12px;color:rgba(255,255,255,.9);margin-top:4px;font-weight:600}
+.bq-wrap{font-family:'Inter',system-ui,sans-serif;padding:20px;background:transparent;min-height:100vh}
+.bq-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+.bq-stat-card{padding:18px 20px;border-radius:12px;display:flex;align-items:center;gap:14px;border:1px solid;transition:all .2s}
+.bq-stat-card:hover{transform:translateY(-1px)}
+.bq-stat-blue{background:#f0f9ff;border-color:#bae6fd}.bq-stat-blue .bq-stat-icon{background:#dbeafe;color:#0284c7}.bq-stat-blue .bq-stat-value{color:#0369a1}.bq-stat-blue .bq-stat-label{color:#0284c7}
+.bq-stat-amber{background:#fffbeb;border-color:#fde68a}.bq-stat-amber .bq-stat-icon{background:#fef3c7;color:#d97706}.bq-stat-amber .bq-stat-value{color:#b45309}.bq-stat-amber .bq-stat-label{color:#d97706}
+.bq-stat-green{background:#f0fdf4;border-color:#bbf7d0}.bq-stat-green .bq-stat-icon{background:#dcfce7;color:#059669}.bq-stat-green .bq-stat-value{color:#166534}.bq-stat-green .bq-stat-label{color:#059669}
+.bq-stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bq-stat-value{font-size:22px;font-weight:800;line-height:1}
+.bq-stat-label{font-size:12px;margin-top:3px;font-weight:600}
 
 /* ── Filters ── */
 .bq-filters{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .bq-search{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;flex:1;min-width:220px}
 .bq-search input{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%;font-family:inherit}
 .bq-date-input{padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;font-size:13px;color:#334155;outline:none;font-family:inherit}
+
+/* ── Sort Dropdown ── */
+.bq-sort-wrap{position:relative}
+.bq-sort-trigger{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;color:#334155;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
+.bq-sort-trigger:hover{border-color:#93c5fd;background:#f8fafc}
+.bq-sort-chevron{transition:transform .2s ease;color:#94a3b8}
+.bq-sort-chevron-open{transform:rotate(180deg)}
+.bq-sort-dropdown{position:absolute;top:calc(100% + 6px);right:0;z-index:100;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.04);min-width:220px;padding:6px;animation:fadeSlideIn .15s ease;overflow:hidden}
+.bq-sort-option{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:none;background:none;font-size:13px;color:#475569;cursor:pointer;border-radius:8px;transition:all .15s;font-family:inherit;text-align:left}
+.bq-sort-option:hover{background:#f0f9ff;color:#0369a1}
+.bq-sort-option-active{background:#eff6ff;color:#0369a1;font-weight:700}
+.bq-sort-option-icon{width:22px;height:22px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#64748b;flex-shrink:0}
+.bq-sort-option-active .bq-sort-option-icon{background:#dbeafe;color:#0369a1}
+.bq-sort-check{color:#0ea5e9;margin-left:auto;flex-shrink:0}
 
 /* ── Buttons ── */
 .bq-btn-primary,.bq-btn-secondary{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;transition:all .2s}
@@ -1517,7 +1953,7 @@ const BQ_CSS = `
 .bq-btn-collect-main:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
 /* ── Table Card ── */
-.bq-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.bq-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:none}
 .bq-loading{padding:60px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;color:#94a3b8;font-size:14px}
 .bq-empty{padding:60px 20px;text-align:center;color:#94a3b8}
 .bq-empty-title{font-size:15px;font-weight:600;margin-top:12px;color:#64748b}
@@ -1673,4 +2109,57 @@ const BQ_CSS = `
 .text-success{color:#059669}
 .bill-footer{margin-top:32px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center}
 .bill-footer p{margin:0;font-size:13px;color:#64748b}
+
+/* ── Checkbox ── */
+.bq-checkbox{width:16px;height:16px;accent-color:#0ea5e9;cursor:pointer;border-radius:4px}
+.bq-row-selected{background:#f0f9ff !important}
+.bq-row-selected td{background:#f0f9ff !important}
+
+/* ── Bulk Action Bar ── */
+.bq-bulk-bar{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:12px;padding:12px 20px;margin-bottom:16px;animation:fadeSlideIn .25s ease}
+.bq-bulk-info{display:flex;align-items:center;gap:8px;font-size:13px;color:#1e40af;font-weight:600}
+.bq-bulk-actions{display:flex;align-items:center;gap:8px}
+.bq-btn-bulk-email{padding:8px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;box-shadow:0 2px 8px rgba(14,165,233,.3);transition:all .2s}
+.bq-btn-bulk-email:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,165,233,.4)}
+.bq-btn-bulk-email:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.bq-btn-bulk-delete{padding:8px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;background:#fee2e2;color:#dc2626;transition:all .2s}
+.bq-btn-bulk-delete:hover{background:#fecaca;transform:translateY(-1px)}
+.bq-btn-bulk-delete:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.bq-bulk-progress{display:flex;align-items:center;gap:12px;flex:1;margin-left:20px}
+.bq-bulk-progress-bar{flex:1;height:8px;background:#e2e8f0;border-radius:100px;overflow:hidden}
+.bq-bulk-progress-fill{height:100%;background:linear-gradient(90deg,#0ea5e9,#06b6d4);border-radius:100px;transition:width .3s ease}
+.bq-bulk-progress-text{font-size:12px;color:#475569;font-weight:600;white-space:nowrap}
+
+/* ── Toast Notification ── */
+@keyframes toastSlideIn{from{opacity:0;transform:translateX(40px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes toastTimerShrink{from{width:100%}to{width:0%}}
+@keyframes checkCircleDraw{0%{stroke-dashoffset:166}100%{stroke-dashoffset:0}}
+@keyframes checkDraw{0%{stroke-dashoffset:48}100%{stroke-dashoffset:0}}
+@keyframes toastPop{0%{transform:scale(0)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+.bq-toast{position:fixed;top:28px;right:28px;z-index:10000;display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;background:#fff;box-shadow:0 8px 32px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);animation:toastSlideIn .35s cubic-bezier(.21,1.02,.73,1);max-width:420px;min-width:320px;border-left:4px solid #10b981;overflow:hidden}
+.bq-toast-success{border-left-color:#10b981}
+.bq-toast-error{border-left-color:#ef4444}
+.bq-toast-warning{border-left-color:#f59e0b}
+
+.bq-toast-icon-wrap{flex-shrink:0;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;animation:toastPop .4s cubic-bezier(.21,1.02,.73,1) .1s both}
+.bq-toast-success .bq-toast-icon-wrap{background:#f0fdf4;color:#10b981}
+.bq-toast-error .bq-toast-icon-wrap{background:#fef2f2;color:#ef4444}
+.bq-toast-warning .bq-toast-icon-wrap{background:#fffbeb;color:#f59e0b}
+
+.bq-toast-checkmark{color:#10b981}
+.bq-toast-circle{stroke-dasharray:166;stroke-dashoffset:166;animation:checkCircleDraw .5s cubic-bezier(.65,0,.45,1) .15s forwards}
+.bq-toast-check{stroke-dasharray:48;stroke-dashoffset:48;animation:checkDraw .35s cubic-bezier(.65,0,.45,1) .45s forwards}
+
+.bq-toast-content{flex:1;min-width:0}
+.bq-toast-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:2px}
+.bq-toast-msg{font-size:12px;color:#64748b;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.bq-toast-close{flex-shrink:0;background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;border-radius:6px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.bq-toast-close:hover{background:#f1f5f9;color:#475569}
+
+.bq-toast-timer{position:absolute;bottom:0;left:0;height:3px;border-radius:0 0 0 14px;animation:toastTimerShrink 4s linear forwards}
+.bq-toast-success .bq-toast-timer{background:linear-gradient(90deg,#10b981,#34d399)}
+.bq-toast-error .bq-toast-timer{background:linear-gradient(90deg,#ef4444,#f87171)}
+.bq-toast-warning .bq-toast-timer{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
 `;

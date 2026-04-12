@@ -1,14 +1,16 @@
 import nodemailer from "nodemailer";
 
+const smtpUser = process.env.EMAIL_USERNAME || process.env.SMTP_USER;
+const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS;
+
+console.log("[Mailer] Config:", { user: smtpUser ? smtpUser.substring(0, 5) + "***" : "NOT SET", passSet: !!smtpPass });
+
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.EMAIL_USERNAME || process.env.SMTP_USER,
-    pass: process.env.EMAIL_PASSWORD || process.env.SMTP_PASS,
-  },
-});
+  service: "gmail",
+  auth: { user: smtpUser, pass: smtpPass },
+} as any);
+
+transporter.verify().then(() => console.log("[Mailer] Gmail connected ✓")).catch((err) => console.error("[Mailer] Gmail FAILED:", err.message));
 
 export const sendDoctorCredentials = async (opts: {
   to: string;
@@ -19,7 +21,7 @@ export const sendDoctorCredentials = async (opts: {
   loginUrl: string;
 }) => {
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Your Doctor Portal Credentials – ${opts.hospitalName}`,
     html: `
@@ -88,7 +90,7 @@ export const sendPatientWelcome = async (opts: {
     : `<span style="font-size:48px;">🏥</span>`;
 
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Welcome to ${opts.hospitalName} – Your Patient ID`,
     html: `
@@ -140,7 +142,7 @@ export const sendAppointmentConfirmation = async (opts: {
     : `<span style="font-size:48px;">🏥</span>`;
 
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Appointment Confirmed – ${opts.hospitalName}`,
     html: `
@@ -180,7 +182,7 @@ export const sendSubDeptCredentials = async (opts: {
   loginUrl: string;
 }) => {
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Your ${opts.deptName} Portal Credentials – ${opts.hospitalName}`,
     html: `
@@ -251,7 +253,7 @@ export const sendPrescriptionEmail = async (opts: {
   } catch {}
 
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Your Prescription ${opts.prescriptionNo} – ${opts.hospitalName}`,
     html: `
@@ -298,7 +300,7 @@ export const sendFinanceCredentials = async (
   hospitalName: string
 ) => {
   await transporter.sendMail({
-    from: `"${hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${hospitalName}" <${smtpUser}>`,
     to,
     subject: `Your Finance Department Credentials – ${hospitalName}`,
     html: `
@@ -339,7 +341,7 @@ export const sendAppointmentReminder = async (opts: {
     : `<span style="font-size:48px;">🏥</span>`;
 
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Appointment Reminder – ${opts.hospitalName}`,
     html: `
@@ -378,7 +380,7 @@ export const sendStaffCredentials = async (opts: {
   loginUrl: string;
 }) => {
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Your Staff Portal Credentials – ${opts.hospitalName}`,
     html: `
@@ -433,7 +435,7 @@ export const sendEnquiryConfirmation = async (opts: {
   console.log("[Mailer] sendEnquiryConfirmation - Sending to:", opts.to);
   
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Enquiry Received – ${opts.hospitalName}`,
     html: `
@@ -502,7 +504,7 @@ export const sendEnquiryNotificationToHospital = async (opts: {
   console.log("[Mailer] sendEnquiryNotificationToHospital - Sending to:", opts.to);
   
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `New Enquiry from ${opts.fullName} – ${opts.department || "General"}`,
     html: `
@@ -565,7 +567,7 @@ export const sendPayslipEmail = async (opts: {
   hospitalLogo?: string | null;
 }) => {
   await transporter.sendMail({
-    from: `"${opts.hospitalName}" <${process.env.EMAIL_USERNAME || process.env.SMTP_USER}>`,
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Salary Slip for ${opts.month} – ${opts.hospitalName}`,
     html: `
@@ -590,5 +592,47 @@ export const sendPayslipEmail = async (opts: {
   This is a computer-generated email and does not require authentication.
 </td></tr>
 </table></td></tr></table></body></html>`,
+  });
+};
+
+export const sendBillInvoice = async (opts: {
+  to: string;
+  patientName: string;
+  patientId: string;
+  billNo: string;
+  billDate: string;
+  total: number;
+  paidAmount: number;
+  status: string;
+  hospitalName: string;
+  hospitalLogo?: string | null;
+  pdfBuffer: Buffer;
+}) => {
+  const isPaid = opts.status === "PAID";
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
+    to: opts.to,
+    subject: `Invoice ${opts.billNo} - ${opts.hospitalName}`,
+    html: `<table width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
+<tr><td style="padding:20px 24px;border-bottom:2px solid #e5e7eb;">
+<b style="font-size:16px;color:#111;">${opts.hospitalName}</b>
+<span style="float:right;font-size:12px;color:#6b7280;">Invoice</span>
+</td></tr>
+<tr><td style="padding:20px 24px;font-size:13px;color:#374151;line-height:1.6;">
+Dear ${opts.patientName},<br><br>
+Please find your invoice details below. The PDF is attached.
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;">
+<tr><td style="padding:8px 12px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Invoice</td><td style="padding:8px 12px;font-weight:600;color:#111;border-bottom:1px solid #f3f4f6;">${opts.billNo}</td></tr>
+<tr><td style="padding:8px 12px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Date</td><td style="padding:8px 12px;color:#111;border-bottom:1px solid #f3f4f6;">${opts.billDate}</td></tr>
+<tr><td style="padding:8px 12px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Patient ID</td><td style="padding:8px 12px;color:#111;border-bottom:1px solid #f3f4f6;">${opts.patientId}</td></tr>
+<tr><td style="padding:8px 12px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Total</td><td style="padding:8px 12px;font-weight:700;color:#111;border-bottom:1px solid #f3f4f6;">Rs. ${opts.total.toLocaleString("en-IN")}</td></tr>
+<tr><td style="padding:8px 12px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Paid</td><td style="padding:8px 12px;color:#059669;font-weight:600;border-bottom:1px solid #f3f4f6;">Rs. ${opts.paidAmount.toLocaleString("en-IN")}</td></tr>
+<tr><td style="padding:8px 12px;color:#6b7280;">Status</td><td style="padding:8px 12px;font-weight:600;color:${isPaid ? "#059669" : "#d97706"};">${opts.status}</td></tr>
+</table>
+For queries, contact our billing department.
+</td></tr>
+<tr><td style="padding:12px 24px;font-size:11px;color:#9ca3af;border-top:1px solid #f3f4f6;">Auto-generated by ${opts.hospitalName}. Do not reply.</td></tr>
+</table>`,
+    attachments: [{ filename: `${opts.billNo}.pdf`, content: opts.pdfBuffer, contentType: "application/pdf" }],
   });
 };

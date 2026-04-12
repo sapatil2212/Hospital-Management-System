@@ -1,7 +1,5 @@
 {
-  "/page": "app/page.js",
-  "/about/page": "app/about/page.js",
-  "/doctor/dashboard/prescription/[appointmentId]/page": "app/doctor/dashboard/prescription/[appointmentId]/page.js",
-  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js",
-  "/hospitaladmin/configure/page": "app/hospitaladmin/configure/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/dashboard/overview/route": "app/api/dashboard/overview/route.js",
+  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js"
 }
