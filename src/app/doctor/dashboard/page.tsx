@@ -2,9 +2,25 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  CalendarDays, ChevronRight, ChevronLeft,
-  UserRound, Loader2, PlayCircle, CheckCircle2, X, FileText, Clock, RefreshCw, Pencil, Activity, ClipboardCheck
+  CalendarDays, ChevronRight, ChevronLeft, ChevronUp, ChevronDown,
+  UserRound, Loader2, PlayCircle, CheckCircle2, X, FileText, Clock, RefreshCw, Pencil, Activity, ClipboardCheck,
+  BarChart2, TrendingUp, IndianRupee, Users, ArrowRight, Search, Download, FileSpreadsheet, FileType, ArrowUpDown
 } from "lucide-react";
+import {
+  ResponsiveContainer as RechartsResponsiveContainer,
+  AreaChart as RechartsAreaChart,
+  Area as RechartsArea,
+  XAxis as RechartsXAxis,
+  YAxis as RechartsYAxis,
+  Tooltip as RechartsTooltip,
+  PieChart as RechartsPieChart,
+  Pie as RechartsPie,
+  Cell as RechartsCell,
+  ComposedChart as RechartsComposedChart,
+  Bar as RechartsBar,
+  Line as RechartsLine,
+  BarChart as RechartsBarChart,
+} from "recharts";
 
 import PatientProfilePanel from "@/components/PatientProfilePanel";
 import PrescriptionSettingsPanel from "@/components/PrescriptionSettingsPanel";
@@ -694,7 +710,7 @@ function ScheduleMgmtTab({ accent, localSchedule, setLocalSchedule, scheduleLoad
   );
 }
 
-type Tab = "schedule"|"patients"|"prescription-settings"|"treatment-plans"|"attendance"|"schedule-mgmt";
+type Tab = "schedule"|"patients"|"prescription-settings"|"treatment-plans"|"attendance"|"schedule-mgmt"|"reports";
 
 const fmtDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const isSameDay = (a: Date, b: Date) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
@@ -750,6 +766,36 @@ function DoctorDashboardContent() {
   const [editPlanSaving, setEditPlanSaving] = useState(false);
   const [editPlanErr, setEditPlanErr] = useState("");
   const [deletingPlanId, setDeletingPlanId] = useState<string|null>(null);
+
+  // Reports
+  const [reportData, setReportData] = useState<any>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
+  // Search / Sort / Export state for all tables
+  const [apptSearch, setApptSearch] = useState("");
+  const [apptSortField, setApptSortField] = useState("tokenNumber");
+  const [apptSortDir, setApptSortDir] = useState<"asc"|"desc">("asc");
+  const [apptExportOpen, setApptExportOpen] = useState(false);
+
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientSortField, setPatientSortField] = useState("name");
+  const [patientSortDir, setPatientSortDir] = useState<"asc"|"desc">("asc");
+  const [patientExportOpen, setPatientExportOpen] = useState(false);
+
+  const [planSearch, setPlanSearch] = useState("");
+  const [planSortField, setPlanSortField] = useState("planName");
+  const [planSortDir, setPlanSortDir] = useState<"asc"|"desc">("asc");
+  const [planExportOpen, setPlanExportOpen] = useState(false);
+
+  const [attendSearch, setAttendSearch] = useState("");
+  const [attendSortField, setAttendSortField] = useState("date");
+  const [attendSortDir, setAttendSortDir] = useState<"asc"|"desc">("desc");
+  const [attendExportOpen, setAttendExportOpen] = useState(false);
+
+  const [recentSearch, setRecentSearch] = useState("");
+  const [recentSortField, setRecentSortField] = useState("date");
+  const [recentSortDir, setRecentSortDir] = useState<"asc"|"desc">("desc");
+  const [recentExportOpen, setRecentExportOpen] = useState(false);
 
   const isToday = isSameDay(selectedDate, new Date());
   const goDate = (offset: number) => setSelectedDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + offset); return d; });
@@ -850,11 +896,211 @@ function DoctorDashboardContent() {
     }
   }, [tab, doctor, fetchWeeklySchedule]);
 
+  // ── Load reports ──
+  const loadReports = useCallback(async () => {
+    setReportLoading(true);
+    const res = await api("/api/doctor/reports");
+    if (res.success) setReportData(res.data);
+    setReportLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (doctor && tab === "reports") loadReports();
+  }, [tab, doctor, loadReports]);
+
   useEffect(() => {
     if (doctor && tab === "schedule") {
       fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
     }
   }, [selectedDate, doctor, tab, fetchAppointments]);
+
+  // ── Generic sort handler ──
+  const mkSort = (setField: (f:string)=>void, setDir: (d:"asc"|"desc")=>void, curField: string, curDir: "asc"|"desc") =>
+    (field: string) => { if (curField === field) setDir(curDir === "asc" ? "desc" : "asc"); else { setField(field); setDir("desc"); } };
+  const handleApptSort = mkSort(setApptSortField, setApptSortDir, apptSortField, apptSortDir);
+  const handlePatientSort = mkSort(setPatientSortField, setPatientSortDir, patientSortField, patientSortDir);
+  const handlePlanSort = mkSort(setPlanSortField, setPlanSortDir, planSortField, planSortDir);
+  const handleAttendSort = mkSort(setAttendSortField, setAttendSortDir, attendSortField, attendSortDir);
+  const handleRecentSort = mkSort(setRecentSortField, setRecentSortDir, recentSortField, recentSortDir);
+
+  // ── Sort icon ──
+  const sortIcon = (field: string, curField: string, curDir: "asc"|"desc") =>
+    curField === field ? (curDir === "asc" ? <ChevronUp size={12}/> : <ChevronDown size={12}/>) : <ArrowUpDown size={10} style={{opacity:.35}}/>;
+
+  // ── Filtered + sorted appointments ──
+  const filteredAppts = appointments.filter((a:any) => {
+    if (!apptSearch) return true;
+    const q = apptSearch.toLowerCase();
+    return (a.patient?.name||"").toLowerCase().includes(q) || (a.patient?.patientId||"").toLowerCase().includes(q) || (a.timeSlot||"").includes(q) || (a.type||"").toLowerCase().includes(q) || (STATUS_CFG[a.status]?.label||"").toLowerCase().includes(q);
+  });
+  const sortedAppts = [...filteredAppts].sort((a:any,b:any) => {
+    const d = apptSortDir === "asc" ? 1 : -1;
+    if (apptSortField === "tokenNumber") return d * ((a.tokenNumber||0) - (b.tokenNumber||0));
+    if (apptSortField === "timeSlot") return d * ((a.timeSlot||"").localeCompare(b.timeSlot||""));
+    if (apptSortField === "patient") return d * ((a.patient?.name||"").localeCompare(b.patient?.name||""));
+    if (apptSortField === "type") return d * ((a.type||"").localeCompare(b.type||""));
+    if (apptSortField === "status") return d * ((a.status||"").localeCompare(b.status||""));
+    return 0;
+  });
+
+  // ── Filtered + sorted patients ──
+  const filteredPatients = allPatients.filter((p:any) => {
+    if (!patientSearch) return true;
+    const q = patientSearch.toLowerCase();
+    return (p.name||"").toLowerCase().includes(q) || (p.patientId||"").toLowerCase().includes(q) || (p.phone||"").includes(q) || (p.gender||"").toLowerCase().includes(q);
+  });
+  const sortedPatients = [...filteredPatients].sort((a:any,b:any) => {
+    const d = patientSortDir === "asc" ? 1 : -1;
+    if (patientSortField === "patientId") return d * ((a.patientId||"").localeCompare(b.patientId||""));
+    if (patientSortField === "name") return d * ((a.name||"").localeCompare(b.name||""));
+    if (patientSortField === "phone") return d * ((a.phone||"").localeCompare(b.phone||""));
+    if (patientSortField === "gender") return d * ((a.gender||"").localeCompare(b.gender||""));
+    if (patientSortField === "lastVisit") return d * (new Date(a.lastVisit||0).getTime() - new Date(b.lastVisit||0).getTime());
+    if (patientSortField === "lastType") return d * ((a.lastType||"").localeCompare(b.lastType||""));
+    return 0;
+  });
+
+  // ── Filtered + sorted plans ──
+  const filteredPlans = myPlans.filter((p:any) => {
+    if (!planSearch) return true;
+    const q = planSearch.toLowerCase();
+    return (p.planName||"").toLowerCase().includes(q) || (p.patient?.name||"").toLowerCase().includes(q) || (p.service?.name||"").toLowerCase().includes(q) || (p.status||"").toLowerCase().includes(q);
+  });
+  const sortedPlans = [...filteredPlans].sort((a:any,b:any) => {
+    const d = planSortDir === "asc" ? 1 : -1;
+    if (planSortField === "planName") return d * ((a.planName||"").localeCompare(b.planName||""));
+    if (planSortField === "patient") return d * ((a.patient?.name||"").localeCompare(b.patient?.name||""));
+    if (planSortField === "status") return d * ((a.status||"").localeCompare(b.status||""));
+    if (planSortField === "sessions") return d * ((a.completedSessions||0) - (b.completedSessions||0));
+    if (planSortField === "cost") return d * ((a.totalCost||0) - (b.totalCost||0));
+    return 0;
+  });
+
+  // ── Filtered + sorted attendance ──
+  const filteredAttendance = attendance.filter((r:any) => {
+    if (!attendSearch) return true;
+    const q = attendSearch.toLowerCase();
+    const d = new Date(r.date);
+    return d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}).toLowerCase().includes(q)
+      || d.toLocaleDateString("en-IN",{weekday:"short"}).toLowerCase().includes(q)
+      || (r.status||"").toLowerCase().includes(q) || (r.notes||"").toLowerCase().includes(q);
+  });
+  const sortedAttendance = [...filteredAttendance].sort((a:any,b:any) => {
+    const d = attendSortDir === "asc" ? 1 : -1;
+    if (attendSortField === "date") return d * (new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (attendSortField === "status") return d * ((a.status||"").localeCompare(b.status||""));
+    if (attendSortField === "loginTime") return d * (new Date(a.loginTime||0).getTime() - new Date(b.loginTime||0).getTime());
+    return 0;
+  });
+
+  // ── Generic export helpers ──
+  const doExportExcel = async (headers: string[], rows: any[][], filename: string) => {
+    const XLSX = (await import("xlsx")).default || await import("xlsx");
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(wb, filename);
+  };
+  const doExportPDF = async (title: string, headers: string[], rows: any[][], count: number, filename: string) => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16); doc.text(title, 14, 18);
+    doc.setFontSize(10); doc.setTextColor(100);
+    doc.text(`Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} record(s)`, 14, 26);
+    autoTable(doc, { head: [headers], body: rows, startY: 32, styles: { fontSize: 9, cellPadding: 3 }, headStyles: { fillColor: [14, 137, 143], textColor: 255, fontStyle: "bold" }, alternateRowStyles: { fillColor: [248, 250, 252] } });
+    doc.save(filename);
+  };
+  const doExportWord = async (title: string, headers: string[], rows: any[][], count: number, filename: string) => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, TextRun, AlignmentType, BorderStyle } = await import("docx");
+    const { saveAs } = await import("file-saver");
+    const tb = { top:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"},bottom:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"},left:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"},right:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"} };
+    const hRow = new TableRow({ children: headers.map(h => new TableCell({ borders:tb, shading:{fill:"0E898F"}, children:[new Paragraph({children:[new TextRun({text:h,bold:true,color:"FFFFFF",size:18,font:"Calibri"})],alignment:AlignmentType.CENTER})], width:{size:100/headers.length,type:WidthType.PERCENTAGE} })) });
+    const dRows = rows.map((row:any[]) => new TableRow({ children: row.map((c:any) => new TableCell({ borders:tb, children:[new Paragraph({children:[new TextRun({text:String(c),size:18,font:"Calibri"})],alignment:AlignmentType.LEFT})] })) }));
+    const doc = new Document({ sections:[{ children:[
+      new Paragraph({children:[new TextRun({text:title,bold:true,size:32,font:"Calibri"})],spacing:{after:100}}),
+      new Paragraph({children:[new TextRun({text:`Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} record(s)`,size:20,color:"64748B",font:"Calibri"})],spacing:{after:300}}),
+      new Table({rows:[hRow,...dRows],width:{size:100,type:WidthType.PERCENTAGE}}),
+    ]}] });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, filename);
+  };
+
+  // Table-specific export functions
+  const exportAppts = (fmt: "pdf"|"excel"|"word") => {
+    const h = ["Token","Time","Patient","Patient ID","Type","Status","Fee"];
+    const r = sortedAppts.map((a:any) => [a.tokenNumber||"—",a.timeSlot||"",a.patient?.name||"",a.patient?.patientId||"",TYPE_LABEL[a.type]||a.type,STATUS_CFG[a.status]?.label||a.status,a.consultationFee||0]);
+    const t = `Dr. ${doctorName} — Appointments (${selectedDate.toLocaleDateString("en-IN")})`;
+    const fn = `appointments-${fmtDate(selectedDate)}`;
+    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
+    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
+    else doExportWord(t,h,r,r.length,fn+".docx");
+    setApptExportOpen(false);
+  };
+  const exportPatients = (fmt: "pdf"|"excel"|"word") => {
+    const h = ["Patient ID","Name","Phone","Gender","Last Visit","Last Type"];
+    const r = sortedPatients.map((p:any) => [p.patientId||"",p.name||"",p.phone||"",p.gender||"",p.lastVisit?new Date(p.lastVisit).toLocaleDateString("en-IN"):"",TYPE_LABEL[p.lastType]||p.lastType||""]);
+    const t = `Dr. ${doctorName} — My Patients`;
+    const fn = `patients-${new Date().toISOString().slice(0,10)}`;
+    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
+    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
+    else doExportWord(t,h,r,r.length,fn+".docx");
+    setPatientExportOpen(false);
+  };
+  const exportPlans = (fmt: "pdf"|"excel"|"word") => {
+    const h = ["Plan Name","Patient","Status","Sessions","Cost (₹)","Paid (₹)"];
+    const r = sortedPlans.map((p:any) => [p.planName||"",p.patient?.name||"",p.status||"",`${p.completedSessions||0}/${p.totalSessions||0}`,p.totalCost||0,p.paidAmount||0]);
+    const t = `Dr. ${doctorName} — Treatment Plans`;
+    const fn = `treatment-plans-${new Date().toISOString().slice(0,10)}`;
+    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
+    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
+    else doExportWord(t,h,r,r.length,fn+".docx");
+    setPlanExportOpen(false);
+  };
+  const exportAttendance = (fmt: "pdf"|"excel"|"word") => {
+    const h = ["Date","Day","Status","Login Time","Notes"];
+    const r = sortedAttendance.map((rec:any) => { const d=new Date(rec.date); return [d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}),d.toLocaleDateString("en-IN",{weekday:"short"}),rec.status||"",rec.loginTime?new Date(rec.loginTime).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}):"—",rec.notes||""]; });
+    const t = `Dr. ${doctorName} — Attendance (${attendanceMonth})`;
+    const fn = `attendance-${attendanceMonth}`;
+    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
+    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
+    else doExportWord(t,h,r,r.length,fn+".docx");
+    setAttendExportOpen(false);
+  };
+  const exportRecent = (fmt: "pdf"|"excel"|"word") => {
+    const src = (reportData?.recentCompleted||[]).filter((r:any) => { if (!recentSearch) return true; const q=recentSearch.toLowerCase(); return (r.patientName||"").toLowerCase().includes(q)||(r.patientId||"").toLowerCase().includes(q)||(r.type||"").toLowerCase().includes(q); });
+    const h = ["Patient","Patient ID","Type","Date","Time","Fee (₹)"];
+    const r = src.map((x:any) => [x.patientName||"",x.patientId||"",TYPE_LABEL[x.type]||x.type||"",x.date?new Date(x.date).toLocaleDateString("en-IN"):"",x.timeSlot||"",x.fee||0]);
+    const t = `Dr. ${doctorName} — Recent Consultations`;
+    const fn = `recent-consultations-${new Date().toISOString().slice(0,10)}`;
+    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
+    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
+    else doExportWord(t,h,r,r.length,fn+".docx");
+    setRecentExportOpen(false);
+  };
+
+  // ── Reusable export dropdown component ──
+  const ExportDropdown = ({open, onClose, onExport}: {open:boolean; onClose:()=>void; onExport:(fmt:"pdf"|"excel"|"word")=>void}) => {
+    if (!open) return null;
+    return (<>
+      <div style={{position:"fixed",inset:0,zIndex:60}} onClick={onClose}/>
+      <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,zIndex:70,minWidth:180,padding:6,boxShadow:"0 8px 24px rgba(0,0,0,.1)"}}>
+        <button onClick={()=>onExport("pdf")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+          onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+          <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff5f5",color:"#ef4444"}}><FileText size={13}/></span>Export as PDF
+        </button>
+        <button onClick={()=>onExport("excel")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+          onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+          <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",color:"#16a34a"}}><FileSpreadsheet size={13}/></span>Export as Excel
+        </button>
+        <button onClick={()=>onExport("word")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+          onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+          <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#eff6ff",color:"#2563eb"}}><FileType size={13}/></span>Export as Word
+        </button>
+      </div>
+    </>);
+  };
 
   const handleStartPrescription = (appointmentId: string) => {
     router.push(`/doctor/dashboard/prescription/${appointmentId}`);
@@ -1013,21 +1259,40 @@ function DoctorDashboardContent() {
                       <RefreshCw size={12}/>Refresh
                     </button>
                   </div>
+                  {/* Search / Export toolbar */}
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
+                      <Search size={13} color="#94a3b8"/>
+                      <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search patient, time, type..." value={apptSearch} onChange={e=>setApptSearch(e.target.value)}/>
+                      {apptSearch && <button onClick={()=>setApptSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                    </div>
+                    {loadingAppts && <Loader2 size={14} color={accent} style={{animation:"spin .7s linear infinite"}}/>}
+                    <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedAppts.length} of {appointments.length}</div>
+                    <div style={{position:"relative",marginLeft:"auto"}}>
+                      <button onClick={()=>setApptExportOpen(!apptExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
+                      <ExportDropdown open={apptExportOpen} onClose={()=>setApptExportOpen(false)} onExport={exportAppts}/>
+                    </div>
+                  </div>
                   {loadingAppts ? (
                     <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
                       <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading appointments...
                     </div>
-                  ) : appointments.length === 0 ? (
+                  ) : sortedAppts.length === 0 ? (
                     <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
                       <CalendarDays size={32} style={{marginBottom:10,opacity:.4}}/>
-                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No appointments {isToday?"today":"on this day"}</div>
-                      <div style={{fontSize:12,marginTop:4}}>Your schedule is clear {isToday?"for today":"for "+selectedDate.toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div>
+                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{apptSearch ? "No matching appointments" : `No appointments ${isToday?"today":"on this day"}`}</div>
+                      <div style={{fontSize:12,marginTop:4}}>{apptSearch ? "Try a different search term" : `Your schedule is clear ${isToday?"for today":"for "+selectedDate.toLocaleDateString("en-IN",{day:"numeric",month:"short"})}`}</div>
                     </div>
                   ) : (
                     <table className="doc-tbl">
-                      <thead><tr><th>Token</th><th>Time</th><th>Patient</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
+                      <thead><tr>
+                        {[{k:"tokenNumber",l:"Token"},{k:"timeSlot",l:"Time"},{k:"patient",l:"Patient"},{k:"type",l:"Type"},{k:"status",l:"Status"}].map(c=>(
+                          <th key={c.k} onClick={()=>handleApptSort(c.k)} style={{cursor:"pointer",userSelect:"none"}}><span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,apptSortField,apptSortDir)}</span></th>
+                        ))}
+                        <th>Action</th>
+                      </tr></thead>
                       <tbody>
-                        {appointments.map((a:any)=>{
+                        {sortedAppts.map((a:any)=>{
                           const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
                           const canConsult = ["SCHEDULED","CONFIRMED","IN_PROGRESS"].includes(a.status);
                           return (
@@ -1086,6 +1351,12 @@ function DoctorDashboardContent() {
                       </tbody>
                     </table>
                   )}
+                  {sortedAppts.length > 0 && (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
+                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedAppts.length} of {appointments.length}</div>
+                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {apptSortField==="tokenNumber"?"Token":apptSortField==="timeSlot"?"Time":apptSortField.charAt(0).toUpperCase()+apptSortField.slice(1)} · {apptSortDir==="asc"?"Ascending":"Descending"}</div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1094,16 +1365,34 @@ function DoctorDashboardContent() {
                   <div className="doc-card-head">
                     <div><div className="doc-card-title">My Patients</div><div className="doc-card-sub">{allPatients.length} unique patients</div></div>
                   </div>
-                  {allPatients.length === 0 ? (
+                  {/* Search / Export toolbar */}
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
+                      <Search size={13} color="#94a3b8"/>
+                      <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search name, ID, phone..." value={patientSearch} onChange={e=>setPatientSearch(e.target.value)}/>
+                      {patientSearch && <button onClick={()=>setPatientSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                    </div>
+                    <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedPatients.length} of {allPatients.length}</div>
+                    <div style={{position:"relative",marginLeft:"auto"}}>
+                      <button onClick={()=>setPatientExportOpen(!patientExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
+                      <ExportDropdown open={patientExportOpen} onClose={()=>setPatientExportOpen(false)} onExport={exportPatients}/>
+                    </div>
+                  </div>
+                  {sortedPatients.length === 0 ? (
                     <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
                       <UserRound size={32} style={{marginBottom:10,opacity:.4}}/>
-                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No patients yet</div>
+                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{patientSearch ? "No matching patients" : "No patients yet"}</div>
                     </div>
                   ) : (
                     <table className="doc-tbl">
-                      <thead><tr><th>Patient ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Last Visit</th><th>Last Type</th><th></th></tr></thead>
+                      <thead><tr>
+                        {[{k:"patientId",l:"Patient ID"},{k:"name",l:"Name"},{k:"phone",l:"Phone"},{k:"gender",l:"Gender"},{k:"lastVisit",l:"Last Visit"},{k:"lastType",l:"Last Type"}].map(c=>(
+                          <th key={c.k} onClick={()=>handlePatientSort(c.k)} style={{cursor:"pointer",userSelect:"none"}}><span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,patientSortField,patientSortDir)}</span></th>
+                        ))}
+                        <th></th>
+                      </tr></thead>
                       <tbody>
-                        {allPatients.map((p:any)=>(
+                        {sortedPatients.map((p:any)=>(
                           <tr key={p.id} onClick={() => setSelectedPatientId(p.id)} style={{cursor:"pointer"}}>
                             <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:11}}>{p.patientId}</span></td>
                             <td style={{fontWeight:600,color:"#1e293b"}}>{p.name}</td>
@@ -1122,6 +1411,12 @@ function DoctorDashboardContent() {
                         ))}
                       </tbody>
                     </table>
+                  )}
+                  {sortedPatients.length > 0 && (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
+                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedPatients.length} of {allPatients.length}</div>
+                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {patientSortField==="patientId"?"ID":patientSortField==="lastVisit"?"Last Visit":patientSortField==="lastType"?"Last Type":patientSortField.charAt(0).toUpperCase()+patientSortField.slice(1)} · {patientSortDir==="asc"?"A→Z":"Z→A"}</div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1236,18 +1531,38 @@ function DoctorDashboardContent() {
                       </button>
                     </div>
                   </div>
+                  {/* Search / Sort / Export toolbar */}
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
+                      <Search size={13} color="#94a3b8"/>
+                      <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search plan, patient, status..." value={planSearch} onChange={e=>setPlanSearch(e.target.value)}/>
+                      {planSearch && <button onClick={()=>setPlanSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                    </div>
+                    {plansLoading && <Loader2 size={14} color={accent} style={{animation:"spin .7s linear infinite"}}/>}
+                    <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedPlans.length} plans</div>
+                    {/* Sort buttons */}
+                    {[{k:"planName",l:"Name"},{k:"status",l:"Status"},{k:"sessions",l:"Sessions"},{k:"cost",l:"Cost"}].map(c=>(
+                      <button key={c.k} onClick={()=>handlePlanSort(c.k)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"5px 10px",borderRadius:7,border:"1px solid #e2e8f0",background:planSortField===c.k?"#f0fdf4":"#fff",color:planSortField===c.k?accent:"#64748b",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                        {c.l} {sortIcon(c.k,planSortField,planSortDir)}
+                      </button>
+                    ))}
+                    <div style={{position:"relative",marginLeft:"auto"}}>
+                      <button onClick={()=>setPlanExportOpen(!planExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
+                      <ExportDropdown open={planExportOpen} onClose={()=>setPlanExportOpen(false)} onExport={exportPlans}/>
+                    </div>
+                  </div>
                   {plansLoading ? (
                     <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
                       <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading treatment plans...
                     </div>
-                  ) : myPlans.length === 0 ? (
+                  ) : sortedPlans.length === 0 ? (
                     <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
                       <Activity size={32} style={{marginBottom:10,opacity:.4}}/>
-                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No treatment plans found</div>
+                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{planSearch ? "No matching plans" : "No treatment plans found"}</div>
                     </div>
                   ) : (
                     <div style={{padding:"0 0 4px"}}>
-                      {myPlans.map((plan:any)=>{
+                      {sortedPlans.map((plan:any)=>{
                         const pct = plan.totalSessions>0?Math.round((plan.completedSessions/plan.totalSessions)*100):0;
                         const STATUS_SC:any={ACTIVE:{bg:"#E6F4F4",c:"#0A6B70"},COMPLETED:{bg:"#f0fdf4",c:"#16a34a"},CANCELLED:{bg:"#fff5f5",c:"#ef4444"},ON_HOLD:{bg:"#fefce8",c:"#ca8a04"}};
                         const sc=STATUS_SC[plan.status]||{bg:"#f8fafc",c:"#64748b"};
@@ -1299,6 +1614,12 @@ function DoctorDashboardContent() {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                  {sortedPlans.length > 0 && (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
+                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedPlans.length} of {myPlans.length} plans</div>
+                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {planSortField==="planName"?"Name":planSortField==="sessions"?"Sessions":planSortField==="cost"?"Cost":planSortField.charAt(0).toUpperCase()+planSortField.slice(1)} · {planSortDir==="asc"?"Ascending":"Descending"}</div>
                     </div>
                   )}
                 </div>
@@ -1443,28 +1764,46 @@ function DoctorDashboardContent() {
                       ))}
                     </div>
 
+                    {/* Search / Export toolbar */}
+                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
+                        <Search size={13} color="#94a3b8"/>
+                        <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search date, status..." value={attendSearch} onChange={e=>setAttendSearch(e.target.value)}/>
+                        {attendSearch && <button onClick={()=>setAttendSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                      </div>
+                      {attendanceLoading && <Loader2 size={14} color={accent} style={{animation:"spin .7s linear infinite"}}/>}
+                      <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedAttendance.length} of {attendance.length}</div>
+                      <div style={{position:"relative",marginLeft:"auto"}}>
+                        <button onClick={()=>setAttendExportOpen(!attendExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
+                        <ExportDropdown open={attendExportOpen} onClose={()=>setAttendExportOpen(false)} onExport={exportAttendance}/>
+                      </div>
+                    </div>
+
                     {attendanceLoading ? (
                       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
                         <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading attendance...
                       </div>
-                    ) : attendance.length === 0 ? (
+                    ) : sortedAttendance.length === 0 ? (
                       <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
                         <ClipboardCheck size={32} style={{marginBottom:10,opacity:.3,display:"block",margin:"0 auto 10px"}}/>
-                        <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>No attendance records for this month</div>
-                        <div style={{fontSize:12,marginTop:4}}>Records appear automatically on login</div>
+                        <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{attendSearch ? "No matching records" : "No attendance records for this month"}</div>
+                        <div style={{fontSize:12,marginTop:4}}>{attendSearch ? "Try a different search" : "Records appear automatically on login"}</div>
                       </div>
                     ) : (
                       <div style={{overflowX:"auto"}}>
                         <table style={{width:"100%",borderCollapse:"collapse"}}>
                           <thead>
                             <tr style={{background:"#f8fafc",borderBottom:"2px solid #e2e8f0"}}>
-                              {["Date","Day","Status","Login Time","Notes"].map(h=>(
-                                <th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",whiteSpace:"nowrap"}}>{h}</th>
+                              {[{k:"date",l:"Date"},{k:"date",l:"Day"},{k:"status",l:"Status"},{k:"loginTime",l:"Login Time"}].map((col,ci)=>(
+                                <th key={ci} onClick={()=>handleAttendSort(col.k)} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",whiteSpace:"nowrap",cursor:"pointer",userSelect:"none"}}>
+                                  <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{col.l} {sortIcon(col.k,attendSortField,attendSortDir)}</span>
+                                </th>
                               ))}
+                              <th style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em"}}>Notes</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {attendance.map((rec:any)=>{
+                            {sortedAttendance.map((rec:any)=>{
                               const sc = statusCfg[rec.status] || statusCfg.PRESENT;
                               const d = new Date(rec.date);
                               const dayName = d.toLocaleDateString("en-IN",{weekday:"short"});
@@ -1486,6 +1825,12 @@ function DoctorDashboardContent() {
                         </table>
                       </div>
                     )}
+                    {sortedAttendance.length > 0 && (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
+                        <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedAttendance.length} of {attendance.length}</div>
+                        <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {attendSortField==="loginTime"?"Login Time":attendSortField.charAt(0).toUpperCase()+attendSortField.slice(1)} · {attendSortDir==="desc"?"Newest first":"Oldest first"}</div>
+                      </div>
+                    )}
                   </>
                 );
               })()}
@@ -1500,6 +1845,278 @@ function DoctorDashboardContent() {
               apiBase="/api/doctor"
             />
           )}
+
+          {/* ═══════════════════ REPORTS ═══════════════════ */}
+          {tab === "reports" && (<>
+            {reportLoading || !reportData ? (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"80px 0",color:"#94a3b8"}}>
+                <Loader2 size={22} style={{animation:"spin .7s linear infinite"}}/>Loading reports...
+              </div>
+            ) : (()=>{
+              const s = reportData.summary || {};
+              const STATUS_COLORS: Record<string,string> = {SCHEDULED:"#94a3b8",CONFIRMED:"#10b981",IN_PROGRESS:"#0E898F",COMPLETED:"#059669",CANCELLED:"#ef4444",NO_SHOW:"#f97316",RESCHEDULED:"#a855f7"};
+              const TYPE_COLORS: Record<string,string> = {OPD:"#0E898F",ONLINE:"#6366f1",FOLLOW_UP:"#f59e0b",EMERGENCY:"#ef4444"};
+              const GENDER_COLORS: Record<string,string> = {MALE:"#3b82f6",FEMALE:"#ec4899",OTHER:"#8b5cf6",Unknown:"#94a3b8"};
+              const CHART_COLORS = [accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"];
+
+              return (<>
+                {/* Header + Refresh */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                  <div>
+                    <div style={{fontSize:18,fontWeight:800,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><BarChart2 size={20} color={accent}/>Reports & Analytics</div>
+                    <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Comprehensive overview of appointments, patients, and revenue</div>
+                  </div>
+                  <button onClick={loadReports} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 18px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 3px 12px ${accent}44`}}>
+                    <RefreshCw size={14}/>Refresh
+                  </button>
+                </div>
+
+                {/* Summary Cards Row 1 */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
+                  {[
+                    {label:"Total Appointments",value:s.totalAppointments,icon:<CalendarDays size={18}/>,color:accent,bg:"#E6F4F4",border:"#B3E0E0"},
+                    {label:"Total Revenue",value:`₹${(s.totalRevenue||0).toLocaleString("en-IN")}`,icon:<IndianRupee size={18}/>,color:"#10b981",bg:"#f0fdf4",border:"#bbf7d0"},
+                    {label:"Today's Appointments",value:s.todayAppointments,icon:<Activity size={18}/>,color:"#6366f1",bg:"#eef2ff",border:"#c7d2fe"},
+                    {label:"Today's Revenue",value:`₹${(s.todayRevenue||0).toLocaleString("en-IN")}`,icon:<TrendingUp size={18}/>,color:"#f59e0b",bg:"#fffbeb",border:"#fde68a"},
+                  ].map((c,i)=>(
+                    <div key={i} style={{background:"#fff",borderRadius:14,padding:"18px 20px",border:`1px solid ${c.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                        <div style={{width:38,height:38,borderRadius:10,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",color:c.color}}>{c.icon}</div>
+                      </div>
+                      <div style={{fontSize:24,fontWeight:800,color:c.color}}>{c.value}</div>
+                      <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:2}}>{c.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Summary Cards Row 2 */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
+                  {[
+                    {label:"Total Patients",value:s.totalPatients,color:accent},
+                    {label:"Completion Rate",value:`${s.completionRate}%`,color:"#10b981"},
+                    {label:"Avg Revenue / Visit",value:`₹${(s.avgRevenuePerVisit||0).toLocaleString("en-IN")}`,color:"#6366f1"},
+                    {label:"Active Treatment Plans",value:s.activePlans,color:"#f59e0b"},
+                  ].map((c,i)=>(
+                    <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 18px",border:"1px solid #d1fae5",display:"flex",alignItems:"center",gap:12}}>
+                      <div style={{width:8,height:32,borderRadius:4,background:c.color,flexShrink:0}}/>
+                      <div>
+                        <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>{c.value}</div>
+                        <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{c.label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Charts Row 1: Daily Trend + Appointment Types */}
+                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                  {/* Daily Trend */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Daily Appointments & Revenue (Last 30 Days)</div>
+                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Hover for details</div>
+                    <div style={{width:"100%",height:260}}>
+                      <RechartsResponsiveContainer width="100%" height="100%">
+                        <RechartsAreaChart data={reportData.dailyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                          <defs>
+                            <linearGradient id="docGradCount" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={accent} stopOpacity={.3}/><stop offset="100%" stopColor={accent} stopOpacity={0}/></linearGradient>
+                            <linearGradient id="docGradRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={.25}/><stop offset="100%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                          </defs>
+                          <RechartsXAxis dataKey="label" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}} interval={4}/>
+                          <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                          <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                          <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #d1fae5",fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
+                          <RechartsArea yAxisId="left" type="monotone" dataKey="count" stroke={accent} fill="url(#docGradCount)" strokeWidth={2} name="Appointments" dot={false}/>
+                          <RechartsArea yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#docGradRev)" strokeWidth={2} name="Revenue (₹)" dot={false}/>
+                        </RechartsAreaChart>
+                      </RechartsResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Appointment Types Pie */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>By Appointment Type</div>
+                    <div style={{width:"100%",height:180}}>
+                      <RechartsResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <RechartsPie data={(reportData.byType||[])} dataKey="count" nameKey="type" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} strokeWidth={0}>
+                            {(reportData.byType||[]).map((t:any,i:number)=>(
+                              <RechartsCell key={i} fill={TYPE_COLORS[t.type]||CHART_COLORS[i%CHART_COLORS.length]}/>
+                            ))}
+                          </RechartsPie>
+                          <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #d1fae5",fontSize:11}}/>
+                        </RechartsPieChart>
+                      </RechartsResponsiveContainer>
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
+                      {(reportData.byType||[]).map((t:any,i:number)=>(
+                        <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:600,color:"#64748b"}}>
+                          <span style={{width:8,height:8,borderRadius:2,background:TYPE_COLORS[t.type]||CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}/>
+                          {TYPE_LABEL[t.type]||t.type} ({t.count})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Charts Row 2: Monthly Revenue + Status Distribution */}
+                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                  {/* Monthly Revenue Bar */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Monthly Revenue & Appointments (Last 6 Months)</div>
+                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Bar = Revenue, Line = Appointments</div>
+                    <div style={{width:"100%",height:240}}>
+                      <RechartsResponsiveContainer width="100%" height="100%">
+                        <RechartsComposedChart data={reportData.monthlyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                          <RechartsXAxis dataKey="label" tick={{fontSize:11,fill:"#64748b"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
+                          <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                          <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                          <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #d1fae5",fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
+                          <RechartsBar yAxisId="left" dataKey="revenue" fill={accent} radius={[6,6,0,0]} name="Revenue (₹)" opacity={0.85} barSize={32}/>
+                          <RechartsLine yAxisId="right" type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2.5} dot={{r:4,fill:"#f59e0b"}} name="Appointments"/>
+                        </RechartsComposedChart>
+                      </RechartsResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Status Distribution */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>Appointment Status</div>
+                    {(reportData.byStatus||[]).map((st:any,i:number)=>{
+                      const total = (reportData.byStatus||[]).reduce((sum:number,x:any)=>sum+x.count,0);
+                      const pct = total ? Math.round((st.count/total)*100) : 0;
+                      const clr = STATUS_COLORS[st.status]||"#94a3b8";
+                      return (
+                        <div key={i} style={{marginBottom:12}}>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                            <span style={{fontSize:12,fontWeight:600,color:"#334155"}}>{STATUS_CFG[st.status]?.label||st.status}</span>
+                            <span style={{fontSize:12,fontWeight:700,color:clr}}>{st.count} ({pct}%)</span>
+                          </div>
+                          <div style={{height:8,borderRadius:4,background:"#f1f5f9",overflow:"hidden"}}>
+                            <div style={{height:"100%",borderRadius:4,background:clr,width:`${pct}%`,transition:"width .5s ease"}}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {(reportData.byStatus||[]).length===0 && <div style={{color:"#94a3b8",fontSize:12}}>No data</div>}
+                  </div>
+                </div>
+
+                {/* Charts Row 3: Hourly Distribution + Gender Distribution */}
+                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                  {/* Hourly Distribution Bar */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Peak Hours Distribution</div>
+                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>When patients visit most</div>
+                    <div style={{width:"100%",height:200}}>
+                      <RechartsResponsiveContainer width="100%" height="100%">
+                        <RechartsBarChart data={reportData.hourlyDistribution||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                          <RechartsXAxis dataKey="hour" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
+                          <RechartsYAxis tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                          <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #d1fae5",fontSize:11}}/>
+                          <RechartsBar dataKey="count" fill={accent} radius={[4,4,0,0]} name="Appointments" opacity={0.85} barSize={24}/>
+                        </RechartsBarChart>
+                      </RechartsResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Gender Distribution */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>Patient Demographics</div>
+                    <div style={{width:"100%",height:160}}>
+                      <RechartsResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <RechartsPie data={(reportData.genderDistribution||[])} dataKey="count" nameKey="gender" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3} strokeWidth={0}>
+                            {(reportData.genderDistribution||[]).map((g:any,i:number)=>(
+                              <RechartsCell key={i} fill={GENDER_COLORS[g.gender]||CHART_COLORS[i%CHART_COLORS.length]}/>
+                            ))}
+                          </RechartsPie>
+                          <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #d1fae5",fontSize:11}}/>
+                        </RechartsPieChart>
+                      </RechartsResponsiveContainer>
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:6,justifyContent:"center"}}>
+                      {(reportData.genderDistribution||[]).map((g:any,i:number)=>(
+                        <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontWeight:600,color:"#64748b"}}>
+                          <span style={{width:8,height:8,borderRadius:2,background:GENDER_COLORS[g.gender]||CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}/>
+                          {g.gender} ({g.count})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Completed Appointments Table */}
+                {(()=>{
+                  const recentFiltered = (reportData.recentCompleted||[]).filter((r:any) => {
+                    if (!recentSearch) return true;
+                    const q = recentSearch.toLowerCase();
+                    return (r.patientName||"").toLowerCase().includes(q) || (r.patientId||"").toLowerCase().includes(q) || (r.type||"").toLowerCase().includes(q) || (r.timeSlot||"").includes(q);
+                  });
+                  const recentSorted = [...recentFiltered].sort((a:any,b:any)=>{
+                    const d = recentSortDir === "asc" ? 1 : -1;
+                    if (recentSortField==="patient") return d*((a.patientName||"").localeCompare(b.patientName||""));
+                    if (recentSortField==="patientId") return d*((a.patientId||"").localeCompare(b.patientId||""));
+                    if (recentSortField==="type") return d*((a.type||"").localeCompare(b.type||""));
+                    if (recentSortField==="date") return d*(new Date(a.date||0).getTime()-new Date(b.date||0).getTime());
+                    if (recentSortField==="timeSlot") return d*((a.timeSlot||"").localeCompare(b.timeSlot||""));
+                    if (recentSortField==="fee") return d*((a.fee||0)-(b.fee||0));
+                    return 0;
+                  });
+                  return (
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                  <div style={{padding:"16px 18px",borderBottom:"1px solid #ecfdf5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Clock size={15} color="#f59e0b"/>Recent Completed Consultations</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{position:"relative"}}>
+                        <button onClick={()=>setRecentExportOpen(!recentExportOpen)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:12,fontWeight:500,cursor:"pointer"}}><Download size={13}/>Export</button>
+                        <ExportDropdown open={recentExportOpen} onClose={()=>setRecentExportOpen(false)} onExport={exportRecent}/>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Search toolbar */}
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"6px 12px",flex:1,minWidth:160}}>
+                      <Search size={12} color="#94a3b8"/>
+                      <input style={{background:"none",border:"none",outline:"none",fontSize:12,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search patient, ID, type..." value={recentSearch} onChange={e=>setRecentSearch(e.target.value)}/>
+                      {recentSearch && <button onClick={()=>setRecentSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={11} color="#94a3b8"/></button>}
+                    </div>
+                    <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{recentSorted.length} records</div>
+                  </div>
+                  <div style={{overflowX:"auto"}}>
+                    <table className="doc-tbl">
+                      <thead>
+                        <tr>
+                          {[{k:"patient",l:"Patient"},{k:"patientId",l:"Patient ID"},{k:"type",l:"Type"},{k:"date",l:"Date"},{k:"timeSlot",l:"Time"},{k:"fee",l:"Fee"}].map(c=>(
+                            <th key={c.k} onClick={()=>handleRecentSort(c.k)} style={{cursor:"pointer",userSelect:"none"}}><span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,recentSortField,recentSortDir)}</span></th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentSorted.map((r:any,i:number)=>(
+                          <tr key={i}>
+                            <td style={{fontWeight:600,color:"#1e293b"}}>{r.patientName}</td>
+                            <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:11}}>{r.patientId}</span></td>
+                            <td><span style={{fontSize:11,background:TYPE_COLORS[r.type]?TYPE_COLORS[r.type]+"18":"#f1f5f9",color:TYPE_COLORS[r.type]||"#475569",padding:"3px 8px",borderRadius:6,fontWeight:600}}>{TYPE_LABEL[r.type]||r.type}</span></td>
+                            <td style={{fontSize:12,color:"#64748b"}}>{r.date ? new Date(r.date).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}</td>
+                            <td style={{fontWeight:600,color:"#334155"}}>{r.timeSlot||"—"}</td>
+                            <td style={{fontWeight:700,color:"#059669"}}>₹{(r.fee||0).toLocaleString("en-IN")}</td>
+                          </tr>
+                        ))}
+                        {recentSorted.length===0 && <tr><td colSpan={6} style={{padding:30,textAlign:"center",color:"#94a3b8",fontSize:12}}>{recentSearch ? "No matching consultations" : "No completed consultations yet"}</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                  {recentSorted.length > 0 && (
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
+                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {recentSorted.length} of {(reportData.recentCompleted||[]).length}</div>
+                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {recentSortField==="patient"?"Patient":recentSortField==="patientId"?"ID":recentSortField==="timeSlot"?"Time":recentSortField.charAt(0).toUpperCase()+recentSortField.slice(1)} · {recentSortDir==="desc"?"Newest":"Oldest"}</div>
+                    </div>
+                  )}
+                </div>
+                  );
+                })()}
+              </>);
+            })()}
+          </>)}
         </div>
 
         {/* Right Sidebar */}

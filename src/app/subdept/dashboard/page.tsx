@@ -1,9 +1,23 @@
 "use client";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useState, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ViewRecordModal, EditRecordModal, TransferPatientModal, ViewPrescriptionModal } from "./modals";
 import NotificationBell from "@/components/NotificationBell";
+import {
+  ResponsiveContainer as RechartsResponsiveContainer,
+  AreaChart as RechartsAreaChart,
+  Area as RechartsArea,
+  XAxis as RechartsXAxis,
+  YAxis as RechartsYAxis,
+  Tooltip as RechartsTooltip,
+  PieChart as RechartsPieChart,
+  Pie as RechartsPie,
+  Cell as RechartsCell,
+  ComposedChart as RechartsComposedChart,
+  Bar as RechartsBar,
+  Line as RechartsLine,
+} from "recharts";
 
 import {
   LogOut, Loader2, Bell, User, Phone, Mail, Activity, LayoutDashboard,
@@ -13,8 +27,9 @@ import {
   TestTube2, HelpCircle, PlayCircle, CheckCircle2, AlertCircle,
   CalendarDays, FileText, TrendingUp, FlaskConical,
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
-  Save, Ban, ChevronDown, MessageSquare, UserCheck, Eye, Download,
-  ShieldCheck, BarChart2, Package, UserPlus
+  Save, Ban, ChevronDown, ChevronUp, MessageSquare, UserCheck, Eye, Download,
+  ShieldCheck, BarChart2, Package, UserPlus, ArrowUpDown, FileSpreadsheet,
+  FileType, AlertTriangle
 } from "lucide-react";
 
 const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Queue...</span></div> });
@@ -92,6 +107,16 @@ function SubDeptDashboardContent() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [queueSearch, setQueueSearch] = useState("");
   const [recordingFor, setRecordingFor] = useState<any>(null);
+  const [selectedQueue, setSelectedQueue] = useState<Set<string>>(new Set());
+  const [queueExportOpen, setQueueExportOpen] = useState(false);
+  const [completedQueue, setCompletedQueue] = useState<any[]>([]);
+  const [completedQueueSearch, setCompletedQueueSearch] = useState("");
+  const [viewCompletedItem, setViewCompletedItem] = useState<any>(null);
+  const [editCompletedItem, setEditCompletedItem] = useState<any>(null);
+  const [editCompletedForm, setEditCompletedForm] = useState<any>({});
+  const [editCompletedSaving, setEditCompletedSaving] = useState(false);
+  const [deleteCompletedTarget, setDeleteCompletedTarget] = useState<any>(null);
+  const [deletingCompleted, setDeletingCompleted] = useState(false);
 
   // Procedures CRUD
   const [procs, setProcs]             = useState<any[]>([]);
@@ -101,6 +126,13 @@ function SubDeptDashboardContent() {
   const [procForm, setProcForm]         = useState<any>(BLANK_PROC);
   const [procSaving, setProcSaving]     = useState(false);
   const [procMsg, setProcMsg]           = useState("");
+  const [selectedProcs, setSelectedProcs] = useState<Set<string>>(new Set());
+  const [procExportOpen, setProcExportOpen] = useState(false);
+  const [deleteProcTarget, setDeleteProcTarget] = useState<any>(null);
+  const [deletingProc, setDeletingProc] = useState(false);
+  const [showBulkDeleteProcConfirm, setShowBulkDeleteProcConfirm] = useState(false);
+  const [bulkDeletingProcs, setBulkDeletingProcs] = useState(false);
+  const [procSearch, setProcSearch] = useState("");
 
   // Upcoming Sessions
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
@@ -119,10 +151,22 @@ function SubDeptDashboardContent() {
   const [viewingRecord, setViewingRecord]   = useState<any>(null);
   const [editingRecord, setEditingRecord]   = useState<any>(null);
   const [transferTarget, setTransferTarget] = useState<any>(null);
+  const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<string>("performedAt");
+  const [sortDir, setSortDir] = useState<"asc"|"desc">("desc");
+  const [exportDropdown, setExportDropdown] = useState<"all"|"selected"|null>(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteRunning, setBulkDeleteRunning] = useState(false);
+  const [deleteRecordTarget, setDeleteRecordTarget] = useState<any>(null);
+  const [deletingRecord, setDeletingRecord] = useState(false);
   const [viewPrescription, setViewPrescription] = useState<any>(null);
   const [subDepts, setSubDepts]             = useState<any[]>([]);
   const [transferForm, setTransferForm]     = useState({ subDeptId: "", notes: "" });
   const [transferring, setTransferring]     = useState(false);
+
+  // Reports
+  const [reportData, setReportData] = useState<any>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Reception-specific: Doctors
   const [docList, setDocList] = useState<any[]>([]);
@@ -180,11 +224,98 @@ function SubDeptDashboardContent() {
   const loadQueue = useCallback(async () => {
     setQueueLoading(true);
     const res = await fetch("/api/subdept/queue", { credentials: "include" }).then(r => r.json());
-    if (res.success) { setQueue(res.data.queue || []); setQueueMeta(res.data); }
+    if (res.success) { setQueue(res.data.queue || []); setCompletedQueue(res.data.completedList || []); setQueueMeta(res.data); }
     setQueueLoading(false);
   }, []);
 
   useEffect(() => { if (tab === "queue") loadQueue(); }, [tab, loadQueue]);
+
+  // ── Queue selection & export helpers ──
+  const toggleSelectQueue = (id: string) => {
+    setSelectedQueue(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  };
+  const toggleSelectAllQueue = () => {
+    if (selectedQueue.size === filteredQueue.length) setSelectedQueue(new Set());
+    else setSelectedQueue(new Set(filteredQueue.map((q: any) => q.id)));
+  };
+  const getQueueExportData = () => {
+    const src = selectedQueue.size > 0 ? filteredQueue.filter((q: any) => selectedQueue.has(q.id)) : filteredQueue;
+    const headers = ["Token", "Patient", "Patient ID", "Referred On", "Time Slot", "Referred By", "Specialization", "Referral Note", "Type", "Fee (₹)"];
+    const rows = src.map((q: any) => [
+      q.tokenNumber || "—", q.patient?.name || "—", q.patient?.patientId || "—",
+      q.appointmentDate ? new Date(q.appointmentDate).toLocaleDateString("en-IN") : "—",
+      q.timeSlot || "—", q.doctor?.name || "—", q.doctor?.specialization || q.doctor?.department || "—",
+      q.subDeptNote || q.doctorNotes || "—", q.type || "—", q.consultationFee || "—",
+    ]);
+    return { headers, rows, count: src.length };
+  };
+  const exportQueuePDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const { headers, rows, count } = getQueueExportData();
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16); doc.text(`${deptName} — Doctor Referrals Queue`, 14, 18);
+    doc.setFontSize(10); doc.setTextColor(100); doc.text(`Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} referral(s)`, 14, 26);
+    autoTable(doc, { head: [headers], body: rows, startY: 32, styles: { fontSize: 8, cellPadding: 3 }, headStyles: { fillColor: [14, 137, 143], textColor: 255, fontStyle: "bold" }, alternateRowStyles: { fillColor: [248, 250, 252] } });
+    doc.save(`referrals-queue-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setQueueExportOpen(false);
+  };
+  const exportQueueExcel = async () => {
+    const XLSX = (await import("xlsx")).default || await import("xlsx");
+    const { headers, rows } = getQueueExportData();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Referrals");
+    XLSX.writeFile(wb, `referrals-queue-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setQueueExportOpen(false);
+  };
+  const exportQueueWord = async () => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, TextRun, AlignmentType, BorderStyle } = await import("docx");
+    const { saveAs } = await import("file-saver");
+    const { headers, rows, count } = getQueueExportData();
+    const thinBorder = { top: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, bottom: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, left: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, right: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" } };
+    const headerRow = new TableRow({ children: headers.map(h => new TableCell({ borders: thinBorder, shading: { fill: "0E898F" }, children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER })], width: { size: 100 / headers.length, type: WidthType.PERCENTAGE } })) });
+    const dataRows = rows.map((row: any[]) => new TableRow({ children: row.map((cell: any) => new TableCell({ borders: thinBorder, children: [new Paragraph({ children: [new TextRun({ text: String(cell), size: 16, font: "Calibri" })], alignment: AlignmentType.LEFT })] })) }));
+    const doc = new Document({ sections: [{ children: [
+      new Paragraph({ children: [new TextRun({ text: `${deptName} — Doctor Referrals Queue`, bold: true, size: 32, font: "Calibri" })], spacing: { after: 100 } }),
+      new Paragraph({ children: [new TextRun({ text: `Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} referral(s)`, size: 20, color: "64748B", font: "Calibri" })], spacing: { after: 300 } }),
+      new Table({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+    ] }] });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `referrals-queue-${new Date().toISOString().slice(0, 10)}.docx`);
+    setQueueExportOpen(false);
+  };
+
+  // ── Completed record CRUD helpers ──
+  const openEditCompleted = (c: any) => {
+    const pr = c.procedureRecords?.[0];
+    if (!pr) return;
+    setEditCompletedItem(c);
+    setEditCompletedForm({ amount: pr.amount || "", notes: pr.notes || "", performedBy: pr.performedBy || "", status: pr.status || "COMPLETED" });
+  };
+  const saveEditCompleted = async () => {
+    const pr = editCompletedItem?.procedureRecords?.[0];
+    if (!pr) return;
+    setEditCompletedSaving(true);
+    await fetch(`/api/subdept/records/${pr.id}`, {
+      method: "PUT", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: parseFloat(editCompletedForm.amount) || 0, notes: editCompletedForm.notes, performedBy: editCompletedForm.performedBy, status: editCompletedForm.status }),
+    });
+    setEditCompletedSaving(false);
+    setEditCompletedItem(null);
+    await loadQueue();
+  };
+  const handleDeleteCompleted = async () => {
+    const pr = deleteCompletedTarget?.procedureRecords?.[0];
+    if (!pr) return;
+    setDeletingCompleted(true);
+    await fetch(`/api/subdept/records/${pr.id}`, { method: "DELETE", credentials: "include" });
+    setDeletingCompleted(false);
+    setDeleteCompletedTarget(null);
+    await loadQueue();
+  };
 
   // ── Load procedures (HOD's own) ──
   const loadProcs = useCallback(async () => {
@@ -195,6 +326,16 @@ function SubDeptDashboardContent() {
   }, []);
 
   useEffect(() => { if (tab === "procedures") loadProcs(); }, [tab, loadProcs]);
+
+  // ── Load reports ──
+  const loadReports = useCallback(async () => {
+    setReportLoading(true);
+    const res = await fetch("/api/subdept/reports", { credentials: "include" }).then(r => r.json());
+    if (res.success) setReportData(res.data);
+    setReportLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
 
   // ── Load records ──
   const loadRecords = useCallback(async (search = "") => {
@@ -260,6 +401,81 @@ function SubDeptDashboardContent() {
     await loadProcs();
   };
 
+  // ── Procedure selection & export helpers ──
+  const toggleSelectProc = (id: string) => {
+    setSelectedProcs(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  };
+  const toggleSelectAllProcs = () => {
+    if (selectedProcs.size === filteredProcs.length) setSelectedProcs(new Set());
+    else setSelectedProcs(new Set(filteredProcs.map((p: any) => p.id)));
+  };
+  const handleDeleteSingleProc = async () => {
+    if (!deleteProcTarget) return;
+    setDeletingProc(true);
+    await fetch(`/api/subdept/procedures/${deleteProcTarget.id}`, { method: "DELETE", credentials: "include" });
+    selectedProcs.delete(deleteProcTarget.id);
+    setSelectedProcs(new Set(selectedProcs));
+    setDeleteProcTarget(null);
+    setDeletingProc(false);
+    await loadProcs();
+  };
+  const bulkDeleteProcs = async () => {
+    setBulkDeletingProcs(true);
+    for (const id of selectedProcs) {
+      await fetch(`/api/subdept/procedures/${id}`, { method: "DELETE", credentials: "include" });
+    }
+    setSelectedProcs(new Set());
+    setShowBulkDeleteProcConfirm(false);
+    setBulkDeletingProcs(false);
+    await loadProcs();
+  };
+  const getProcExportData = () => {
+    const src = selectedProcs.size > 0 ? displayProcs.filter((p: any) => selectedProcs.has(p.id)) : filteredProcs;
+    const headers = ["#", "Name", "Description", "Type", "Fee (₹)", "Duration (min)", "Status"];
+    const rows = src.map((p: any, i: number) => [
+      i + 1, p.name || "", p.description || "", p.type || "",
+      p.fee != null ? p.fee : "—", p.duration || "—", p.isActive ? "Active" : "Inactive",
+    ]);
+    return { headers, rows, count: src.length };
+  };
+  const exportProcPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const { headers, rows, count } = getProcExportData();
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text(`${deptName} — Procedure Catalog`, 14, 18);
+    doc.setFontSize(10); doc.setTextColor(100); doc.text(`Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} procedure(s)`, 14, 26);
+    autoTable(doc, { head: [headers], body: rows, startY: 32, styles: { fontSize: 9, cellPadding: 3 }, headStyles: { fillColor: [14, 137, 143], textColor: 255, fontStyle: "bold" }, alternateRowStyles: { fillColor: [248, 250, 252] } });
+    doc.save(`procedures-${new Date().toISOString().slice(0, 10)}.pdf`);
+    setProcExportOpen(false);
+  };
+  const exportProcExcel = async () => {
+    const XLSX = (await import("xlsx")).default || await import("xlsx");
+    const { headers, rows } = getProcExportData();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Procedures");
+    XLSX.writeFile(wb, `procedures-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    setProcExportOpen(false);
+  };
+  const exportProcWord = async () => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, TextRun, AlignmentType, BorderStyle } = await import("docx");
+    const { saveAs } = await import("file-saver");
+    const { headers, rows, count } = getProcExportData();
+    const thinBorder = { top: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, bottom: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, left: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, right: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" } };
+    const headerRow = new TableRow({ children: headers.map(h => new TableCell({ borders: thinBorder, shading: { fill: "0E898F" }, children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 18, font: "Calibri" })], alignment: AlignmentType.CENTER })], width: { size: 100 / headers.length, type: WidthType.PERCENTAGE } })) });
+    const dataRows = rows.map((row: any[]) => new TableRow({ children: row.map((cell: any) => new TableCell({ borders: thinBorder, children: [new Paragraph({ children: [new TextRun({ text: String(cell), size: 18, font: "Calibri" })], alignment: AlignmentType.LEFT })] })) }));
+    const doc = new Document({ sections: [{ children: [
+      new Paragraph({ children: [new TextRun({ text: `${deptName} — Procedure Catalog`, bold: true, size: 32, font: "Calibri" })], spacing: { after: 100 } }),
+      new Paragraph({ children: [new TextRun({ text: `Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} procedure(s)`, size: 20, color: "64748B", font: "Calibri" })], spacing: { after: 300 } }),
+      new Table({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+    ] }] });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `procedures-${new Date().toISOString().slice(0, 10)}.docx`);
+    setProcExportOpen(false);
+  };
+
   // ── Patient search for record form ──
   const searchPatients = useCallback(async (q: string) => {
     if (!q || q.length < 2) { setPatientResults([]); return; }
@@ -320,6 +536,118 @@ function SubDeptDashboardContent() {
     }
   };
 
+  // ── Records: selection helpers ──
+  const toggleSelectRecord = (id: string) => {
+    setSelectedRecords(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  };
+  const toggleSelectAll = () => {
+    if (selectedRecords.size === sortedRecords.length) setSelectedRecords(new Set());
+    else setSelectedRecords(new Set(sortedRecords.map((r: any) => r.id)));
+  };
+  const bulkDeleteRecords = async () => {
+    setBulkDeleteRunning(true);
+    for (const id of selectedRecords) {
+      await fetch(`/api/subdept/records/${id}`, { method: "DELETE", credentials: "include" });
+    }
+    setSelectedRecords(new Set());
+    setShowBulkDeleteConfirm(false);
+    setBulkDeleteRunning(false);
+    await loadRecords(recordsSearch);
+  };
+  const handleDeleteSingleRecord = async () => {
+    if (!deleteRecordTarget) return;
+    setDeletingRecord(true);
+    const res = await fetch(`/api/subdept/records/${deleteRecordTarget.id}`, { method: "DELETE", credentials: "include" }).then(r => r.json());
+    if (res.success) {
+      selectedRecords.delete(deleteRecordTarget.id);
+      setSelectedRecords(new Set(selectedRecords));
+      setDeleteRecordTarget(null);
+      await loadRecords(recordsSearch);
+    } else { alert(res.message || "Failed to delete record"); }
+    setDeletingRecord(false);
+  };
+  const getExportData = (mode: "all" | "selected") => {
+    const src = mode === "selected" ? records.filter((r: any) => selectedRecords.has(r.id)) : sortedRecords;
+    const headers = ["Date", "Patient", "Patient ID", "Procedure", "Type", "Amount (₹)", "Performed By", "Status", "Notes"];
+    const rows = src.map((r: any) => [
+      new Date(r.performedAt).toLocaleDateString("en-IN"),
+      r.patient?.name || "", r.patient?.patientId || "",
+      r.procedure?.name || "", r.procedure?.type || "",
+      r.amount || 0, r.performedBy || "", r.status?.replace(/_/g, " ") || "", r.notes || "",
+    ]);
+    return { headers, rows, count: src.length };
+  };
+
+  const exportExcel = async (mode: "all" | "selected") => {
+    const XLSX = (await import("xlsx")).default || await import("xlsx");
+    const { headers, rows } = getExportData(mode);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Records");
+    XLSX.writeFile(wb, `records-${mode}-${new Date().toISOString().slice(0,10)}.xlsx`);
+    setExportDropdown(null);
+  };
+
+  const exportPDF = async (mode: "all" | "selected") => {
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const { headers, rows, count } = getExportData(mode);
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16);
+    doc.text(`${deptName} — Procedure Records`, 14, 18);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} record(s)`, 14, 26);
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 32,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [14, 137, 143], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+    doc.save(`records-${mode}-${new Date().toISOString().slice(0,10)}.pdf`);
+    setExportDropdown(null);
+  };
+
+  const exportWord = async (mode: "all" | "selected") => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, TextRun, AlignmentType, BorderStyle } = await import("docx");
+    const { saveAs } = await import("file-saver");
+    const { headers, rows, count } = getExportData(mode);
+    const thinBorder = { top: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, bottom: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, left: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, right: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" } };
+    const headerRow = new TableRow({
+      children: headers.map(h => new TableCell({
+        borders: thinBorder,
+        shading: { fill: "0E898F" },
+        children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 18, font: "Calibri" })], alignment: AlignmentType.CENTER })],
+        width: { size: 100 / headers.length, type: WidthType.PERCENTAGE },
+      })),
+    });
+    const dataRows = rows.map((row: any[]) => new TableRow({
+      children: row.map((cell: any) => new TableCell({
+        borders: thinBorder,
+        children: [new Paragraph({ children: [new TextRun({ text: String(cell), size: 18, font: "Calibri" })], alignment: AlignmentType.LEFT })],
+      })),
+    }));
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ children: [new TextRun({ text: `${deptName} — Procedure Records`, bold: true, size: 32, font: "Calibri" })], spacing: { after: 100 } }),
+          new Paragraph({ children: [new TextRun({ text: `Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} record(s)`, size: 20, color: "64748B", font: "Calibri" })], spacing: { after: 300 } }),
+          new Table({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `records-${mode}-${new Date().toISOString().slice(0,10)}.docx`);
+    setExportDropdown(null);
+  };
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("desc"); }
+  };
+
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/login");
@@ -331,27 +659,43 @@ function SubDeptDashboardContent() {
   const profileProcs: any[] = profile?.procedures || [];
   const activeProcs   = procs.length > 0 ? procs.filter((p: any) => p.isActive) : profileProcs.filter((p: any) => p.isActive);
   const displayProcs  = procs.length > 0 ? procs : profileProcs;
+  const filteredProcs = procSearch
+    ? displayProcs.filter((p: any) => p.name?.toLowerCase().includes(procSearch.toLowerCase()) || p.type?.toLowerCase().includes(procSearch.toLowerCase()) || p.description?.toLowerCase().includes(procSearch.toLowerCase()))
+    : displayProcs;
   const pendingBillingQueue = billingQueue.filter((item: any) => item.bill?.status !== "PAID");
   const hodName       = profile?.hodName || user?.name || "HOD";
   const deptName      = (profile?.type === "OTHER" && profile?.customName) ? profile.customName : (profile?.name || "Sub-Department");
   const today         = new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
+  // Sorted records
+  const sortedRecords = [...records].sort((a: any, b: any) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    if (sortField === "performedAt") return dir * (new Date(a.performedAt).getTime() - new Date(b.performedAt).getTime());
+    if (sortField === "patient") return dir * ((a.patient?.name || "").localeCompare(b.patient?.name || ""));
+    if (sortField === "procedure") return dir * ((a.procedure?.name || "").localeCompare(b.procedure?.name || ""));
+    if (sortField === "type") return dir * ((a.procedure?.type || "").localeCompare(b.procedure?.type || ""));
+    if (sortField === "amount") return dir * ((a.amount || 0) - (b.amount || 0));
+    if (sortField === "performedBy") return dir * ((a.performedBy || "").localeCompare(b.performedBy || ""));
+    if (sortField === "status") return dir * ((a.status || "").localeCompare(b.status || ""));
+    return 0;
+  });
+
   // Type-based predefined tabs
   const deptType = profile?.type || "OTHER";
   const TYPE_TABS: Record<string, string[]> = {
-    DENTAL:      ["overview","queue","procedures","records","dept"],
-    DERMATOLOGY: ["overview","queue","procedures","records","dept"],
-    HAIR:        ["overview","queue","procedures","records","dept"],
-    ONCOLOGY:    ["overview","queue","procedures","records","dept"],
-    CARDIOLOGY:  ["overview","queue","procedures","records","dept"],
-    RECEPTION:   ["overview","appointments","billing","patients","doctors","inventory","dept"],
-    PHARMACY:    ["overview","queue","procedures","records","dept"],
-    BILLING:     ["overview","queue","billing","records","dept"],
-    PATHOLOGY:   ["overview","queue","procedures","records","dept"],
-    RADIOLOGY:   ["overview","queue","procedures","records","dept"],
-    LABORATORY:  ["overview","queue","procedures","records","dept"],
-    PROCEDURE:   ["overview","queue","procedures","records","dept"],
-    OTHER:       ["overview","queue","procedures","records","dept"],
+    DENTAL:      ["overview","queue","procedures","records","reports","dept"],
+    DERMATOLOGY: ["overview","queue","procedures","records","reports","dept"],
+    HAIR:        ["overview","queue","procedures","records","reports","dept"],
+    ONCOLOGY:    ["overview","queue","procedures","records","reports","dept"],
+    CARDIOLOGY:  ["overview","queue","procedures","records","reports","dept"],
+    RECEPTION:   ["overview","appointments","billing","patients","doctors","inventory","reports","dept"],
+    PHARMACY:    ["overview","queue","procedures","records","reports","dept"],
+    BILLING:     ["overview","queue","billing","records","reports","dept"],
+    PATHOLOGY:   ["overview","queue","procedures","records","reports","dept"],
+    RADIOLOGY:   ["overview","queue","procedures","records","reports","dept"],
+    LABORATORY:  ["overview","queue","procedures","records","reports","dept"],
+    PROCEDURE:   ["overview","queue","procedures","records","reports","dept"],
+    OTHER:       ["overview","queue","procedures","records","reports","dept"],
   };
   const enabledTabs = new Set(TYPE_TABS[deptType] || TYPE_TABS.OTHER);
 
@@ -500,17 +844,7 @@ function SubDeptDashboardContent() {
               <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{today}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              {tab==="queue" && (
-                <div className="sd2-search">
-                  <Search size={13} color="#94a3b8"/>
-                  <input placeholder="Search patient, token…" value={queueSearch} onChange={e=>setQueueSearch(e.target.value)}/>
-                </div>
-              )}
-              {tab==="queue" && (
-                <button onClick={loadQueue} style={{width:36,height:36,borderRadius:10,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title="Refresh queue">
-                  <RefreshCw size={14} color={queueLoading?"#94a3b8":meta.accent} style={queueLoading?{animation:"spin .7s linear infinite"}:{}}/>
-                </button>
-              )}
+              
               <NotificationBell accentColor={meta.accent} bgColor={meta.lightBg} borderColor={meta.borderColor} types={["PROCEDURE_COMPLETED","APPOINTMENT_UPDATED"]} />
               <div 
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,cursor:"pointer",position:"relative"}}
@@ -930,163 +1264,706 @@ function SubDeptDashboardContent() {
                 </div>
               </div>
 
-              {/* Queue table */}
-              <div className="sd2-card" style={{marginBottom:0}}>
-                <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><UserCheck size={15} color={meta.accent}/>Doctor Referrals — Today</span>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    {queueLoading && <Loader2 size={14} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
-                    <button onClick={loadQueue} style={{padding:"5px 12px",borderRadius:8,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><RefreshCw size={11}/>Refresh</button>
-                  </div>
+              {/* Toolbar — matches hospitaladmin/appointments style */}
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 14px",flex:1,minWidth:200}}>
+                  <Search size={13} color="#94a3b8"/>
+                  <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}}
+                    placeholder="Search by patient, token, doctor..." value={queueSearch} onChange={e=>setQueueSearch(e.target.value)}/>
+                  {queueSearch && <button onClick={()=>setQueueSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
                 </div>
+                {queueLoading && <Loader2 size={16} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{filteredQueue.length} referrals</div>
+                {/* Export Dropdown */}
+                <div style={{position:"relative",marginLeft:"auto"}}>
+                  <button onClick={()=>setQueueExportOpen(!queueExportOpen)}
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#cbd5e1";e.currentTarget.style.background="#f8fafc";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#fff";}}>
+                    <Download size={14}/>Export
+                  </button>
+                  {queueExportOpen && (<>
+                    <div style={{position:"fixed",inset:0,zIndex:60}} onClick={()=>setQueueExportOpen(false)}/>
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,zIndex:70,minWidth:180,padding:6}}>
+                      <button onClick={exportQueuePDF} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff5f5",color:"#ef4444"}}><FileText size={13}/></span>Export as PDF
+                      </button>
+                      <button onClick={exportQueueExcel} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",color:"#16a34a"}}><FileSpreadsheet size={13}/></span>Export as Excel
+                      </button>
+                      <button onClick={exportQueueWord} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#eff6ff",color:"#2563eb"}}><FileType size={13}/></span>Export as Word
+                      </button>
+                    </div>
+                  </>)}
+                </div>
+                <button onClick={loadQueue}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"9px 20px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
+                  <RefreshCw size={15} style={queueLoading?{animation:"spin .7s linear infinite"}:{}}/>Refresh
+                </button>
+              </div>
 
-                {queueLoading && queue.length===0 ? (
-                  <div style={{padding:"48px",textAlign:"center",color:"#94a3b8",fontSize:13,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-                    <Loader2 size={22} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>
-                    Loading referrals…
-                  </div>
-                ) : filteredQueue.length===0 ? (
-                  <div style={{padding:"56px 24px",textAlign:"center"}}>
-                    <UserCheck size={36} color="#e2e8f0" style={{marginBottom:10}}/>
-                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8"}}>No referrals for today</div>
-                    <div style={{fontSize:12,color:"#cbd5e1",marginTop:4}}>Patients will appear here after a doctor completes their consultation and selects <strong>{deptName}</strong> as the referral</div>
-                  </div>
-                ) : (
-                  <table className="sd2-tbl">
-                    <thead>
-                      <tr>
-                        <th>Token</th>
-                        <th>Patient</th>
-                        <th>Referred On</th>
-                        <th>Referred By</th>
-                        <th>Doctor&apos;s Referral Note</th>
-                        <th>Suggested Procedures</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredQueue.map((q:any)=>{
-                        const exp = expandedRow===q.id;
-                        return (
-                          <>
-                            <tr key={q.id} className="sd2-q-row" style={{cursor:"pointer"}} onClick={()=>setExpandedRow(exp?null:q.id)}>
-                              <td>
-                                <div style={{width:34,height:34,borderRadius:10,background:meta.lightBg,border:`1.5px solid ${meta.borderColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:meta.accent}}>
-                                  {q.tokenNumber||"—"}
-                                </div>
-                              </td>
-                              <td>
-                                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                                  <div style={{width:34,height:34,borderRadius:9,background:"linear-gradient(135deg,#0ea5e9,#6366f1)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,color:"#fff",flexShrink:0}}>
-                                    {(q.patient?.name||"P").charAt(0).toUpperCase()}
+              {/* Queue Table */}
+              {queueLoading && queue.length===0 ? (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"60px 0",color:"#94a3b8"}}>
+                  <Loader2 size={20} style={{animation:"spin .7s linear infinite"}}/>Loading referrals...
+                </div>
+              ) : filteredQueue.length===0 ? (
+                <div style={{textAlign:"center",padding:"60px 20px",background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",color:"#94a3b8"}}>
+                  <UserCheck size={32} style={{marginBottom:10,opacity:.4}}/>
+                  <div style={{fontSize:14,fontWeight:600}}>No referrals for today</div>
+                  <div style={{fontSize:12,color:"#cbd5e1",marginTop:4}}>Patients will appear here after a doctor completes their consultation and refers to <strong>{deptName}</strong></div>
+                </div>
+              ) : (
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                  <div style={{overflowX:"auto"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead>
+                        <tr style={{background:"#f8fafc"}}>
+                          <th style={{padding:"12px 10px 12px 14px",borderBottom:"2px solid #f1f5f9",width:36}}>
+                            <input type="checkbox" checked={filteredQueue.length>0 && selectedQueue.size===filteredQueue.length} onChange={toggleSelectAllQueue}
+                              style={{width:15,height:15,cursor:"pointer",accentColor:meta.accent}}/>
+                          </th>
+                          {["Token","Patient","Referred On","Referred By","Referral Note","Suggested Procedures","Actions"].map(h=>(
+                            <th key={h} style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"12px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredQueue.map((q:any)=>{
+                          const exp = expandedRow===q.id;
+                          const isSelected = selectedQueue.has(q.id);
+                          return (
+                            <React.Fragment key={q.id}>
+                              <tr style={{borderBottom:"1px solid #f8fafc",background:isSelected?meta.lightBg:"transparent",cursor:"pointer"}}
+                                onMouseEnter={e=>{if(!isSelected)e.currentTarget.style.background="#fafbfc";}}
+                                onMouseLeave={e=>{if(!isSelected)e.currentTarget.style.background="transparent";}}
+                                onClick={()=>setExpandedRow(exp?null:q.id)}>
+                                <td style={{padding:"12px 10px 12px 14px",width:36}} onClick={e=>e.stopPropagation()}>
+                                  <input type="checkbox" checked={isSelected} onChange={()=>toggleSelectQueue(q.id)}
+                                    style={{width:15,height:15,cursor:"pointer",accentColor:meta.accent}}/>
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{width:34,height:34,borderRadius:10,background:meta.lightBg,border:`1.5px solid ${meta.borderColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:meta.accent}}>
+                                    {q.tokenNumber||"—"}
                                   </div>
-                                  <div>
-                                    <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{q.patient?.name||"Unknown"}</div>
-                                    <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>
-                                      {q.patient?.patientId||""}{q.patient?.age ? ` · ${q.patient.age}y` : ""}{q.patient?.gender ? ` · ${q.patient.gender.charAt(0)}` : ""}
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                    <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#0ea5e9,#6366f1)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,color:"#fff",flexShrink:0}}>
+                                      {(q.patient?.name||"P").charAt(0).toUpperCase()}
                                     </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>
-                                  {q.appointmentDate ? new Date(q.appointmentDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "—"}
-                                </div>
-                                <div style={{fontSize:11,color:"#94a3b8"}}>{q.timeSlot||"—"}</div>
-                              </td>
-                              <td>
-                                <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{q.doctor?.name||"—"}</div>
-                                <div style={{fontSize:11,color:"#94a3b8"}}>{q.doctor?.specialization||q.doctor?.department||""}</div>
-                              </td>
-                              <td style={{maxWidth:200}}>
-                                {q.subDeptNote
-                                  ? <div style={{fontSize:12,color:"#166534",background:"#f0fdf4",borderRadius:7,padding:"5px 8px",border:"1px solid #bbf7d0",lineHeight:1.4}}><MessageSquare size={10} style={{marginRight:5,verticalAlign:"middle",color:"#16a34a"}}/>{q.subDeptNote}</div>
-                                  : q.doctorNotes
-                                    ? <div style={{fontSize:12,color:"#64748b",fontStyle:"italic"}}>{q.doctorNotes.slice(0,60)}{q.doctorNotes.length>60?"…":""}</div>
-                                    : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
-                                }
-                              </td>
-                              <td>
-                                {q.suggestedProcedures?.length>0
-                                  ? q.suggestedProcedures.map((p:any,i:number)=>(
-                                    <span key={i} style={{display:"inline-block",marginRight:4,marginBottom:2,padding:"2px 8px",borderRadius:100,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8",fontSize:10,fontWeight:700}}>{p.name}</span>
-                                  ))
-                                  : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
-                                }
-                              </td>
-                              <td onClick={e=>e.stopPropagation()}>
-                                <div style={{display:"flex",gap:6,flexWrap:"nowrap"}}>
-                                  <button className="sd2-btn" style={{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}
-                                    onClick={()=>{ setRecordForm({...BLANK_REC, patientId:q.patient?.id||"" , patientSearch:q.patient?.name||"" , appointmentId:q.id, amount:q.suggestedProcedures?.[0]?.fee||"" , procedureId:q.suggestedProcedures?.[0]?.id||""}); setShowRecordForm(true); setTab("records"); }}>
-                                    <Plus size={11}/>Record Procedure
-                                  </button>
-                                  <button className="sd2-btn" style={{background:"#f8fafc",color:"#64748b",border:"1px solid #e2e8f0"}} onClick={()=>setExpandedRow(exp?null:q.id)}>
-                                    <FileText size={11}/>{exp?"Hide":"Details"}
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-
-                            {exp && (
-                              <tr key={`${q.id}-exp`}>
-                                <td colSpan={7} style={{padding:0}}>
-                                  <div className="sd2-expand">
-                                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
-                                      <div>
-                                        <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><Stethoscope size={12} color={meta.accent}/>Doctor&apos;s Consultation Notes</div>
-                                        <div style={{background:"#fff",borderRadius:10,border:`1px solid ${meta.borderColor}`,padding:"12px 14px",fontSize:13,color:"#334155",lineHeight:1.6,minHeight:56}}>
-                                          {q.doctorNotes ? q.doctorNotes : <span style={{color:"#94a3b8",fontStyle:"italic"}}>No consultation notes</span>}
-                                        </div>
-                                        {q.subDeptNote && (
-                                          <div style={{marginTop:10,background:"#f0fdf4",borderRadius:10,border:"1.5px solid #bbf7d0",padding:"12px 14px"}}>
-                                            <div style={{fontSize:11,fontWeight:700,color:"#16a34a",marginBottom:5,display:"flex",alignItems:"center",gap:5}}><MessageSquare size={11}/>Referral Instructions</div>
-                                            <div style={{fontSize:13,color:"#166534",lineHeight:1.6}}>{q.subDeptNote}</div>
-                                          </div>
-                                        )}
-                                        <div style={{marginTop:10,display:"flex",gap:10}}>
-                                          {[["Type",q.type],["Fee",q.consultationFee?`₹${q.consultationFee}`:"—"],["Phone",q.patient?.phone||"—"]].map(([k,v])=>(
-                                            <div key={k} style={{flex:1,background:"#fff",borderRadius:9,padding:"8px 10px",border:"1px solid #e2e8f0",textAlign:"center"}}>
-                                              <div style={{fontSize:10,color:"#94a3b8",fontWeight:600,marginBottom:2}}>{k}</div>
-                                              <div style={{fontSize:12,fontWeight:700,color:"#334155"}}>{v}</div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><TrendingUp size={12} color={meta.accent}/>Patient Journey</div>
-                                        {profile?.flow ? (
-                                          <div style={{background:"#fff",borderRadius:10,border:`1px solid ${meta.borderColor}`,padding:"12px 14px"}}>
-                                            {profile.flow.split("→").map((step:string,i:number,arr:string[])=>{
-                                              const isHere = step.trim().toLowerCase().includes(deptName.split(" ")[0].toLowerCase());
-                                              return (
-                                                <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:i<arr.length-1?8:0}}>
-                                                  <div style={{width:22,height:22,borderRadius:"50%",background:isHere?meta.gradient:"#f1f5f9",border:`2px solid ${isHere?meta.accent:"#e2e8f0"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                                    <span style={{fontSize:9,fontWeight:800,color:isHere?"#fff":"#94a3b8"}}>{i+1}</span>
-                                                  </div>
-                                                  <span style={{fontSize:12,fontWeight:isHere?700:500,color:isHere?meta.accent:"#64748b"}}>{step.trim()}</span>
-                                                  {isHere && <span style={{marginLeft:"auto",fontSize:9,padding:"1px 6px",borderRadius:100,background:meta.lightBg,color:meta.accent,fontWeight:700,border:`1px solid ${meta.borderColor}`}}>HERE</span>}
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        ) : (
-                                          <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:"12px 14px",color:"#94a3b8",fontSize:12}}>
-                                            OPD → <strong style={{color:meta.accent}}>{deptName}</strong> → Billing
-                                          </div>
-                                        )}
-                                      </div>
+                                    <div>
+                                      <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{q.patient?.name||"Unknown"}</div>
+                                      <div style={{fontSize:11,color:"#94a3b8"}}>{q.patient?.patientId||""}{q.patient?.age ? ` · ${q.patient.age}y` : ""}{q.patient?.gender ? ` · ${q.patient.gender.charAt(0)}` : ""}</div>
                                     </div>
                                   </div>
                                 </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{q.appointmentDate ? new Date(q.appointmentDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "—"}</div>
+                                  <div style={{fontSize:11,color:"#94a3b8"}}>{q.timeSlot||"—"}</div>
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{q.doctor?.name||"—"}</div>
+                                  <div style={{fontSize:11,color:"#94a3b8"}}>{q.doctor?.specialization||q.doctor?.department||""}</div>
+                                </td>
+                                <td style={{padding:"12px 14px",maxWidth:200}}>
+                                  {q.subDeptNote
+                                    ? <div style={{fontSize:12,color:"#166534",background:"#f0fdf4",borderRadius:7,padding:"5px 8px",border:"1px solid #bbf7d0",lineHeight:1.4}}><MessageSquare size={10} style={{marginRight:5,verticalAlign:"middle",color:"#16a34a"}}/>{q.subDeptNote}</div>
+                                    : q.doctorNotes
+                                      ? <div style={{fontSize:12,color:"#64748b",fontStyle:"italic"}}>{q.doctorNotes.slice(0,60)}{q.doctorNotes.length>60?"…":""}</div>
+                                      : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
+                                  }
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  {q.suggestedProcedures?.length>0
+                                    ? q.suggestedProcedures.map((p:any,i:number)=>(
+                                      <span key={i} style={{display:"inline-block",marginRight:4,marginBottom:2,padding:"2px 8px",borderRadius:100,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8",fontSize:10,fontWeight:700}}>{p.name}</span>
+                                    ))
+                                    : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
+                                  }
+                                </td>
+                                <td style={{padding:"12px 14px"}} onClick={e=>e.stopPropagation()}>
+                                  <div style={{display:"flex",gap:6}}>
+                                    <button onClick={()=>{ setRecordForm({...BLANK_REC, patientId:q.patient?.id||"" , patientSearch:q.patient?.name||"" , appointmentId:q.id, amount:q.suggestedProcedures?.[0]?.fee||"" , procedureId:q.suggestedProcedures?.[0]?.id||""}); setShowRecordForm(true); setTab("records"); }}
+                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#f0fdf4",color:"#16a34a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Record Procedure"><Plus size={13}/></button>
+                                    <button onClick={()=>setExpandedRow(exp?null:q.id)}
+                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#f8fafc",color:"#64748b",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title={exp?"Hide Details":"View Details"}><Eye size={13}/></button>
+                                  </div>
+                                </td>
                               </tr>
-                            )}
-                          </>
+
+                              {exp && (
+                                <tr>
+                                  <td colSpan={8} style={{padding:0}}>
+                                    <div style={{background:"#fafbfc",padding:"18px 20px",borderBottom:"1px solid #f1f5f9"}}>
+                                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+                                        <div>
+                                          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><Stethoscope size={12} color={meta.accent}/>Doctor&apos;s Consultation Notes</div>
+                                          <div style={{background:"#fff",borderRadius:10,border:`1px solid ${meta.borderColor}`,padding:"12px 14px",fontSize:13,color:"#334155",lineHeight:1.6,minHeight:56}}>
+                                            {q.doctorNotes ? q.doctorNotes : <span style={{color:"#94a3b8",fontStyle:"italic"}}>No consultation notes</span>}
+                                          </div>
+                                          {q.subDeptNote && (
+                                            <div style={{marginTop:10,background:"#f0fdf4",borderRadius:10,border:"1.5px solid #bbf7d0",padding:"12px 14px"}}>
+                                              <div style={{fontSize:11,fontWeight:700,color:"#16a34a",marginBottom:5,display:"flex",alignItems:"center",gap:5}}><MessageSquare size={11}/>Referral Instructions</div>
+                                              <div style={{fontSize:13,color:"#166534",lineHeight:1.6}}>{q.subDeptNote}</div>
+                                            </div>
+                                          )}
+                                          <div style={{marginTop:10,display:"flex",gap:10}}>
+                                            {[["Type",q.type],["Fee",q.consultationFee?`₹${q.consultationFee}`:"—"],["Phone",q.patient?.phone||"—"]].map(([k,v])=>(
+                                              <div key={k} style={{flex:1,background:"#fff",borderRadius:9,padding:"8px 10px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                                                <div style={{fontSize:10,color:"#94a3b8",fontWeight:600,marginBottom:2}}>{k}</div>
+                                                <div style={{fontSize:12,fontWeight:700,color:"#334155"}}>{v}</div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><TrendingUp size={12} color={meta.accent}/>Patient Journey</div>
+                                          {profile?.flow ? (
+                                            <div style={{background:"#fff",borderRadius:10,border:`1px solid ${meta.borderColor}`,padding:"12px 14px"}}>
+                                              {profile.flow.split("→").map((step:string,i:number,arr:string[])=>{
+                                                const isHere = step.trim().toLowerCase().includes(deptName.split(" ")[0].toLowerCase());
+                                                return (
+                                                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:i<arr.length-1?8:0}}>
+                                                    <div style={{width:22,height:22,borderRadius:"50%",background:isHere?meta.gradient:"#f1f5f9",border:`2px solid ${isHere?meta.accent:"#e2e8f0"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                                      <span style={{fontSize:9,fontWeight:800,color:isHere?"#fff":"#94a3b8"}}>{i+1}</span>
+                                                    </div>
+                                                    <span style={{fontSize:12,fontWeight:isHere?700:500,color:isHere?meta.accent:"#64748b"}}>{step.trim()}</span>
+                                                    {isHere && <span style={{marginLeft:"auto",fontSize:9,padding:"1px 6px",borderRadius:100,background:meta.lightBg,color:meta.accent,fontWeight:700,border:`1px solid ${meta.borderColor}`}}>HERE</span>}
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          ) : (
+                                            <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:"12px 14px",color:"#94a3b8",fontSize:12}}>
+                                              OPD → <strong style={{color:meta.accent}}>{deptName}</strong> → Billing
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Footer */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderTop:"1px solid #f1f5f9"}}>
+                    <div style={{fontSize:12,color:"#94a3b8"}}>Showing {filteredQueue.length} of {queue.length} referrals</div>
+                    {selectedQueue.size > 0 && <div style={{fontSize:11,color:meta.accent,fontWeight:600}}>{selectedQueue.size} selected</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* ═══════════════════ COMPLETED REFERRALS ═══════════════════ */}
+              {completedQueue.length > 0 && (<>
+                <div style={{marginTop:28,marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+                  <CheckCircle size={16} color="#16a34a"/>
+                  <span style={{fontSize:15,fontWeight:700,color:"#1e293b"}}>Completed Procedures</span>
+                  <span style={{fontSize:11,fontWeight:600,background:"#f0fdf4",padding:"2px 10px",borderRadius:100,border:"1px solid #bbf7d0",color:"#16a34a"}}>{completedQueue.length}</span>
+                </div>
+                {/* Search */}
+                <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 14px",marginBottom:12,maxWidth:350}}>
+                  <Search size={13} color="#94a3b8"/>
+                  <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}}
+                    placeholder="Search completed..." value={completedQueueSearch} onChange={e=>setCompletedQueueSearch(e.target.value)}/>
+                  {completedQueueSearch && <button onClick={()=>setCompletedQueueSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                </div>
+                {(()=>{
+                  const filtered = completedQueueSearch
+                    ? completedQueue.filter((c:any) => c.patient?.name?.toLowerCase().includes(completedQueueSearch.toLowerCase()) || c.patient?.patientId?.toLowerCase().includes(completedQueueSearch.toLowerCase()) || c.doctor?.name?.toLowerCase().includes(completedQueueSearch.toLowerCase()))
+                    : completedQueue;
+                  return filtered.length === 0 ? (
+                    <div style={{textAlign:"center",padding:"30px 20px",background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",color:"#94a3b8",fontSize:13}}>No matches</div>
+                  ) : (
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                      <div style={{overflowX:"auto"}}>
+                        <table style={{width:"100%",borderCollapse:"collapse"}}>
+                          <thead>
+                            <tr style={{background:"#f0fdf4"}}>
+                              {["Token","Patient","Referred By","Procedure Done","Amount","Performed By","Date","Actions"].map(h=>(
+                                <th key={h} style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#16a34a",padding:"12px 14px",borderBottom:"2px solid #bbf7d0",whiteSpace:"nowrap"}}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map((c:any)=>(
+                              <tr key={c.id} style={{borderBottom:"1px solid #f8fafc"}}
+                                onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{width:34,height:34,borderRadius:10,background:"#f0fdf4",border:"1.5px solid #bbf7d0",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:"#16a34a"}}>
+                                    {c.tokenNumber||"—"}
+                                  </div>
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                    <div style={{width:32,height:32,borderRadius:9,background:"linear-gradient(135deg,#22c55e,#16a34a)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,color:"#fff",flexShrink:0}}>
+                                      {(c.patient?.name||"P").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{c.patient?.name||"—"}</div>
+                                      <div style={{fontSize:11,color:"#94a3b8"}}>{c.patient?.patientId||""}{c.patient?.phone?` · ${c.patient.phone}`:""}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{c.doctor?.name||"—"}</div>
+                                  <div style={{fontSize:11,color:"#94a3b8"}}>{c.doctor?.specialization||""}</div>
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  {c.procedureRecords?.length > 0
+                                    ? c.procedureRecords.map((pr:any,i:number)=>(
+                                      <span key={i} style={{display:"inline-block",marginRight:4,marginBottom:2,padding:"2px 8px",borderRadius:100,background:(PROC_TYPE_COLOR[pr.procedureType]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[pr.procedureType]||"#94a3b8",fontSize:10,fontWeight:700}}>{pr.procedureName}</span>
+                                    ))
+                                    : <span style={{fontSize:11,color:"#94a3b8"}}>—</span>
+                                  }
+                                </td>
+                                <td style={{padding:"12px 14px",fontWeight:700,color:"#0A6B70",fontSize:13}}>
+                                  {c.procedureRecords?.length > 0 ? `₹${c.procedureRecords.reduce((s:number,pr:any)=>s+(pr.amount||0),0)}` : "—"}
+                                </td>
+                                <td style={{padding:"12px 14px",fontSize:13,color:"#64748b"}}>
+                                  {c.procedureRecords?.[0]?.performedBy || "—"}
+                                </td>
+                                <td style={{padding:"12px 14px",fontSize:12,color:"#64748b",whiteSpace:"nowrap"}}>
+                                  {c.procedureRecords?.[0]?.performedAt
+                                    ? new Date(c.procedureRecords[0].performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})
+                                    : c.appointmentDate ? new Date(c.appointmentDate).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{display:"flex",gap:6}}>
+                                    <button onClick={()=>setViewCompletedItem(c)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#f0fdf4",color:"#16a34a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="View"><Eye size={13}/></button>
+                                    <button onClick={()=>openEditCompleted(c)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#E6F4F4",color:"#0E898F",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Edit"><Edit2 size={13}/></button>
+                                    <button onClick={()=>setDeleteCompletedTarget(c)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#fff5f5",color:"#ef4444",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Delete"><Trash2 size={13}/></button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{padding:"12px 16px",borderTop:"1px solid #f1f5f9",fontSize:12,color:"#94a3b8"}}>
+                        {filtered.length} completed procedure{filtered.length!==1?"s":""}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>)}
+
+              {/* ── View Completed Modal ── */}
+              {viewCompletedItem && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={()=>setViewCompletedItem(null)}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:28,width:"100%",maxWidth:540,border:"1px solid #e2e8f0",maxHeight:"90vh",overflowY:"auto"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                      <div style={{fontSize:17,fontWeight:800,color:"#1e293b"}}>Completed Procedure Details</div>
+                      <button onClick={()=>setViewCompletedItem(null)} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
+                    </div>
+                    {/* Patient Info */}
+                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:16}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#22c55e,#16a34a)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:15,color:"#fff"}}>
+                        {(viewCompletedItem.patient?.name||"P").charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{viewCompletedItem.patient?.name||"—"}</div>
+                        <div style={{fontSize:12,color:"#94a3b8"}}>{viewCompletedItem.patient?.patientId||""}{viewCompletedItem.patient?.phone?` · ${viewCompletedItem.patient.phone}`:""}{viewCompletedItem.patient?.gender?` · ${viewCompletedItem.patient.gender}`:""}</div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>TOKEN</div>
+                        <div style={{fontSize:18,fontWeight:800,color:meta.accent}}>{viewCompletedItem.tokenNumber||"—"}</div>
+                      </div>
+                    </div>
+                    {/* Info grid */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+                      {[
+                        ["Referred By", viewCompletedItem.doctor?.name || "—"],
+                        ["Specialization", viewCompletedItem.doctor?.specialization || "—"],
+                        ["Appointment Date", viewCompletedItem.appointmentDate ? new Date(viewCompletedItem.appointmentDate).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : "—"],
+                        ["Time Slot", viewCompletedItem.timeSlot || "—"],
+                        ["Type", viewCompletedItem.type || "—"],
+                        ["Consultation Fee", viewCompletedItem.consultationFee ? `₹${viewCompletedItem.consultationFee}` : "—"],
+                      ].map(([k,v])=>(
+                        <div key={k} style={{background:"#f8fafc",borderRadius:9,padding:"10px 12px",border:"1px solid #f1f5f9"}}>
+                          <div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:".04em"}}>{k}</div>
+                          <div style={{fontSize:13,fontWeight:600,color:"#334155",marginTop:2}}>{v}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Referral Note */}
+                    {viewCompletedItem.subDeptNote && (
+                      <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:12,marginBottom:16}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#16a34a",marginBottom:4,display:"flex",alignItems:"center",gap:5}}><MessageSquare size={11}/>Referral Note</div>
+                        <div style={{fontSize:13,color:"#166534",lineHeight:1.5}}>{viewCompletedItem.subDeptNote}</div>
+                      </div>
+                    )}
+                    {/* Procedure Records */}
+                    <div style={{fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>Procedures Performed</div>
+                    {viewCompletedItem.procedureRecords?.map((pr:any,i:number)=>(
+                      <div key={i} style={{background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0",padding:"12px 14px",marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                          <span style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{pr.procedureName||"—"}</span>
+                          <span style={{fontSize:10,padding:"2px 8px",borderRadius:100,background:(PROC_TYPE_COLOR[pr.procedureType]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[pr.procedureType]||"#94a3b8",fontWeight:700}}>{pr.procedureType}</span>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                          {[["Amount",`₹${pr.amount||0}`],["Status",pr.status||"—"],["Performed By",pr.performedBy||"—"]].map(([k,v])=>(
+                            <div key={k}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{k}</div><div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{v}</div></div>
+                          ))}
+                        </div>
+                        {pr.performedAt && <div style={{fontSize:11,color:"#94a3b8",marginTop:4}}>Performed: {new Date(pr.performedAt).toLocaleString("en-IN",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div>}
+                        {pr.notes && <div style={{fontSize:12,color:"#64748b",marginTop:4,fontStyle:"italic"}}>{pr.notes}</div>}
+                      </div>
+                    ))}
+                    <div style={{display:"flex",justifyContent:"flex-end",marginTop:14}}>
+                      <button onClick={()=>setViewCompletedItem(null)} style={{padding:"9px 20px",borderRadius:9,border:"1.5px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Edit Completed Modal ── */}
+              {editCompletedItem && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={()=>{if(!editCompletedSaving)setEditCompletedItem(null);}}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:28,width:"100%",maxWidth:480,border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                      <div>
+                        <div style={{fontSize:17,fontWeight:800,color:"#1e293b"}}>Edit Procedure Record</div>
+                        <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>For {editCompletedItem.patient?.name||"—"} — {editCompletedItem.procedureRecords?.[0]?.procedureName||""}</div>
+                      </div>
+                      <button onClick={()=>setEditCompletedItem(null)} disabled={editCompletedSaving} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
+                    </div>
+                    <div style={{display:"grid",gap:14}}>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Amount (₹)</label>
+                        <input type="number" value={editCompletedForm.amount} onChange={e=>setEditCompletedForm((f:any)=>({...f,amount:e.target.value}))}
+                          style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"inherit"}}/>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Performed By</label>
+                        <input value={editCompletedForm.performedBy} onChange={e=>setEditCompletedForm((f:any)=>({...f,performedBy:e.target.value}))}
+                          placeholder="Doctor / technician name" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"inherit"}}/>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Status</label>
+                        <select value={editCompletedForm.status} onChange={e=>setEditCompletedForm((f:any)=>({...f,status:e.target.value}))}
+                          style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"inherit"}}>
+                          {["COMPLETED","PENDING","CANCELLED"].map(s=><option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:5}}>Notes</label>
+                        <textarea value={editCompletedForm.notes} onChange={e=>setEditCompletedForm((f:any)=>({...f,notes:e.target.value}))}
+                          rows={3} placeholder="Optional notes" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"inherit",resize:"vertical"}}/>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:10,marginTop:18,borderTop:"1px solid #f1f5f9",paddingTop:18}}>
+                      <button onClick={saveEditCompleted} disabled={editCompletedSaving}
+                        style={{padding:"10px 24px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:editCompletedSaving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6,opacity:editCompletedSaving?.7:1}}>
+                        {editCompletedSaving ? <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/> : <Save size={13}/>}
+                        {editCompletedSaving?"Saving...":"Save Changes"}
+                      </button>
+                      <button onClick={()=>setEditCompletedItem(null)} disabled={editCompletedSaving}
+                        style={{padding:"10px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><Ban size={13}/>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Delete Completed Confirmation Modal ── */}
+              {deleteCompletedTarget && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={e=>{if(e.target===e.currentTarget && !deletingCompleted) setDeleteCompletedTarget(null);}}>
+                  <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:440,border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:18}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:"#fff5f5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <AlertTriangle size={20} color="#ef4444"/>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:16,fontWeight:700,color:"#1e293b",marginBottom:4}}>Delete Procedure Record?</div>
+                        <div style={{fontSize:13,color:"#64748b",lineHeight:1.5}}>
+                          Are you sure you want to delete the procedure record for <strong>{deleteCompletedTarget.patient?.name||"—"}</strong>?
+                          {deleteCompletedTarget.procedureRecords?.[0]?.procedureName && <> ({deleteCompletedTarget.procedureRecords[0].procedureName})</>}
+                        </div>
+                      </div>
+                    </div>
+                    {deleteCompletedTarget.procedureRecords?.[0]?.amount > 0 && (
+                      <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:12,marginBottom:18}}>
+                        <div style={{fontSize:12,color:"#92400e",fontWeight:600,marginBottom:4}}>⚠️ Warning</div>
+                        <div style={{fontSize:11,color:"#a16207"}}>This will permanently remove the ₹{deleteCompletedTarget.procedureRecords[0].amount} procedure record and the patient will reappear in the pending queue.</div>
+                      </div>
+                    )}
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>setDeleteCompletedTarget(null)} disabled={deletingCompleted}
+                        style={{padding:"9px 18px",borderRadius:9,border:"1.5px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:deletingCompleted?"not-allowed":"pointer",opacity:deletingCompleted?.5:1}}>Cancel</button>
+                      <button onClick={handleDeleteCompleted} disabled={deletingCompleted}
+                        style={{padding:"9px 18px",borderRadius:9,border:"none",background:"#ef4444",color:"#fff",fontSize:13,fontWeight:700,cursor:deletingCompleted?"not-allowed":"pointer",opacity:deletingCompleted?.7:1,display:"flex",alignItems:"center",gap:6}}>
+                        {deletingCompleted && <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>}
+                        {deletingCompleted?"Deleting...":"Delete Record"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>)}
+
+            {/* ═══════════════════ REPORTS ═══════════════════ */}
+            {tab==="reports" && (<>
+              {reportLoading || !reportData ? (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"80px 0",color:"#94a3b8"}}>
+                  <Loader2 size={22} style={{animation:"spin .7s linear infinite"}}/>Loading reports...
+                </div>
+              ) : (()=>{
+                const s = reportData.summary || {};
+                const CHART_COLORS = [meta.accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"];
+                const TYPE_COLORS: Record<string,string> = {DIAGNOSTIC:"#6366f1",THERAPEUTIC:"#10b981",SURGICAL:"#ef4444",COSMETIC:"#ec4899",PREVENTIVE:"#f59e0b",EMERGENCY:"#dc2626",REHABILITATIVE:"#06b6d4",OTHER:"#94a3b8"};
+
+                return (<>
+                  {/* Header + Refresh */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                    <div>
+                      <div style={{fontSize:18,fontWeight:800,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><BarChart2 size={20} color={meta.accent}/>{deptName} — Reports & Analytics</div>
+                      <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Comprehensive overview of all procedures, revenue, and performance metrics</div>
+                    </div>
+                    <button onClick={loadReports} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 18px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                      <RefreshCw size={14}/>Refresh
+                    </button>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
+                    {[
+                      {label:"Total Procedures Done",value:s.totalRecords,icon:<ClipboardList size={18}/>,color:meta.accent,bg:meta.lightBg,border:meta.borderColor},
+                      {label:"Total Revenue",value:`₹${(s.totalRevenue||0).toLocaleString("en-IN")}`,icon:<IndianRupee size={18}/>,color:"#10b981",bg:"#f0fdf4",border:"#bbf7d0"},
+                      {label:"Today's Procedures",value:s.todayRecords,icon:<Activity size={18}/>,color:"#6366f1",bg:"#eef2ff",border:"#c7d2fe"},
+                      {label:"Today's Revenue",value:`₹${(s.todayRevenue||0).toLocaleString("en-IN")}`,icon:<TrendingUp size={18}/>,color:"#f59e0b",bg:"#fffbeb",border:"#fde68a"},
+                    ].map((c,i)=>(
+                      <div key={i} style={{background:"#fff",borderRadius:14,padding:"18px 20px",border:`1px solid ${c.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                          <div style={{width:38,height:38,borderRadius:10,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",color:c.color}}>{c.icon}</div>
+                        </div>
+                        <div style={{fontSize:24,fontWeight:800,color:c.color}}>{c.value}</div>
+                        <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:2}}>{c.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Secondary Stats Row */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
+                    {[
+                      {label:"Active Procedures",value:s.activeProcedures,color:meta.accent},
+                      {label:"Total Catalog",value:s.totalProcedures,color:"#6366f1"},
+                      {label:"Total Referrals",value:s.totalReferred,color:"#10b981"},
+                      {label:"Avg Revenue / Record",value:`₹${(s.avgRevenuePerRecord||0).toLocaleString("en-IN")}`,color:"#f59e0b"},
+                    ].map((c,i)=>(
+                      <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 18px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:12}}>
+                        <div style={{width:8,height:32,borderRadius:4,background:c.color,flexShrink:0}}/>
+                        <div>
+                          <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>{c.value}</div>
+                          <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{c.label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Charts Row 1: Daily Trend + Procedures by Type */}
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                    {/* Daily Trend Line Chart */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Daily Procedures & Revenue (Last 30 Days)</div>
+                      <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Hover for details</div>
+                      <div style={{width:"100%",height:260}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsAreaChart data={reportData.dailyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                            <defs>
+                              <linearGradient id="gradCount" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={meta.accent} stopOpacity={.3}/><stop offset="100%" stopColor={meta.accent} stopOpacity={0}/></linearGradient>
+                              <linearGradient id="gradRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={.25}/><stop offset="100%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                            </defs>
+                            <RechartsXAxis dataKey="label" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}} interval={4}/>
+                            <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #e2e8f0",fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
+                            <RechartsArea yAxisId="left" type="monotone" dataKey="count" stroke={meta.accent} fill="url(#gradCount)" strokeWidth={2} name="Procedures" dot={false}/>
+                            <RechartsArea yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#gradRev)" strokeWidth={2} name="Revenue (₹)" dot={false}/>
+                          </RechartsAreaChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Procedures by Type — Pie */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>By Procedure Type</div>
+                      <div style={{width:"100%",height:180}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsPieChart>
+                            <RechartsPie data={(reportData.byType||[]).map((t:any,i:number)=>({...t,fill:TYPE_COLORS[t.type]||CHART_COLORS[i%CHART_COLORS.length]}))} dataKey="count" nameKey="type" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} strokeWidth={0}>
+                              {(reportData.byType||[]).map((_:any,i:number)=>(
+                                <RechartsCell key={i} fill={TYPE_COLORS[(reportData.byType||[])[i]?.type]||CHART_COLORS[i%CHART_COLORS.length]}/>
+                              ))}
+                            </RechartsPie>
+                            <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:11}}/>
+                          </RechartsPieChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
+                        {(reportData.byType||[]).map((t:any,i:number)=>(
+                          <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:600,color:"#64748b"}}>
+                            <span style={{width:8,height:8,borderRadius:2,background:TYPE_COLORS[t.type]||CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}/>
+                            {t.type} ({t.count})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Charts Row 2: Monthly Revenue Bar + Status Distribution */}
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                    {/* Monthly Revenue Bar Chart */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Monthly Revenue & Procedures (Last 6 Months)</div>
+                      <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Bar = Revenue, Line = Count</div>
+                      <div style={{width:"100%",height:240}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsComposedChart data={reportData.monthlyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                            <RechartsXAxis dataKey="label" tick={{fontSize:11,fill:"#64748b"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
+                            <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #e2e8f0",fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
+                            <RechartsBar yAxisId="left" dataKey="revenue" fill={meta.accent} radius={[6,6,0,0]} name="Revenue (₹)" opacity={0.85} barSize={32}/>
+                            <RechartsLine yAxisId="right" type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2.5} dot={{r:4,fill:"#f59e0b"}} name="Procedures"/>
+                          </RechartsComposedChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Status Distribution */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>Record Status</div>
+                      {(reportData.byStatus||[]).map((st:any,i:number)=>{
+                        const total = (reportData.byStatus||[]).reduce((s:number,x:any)=>s+x.count,0);
+                        const pct = total ? Math.round((st.count/total)*100) : 0;
+                        const statusColors: Record<string,string> = {COMPLETED:"#10b981",PENDING:"#f59e0b",CANCELLED:"#ef4444",IN_PROGRESS:"#6366f1"};
+                        const clr = statusColors[st.status]||"#94a3b8";
+                        return (
+                          <div key={i} style={{marginBottom:14}}>
+                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                              <span style={{fontSize:12,fontWeight:600,color:"#334155"}}>{st.status}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:clr}}>{st.count} ({pct}%)</span>
+                            </div>
+                            <div style={{height:8,borderRadius:4,background:"#f1f5f9",overflow:"hidden"}}>
+                              <div style={{height:"100%",borderRadius:4,background:clr,width:`${pct}%`,transition:"width .5s ease"}}/>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                      {(reportData.byStatus||[]).length===0 && <div style={{color:"#94a3b8",fontSize:12}}>No data</div>}
+                    </div>
+                  </div>
+
+                  {/* Tables Row: Top Procedures + Performers */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:24}}>
+                    {/* Top Procedures Table */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{padding:"16px 18px",borderBottom:"1px solid #f1f5f9",fontSize:14,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><ClipboardList size={15} color={meta.accent}/>Top Procedures</div>
+                      <table style={{width:"100%",borderCollapse:"collapse"}}>
+                        <thead>
+                          <tr style={{background:"#f8fafc"}}>
+                            {["#","Procedure","Type","Count","Revenue"].map(h=>(
+                              <th key={h} style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"10px 14px",borderBottom:"2px solid #f1f5f9"}}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(reportData.topProcedures||[]).map((p:any,i:number)=>(
+                            <tr key={i} style={{borderBottom:"1px solid #f8fafc"}} onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                              <td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:meta.accent}}>{i+1}</td>
+                              <td style={{padding:"10px 14px",fontSize:13,fontWeight:600,color:"#1e293b"}}>{p.name}</td>
+                              <td style={{padding:"10px 14px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:100,fontWeight:700,background:(TYPE_COLORS[p.type]||"#94a3b8")+"18",color:TYPE_COLORS[p.type]||"#94a3b8"}}>{p.type}</span></td>
+                              <td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:"#334155"}}>{p.count}</td>
+                              <td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:"#10b981"}}>₹{(p.revenue||0).toLocaleString("en-IN")}</td>
+                            </tr>
+                          ))}
+                          {(reportData.topProcedures||[]).length===0 && <tr><td colSpan={5} style={{padding:20,textAlign:"center",color:"#94a3b8",fontSize:12}}>No data</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Performers Leaderboard */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{padding:"16px 18px",borderBottom:"1px solid #f1f5f9",fontSize:14,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Users size={15} color="#6366f1"/>Performers Leaderboard</div>
+                      <table style={{width:"100%",borderCollapse:"collapse"}}>
+                        <thead>
+                          <tr style={{background:"#f8fafc"}}>
+                            {["#","Name","Procedures","Revenue"].map(h=>(
+                              <th key={h} style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"10px 14px",borderBottom:"2px solid #f1f5f9"}}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(reportData.performers||[]).map((p:any,i:number)=>(
+                            <tr key={i} style={{borderBottom:"1px solid #f8fafc"}} onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                              <td style={{padding:"10px 14px"}}>
+                                <div style={{width:26,height:26,borderRadius:7,background:i===0?"linear-gradient(135deg,#f59e0b,#eab308)":i===1?"linear-gradient(135deg,#94a3b8,#64748b)":i===2?"linear-gradient(135deg,#cd7f32,#b8860b)":"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:i<3?"#fff":"#64748b"}}>{i+1}</div>
+                              </td>
+                              <td style={{padding:"10px 14px"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                  <div style={{width:28,height:28,borderRadius:8,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{(p.name||"?").charAt(0).toUpperCase()}</div>
+                                  <span style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{p.name}</span>
+                                </div>
+                              </td>
+                              <td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:"#334155"}}>{p.count}</td>
+                              <td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:"#10b981"}}>₹{(p.revenue||0).toLocaleString("en-IN")}</td>
+                            </tr>
+                          ))}
+                          {(reportData.performers||[]).length===0 && <tr><td colSpan={4} style={{padding:20,textAlign:"center",color:"#94a3b8",fontSize:12}}>No data</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Recent Records Table */}
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                    <div style={{padding:"16px 18px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Clock size={15} color="#f59e0b"/>Recent Procedure Records</div>
+                      <button onClick={()=>setTab("records")} style={{fontSize:12,fontWeight:600,color:meta.accent,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={12}/></button>
+                    </div>
+                    <div style={{overflowX:"auto"}}>
+                      <table style={{width:"100%",borderCollapse:"collapse"}}>
+                        <thead>
+                          <tr style={{background:"#f8fafc"}}>
+                            {["Patient","Procedure","Type","Amount","Status","Performed By","Date"].map(h=>(
+                              <th key={h} style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"10px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(reportData.recentRecords||[]).map((r:any,i:number)=>{
+                            const stClr = r.status==="COMPLETED"?"#10b981":r.status==="PENDING"?"#f59e0b":"#ef4444";
+                            return (
+                              <tr key={i} style={{borderBottom:"1px solid #f8fafc"}} onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                                <td style={{padding:"10px 14px",fontSize:13,fontWeight:600,color:"#1e293b"}}>{r.patientName}</td>
+                                <td style={{padding:"10px 14px",fontSize:13,color:"#334155"}}>{r.procedureName}</td>
+                                <td style={{padding:"10px 14px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:100,fontWeight:700,background:(TYPE_COLORS[r.procedureType]||"#94a3b8")+"18",color:TYPE_COLORS[r.procedureType]||"#94a3b8"}}>{r.procedureType}</span></td>
+                                <td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:"#0A6B70"}}>₹{(r.amount||0).toLocaleString("en-IN")}</td>
+                                <td style={{padding:"10px 14px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:100,fontWeight:700,background:stClr+"18",color:stClr}}>{r.status}</span></td>
+                                <td style={{padding:"10px 14px",fontSize:13,color:"#64748b"}}>{r.performedBy}</td>
+                                <td style={{padding:"10px 14px",fontSize:12,color:"#64748b",whiteSpace:"nowrap"}}>{r.performedAt ? new Date(r.performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}</td>
+                              </tr>
+                            );
+                          })}
+                          {(reportData.recentRecords||[]).length===0 && <tr><td colSpan={7} style={{padding:30,textAlign:"center",color:"#94a3b8",fontSize:12}}>No records yet</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>);
+              })()}
             </>)}
 
             {/* ═══════════════════ PROCEDURES CRUD ═══════════════════ */}
@@ -1138,59 +2015,191 @@ function SubDeptDashboardContent() {
                 </div>
               )}
 
-              <div className="sd2-card" style={{marginBottom:0}}>
-                <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><ClipboardList size={15} color={meta.accent}/>Procedure Catalog</span>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    {procsLoading && <Loader2 size={13} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
-                    <span style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active</span>
-                    <button onClick={openAddProc} style={{padding:"6px 14px",borderRadius:9,background:meta.gradient,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",display:"flex",alignItems:"center",gap:5}}><Plus size={13}/>Add Procedure</button>
+              {/* Toolbar — matches hospitaladmin/appointments style */}
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 14px",flex:1,minWidth:200}}>
+                  <Search size={13} color="#94a3b8"/>
+                  <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}}
+                    placeholder="Search by name, type..." value={procSearch} onChange={e=>setProcSearch(e.target.value)}/>
+                  {procSearch && <button onClick={()=>setProcSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                </div>
+                {procsLoading && <Loader2 size={16} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{filteredProcs.length} procedures</div>
+                {selectedProcs.size > 0 && (
+                  <button onClick={()=>setShowBulkDeleteProcConfirm(true)}
+                    style={{padding:"8px 14px",borderRadius:10,border:"1px solid #fecaca",background:"#fff5f5",fontSize:12,color:"#ef4444",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                    <Trash2 size={12}/>Delete ({selectedProcs.size})
+                  </button>
+                )}
+                {/* Export Dropdown */}
+                <div style={{position:"relative",marginLeft:"auto"}}>
+                  <button onClick={()=>setProcExportOpen(!procExportOpen)}
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#cbd5e1";e.currentTarget.style.background="#f8fafc";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#fff";}}>
+                    <Download size={14}/>Export
+                  </button>
+                  {procExportOpen && (<>
+                    <div style={{position:"fixed",inset:0,zIndex:60}} onClick={()=>setProcExportOpen(false)}/>
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,zIndex:70,minWidth:180,padding:6}}>
+                      <button onClick={exportProcPDF} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff5f5",color:"#ef4444"}}><FileText size={13}/></span>Export as PDF
+                      </button>
+                      <button onClick={exportProcExcel} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",color:"#16a34a"}}><FileSpreadsheet size={13}/></span>Export as Excel
+                      </button>
+                      <button onClick={exportProcWord} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#eff6ff",color:"#2563eb"}}><FileType size={13}/></span>Export as Word
+                      </button>
+                    </div>
+                  </>)}
+                </div>
+                <button onClick={openAddProc}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"9px 20px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
+                  <Plus size={15}/>Add Procedure
+                </button>
+              </div>
+
+              {/* Procedures Table */}
+              {filteredProcs.length===0 ? (
+                <div style={{textAlign:"center",padding:"60px 20px",background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",color:"#94a3b8"}}>
+                  <FlaskConical size={32} style={{marginBottom:10,opacity:.4}}/>
+                  <div style={{fontSize:14,fontWeight:600}}>{displayProcs.length===0?"No procedures yet":"No procedures match your search"}</div>
+                </div>
+              ) : (
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                  <div style={{overflowX:"auto"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead>
+                        <tr style={{background:"#f8fafc"}}>
+                          <th style={{padding:"12px 10px 12px 14px",borderBottom:"2px solid #f1f5f9",width:36}}>
+                            <input type="checkbox" checked={filteredProcs.length>0 && selectedProcs.size===filteredProcs.length} onChange={toggleSelectAllProcs}
+                              style={{width:15,height:15,cursor:"pointer",accentColor:meta.accent}}/>
+                          </th>
+                          {["#","Procedure Name","Type","Fee","Duration","Status","Actions"].map(h=>(
+                            <th key={h} style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"12px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredProcs.map((p:any,i:number)=>{
+                          const isSelected = selectedProcs.has(p.id);
+                          return (
+                            <tr key={p.id} style={{borderBottom:"1px solid #f8fafc",background:isSelected?meta.lightBg:"transparent"}}
+                              onMouseEnter={e=>{if(!isSelected)e.currentTarget.style.background="#fafbfc";}}
+                              onMouseLeave={e=>{if(!isSelected)e.currentTarget.style.background="transparent";}}>
+                              <td style={{padding:"12px 10px 12px 14px",width:36}}>
+                                <input type="checkbox" checked={isSelected} onChange={()=>toggleSelectProc(p.id)}
+                                  style={{width:15,height:15,cursor:"pointer",accentColor:meta.accent}}/>
+                              </td>
+                              <td style={{padding:"12px 14px",color:"#94a3b8",fontWeight:600,fontSize:12}}>{i+1}</td>
+                              <td style={{padding:"12px 14px"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                  <div style={{width:32,height:32,borderRadius:9,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                    <FlaskConical size={14} color={PROC_TYPE_COLOR[p.type]||"#94a3b8"}/>
+                                  </div>
+                                  <div>
+                                    <div style={{fontSize:13,fontWeight:600,color:p.isActive?"#1e293b":"#94a3b8"}}>{p.name}</div>
+                                    {p.description && <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{p.description}</div>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{padding:"12px 14px"}}><span style={{fontSize:10,padding:"3px 8px",borderRadius:100,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8",fontWeight:600}}>{p.type}</span></td>
+                              <td style={{padding:"12px 14px",fontWeight:700,color:p.fee!=null?"#0A6B70":"#94a3b8",fontSize:13}}>{p.fee!=null?`₹${p.fee}`:"—"}</td>
+                              <td style={{padding:"12px 14px",fontSize:13,color:"#64748b"}}>{p.duration?`${p.duration} min`:"—"}</td>
+                              <td style={{padding:"12px 14px"}}>
+                                <button onClick={()=>toggleProcActive(p)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                                  {p.isActive
+                                    ? <><ToggleRight size={18} color="#22c55e"/><span style={{fontSize:11,fontWeight:700,color:"#16a34a"}}>Active</span></>
+                                    : <><ToggleLeft size={18} color="#94a3b8"/><span style={{fontSize:11,fontWeight:600,color:"#94a3b8"}}>Inactive</span></>}
+                                </button>
+                              </td>
+                              <td style={{padding:"12px 14px"}}>
+                                <div style={{display:"flex",gap:6}}>
+                                  <button onClick={()=>openEditProc(p)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#E6F4F4",color:"#0E898F",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Edit"><Edit2 size={13}/></button>
+                                  <button onClick={()=>setDeleteProcTarget(p)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#fff5f5",color:"#ef4444",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Delete"><Trash2 size={13}/></button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Footer */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderTop:"1px solid #f1f5f9"}}>
+                    <div style={{fontSize:12,color:"#94a3b8"}}>Showing {filteredProcs.length} of {displayProcs.length} procedures</div>
+                    <div style={{fontSize:11,color:"#94a3b8"}}>{activeProcs.length} active · {displayProcs.length - activeProcs.length} inactive</div>
                   </div>
                 </div>
-                {displayProcs.length===0 ? (
-                  <div style={{padding:"56px",textAlign:"center"}}>
-                    <FlaskConical size={36} color="#e2e8f0" style={{marginBottom:10}}/>
-                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8",marginBottom:6}}>No procedures yet</div>
-                    <button onClick={openAddProc} style={{padding:"8px 18px",borderRadius:9,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:12,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Plus size={12}/>Add First Procedure</button>
+              )}
+
+              {/* Single Delete Confirmation Modal */}
+              {deleteProcTarget && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={e=>{if(e.target===e.currentTarget && !deletingProc) setDeleteProcTarget(null);}}>
+                  <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:440,border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:18}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:"#fff5f5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <AlertTriangle size={20} color="#ef4444"/>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:16,fontWeight:700,color:"#1e293b",marginBottom:4}}>Delete Procedure?</div>
+                        <div style={{fontSize:13,color:"#64748b",lineHeight:1.5}}>
+                          Are you sure you want to delete <strong>{deleteProcTarget.name}</strong> ({deleteProcTarget.type})? This cannot be undone.
+                        </div>
+                      </div>
+                    </div>
+                    {deleteProcTarget.fee!=null && (
+                      <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:12,marginBottom:18}}>
+                        <div style={{fontSize:12,color:"#92400e",fontWeight:600,marginBottom:4}}>⚠️ Warning</div>
+                        <div style={{fontSize:11,color:"#a16207"}}>This procedure with fee ₹{deleteProcTarget.fee} will be permanently removed from your catalog.</div>
+                      </div>
+                    )}
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>setDeleteProcTarget(null)} disabled={deletingProc}
+                        style={{padding:"9px 18px",borderRadius:9,border:"1.5px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:deletingProc?"not-allowed":"pointer",opacity:deletingProc?.5:1}}>Cancel</button>
+                      <button onClick={handleDeleteSingleProc} disabled={deletingProc}
+                        style={{padding:"9px 18px",borderRadius:9,border:"none",background:"#ef4444",color:"#fff",fontSize:13,fontWeight:700,cursor:deletingProc?"not-allowed":"pointer",opacity:deletingProc?.7:1,display:"flex",alignItems:"center",gap:6}}>
+                        {deletingProc && <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>}
+                        {deletingProc?"Deleting...":"Delete Procedure"}
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <table className="sd2-tbl">
-                    <thead><tr><th>#</th><th>Procedure Name</th><th>Type</th><th>Fee</th><th>Duration</th><th>Status</th><th>Actions</th></tr></thead>
-                    <tbody>
-                      {displayProcs.map((p:any,i:number)=>(
-                        <tr key={p.id}>
-                          <td style={{color:"#94a3b8",fontWeight:600}}>{i+1}</td>
-                          <td>
-                            <div style={{display:"flex",alignItems:"center",gap:10}}>
-                              <div style={{width:8,height:8,borderRadius:"50%",background:PROC_TYPE_COLOR[p.type]||"#94a3b8",flexShrink:0}}/>
-                              <div>
-                                <div style={{fontSize:13,fontWeight:600,color:p.isActive?"#1e293b":"#94a3b8"}}>{p.name}</div>
-                                {p.description && <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{p.description}</div>}
-                              </div>
-                            </div>
-                          </td>
-                          <td><span className="sd2-badge" style={{background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8"}}>{p.type}</span></td>
-                          <td style={{fontWeight:700,color:p.fee!=null?"#10b981":"#94a3b8"}}>{p.fee!=null?`₹${p.fee}`:"—"}</td>
-                          <td style={{color:"#64748b"}}>{p.duration?`${p.duration} min`:"—"}</td>
-                          <td>
-                            <button onClick={()=>toggleProcActive(p)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-                              {p.isActive
-                                ? <><ToggleRight size={18} color="#22c55e"/><span style={{fontSize:11,fontWeight:700,color:"#16a34a"}}>Active</span></>
-                                : <><ToggleLeft size={18} color="#94a3b8"/><span style={{fontSize:11,fontWeight:600,color:"#94a3b8"}}>Inactive</span></>}
-                            </button>
-                          </td>
-                          <td>
-                            <div style={{display:"flex",gap:6}}>
-                              <button className="sd2-btn" style={{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}} onClick={()=>openEditProc(p)}><Edit2 size={11}/>Edit</button>
-                              <button className="sd2-btn" style={{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}} onClick={()=>deleteProc(p.id)}><Trash2 size={11}/>Delete</button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Bulk Delete Confirmation Modal */}
+              {showBulkDeleteProcConfirm && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={e=>{if(e.target===e.currentTarget && !bulkDeletingProcs) setShowBulkDeleteProcConfirm(false);}}>
+                  <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:440,border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:18}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:"#fff5f5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <AlertTriangle size={20} color="#ef4444"/>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:16,fontWeight:700,color:"#1e293b",marginBottom:4}}>Delete {selectedProcs.size} Procedures?</div>
+                        <div style={{fontSize:13,color:"#64748b",lineHeight:1.5}}>
+                          Are you sure you want to delete <strong>{selectedProcs.size}</strong> selected procedure(s)? This action cannot be undone.
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>setShowBulkDeleteProcConfirm(false)} disabled={bulkDeletingProcs}
+                        style={{padding:"9px 18px",borderRadius:9,border:"1.5px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:bulkDeletingProcs?"not-allowed":"pointer",opacity:bulkDeletingProcs?.5:1}}>Cancel</button>
+                      <button onClick={bulkDeleteProcs} disabled={bulkDeletingProcs}
+                        style={{padding:"9px 18px",borderRadius:9,border:"none",background:"#ef4444",color:"#fff",fontSize:13,fontWeight:700,cursor:bulkDeletingProcs?"not-allowed":"pointer",opacity:bulkDeletingProcs?.7:1,display:"flex",alignItems:"center",gap:6}}>
+                        {bulkDeletingProcs && <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>}
+                        {bulkDeletingProcs?"Deleting...":`Delete ${selectedProcs.size} Procedures`}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>)}
 
             {/* ═══════════════════ PATIENT RECORDS ═══════════════════ */}
@@ -1198,10 +2207,10 @@ function SubDeptDashboardContent() {
               {/* Procedure Stats */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,marginBottom:20}}>
                 {[
-                  {label:"Today's Procedures", value:recordsMeta.todayRecords||0,  color:"#6366f1", bg:"#eef2ff"},
-                  {label:"Total Procedures Done",value:recordsMeta.totalRecords||0, color:meta.accent, bg:meta.lightBg},
+                  {label:"Today's Procedures", value:recordsMeta.todayRecords||0,  color:"#6366f1", bg:"#eef2ff", border:"#c7d2fe"},
+                  {label:"Total Procedures Done",value:recordsMeta.totalRecords||0, color:meta.accent, bg:meta.lightBg, border:meta.borderColor},
                 ].map((s,i)=>(
-                  <div key={i} style={{background:s.bg,borderRadius:12,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                  <div key={i} style={{background:s.bg,borderRadius:12,padding:"16px",border:`1px solid ${s.border}`}}>
                     <div style={{fontSize:28,fontWeight:800,color:s.color}}>{s.value}</div>
                     <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{s.label}</div>
                     {i===0&&<div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>Billing managed by Finance Dept</div>}
@@ -1212,7 +2221,7 @@ function SubDeptDashboardContent() {
               {/* Record Procedure Modal */}
               {showRecordForm && (
                 <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}}>
-                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:580,boxShadow:"0 24px 60px rgba(0,0,0,.18)",fontFamily:"'Inter',sans-serif",animation:"fadeUp .25s ease",maxHeight:"90vh",overflowY:"auto"}}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:580,border:"1px solid #e2e8f0",fontFamily:"'Inter',sans-serif",animation:"fadeUp .25s ease",maxHeight:"90vh",overflowY:"auto"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
                       <div>
                         <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>Record Procedure Performed</div>
@@ -1227,7 +2236,7 @@ function SubDeptDashboardContent() {
                         <input value={recordForm.patientSearch} onChange={e=>{ setRecordForm((f:any)=>({...f,patientSearch:e.target.value,patientId:""})); searchPatients(e.target.value); }}
                           placeholder="Search patient by name, ID or phone…" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1.5px solid ${meta.borderColor}`,background:"#f8fafc",fontSize:13,color:"#334155",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
                         {patientResults.length>0 && !recordForm.patientId && (
-                          <div style={{position:"absolute",zIndex:50,top:"100%",left:0,right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,boxShadow:"0 8px 24px rgba(0,0,0,.12)",overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
+                          <div style={{position:"absolute",zIndex:50,top:"100%",left:0,right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,overflow:"hidden",maxHeight:220,overflowY:"auto"}}>
                             {patientResults.map((pt:any)=>(
                               <div key={pt.id} onClick={()=>{ setRecordForm((f:any)=>({...f,patientId:pt.id,patientSearch:`${pt.name} (${pt.patientId})`})); setPatientResults([]); }}
                                 style={{padding:"10px 14px",cursor:"pointer",fontSize:13,borderBottom:"1px solid #f8fafc",display:"flex",alignItems:"center",gap:8}} onMouseEnter={e=>(e.currentTarget.style.background="#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.background="#fff")}>
@@ -1275,7 +2284,7 @@ function SubDeptDashboardContent() {
                     </div>
                     {recordMsg && <div style={{fontSize:12,color:"#ef4444",marginTop:12,fontWeight:600}}>{recordMsg}</div>}
                     <div style={{display:"flex",gap:10,marginTop:18,borderTop:"1px solid #f1f5f9",paddingTop:18}}>
-                      <button onClick={saveRecord} disabled={recordSaving} style={{padding:"10px 24px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:`0 4px 14px ${meta.accent}33`}}>
+                      <button onClick={saveRecord} disabled={recordSaving} style={{padding:"10px 24px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
                         {recordSaving ? <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/> : <Save size={13}/>}
                         Save Record
                       </button>
@@ -1285,80 +2294,213 @@ function SubDeptDashboardContent() {
                 </div>
               )}
 
-              {/* Records Table */}
-              <div className="sd2-card" style={{marginBottom:0}}>
-                <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><IndianRupee size={15} color={meta.accent}/>Patient Procedure Records</span>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div className="sd2-search" style={{width:220}}>
-                      <Search size={12} color="#94a3b8"/>
-                      <input placeholder="Search patient…" value={recordsSearch} onChange={e=>{setRecordsSearch(e.target.value);loadRecords(e.target.value);}}/>
+              {/* Toolbar — matches hospitaladmin/appointments style */}
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 14px",flex:1,minWidth:200}}>
+                  <Search size={13} color="#94a3b8"/>
+                  <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}}
+                    placeholder="Search by patient, procedure, ID..." value={recordsSearch} onChange={e=>{setRecordsSearch(e.target.value);loadRecords(e.target.value);}}/>
+                  {recordsSearch && <button onClick={()=>{setRecordsSearch("");loadRecords("");}} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                </div>
+                {recordsLoading && <Loader2 size={16} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedRecords.length} records</div>
+                {selectedRecords.size > 0 && (
+                  <button onClick={()=>setShowBulkDeleteConfirm(true)}
+                    style={{padding:"8px 14px",borderRadius:10,border:"1px solid #fecaca",background:"#fff5f5",fontSize:12,color:"#ef4444",fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                    <Trash2 size={12}/>Delete ({selectedRecords.size})
+                  </button>
+                )}
+                {/* Export Dropdown */}
+                <div style={{position:"relative",marginLeft:"auto"}}>
+                  <button onClick={()=>setExportDropdown(exportDropdown==="all"?null:"all")}
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#cbd5e1";e.currentTarget.style.background="#f8fafc";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#fff";}}>
+                    <Download size={14}/>Export
+                  </button>
+                  {exportDropdown==="all" && (<>
+                    <div style={{position:"fixed",inset:0,zIndex:60}} onClick={()=>setExportDropdown(null)}/>
+                    <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,zIndex:70,minWidth:180,padding:6}}>
+                      <button onClick={()=>exportPDF(selectedRecords.size>0?"selected":"all")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff5f5",color:"#ef4444"}}><FileText size={13}/></span>Export as PDF
+                      </button>
+                      <button onClick={()=>exportExcel(selectedRecords.size>0?"selected":"all")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",color:"#16a34a"}}><FileSpreadsheet size={13}/></span>Export as Excel
+                      </button>
+                      <button onClick={()=>exportWord(selectedRecords.size>0?"selected":"all")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
+                        onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                        <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#eff6ff",color:"#2563eb"}}><FileType size={13}/></span>Export as Word
+                      </button>
                     </div>
-                    {recordsLoading && <Loader2 size={13} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
-                    <a
-                      href={`/api/subdept/records/export${recordsSearch ? `?search=${encodeURIComponent(recordsSearch)}` : ""}`}
-                      download
-                      title="Export CSV"
-                      style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:9,background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",fontSize:12,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}
-                    ><Download size={12}/>Export</a>
-                    <button onClick={()=>setShowRecordForm(true)} style={{padding:"6px 14px",borderRadius:9,background:meta.gradient,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",display:"flex",alignItems:"center",gap:5}}><Plus size={13}/>New Record</button>
+                  </>)}
+                </div>
+                <button onClick={()=>setShowRecordForm(true)}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"9px 20px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
+                  <Plus size={15}/>New Record
+                </button>
+              </div>
+
+              {/* Records Table */}
+              {records.length===0 ? (
+                <div style={{textAlign:"center",padding:"60px 20px",background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",color:"#94a3b8"}}>
+                  <IndianRupee size={32} style={{marginBottom:10,opacity:.4}}/>
+                  <div style={{fontSize:14,fontWeight:600}}>No procedure records found</div>
+                </div>
+              ) : (
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                  <div style={{overflowX:"auto"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead>
+                        <tr style={{background:"#f8fafc"}}>
+                          <th style={{padding:"12px 10px 12px 14px",borderBottom:"2px solid #f1f5f9",width:36}}>
+                            <input type="checkbox" checked={sortedRecords.length>0 && selectedRecords.size===sortedRecords.length} onChange={toggleSelectAll}
+                              style={{width:15,height:15,cursor:"pointer",accentColor:meta.accent}}/>
+                          </th>
+                          {[
+                            {key:"performedAt",label:"Date"},
+                            {key:"patient",label:"Patient"},
+                            {key:"procedure",label:"Procedure"},
+                            {key:"type",label:"Type"},
+                            {key:"amount",label:"Amount"},
+                            {key:"performedBy",label:"Performed By"},
+                            {key:"status",label:"Status"},
+                          ].map(col=>(
+                            <th key={col.key} onClick={()=>handleSort(col.key)}
+                              style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"12px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap",cursor:"pointer",userSelect:"none"}}>
+                              <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
+                                {col.label}
+                                {sortField===col.key ? (sortDir==="asc" ? <ChevronUp size={12}/> : <ChevronDown size={12}/>) : <ArrowUpDown size={10} style={{opacity:.35}}/>}
+                              </span>
+                            </th>
+                          ))}
+                          <th style={{textAlign:"left",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"12px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedRecords.map((r:any)=>{
+                          const isSelected = selectedRecords.has(r.id);
+                          return (
+                            <tr key={r.id} style={{borderBottom:"1px solid #f8fafc",background:isSelected?meta.lightBg:"transparent"}}
+                              onMouseEnter={e=>{if(!isSelected)e.currentTarget.style.background="#fafbfc";}}
+                              onMouseLeave={e=>{if(!isSelected)e.currentTarget.style.background="transparent";}}>
+                              <td style={{padding:"12px 10px 12px 14px",width:36}}>
+                                <input type="checkbox" checked={isSelected} onChange={()=>toggleSelectRecord(r.id)}
+                                  style={{width:15,height:15,cursor:"pointer",accentColor:meta.accent}}/>
+                              </td>
+                              <td style={{padding:"12px 14px",fontSize:12,color:"#64748b",whiteSpace:"nowrap"}}>
+                                {new Date(r.performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}<br/>
+                                <span style={{fontSize:10,color:"#94a3b8"}}>{new Date(r.performedAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>
+                              </td>
+                              <td style={{padding:"12px 14px"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                  <div style={{width:32,height:32,borderRadius:9,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:12,flexShrink:0}}>
+                                    {(r.patient?.name||"P").charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{r.patient?.name||"—"}</div>
+                                    <div style={{fontSize:11,color:"#94a3b8"}}>{r.patient?.patientId} · {r.patient?.phone}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{padding:"12px 14px",fontSize:13,fontWeight:600,color:"#334155"}}>{r.procedure?.name||"—"}</td>
+                              <td style={{padding:"12px 14px"}}><span style={{fontSize:10,padding:"3px 8px",borderRadius:100,background:(PROC_TYPE_COLOR[r.procedure?.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[r.procedure?.type]||"#94a3b8",fontWeight:600}}>{r.procedure?.type||"—"}</span></td>
+                              <td style={{padding:"12px 14px",fontWeight:700,color:"#0A6B70",fontSize:13}}>₹{r.amount}</td>
+                              <td style={{padding:"12px 14px",fontSize:13,color:"#64748b"}}>{r.performedBy||"—"}</td>
+                              <td style={{padding:"12px 14px"}}>
+                                <span style={{fontSize:10,padding:"3px 8px",borderRadius:100,fontWeight:700,
+                                  background:r.status==="COMPLETED"?"#f0fdf4":r.status==="CANCELLED"?"#fff5f5":"#fffbeb",
+                                  color:r.status==="COMPLETED"?"#16a34a":r.status==="CANCELLED"?"#ef4444":"#b45309",
+                                  border:`1px solid ${r.status==="COMPLETED"?"#bbf7d0":r.status==="CANCELLED"?"#fecaca":"#fde68a"}`
+                                }}>{r.status.replace(/_/g," ")}</span>
+                              </td>
+                              <td style={{padding:"12px 14px"}}>
+                                <div style={{display:"flex",gap:6}}>
+                                  <button onClick={()=>setViewingRecord(r)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#E6F4F4",color:"#0E898F",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="View Details"><Eye size={13}/></button>
+                                  <button onClick={()=>setEditingRecord(r)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#fef3c7",color:"#d97706",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Edit"><Edit2 size={13}/></button>
+                                  <button onClick={()=>{setTransferTarget(r);setTransferForm({subDeptId:"",notes:""});}} style={{width:28,height:28,borderRadius:8,border:"none",background:"#f0fdf4",color:"#10b981",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Transfer"><ArrowRight size={13}/></button>
+                                  {r.appointment?.id && (
+                                    <button onClick={()=>setViewPrescription(r.appointment)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#fdf4ff",color:"#a855f7",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Prescription"><FileText size={13}/></button>
+                                  )}
+                                  <button onClick={()=>setDeleteRecordTarget(r)} style={{width:28,height:28,borderRadius:8,border:"none",background:"#fff5f5",color:"#ef4444",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Delete"><Trash2 size={13}/></button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Footer */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderTop:"1px solid #f1f5f9"}}>
+                    <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedRecords.length} of {recordsMeta.totalRecords||sortedRecords.length}</div>
+                    <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {sortField==="performedAt"?"Date":sortField.charAt(0).toUpperCase()+sortField.slice(1)} · {sortDir==="desc"?"Newest first":"Oldest first"}</div>
                   </div>
                 </div>
-                {records.length===0 ? (
-                  <div style={{padding:"56px",textAlign:"center"}}>
-                    <IndianRupee size={36} color="#e2e8f0" style={{marginBottom:10}}/>
-                    <div style={{fontSize:14,fontWeight:600,color:"#94a3b8",marginBottom:6}}>No procedure records yet</div>
-                    <button onClick={()=>setShowRecordForm(true)} style={{padding:"8px 18px",borderRadius:9,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,color:meta.accent,fontSize:12,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Plus size={12}/>Record First Procedure</button>
+              )}
+
+              {/* Single Delete Confirmation Modal */}
+              {deleteRecordTarget && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={e=>{if(e.target===e.currentTarget && !deletingRecord) setDeleteRecordTarget(null);}}>
+                  <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:440,border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:18}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:"#fff5f5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <AlertTriangle size={20} color="#ef4444"/>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:16,fontWeight:700,color:"#1e293b",marginBottom:4}}>Delete Record?</div>
+                        <div style={{fontSize:13,color:"#64748b",lineHeight:1.5}}>
+                          Are you sure you want to delete the procedure record for <strong>{deleteRecordTarget.patient?.name}</strong> — <strong>{deleteRecordTarget.procedure?.name}</strong>? This cannot be undone.
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:12,marginBottom:18}}>
+                      <div style={{fontSize:12,color:"#92400e",fontWeight:600,marginBottom:4}}>⚠️ Warning</div>
+                      <div style={{fontSize:11,color:"#a16207"}}>This record with amount ₹{deleteRecordTarget.amount} will be permanently removed.</div>
+                    </div>
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>setDeleteRecordTarget(null)} disabled={deletingRecord}
+                        style={{padding:"9px 18px",borderRadius:9,border:"1.5px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:deletingRecord?"not-allowed":"pointer",opacity:deletingRecord?.5:1}}>Cancel</button>
+                      <button onClick={handleDeleteSingleRecord} disabled={deletingRecord}
+                        style={{padding:"9px 18px",borderRadius:9,border:"none",background:"#ef4444",color:"#fff",fontSize:13,fontWeight:700,cursor:deletingRecord?"not-allowed":"pointer",opacity:deletingRecord?.7:1,display:"flex",alignItems:"center",gap:6}}>
+                        {deletingRecord && <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>}
+                        {deletingRecord?"Deleting...":"Delete Record"}
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <table className="sd2-tbl">
-                    <thead><tr><th>Date</th><th>Patient</th><th>Procedure</th><th>Type</th><th>Amount</th><th>Performed By</th><th>Status</th><th>Actions</th></tr></thead>
-                    <tbody>
-                      {records.map((r:any)=>(
-                        <tr key={r.id}>
-                          <td style={{fontSize:11,color:"#64748b",whiteSpace:"nowrap"}}>
-                            {new Date(r.performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}<br/>
-                            <span style={{fontSize:10}}>{new Date(r.performedAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>
-                          </td>
-                          <td>
-                            <div style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{r.patient?.name||"—"}</div>
-                            <div style={{fontSize:11,color:"#94a3b8"}}>{r.patient?.patientId} · {r.patient?.phone}</div>
-                          </td>
-                          <td style={{fontSize:13,fontWeight:600,color:"#334155"}}>{r.procedure?.name||"—"}</td>
-                          <td><span className="sd2-badge" style={{background:(PROC_TYPE_COLOR[r.procedure?.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[r.procedure?.type]||"#94a3b8"}}>{r.procedure?.type||"—"}</span></td>
-                          <td style={{fontWeight:800,color:"#10b981",fontSize:14}}>₹{r.amount}</td>
-                          <td style={{fontSize:12,color:"#64748b"}}>{r.performedBy||"—"}</td>
-                          <td>
-                            <span className="sd2-badge" style={{
-                              background:r.status==="COMPLETED"?"#f0fdf4":r.status==="CANCELLED"?"#fff5f5":"#fffbeb",
-                              color:r.status==="COMPLETED"?"#16a34a":r.status==="CANCELLED"?"#ef4444":"#b45309",
-                              border:`1px solid ${r.status==="COMPLETED"?"#bbf7d0":r.status==="CANCELLED"?"#fecaca":"#fde68a"}`
-                            }}>{r.status.replace(/_/g," ")}</span>
-                          </td>
-                          <td>
-                            <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
-                              <button onClick={()=>setViewingRecord(r)} className="sd2-btn" style={{background:"#E6F4F4",color:"#0E898F",border:"1px solid #B3E0E0",padding:"4px 8px"}} title="View Details">
-                                <Eye size={11}/>
-                              </button>
-                              <button onClick={()=>setEditingRecord(r)} className="sd2-btn" style={{background:"#fef3c7",color:"#d97706",border:"1px solid #fde68a",padding:"4px 8px"}} title="Edit Record">
-                                <Edit2 size={11}/>
-                              </button>
-                              <button onClick={()=>{setTransferTarget(r);setTransferForm({subDeptId:"",notes:""});}} className="sd2-btn" style={{background:"#f0fdf4",color:"#10b981",border:"1px solid #bbf7d0",padding:"4px 8px"}} title="Transfer Patient">
-                                <ArrowRight size={11}/>
-                              </button>
-                              {r.appointment?.id && (
-                                <button onClick={()=>setViewPrescription(r.appointment)} className="sd2-btn" style={{background:"#fdf4ff",color:"#a855f7",border:"1px solid #e9d5ff",padding:"4px 8px"}} title="View Prescription">
-                                  <FileText size={11}/>
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Bulk Delete Confirmation Modal */}
+              {showBulkDeleteConfirm && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={e=>{if(e.target===e.currentTarget && !bulkDeleteRunning) setShowBulkDeleteConfirm(false);}}>
+                  <div style={{background:"#fff",borderRadius:16,padding:24,width:"100%",maxWidth:440,border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:18}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:"#fff5f5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <AlertTriangle size={20} color="#ef4444"/>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:16,fontWeight:700,color:"#1e293b",marginBottom:4}}>Delete {selectedRecords.size} Records?</div>
+                        <div style={{fontSize:13,color:"#64748b",lineHeight:1.5}}>
+                          Are you sure you want to delete <strong>{selectedRecords.size}</strong> selected record(s)? This action cannot be undone and will permanently remove the procedure data.
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>setShowBulkDeleteConfirm(false)} disabled={bulkDeleteRunning}
+                        style={{padding:"9px 18px",borderRadius:9,border:"1.5px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:bulkDeleteRunning?"not-allowed":"pointer",opacity:bulkDeleteRunning?.5:1}}>Cancel</button>
+                      <button onClick={bulkDeleteRecords} disabled={bulkDeleteRunning}
+                        style={{padding:"9px 18px",borderRadius:9,border:"none",background:"#ef4444",color:"#fff",fontSize:13,fontWeight:700,cursor:bulkDeleteRunning?"not-allowed":"pointer",opacity:bulkDeleteRunning?.7:1,display:"flex",alignItems:"center",gap:6}}>
+                        {bulkDeleteRunning && <Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>}
+                        {bulkDeleteRunning?"Deleting...":`Delete ${selectedRecords.size} Records`}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>)}
 
             {/* ═══════════════════ APPOINTMENTS (Reception) ═══════════════════ */}
@@ -1428,11 +2570,10 @@ function SubDeptDashboardContent() {
               </div>
             )}
 
-            {/* ═══════════════════ FINANCE / REPORTS (fallback placeholder) ═══════════════════ */}
-            {["finance","reports"].includes(tab) && (() => {
+            {/* ═══════════════════ FINANCE (fallback placeholder) ═══════════════════ */}
+            {["finance"].includes(tab) && (() => {
               const fm: Record<string,{icon:any;color:string;bg:string;title:string;desc:string}> = {
                 finance: {icon:<TrendingUp size={28}/>,color:"#6366f1",bg:"#eef2ff",title:"Finance",desc:"Track revenue, expenses and financial reports."},
-                reports: {icon:<BarChart2 size={28}/>,color:"#8b5cf6",bg:"#f5f3ff",title:"Reports",desc:"Access detailed analytics and reports for this department."},
               };
               const f = fm[tab];
               return (

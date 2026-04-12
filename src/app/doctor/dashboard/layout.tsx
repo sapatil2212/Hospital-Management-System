@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   CalendarDays, Stethoscope, LogOut, Search,
   Bell, HelpCircle, UserRound, FileText,
-  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock
+  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock, BarChart2
 } from "lucide-react";
 import { DoctorDashboardProvider, useDoctorDashboard } from "./DoctorDashboardContext";
 import NotificationBell from "@/components/NotificationBell";
@@ -27,6 +27,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     { id: "treatment-plans", path: "/doctor/dashboard?tab=treatment-plans", label: "Treatment Plans", icon: <Activity size={16} /> },
     { id: "attendance", path: "/doctor/dashboard?tab=attendance", label: "My Attendance", icon: <ClipboardCheck size={16} /> },
     { id: "schedule-mgmt", path: "/doctor/dashboard?tab=schedule-mgmt", label: "Schedule Setup", icon: <Clock size={16} /> },
+    { id: "reports", path: "/doctor/dashboard?tab=reports", label: "Reports", icon: <BarChart2 size={16} /> },
   ];
 
   if (loading) {
