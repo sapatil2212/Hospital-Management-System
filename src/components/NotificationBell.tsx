@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Bell, X, Check, CheckCheck, Calendar, UserPlus, CreditCard, Activity, Clock, Package, Loader2 } from "lucide-react";
+import { Bell, X, Check, CheckCheck, Calendar, UserPlus, CreditCard, Activity, Clock, Package, Loader2, QrCode } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -21,6 +21,7 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   PROCEDURE_COMPLETED:  <Activity size={14} />,
   FOLLOW_UP_SCHEDULED:  <Clock size={14} />,
   LOW_STOCK:            <Package size={14} />,
+  BOOKING_REQUEST:     <QrCode size={14} />,
   GENERAL:              <Bell size={14} />,
 };
 
@@ -33,6 +34,7 @@ const TYPE_COLOR: Record<string, string> = {
   PROCEDURE_COMPLETED:  "#06b6d4",
   FOLLOW_UP_SCHEDULED:  "#6366f1",
   LOW_STOCK:            "#ef4444",
+  BOOKING_REQUEST:     "#0E898F",
   GENERAL:              "#64748b",
 };
 

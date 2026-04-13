@@ -45,12 +45,12 @@
   text-decoration: none;
   border-radius: var(--radius-lg);
   transition: all var(--transition-base);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .viewAllBtn:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .card {

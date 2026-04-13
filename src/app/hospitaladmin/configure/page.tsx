@@ -5,7 +5,8 @@ import {
   Settings, Building2, Stethoscope, Users, BedDouble, CreditCard, Package, Activity, BarChart2, Shield,
   Plus, Pencil, Trash2, Search, X, ChevronRight, Check, AlertTriangle,
   LogOut, Bell, HelpCircle, FlaskConical, LayoutDashboard, Loader2, Layers,
-  MessageSquare, CalendarDays, UserRound, ClipboardList, IndianRupee, Download
+  MessageSquare, CalendarDays, UserRound, ClipboardList, IndianRupee, Download,
+  QrCode, Copy, Link2, ExternalLink
 } from "lucide-react";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import DoctorPanel from "@/components/DoctorPanel";
@@ -60,6 +61,78 @@ function SectionCard({icon,title,desc,children}:{icon:React.ReactNode;title:stri
       </div>
       <div style={{padding:"20px 22px"}}>{children}</div>
     </div>
+  );
+}
+
+function QrCodeSection({ hospitalId }: { hospitalId: string }) {
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+
+  if (!hospitalId || !origin) return null;
+
+  const bookingUrl = `${origin}/book-appointment?hid=${hospitalId}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(bookingUrl)}&color=0E898F&bgcolor=ffffff&margin=12`;
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(bookingUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadQr = async () => {
+    const dlUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(bookingUrl)}&color=0E898F&bgcolor=ffffff&margin=16`;
+    const a = document.createElement("a");
+    a.href = dlUrl;
+    a.target = "_blank";
+    a.download = "booking-qr.png";
+    a.click();
+  };
+
+  return (
+    <SectionCard icon={<QrCode size={17} color="#0E898F" />} title="Appointment Booking QR Code" desc="Share this QR code so patients can scan and book appointments online">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 28, flexWrap: "wrap" }}>
+        {/* QR Image */}
+        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <div style={{ padding: 10, border: "2px solid #e2e8f0", borderRadius: 16, background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qrSrc} alt="Booking QR Code" width={160} height={160} style={{ display: "block", borderRadius: 8 }} />
+          </div>
+          <button type="button" onClick={downloadQr}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
+            onMouseOver={e => (e.currentTarget.style.borderColor = "#0E898F")}
+            onMouseOut={e => (e.currentTarget.style.borderColor = "#e2e8f0")}>
+            <Download size={12} /> Download QR
+          </button>
+        </div>
+
+        {/* URL + Actions */}
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Booking URL</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+            <Link2 size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: "#475569", wordBreak: "break-all", flex: 1 }}>{bookingUrl}</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" onClick={copyUrl}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, border: "none", background: copied ? "#f0fdf4" : "#0E898F", color: copied ? "#16a34a" : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? "Copied!" : "Copy URL"}
+            </button>
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 700, textDecoration: "none", transition: "all 0.15s" }}
+              onMouseOver={e => (e.currentTarget.style.borderColor = "#0E898F")}
+              onMouseOut={e => (e.currentTarget.style.borderColor = "#e2e8f0")}>
+              <ExternalLink size={12} /> Preview Form
+            </a>
+          </div>
+          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 12, lineHeight: 1.6 }}>
+            Print or display this QR at your reception. Patients scan it to submit an appointment request which appears in staff notifications.
+          </p>
+        </div>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -200,6 +273,9 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
           </div>
         </div>
       </SectionCard>
+
+      {/* QR Code Section */}
+      <QrCodeSection hospitalId={hospitalId} />
 
       {/* Save Bar */}
       <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 22px",background:"#fff",border:"1px solid #e8edf2",borderRadius:14}}>

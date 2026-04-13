@@ -122,12 +122,15 @@
   flex-wrap: wrap;
 }
 
-.aboutCta {
-  width: fit-content;
+.aboutCta,
+.secondaryCta {
+  min-width: 160px;
+  box-shadow: none !important;
 }
 
-.secondaryCta {
-  width: fit-content;
+.aboutCta:hover,
+.secondaryCta:hover {
+  box-shadow: none !important;
 }
 
 /* ── Right Visual ── */

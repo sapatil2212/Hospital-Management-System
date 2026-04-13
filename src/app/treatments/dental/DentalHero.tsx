@@ -81,19 +81,6 @@ export default function DentalHero() {
               </motion.div>
             </div>
 
-            {/* Floating Card: Doctors */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.doctorsCard}`}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className={styles.doctorInfo}>
-                <span className={styles.doctorCount}>
-                  Expert Care Team
-                </span>
-              </div>
-            </motion.div>
-
             {/* Floating Card: Satisfied Clients */}
             <motion.div
               className={`${styles.floatingCard} ${styles.satisfiedCard}`}

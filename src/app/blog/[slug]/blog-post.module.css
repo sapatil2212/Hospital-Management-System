@@ -173,19 +173,32 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
+/* Sticky sidebar inner wrapper */
+.stickySidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* Floating Sidebar for Desktop */
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .articleLayout {
     display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 80px;
-    max-width: 1160px;
+    grid-template-columns: 1fr 260px;
+    gap: 60px;
+    max-width: 1100px;
+    align-items: start;
   }
   .sidebar {
-    position: sticky;
-    top: 100px;
-    height: fit-content;
     margin-bottom: 0;
+    position: sticky;
+    top: 96px;
+    height: fit-content;
+  }
+  .stickySidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 }
 
@@ -266,6 +279,8 @@
 }
 .shareBtn:hover { border-color: var(--blog-primary); color: var(--blog-primary); transform: translateY(-3px); }
 
+.copiedIcon { color: #10b981; }
+
 /* Author Box */
 .authorBox {
   display: flex; gap: 32px; padding: 40px;
@@ -293,6 +308,13 @@
 .relatedImage { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
 .relatedCard:hover .relatedImage { transform: scale(1.1); }
 .relatedCategory { position: absolute; top: 15px; left: 15px; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.relatedLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.relatedLink:hover { text-decoration: none; }
+
 .relatedContent { padding: 24px; }
 .relatedTitle { font-size: 18px; font-weight: 800; color: var(--blog-text-main); line-height: 1.4; margin-bottom: 12px; }
 .relatedMeta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--blog-text-muted); font-weight: 600; }

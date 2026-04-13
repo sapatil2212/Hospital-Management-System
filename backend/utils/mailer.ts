@@ -609,14 +609,19 @@ export const sendBillInvoice = async (opts: {
   pdfBuffer: Buffer;
 }) => {
   const isPaid = opts.status === "PAID";
+  const headerContent = opts.hospitalLogo
+    ? `<img src="${opts.hospitalLogo}" alt="${opts.hospitalName}" style="max-height:48px;max-width:160px;object-fit:contain;display:block;" />`
+    : `<b style="font-size:16px;color:#111;">${opts.hospitalName}</b>`;
   await transporter.sendMail({
     from: `"${opts.hospitalName}" <${smtpUser}>`,
     to: opts.to,
     subject: `Invoice ${opts.billNo} - ${opts.hospitalName}`,
     html: `<table width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-<tr><td style="padding:20px 24px;border-bottom:2px solid #e5e7eb;">
-<b style="font-size:16px;color:#111;">${opts.hospitalName}</b>
-<span style="float:right;font-size:12px;color:#6b7280;">Invoice</span>
+<tr><td style="padding:16px 24px;border-bottom:2px solid #e5e7eb;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr>
+<td>${headerContent}</td>
+<td align="right" style="font-size:12px;color:#6b7280;white-space:nowrap;">Invoice</td>
+</tr></table>
 </td></tr>
 <tr><td style="padding:20px 24px;font-size:13px;color:#374151;line-height:1.6;">
 Dear ${opts.patientName},<br><br>
