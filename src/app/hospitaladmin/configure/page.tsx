@@ -72,7 +72,7 @@ function QrCodeSection({ hospitalId }: { hospitalId: string }) {
 
   if (!hospitalId || !origin) return null;
 
-  const bookingUrl = `${origin}/book-appointment?hid=${hospitalId}`;
+  const bookingUrl = `${origin}/appointment`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(bookingUrl)}&color=0E898F&bgcolor=ffffff&margin=12`;
 
   const copyUrl = () => {
@@ -128,7 +128,7 @@ function QrCodeSection({ hospitalId }: { hospitalId: string }) {
             </a>
           </div>
           <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 12, lineHeight: 1.6 }}>
-            Print or display this QR at your reception. Patients scan it to submit an appointment request which appears in staff notifications.
+            Print or display this QR at your reception. Patients scan it to access the appointment booking form and book directly.
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
-import AppointmentModal from "./AppointmentModal";
+import { createContext, useContext, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 const AppointmentContext = createContext<{
   openAppointment: () => void;
@@ -12,12 +12,11 @@ export function useAppointment() {
 }
 
 export function AppointmentProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   return (
-    <AppointmentContext.Provider value={{ openAppointment: () => setIsOpen(true) }}>
+    <AppointmentContext.Provider value={{ openAppointment: () => router.push("/appointment") }}>
       {children}
-      <AppointmentModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </AppointmentContext.Provider>
   );
 }
