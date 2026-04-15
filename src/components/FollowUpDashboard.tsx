@@ -7,6 +7,9 @@ import {
   ChevronLeft, ChevronRight, Calendar, Bell,
 } from "lucide-react";
 
+const toLocalDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
@@ -190,7 +193,7 @@ export default function FollowUpDashboard({ onViewPatient }: { onViewPatient?: (
     else if (activeFilter === "overdue") {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      params.set("dateTo", yesterday.toISOString().split("T")[0]);
+      params.set("dateTo", toLocalDateStr(yesterday));
       params.set("status", "PENDING");
     }
 

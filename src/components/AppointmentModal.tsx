@@ -1,616 +1,640 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Calendar, User, Mail, Phone, FileText,
-  CheckCircle2, Loader2, ChevronDown, ChevronLeft, ChevronRight,
-  Stethoscope, Check,
-  ClipboardList, UserCircle, ArrowRight, ArrowLeft, Edit3,
+  X, Check, ChevronDown, Search, Loader2, User, Phone, Mail,
+  AlertCircle, Building2, Stethoscope, CalendarDays, Clock,
+  FileText, IndianRupee, Sparkles, ArrowRight, ArrowLeft,
+  CalendarCheck, Heart, CalendarPlus,
 } from "lucide-react";
 import styles from "./AppointmentModal.module.css";
 
 interface Doctor { id: string; name: string; specialization?: string; departmentId?: string; department?: { name: string }; consultationFee?: number; }
 interface Department { id: string; name: string; code: string; type?: string; }
+interface AppointmentModalProps { isOpen: boolean; onClose: () => void; }
 
-interface AppointmentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const api = async (url: string, method = "GET", body?: any) => {
-  const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  return r.json();
-};
+const toLocalDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 const fmt12 = (t: string) => {
   if (!t) return "";
   const [h, m] = t.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  return `${h % 12 || 12}:${m.toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
 };
 
-/* ─── Static Data ─── */
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAYS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
-const APPOINTMENT_DEPARTMENT_TYPES = ["CLINICAL", "DIAGNOSTIC", "PROCEDURE", "SUPPORT"];
+const fmtDate = (v: string) => {
+  if (!v) return "";
+  const [y, m, d] = v.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+};
 
-const steps = [
-  { num: 1, label: "Your Info", icon: <UserCircle size={18} /> },
-  { num: 2, label: "Appointment", icon: <ClipboardList size={18} /> },
-  { num: 3, label: "Confirm", icon: <CheckCircle2 size={18} /> },
-];
+const isSlotPassed = (dateStr: string, timeStr: string) => {
+  if (!dateStr || !timeStr) return false;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h, min] = timeStr.split(":").map(Number);
+  return new Date(y, m - 1, d, h, min, 0) < new Date();
+};
 
-/* ─── Portal Dropdown ─── */
-interface PortalDropdownProps {
-  anchorEl: HTMLDivElement | null;
-  isOpen: boolean;
-  children: React.ReactNode;
-}
+/* ─── Searchable Dropdown ─── */
+function SearchableSelect({ options, value, onChange, placeholder, icon: Icon, error, renderOption }: {
+  options: { id: string; label: string; sub?: string }[];
+  value: string; onChange: (v: string) => void; placeholder: string;
+  icon: React.ElementType; error?: string;
+  renderOption?: (o: { id: string; label: string; sub?: string }, selected: boolean) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const selected = options.find(o => o.id === value);
+  const filtered = search ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()) || (o.sub || "").toLowerCase().includes(search.toLowerCase())) : options;
 
-function PortalDropdown({ anchorEl, isOpen, children }: PortalDropdownProps) {
-  const [rect, setRect] = useState<DOMRect | null>(null);
-
-  useEffect(() => {
-    if (isOpen && anchorEl) {
-      setRect(anchorEl.getBoundingClientRect());
-    }
-  }, [isOpen, anchorEl]);
-
-  if (!isOpen || !rect) return null;
-
-  // Decide whether to open upward or downward based on available space
-  const spaceBelow = window.innerHeight - rect.bottom;
-  const spaceAbove = rect.top;
-  const openUpward = spaceBelow < 300 && spaceAbove > spaceBelow;
-
-  const style: React.CSSProperties = {
-    position: "fixed",
-    left: rect.left,
-    width: rect.width,
-    zIndex: 999999,
-    ...(openUpward
-      ? { bottom: window.innerHeight - rect.top + 4 }
-      : { top: rect.bottom + 4 }),
-  };
-
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          style={style}
-          className={styles.dropdownPanel}
-          initial={{ opacity: 0, y: openUpward ? 8 : -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: openUpward ? 8 : -8 }}
-          transition={{ duration: 0.15 }}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body
-  );
-}
-
-/* ─── Component ─── */
-export default function AppointmentModal({ isOpen, onClose }: AppointmentModalProps) {
-  const [step, setStep] = useState(1);
-  const [departmentsData, setDepartmentsData] = useState<Department[]>([]);
-  const [doctorsData, setDoctorsData] = useState<Doctor[]>([]);
-  const [slotsData, setSlotsData] = useState<string[]>([]);
-  const [bookedSlotsData, setBookedSlotsData] = useState<string[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-
-  const [form, setForm] = useState({
-    // Step 1
-    name: "",
-    phone: "",
-    email: "",
-    // Step 2
-    departmentId: "",
-    doctorId: "",
-    appointmentDate: "",
-    timeSlot: "",
-    notes: "",
-    // Hidden
-    consultationFee: "",
-    type: "OPD",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  const today = useMemo(() => new Date(), []);
-  const [calMonth, setCalMonth] = useState(today.getMonth());
-  const [calYear, setCalYear] = useState(today.getFullYear());
-
-  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  // Reset when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setTimeout(() => {
-        setStep(1);
-        setForm({
-          name: "", phone: "", email: "",
-          departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "",
-          notes: "", consultationFee: "", type: "OPD",
-        });
-        setErrors({});
-        setOpenDropdown(null);
-        setIsSuccess(false);
-      }, 300);
-    }
-  }, [isOpen]);
-
-  // Fetch Departments
-  useEffect(() => {
-    if (isOpen) {
-      api("/api/config/departments?simple=true").then(d => {
-        const rows: Department[] = d.data || [];
-        setDepartmentsData(rows.filter(dep => dep.type && APPOINTMENT_DEPARTMENT_TYPES.includes(dep.type)));
-      });
-    }
-  }, [isOpen]);
-
-  // Fetch Doctors based on Department
-  useEffect(() => {
-    if (isOpen) {
-      if (!form.departmentId) {
-        setDoctorsData([]);
-        return;
-      }
-      api(`/api/config/doctors?simple=true&departmentId=${form.departmentId}`).then(d => setDoctorsData(d.data || []));
-    }
-  }, [isOpen, form.departmentId]);
-
-  // Fetch Slots based on Doctor and Date
-  useEffect(() => {
-    if (form.doctorId && form.appointmentDate) {
-      setLoadingSlots(true);
-      api(`/api/appointments/slots?doctorId=${form.doctorId}&date=${form.appointmentDate}`)
-        .then(d => {
-          setSlotsData(d.data?.slots || []);
-          setBookedSlotsData(d.data?.bookedSlots || []);
-        })
-        .finally(() => setLoadingSlots(false));
-    } else {
-      setSlotsData([]);
-      setBookedSlotsData([]);
-    }
-  }, [form.doctorId, form.appointmentDate]);
-
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const portalPanels = document.querySelectorAll(`.${styles.dropdownPanel}`);
-      const inPortal = Array.from(portalPanels).some((el) => el.contains(target));
-      const anyContains = Object.values(dropdownRefs.current).some((ref) => ref?.contains(target));
-      if (!anyContains && !inPortal) setOpenDropdown(null);
+      if (ref.current && !ref.current.contains(e.target as Node) && panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const updateField = (field: string, value: string) => {
-    setForm((f) => ({ ...f, [field]: value }));
-    setErrors((e) => { const n = { ...e }; delete n[field]; return n; });
-  };
+  useEffect(() => { if (open && inputRef.current) inputRef.current.focus(); }, [open]);
 
-  const toggleDropdown = useCallback((name: string) => {
-    setOpenDropdown((p) => (p === name ? null : name));
-  }, []);
-
-  /* ─── Validation ─── */
-  const validateStep = (s: number) => {
-    const errs: Record<string, string> = {};
-    if (s === 1) {
-      if (!form.name.trim()) errs.name = "Full Name is required";
-      if (!form.phone.trim()) errs.phone = "Phone Number is required";
-      if (!form.email.trim()) errs.email = "Email is required";
-      else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Invalid email address";
+  const openDropdown = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
     }
-    if (s === 2) {
-      if (!form.departmentId) errs.departmentId = "Please select a department";
-      if (!form.doctorId) errs.doctorId = "Please select a doctor";
-      if (!form.appointmentDate) errs.appointmentDate = "Please select a date";
-      if (!form.timeSlot) errs.timeSlot = "Please select a time slot";
-    }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+    setOpen(o => !o);
   };
 
-  const nextStep = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, 3)); };
-  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    const d = await api("/api/appointments", "POST", form);
-    setIsSubmitting(false);
-
-    if (d.success) {
-      setIsSuccess(true);
-      setTimeout(() => { onClose(); }, 2800);
-    } else {
-      setErrors({ submit: d.message || "An unknown error occurred." });
-    }
-  };
-
-  /* ─── Calendar ─── */
-  const calendarDays = useMemo(() => {
-    const firstDay = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    const prevDays = new Date(calYear, calMonth, 0).getDate();
-    const cells: { day: number; current: boolean; date: Date }[] = [];
-    for (let i = firstDay - 1; i >= 0; i--)
-      cells.push({ day: prevDays - i, current: false, date: new Date(calYear, calMonth - 1, prevDays - i) });
-    for (let d = 1; d <= daysInMonth; d++)
-      cells.push({ day: d, current: true, date: new Date(calYear, calMonth, d) });
-    const rem = 42 - cells.length;
-    for (let d = 1; d <= rem; d++)
-      cells.push({ day: d, current: false, date: new Date(calYear, calMonth + 1, d) });
-    return cells;
-  }, [calMonth, calYear]);
-
-  const stripTime = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const isPast = (d: Date) => stripTime(d) < stripTime(today);
-  const isToday = (d: Date) => stripTime(d).getTime() === stripTime(today).getTime();
-  const fmtDate = (v: string) => {
-    if (!v) return "";
-    const d = new Date(v);
-    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-  };
-  const prevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(calYear-1); } else setCalMonth(calMonth-1); };
-  const nextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(calYear+1); } else setCalMonth(calMonth+1); };
-
-  const displayTime = form.timeSlot ? fmt12(form.timeSlot) : "";
-
-  /* ─── Render Helpers ─── */
-  const renderDropdown = (
-    name: string,
-    label: string,
-    icon: React.ReactNode,
-    value: string,
-    placeholder: string,
-    content: React.ReactNode,
-  ) => (
-    <div
-      className={`${styles.field} ${openDropdown === name ? styles.fieldFocused : ""} ${errors[name] ? styles.fieldError : ""}`}
-      ref={(el) => { dropdownRefs.current[name] = el; }}
-    >
-      <label className={styles.label}>{label}</label>
-      <div className={`${styles.inputWrap} ${styles.customSelect}`} onClick={() => toggleDropdown(name)}>
-        <span className={styles.fieldIconWrap}>{icon}</span>
-        <span className={`${styles.selectValue} ${!value ? styles.placeholder : ""}`}>
-          {value || placeholder}
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div ref={triggerRef} onClick={openDropdown} className={`${styles.inputWrap} ${styles.customSelect} ${error ? styles.fieldError : ""}`}
+        style={{ cursor: "pointer", borderColor: open ? "var(--primary)" : error ? "var(--error)" : undefined, boxShadow: open ? "0 0 0 3px var(--primary-100)" : undefined }}>
+        <span className={styles.fieldIconWrap}><Icon size={15} /></span>
+        <span className={styles.selectValue} style={{ color: selected ? "var(--gray-800)" : "var(--gray-400)" }}>
+          {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown size={14} className={`${styles.selectChevron} ${openDropdown === name ? styles.selectChevronOpen : ""}`} />
+        <ChevronDown size={15} className={`${styles.selectChevron} ${open ? styles.selectChevronOpen : ""}`} />
       </div>
-
-      {/* Portal-based dropdown — escapes overflow:hidden / overflow-y:auto containers */}
-      <PortalDropdown
-        anchorEl={dropdownRefs.current[name] ?? null}
-        isOpen={openDropdown === name}
-      >
-        {content}
-      </PortalDropdown>
-
-      {errors[name] && <span className={styles.errorMsg}>{errors[name]}</span>}
+      <AnimatePresence>
+        {open && (
+          <motion.div ref={panelRef} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}
+            style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 99999 }} className={styles.dropdownPanel}>
+            <div style={{ padding: "6px 8px 4px", borderBottom: "1px solid var(--gray-100)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 8, background: "var(--gray-50)" }}>
+                <Search size={13} style={{ color: "var(--gray-400)", flexShrink: 0 }} />
+                <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search..." style={{ border: "none", background: "transparent", outline: "none", fontSize: 12, color: "var(--gray-700)", width: "100%", padding: "2px 0" }} />
+              </div>
+            </div>
+            <div style={{ maxHeight: 220, overflowY: "auto", padding: 4 }}>
+              {filtered.length === 0 && <div style={{ padding: "12px 8px", fontSize: 12, color: "var(--gray-400)", textAlign: "center" }}>No results found</div>}
+              {filtered.map(o => {
+                const isSel = o.id === value;
+                return (
+                  <button key={o.id} type="button" onClick={() => { onChange(o.id); setOpen(false); setSearch(""); }}
+                    className={`${styles.dropdownOption} ${isSel ? styles.dropdownOptionSelected : ""}`}>
+                    {renderOption ? renderOption(o, isSel) : (
+                      <>
+                        <div className={styles.optionIcon}><Icon size={14} /></div>
+                        <div className={styles.optionLabel}>
+                          <span>{o.label}</span>
+                          {o.sub && <span className={styles.optionDesc}>{o.sub}</span>}
+                        </div>
+                        {isSel && <Check size={14} className={styles.optionCheck} />}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
+}
 
-  const renderInput = (
-    name: string, label: string, icon: React.ReactNode,
-    type = "text", placeholder = "", required = true,
-  ) => (
-    <div className={`${styles.field} ${errors[name] ? styles.fieldError : ""}`}>
-      <label className={styles.label}>{label}{required && " *"}</label>
-      <div className={styles.inputWrap}>
-        <span className={styles.fieldIconWrap}>{icon}</span>
-        <input
-          type={type} placeholder={placeholder} value={(form as Record<string,string>)[name] || ""}
-          onChange={(e) => updateField(name, e.target.value)}
-          className={styles.input}
-        />
-      </div>
-      {errors[name] && <span className={styles.errorMsg}>{errors[name]}</span>}
+/* ─── Step Indicator ─── */
+const STEPS = [
+  { num: 1, label: "Patient Info", icon: User },
+  { num: 2, label: "Appointment", icon: CalendarDays },
+  { num: 3, label: "Confirmed", icon: Check },
+];
+
+function StepIndicator({ current }: { current: number }) {
+  return (
+    <div className={styles.stepper}>
+      {STEPS.map((s, i) => {
+        const done = current > s.num;
+        const active = current === s.num;
+        return (
+          <div key={s.num} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+            <div className={`${styles.stepItem} ${done ? styles.stepActive : ""} ${active ? styles.stepCurrent : ""}`}>
+              <div className={styles.stepCircle}>
+                {done ? <Check size={15} /> : <s.icon size={15} />}
+              </div>
+              <span className={styles.stepLabel}>{s.label}</span>
+            </div>
+            {i < STEPS.length - 1 && <div className={`${styles.stepLine} ${done ? styles.stepLineDone : ""}`} />}
+          </div>
+        );
+      })}
     </div>
   );
+}
 
-  const renderTextarea = (
-    name: string, label: string, placeholder: string, required = false, rows = 3,
-  ) => (
-    <div className={`${styles.field} ${errors[name] ? styles.fieldError : ""}`}>
-      <label className={styles.label}>{label}{required && " *"}</label>
-      <div className={styles.inputWrap}>
-        <span className={`${styles.fieldIconWrap} ${styles.textareaIcon}`}><FileText size={16} /></span>
-        <textarea
-          placeholder={placeholder} rows={rows}
-          value={(form as Record<string,string>)[name] || ""}
-          onChange={(e) => updateField(name, e.target.value)}
-          className={`${styles.input} ${styles.textarea}`}
-        />
-      </div>
-      {errors[name] && <span className={styles.errorMsg}>{errors[name]}</span>}
-    </div>
-  );
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  MAIN COMPONENT                                                       */
+/* ═══════════════════════════════════════════════════════════════════════ */
+export default function AppointmentModal({ isOpen, onClose }: AppointmentModalProps) {
+  const [step, setStep] = useState(1);
+  const [hospitalId, setHospitalId] = useState("");
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
+  const [slots, setSlots] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  /* ─── JSX ─── */
+  const [form, setForm] = useState({
+    name: "", phone: "", email: "",
+    departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "",
+    notes: "", consultationFee: "", type: "OPD",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [bookedInfo, setBookedInfo] = useState<{ doctor: string; department: string; date: string; time: string; email: string; token?: number } | null>(null);
+
+  const todayStr = toLocalDateStr(new Date());
+  const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
+  const tomorrowStr = toLocalDateStr(tmrw);
+
+  const filteredDoctors = form.departmentId
+    ? allDoctors.filter(d => d.departmentId === form.departmentId)
+    : allDoctors;
+  const selectedDoctor = allDoctors.find(d => d.id === form.doctorId);
+  const selectedDept = departments.find(d => d.id === form.departmentId);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(() => {
+        setStep(1);
+        setForm({ name: "", phone: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
+        setErrors({}); setIsSuccess(false); setBookedInfo(null);
+      }, 300);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/public/booking", { credentials: "include" }).then(r => r.json()).then(d => {
+        if (d.data?.hospital?.id) setHospitalId(d.data.hospital.id);
+        setDepartments(d.data?.departments || []);
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && hospitalId) {
+      fetch(`/api/public/booking/doctors?hid=${hospitalId}`, { credentials: "include" }).then(r => r.json()).then(d => setAllDoctors(d.data || []));
+    }
+  }, [isOpen, hospitalId]);
+
+  useEffect(() => {
+    if (!form.doctorId || !form.appointmentDate || !hospitalId) { setSlots([]); setBookedSlots([]); return; }
+    setLoadingSlots(true);
+    fetch(`/api/public/booking/slots?hid=${hospitalId}&doctorId=${form.doctorId}&date=${form.appointmentDate}`, { credentials: "include" })
+      .then(r => r.json()).then(d => { setSlots(d.data?.allSlots || d.data?.slots || []); setBookedSlots(d.data?.bookedSlots || []); })
+      .finally(() => setLoadingSlots(false));
+  }, [hospitalId, form.doctorId, form.appointmentDate]);
+
+  const set = (field: string, value: string) => {
+    setForm(f => ({ ...f, [field]: value }));
+    setErrors(e => { const n = { ...e }; delete n[field]; delete n.submit; return n; });
+  };
+
+  const goToStep2 = () => {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Name is required";
+    if (!form.phone.trim()) errs.phone = "Phone is required";
+    if (!form.email.trim()) errs.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Invalid email";
+    setErrors(errs);
+    if (Object.keys(errs).length === 0) setStep(2);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!form.departmentId) errs.departmentId = "Select a department";
+    if (!form.doctorId) errs.doctorId = "Select a doctor";
+    if (!form.appointmentDate) errs.appointmentDate = "Select a date";
+    if (!form.timeSlot) errs.timeSlot = "Select a time slot";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    if (isSlotPassed(form.appointmentDate, form.timeSlot)) {
+      setErrors({ submit: "The selected time slot has already passed." }); return;
+    }
+    setSaving(true); setErrors({});
+    try {
+      const res = await fetch("/api/public/booking", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hospitalId, name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(),
+          doctorId: form.doctorId, departmentId: form.departmentId || null,
+          appointmentDate: form.appointmentDate, timeSlot: form.timeSlot,
+          type: form.type, consultationFee: form.consultationFee ? Number(form.consultationFee) : null,
+          notes: form.notes || null,
+        }),
+      });
+      const d = await res.json();
+      if (res.ok && d.success) {
+            const dept = departments.find(dp => dp.id === form.departmentId);
+            setBookedInfo({
+              doctor: selectedDoctor?.name || "Doctor",
+              department: dept?.name || selectedDoctor?.department?.name || "",
+              date: form.appointmentDate,
+              time: form.timeSlot,
+              email: form.email,
+              token: d.data?.appointment?.tokenNumber,
+            });
+            setIsSuccess(true); setStep(3);
+          }
+      else setErrors({ submit: d.message || "Booking failed. Please try again." });
+    } catch { setErrors({ submit: "Network error. Please check your connection." }); }
+    finally { setSaving(false); }
+  };
+
+  /* ── Slot grouping (Morning / Afternoon / Evening) ── */
+  const groupSlots = (allSlots: string[]) => {
+    const morning: string[] = [], afternoon: string[] = [], evening: string[] = [];
+    allSlots.forEach(s => {
+      const h = parseInt(s.split(":")[0], 10);
+      if (h < 12) morning.push(s); else if (h < 17) afternoon.push(s); else evening.push(s);
+    });
+    return [
+      { label: "Morning", slots: morning, emoji: "🌅" },
+      { label: "Afternoon", slots: afternoon, emoji: "☀️" },
+      { label: "Evening", slots: evening, emoji: "🌆" },
+    ].filter(g => g.slots.length > 0);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-          <motion.div
-            className={styles.modal}
-            initial={{ opacity: 0, scale: 0.92, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 40 }}
-            transition={{ type: "spring", damping: 26, stiffness: 280 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <motion.div className={styles.modal}
+            initial={{ opacity: 0, scale: 0.92, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 40 }} transition={{ type: "spring", damping: 26, stiffness: 280 }}
+            onClick={(e) => e.stopPropagation()}>
             <button className={styles.closeBtn} onClick={onClose}><X size={20} /></button>
 
-            {/* Success */}
+            {/* ── Step Indicator ── */}
+            <StepIndicator current={isSuccess ? 3 : step} />
+
+            {/* ── Saving Overlay ── */}
             <AnimatePresence>
-              {isSuccess && (
-                <motion.div className={styles.successOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.1 }}>
-                    <CheckCircle2 size={64} className={styles.successIcon} />
+              {saving && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  style={{ position: "absolute", inset: 0, zIndex: 30, background: "rgba(255,255,255,.88)", backdropFilter: "blur(4px)",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, borderRadius: "var(--radius-2xl)" }}>
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                    <Loader2 size={40} style={{ color: "var(--primary)" }} />
                   </motion.div>
-                  <h3>Appointment Booked!</h3>
-                  <p>We&apos;ll send a confirmation to your email shortly.</p>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "var(--gray-700)" }}>Booking your appointment...</div>
+                  <div style={{ fontSize: 12, color: "var(--gray-400)" }}>Please wait a moment</div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Progress */}
-            <div className={styles.stepper}>
-              {steps.map((s, i) => (
-                <div key={s.num} className={`${styles.stepItem} ${step >= s.num ? styles.stepActive : ""} ${step === s.num ? styles.stepCurrent : ""}`}>
-                  <div className={styles.stepCircle}>
-                    {step > s.num ? <Check size={14} /> : s.icon}
-                  </div>
-                  <span className={styles.stepLabel}>{s.label}</span>
-                  {i < steps.length - 1 && <div className={`${styles.stepLine} ${step > s.num ? styles.stepLineDone : ""}`} />}
+            {/* ── Success State ── */}
+            {isSuccess && bookedInfo && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                style={{ flex: 1, position: "relative", background: "#fff",
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  padding: "36px 28px 28px", textAlign: "center", overflow: "hidden" }}>
+
+                {/* Sparkle decorations */}
+                <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.18, scale: 1 }} transition={{ delay: 0.6, duration: 0.4 }}
+                  style={{ position: "absolute", top: 24, right: 32 }}><Sparkles size={24} style={{ color: "var(--primary)" }} /></motion.div>
+                <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.12, scale: 1 }} transition={{ delay: 0.8, duration: 0.4 }}
+                  style={{ position: "absolute", bottom: 32, left: 28 }}><Sparkles size={18} style={{ color: "#10b981" }} /></motion.div>
+                <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.1, scale: 1 }} transition={{ delay: 1, duration: 0.4 }}
+                  style={{ position: "absolute", top: 50, left: 36 }}><Heart size={14} style={{ color: "#f59e0b" }} /></motion.div>
+
+                {/* Animated check circle */}
+                <div style={{ position: "relative", width: 80, height: 80, marginBottom: 20 }}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
+                    style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #10b981, #059669)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "0 8px 32px rgba(16,185,129,.35)" }}>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.3 }}>
+                      <Check size={36} strokeWidth={3} style={{ color: "#fff" }} />
+                    </motion.div>
+                  </motion.div>
+                  <motion.div animate={{ scale: [1, 1.12, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{ position: "absolute", inset: -6, borderRadius: "50%", border: "3px solid rgba(16,185,129,.15)" }} />
                 </div>
-              ))}
-            </div>
 
-            {/* Steps */}
-            <div className={styles.stepBody}>
-              <AnimatePresence mode="wait">
-                {/* ─── STEP 1 ─── */}
-                {step === 1 && (
-                  <motion.div key="step1" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-                    <h3 className={styles.stepTitle}>Your Information</h3>
-                    <p className={styles.stepSubtext}>Please provide your contact details.</p>
-                    <div className={styles.formRow}>
-                      {renderInput("name", "Full Name", <User size={16} />, "text", "e.g. John Doe")}
-                      {renderInput("phone", "Phone Number", <Phone size={16} />, "tel", "e.g. 9876543210")}
-                    </div>
-                    <div className={styles.formRow}>
-                      {renderInput("email", "Email Address", <Mail size={16} />, "email", "e.g. john.doe@example.com")}
-                      <div className={styles.field} />
-                    </div>
-                  </motion.div>
-                )}
+                {/* Title */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                  <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--gray-900)", margin: "0 0 6px", letterSpacing: "-0.02em" }}>Appointment Confirmed!</h3>
+                  <p style={{ fontSize: 13, color: "var(--gray-500)", margin: "0 0 20px", lineHeight: 1.5 }}>
+                    Your booking has been confirmed successfully.
+                  </p>
+                </motion.div>
 
-                {/* ─── STEP 2 ─── */}
-                {step === 2 && (
-                  <motion.div key="step2" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-                    <h3 className={styles.stepTitle}>Appointment Details</h3>
-
-                    <div className={styles.formRow}>
-                      {/* Department */}
-                      {renderDropdown("departmentId", "Department *", <Stethoscope size={16} />,
-                        departmentsData.find(d => d.id === form.departmentId)?.name || "", "Select Department",
-                        departmentsData.map((d) => (
-                          <button key={d.id} type="button"
-                            className={`${styles.dropdownOption} ${form.departmentId === d.id ? styles.dropdownOptionSelected : ""}`}
-                            onClick={() => { updateField("departmentId", d.id); updateField("doctorId", ""); updateField("timeSlot", ""); setOpenDropdown(null); }}
-                          >
-                            <span className={styles.optionLabel}>{d.name}</span>
-                            {form.departmentId === d.id && <Check size={14} className={styles.optionCheck} />}
-                          </button>
-                        ))
-                      )}
-
-                      {/* Doctor */}
-                      {renderDropdown("doctorId", "Doctor *", <User size={16} />,
-                        doctorsData.find(d => d.id === form.doctorId)?.name || "", "Select Doctor",
-                        doctorsData.map((d) => (
-                          <button key={d.id} type="button"
-                            className={`${styles.dropdownOption} ${form.doctorId === d.id ? styles.dropdownOptionSelected : ""}`}
-                            onClick={() => {
-                              updateField("doctorId", d.id);
-                              updateField("timeSlot", "");
-                              if (d.consultationFee) updateField("consultationFee", String(d.consultationFee));
-                              if (d.departmentId && !form.departmentId) updateField("departmentId", d.departmentId);
-                              setOpenDropdown(null);
-                            }}
-                          >
-                            <div>
-                              <span className={styles.optionLabel}>{d.name}</span>
-                              <span className={styles.optionDesc}>{d.specialization || d.department?.name}</span>
-                            </div>
-                            {form.doctorId === d.id && <Check size={14} className={styles.optionCheck} />}
-                          </button>
-                        ))
-                      )}
-                    </div>
-
-                    <div className={styles.formRow}>
-                      {/* Date */}
-                      {renderDropdown("appointmentDate", "Appointment Date *", <Calendar size={16} />,
-                        form.appointmentDate ? fmtDate(form.appointmentDate) : "", "Select Date",
-                        <div className={styles.calendarInner}>
-                          <div className={styles.calNav}>
-                            <button type="button" className={styles.calNavBtn} onClick={prevMonth}><ChevronLeft size={16} /></button>
-                            <span className={styles.calNavTitle}>{MONTHS[calMonth]} {calYear}</span>
-                            <button type="button" className={styles.calNavBtn} onClick={nextMonth}><ChevronRight size={16} /></button>
-                          </div>
-                          <div className={styles.calDayNames}>
-                            {DAYS.map((d) => <span key={d} className={styles.calDayName}>{d}</span>)}
-                          </div>
-                          <div className={styles.calGrid}>
-                            {calendarDays.map((cell, i) => (
-                              <button key={i} type="button" disabled={isPast(cell.date)}
-                                className={`${styles.calDay} ${!cell.current ? styles.calDayOther : ""} ${isPast(cell.date) ? styles.calDayDisabled : ""} ${isToday(cell.date) ? styles.calDayToday : ""} ${form.appointmentDate === cell.date.toISOString().split('T')[0] ? styles.calDaySelected : ""}`}
-                                onClick={() => { updateField("appointmentDate", cell.date.toISOString().split('T')[0]); updateField("timeSlot", ""); setOpenDropdown(null); }}
-                              >{cell.day}</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Type */}
-                      <div className={styles.field}>
-                        <label className={styles.label}>Appointment Type</label>
-                        <select className={styles.input} value={form.type} onChange={(e) => updateField("type", e.target.value)}>
-                          <option value="OPD">OPD</option>
-                          <option value="ONLINE">Online</option>
-                          <option value="FOLLOW_UP">Follow-up</option>
-                          <option value="EMERGENCY">Emergency</option>
-                        </select>
+                {/* Summary card */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+                  style={{ width: "100%", background: "var(--gray-50)", border: "1px solid var(--gray-200)",
+                    borderRadius: 14, overflow: "hidden", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "stretch", padding: "16px 18px" }}>
+                    {/* Doctor */}
+                    <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left" }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: "#fff", border: "1px solid var(--gray-200)",
+                        display: "flex", alignItems: "center", justifyContent: "center", color: "var(--primary)", flexShrink: 0 }}>
+                        <Stethoscope size={14} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Doctor</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gray-900)" }}>{bookedInfo.doctor}</div>
+                        {bookedInfo.department && <div style={{ fontSize: 11, color: "var(--gray-500)" }}>{bookedInfo.department}</div>}
                       </div>
                     </div>
-
-                    {/* Time Slots */}
-                    {form.doctorId && form.appointmentDate && (
-                      <div className={styles.slotsSection}>
-                        <label className={styles.label}>
-                          Available Slots {loadingSlots && <Loader2 size={12} className={styles.spinner} />}
-                        </label>
-                        {slotsData.length === 0 && !loadingSlots ? (
-                          <div className={styles.noSlots}>No slots available for this date.</div>
-                        ) : (
-                          <div className={styles.timeGrid}>
-                            {slotsData.map((slot) => {
-                              const isBooked = bookedSlotsData.includes(slot);
-                              const isSelected = form.timeSlot === slot;
-                              return (
-                                <button
-                                  key={slot}
-                                  type="button"
-                                  disabled={isBooked}
-                                  className={`${styles.timeChip} ${isSelected ? styles.timeChipSelected : ""} ${isBooked ? styles.timeChipDisabled : ""}`}
-                                  onClick={() => updateField("timeSlot", slot)}
-                                >
-                                  {fmt12(slot)}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
+                    {/* Divider */}
+                    <div style={{ width: 1, background: "var(--gray-200)", margin: "0 12px", flexShrink: 0 }} />
+                    {/* Date */}
+                    <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left" }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: "#fff", border: "1px solid var(--gray-200)",
+                        display: "flex", alignItems: "center", justifyContent: "center", color: "var(--primary)", flexShrink: 0 }}>
+                        <CalendarCheck size={14} />
                       </div>
-                    )}
-
-                    {renderTextarea("notes", "Reason for Visit / Notes", "Describe your symptoms or any special requests...", false, 3)}
-                  </motion.div>
-                )}
-
-                {/* ─── STEP 3 ─── */}
-                {step === 3 && (
-                  <motion.div key="step3" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-                    <h3 className={styles.stepTitle}>Confirm Your Appointment</h3>
-                    <p className={styles.confirmSubtext}>Please review the details below before confirming.</p>
-
-                    <div className={styles.summaryCard}>
-                      {/* Section: Patient */}
-                      <div className={styles.summarySection}>
-                        <div className={styles.summarySectionHeader}>
-                          <User size={16} /> <span>Your Details</span>
-                          <button type="button" className={styles.editBtn} onClick={() => setStep(1)}><Edit3 size={12} /> Edit</button>
-                        </div>
-                        <div className={styles.summaryGrid}>
-                          <SummaryItem label="Name" value={form.name} />
-                          <SummaryItem label="Phone" value={form.phone} />
-                          <SummaryItem label="Email" value={form.email} />
-                        </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date & Time</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gray-900)" }}>{fmtDate(bookedInfo.date)}</div>
+                        <div style={{ fontSize: 11, color: "var(--gray-500)" }}>{fmt12(bookedInfo.time)}</div>
                       </div>
-
-                      {/* Section: Appointment */}
-                      <div className={styles.summarySection}>
-                        <div className={styles.summarySectionHeader}>
-                          <Calendar size={16} /> <span>Appointment Details</span>
-                          <button type="button" className={styles.editBtn} onClick={() => setStep(2)}><Edit3 size={12} /> Edit</button>
-                        </div>
-                        <div className={styles.summaryGrid}>
-                          <SummaryItem label="Doctor" value={doctorsData.find(d => d.id === form.doctorId)?.name || ""} />
-                          <SummaryItem label="Department" value={departmentsData.find(d => d.id === form.departmentId)?.name || "—"} />
-                          <SummaryItem label="Date" value={form.appointmentDate ? fmtDate(form.appointmentDate) : ""} />
-                          <SummaryItem label="Time" value={displayTime} />
-                          <SummaryItem label="Type" value={form.type} />
-                          <SummaryItem label="Fee" value={form.consultationFee ? `₹${form.consultationFee}` : "—"} />
-                        </div>
-                      </div>
-
-                      {form.notes && (
-                        <div className={styles.summarySection}>
-                          <div className={styles.summarySectionHeader}>
-                            <FileText size={16} /> <span>Notes</span>
-                          </div>
-                          <div className={styles.summaryGrid}>
-                            <SummaryItem label="Details" value={form.notes} full />
-                          </div>
-                        </div>
-                      )}
                     </div>
-                    {errors.submit && <div className={styles.submitError}>{errors.submit}</div>}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Footer */}
-            <div className={styles.footer}>
-              {step > 1 && (
-                <button type="button" className={`btn btn-secondary ${styles.footerBtn}`} onClick={prevStep}>
-                  <ArrowLeft size={16} /> Back
-                </button>
-              )}
-              <div className={styles.footerSpacer} />
-              {step < 3 ? (
-                <button type="button" className={`btn btn-primary ${styles.footerBtn}`} onClick={nextStep}>
-                  Next <ArrowRight size={16} />
-                </button>
-              ) : (
-                <motion.button
-                  type="button"
-                  className={`btn btn-primary ${styles.footerBtn} ${styles.confirmBtn}`}
-                  onClick={handleSubmit}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <><Loader2 size={18} className={styles.spinner} /> Booking...</>
-                  ) : (
-                    <><CheckCircle2 size={18} /> Confirm Booking</>
+                  </div>
+                  {bookedInfo.token && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "10px 18px", borderTop: "1px solid var(--gray-200)",
+                      background: "linear-gradient(135deg, rgba(14,137,143,.04), rgba(16,185,129,.04))" }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--gray-500)" }}>Token Number</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "var(--primary)",
+                        background: "rgba(14,137,143,.1)", padding: "3px 12px", borderRadius: 7 }}>#{bookedInfo.token}</span>
+                    </div>
                   )}
-                </motion.button>
-              )}
-            </div>
+                </motion.div>
+
+                {/* Email notice */}
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: "var(--gray-500)",
+                    background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 9, padding: "8px 14px", marginBottom: 20 }}>
+                  <Mail size={13} />
+                  <span>Confirmation sent to <strong style={{ color: "#166534" }}>{bookedInfo.email}</strong></span>
+                </motion.div>
+
+                {/* Actions */}
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
+                  style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button type="button" onClick={onClose}
+                    style={{ padding: "10px 22px", borderRadius: 10, border: "none",
+                      background: "linear-gradient(135deg,#0E898F,#0d7a7f)", color: "#fff",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                      boxShadow: "0 4px 14px rgba(14,137,143,.3)", transition: "all .2s" }}>
+                    Done
+                  </button>
+                  <button type="button" onClick={() => {
+                    setIsSuccess(false); setBookedInfo(null); setStep(1);
+                    setForm({ name: "", phone: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
+                  }}
+                    style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid var(--gray-200)",
+                      background: "#fff", color: "var(--gray-600)", fontSize: 13, fontWeight: 600,
+                      cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all .2s" }}>
+                    <CalendarPlus size={14} /> Book Another
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* ── Step 1: Patient Info ── */}
+            {!isSuccess && step === 1 && (
+              <motion.div className={styles.stepBody} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                <h2 className={styles.stepTitle}>Your Information</h2>
+                <p className={styles.stepSubtext}>Please fill in your details to proceed with booking</p>
+                <div className={styles.formRow}>
+                  <div className={`${styles.field} ${errors.name ? styles.fieldError : ""}`}>
+                    <label className={styles.label}>Full Name *</label>
+                    <div className={styles.inputWrap}>
+                      <span className={styles.fieldIconWrap}><User size={15} /></span>
+                      <input className={styles.input} placeholder="e.g. John Doe" value={form.name} onChange={e => set("name", e.target.value)} />
+                    </div>
+                    {errors.name && <span className={styles.errorMsg}>{errors.name}</span>}
+                  </div>
+                  <div className={`${styles.field} ${errors.phone ? styles.fieldError : ""}`}>
+                    <label className={styles.label}>Phone Number *</label>
+                    <div className={styles.inputWrap}>
+                      <span className={styles.fieldIconWrap}><Phone size={15} /></span>
+                      <input className={styles.input} type="tel" placeholder="e.g. 9876543210" value={form.phone} onChange={e => set("phone", e.target.value)} />
+                    </div>
+                    {errors.phone && <span className={styles.errorMsg}>{errors.phone}</span>}
+                  </div>
+                </div>
+                <div className={styles.formRow}>
+                  <div className={`${styles.field} ${errors.email ? styles.fieldError : ""}`} style={{ gridColumn: "1 / -1" }}>
+                    <label className={styles.label}>Email Address *</label>
+                    <div className={styles.inputWrap}>
+                      <span className={styles.fieldIconWrap}><Mail size={15} /></span>
+                      <input className={styles.input} type="email" placeholder="e.g. john@example.com" value={form.email} onChange={e => set("email", e.target.value)} />
+                    </div>
+                    {errors.email && <span className={styles.errorMsg}>{errors.email}</span>}
+                  </div>
+                </div>
+                <div className={styles.footer} style={{ borderTop: "none", padding: "12px 0 0" }}>
+                  <div className={styles.footerSpacer} />
+                  <button type="button" className={styles.footerBtn} onClick={goToStep2}
+                    style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0E898F,#0d7a7f)",
+                      color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                      boxShadow: "0 4px 14px rgba(14,137,143,.3)" }}>
+                    Next <ArrowRight size={15} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Step 2: Appointment Details ── */}
+            {!isSuccess && step === 2 && (
+              <motion.div className={styles.stepBody} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                {/* Patient banner */}
+                <div style={{ background: "linear-gradient(135deg,#0E898F,#0b7a80)", borderRadius: 12, padding: "12px 16px",
+                  marginBottom: 18, display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,.18)",
+                    display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 15 }}>
+                    {form.name.charAt(0).toUpperCase() || "?"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>{form.name}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>{form.phone} &middot; {form.email}</div>
+                  </div>
+                  <button type="button" onClick={() => setStep(1)} className={styles.editBtn}
+                    style={{ background: "rgba(255,255,255,.18)", color: "#fff", border: "none" }}>Edit</button>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                  <div className={styles.formRow}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Department *</label>
+                      <SearchableSelect icon={Building2} placeholder="Select Department..." value={form.departmentId} error={errors.departmentId}
+                        options={departments.map(d => ({ id: d.id, label: d.name, sub: d.code }))}
+                        onChange={v => { set("departmentId", v); set("doctorId", ""); set("timeSlot", ""); }} />
+                      {errors.departmentId && <span className={styles.errorMsg}>{errors.departmentId}</span>}
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Doctor *</label>
+                      <SearchableSelect icon={Stethoscope} placeholder="Select Doctor..." value={form.doctorId} error={errors.doctorId}
+                        options={filteredDoctors.map(d => ({ id: d.id, label: d.name, sub: d.specialization || d.department?.name || "" }))}
+                        onChange={v => {
+                          const doc = allDoctors.find(d => d.id === v);
+                          set("doctorId", v); set("timeSlot", "");
+                          if (doc?.consultationFee) set("consultationFee", String(doc.consultationFee));
+                          if (doc?.departmentId && !form.departmentId) set("departmentId", doc.departmentId);
+                        }} />
+                      {errors.doctorId && <span className={styles.errorMsg}>{errors.doctorId}</span>}
+                    </div>
+                  </div>
+
+                  <div className={styles.formRow}>
+                    <div className={styles.field}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <label className={styles.label}>Date *</label>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          {[{ l: "Today", v: todayStr }, { l: "Tomorrow", v: tomorrowStr }].map(b => (
+                            <button key={b.l} type="button" onClick={() => { set("appointmentDate", b.v); set("timeSlot", ""); }}
+                              style={{ padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
+                                border: `1px solid ${form.appointmentDate === b.v ? "var(--primary)" : "var(--gray-200)"}`,
+                                background: form.appointmentDate === b.v ? "var(--primary-50)" : "var(--gray-50)",
+                                color: form.appointmentDate === b.v ? "var(--primary)" : "var(--gray-500)" }}>{b.l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={styles.inputWrap}>
+                        <span className={styles.fieldIconWrap}><CalendarDays size={15} /></span>
+                        <input className={styles.input} type="date" min={todayStr} value={form.appointmentDate}
+                          onChange={e => { set("appointmentDate", e.target.value); set("timeSlot", ""); }} />
+                      </div>
+                      {errors.appointmentDate && <span className={styles.errorMsg}>{errors.appointmentDate}</span>}
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Appointment Type</label>
+                      <SearchableSelect icon={FileText} placeholder="OPD" value={form.type}
+                        options={[
+                          { id: "OPD", label: "OPD", sub: "Outpatient" },
+                          { id: "ONLINE", label: "Online", sub: "Video Consult" },
+                          { id: "FOLLOW_UP", label: "Follow-up", sub: "Revisit" },
+                          { id: "EMERGENCY", label: "Emergency", sub: "Urgent" },
+                        ]} onChange={v => set("type", v)} />
+                    </div>
+                  </div>
+
+                  {/* ── Time Slots ── */}
+                  {form.doctorId && form.appointmentDate && (
+                    <div className={styles.slotsSection}>
+                      <label className={styles.label} style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        <Clock size={13} /> Time Slot *
+                        {loadingSlots && <Loader2 size={12} className={styles.spinner} style={{ marginLeft: 4 }} />}
+                      </label>
+                      {loadingSlots ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "20px 0", color: "var(--gray-400)", fontSize: 13 }}>
+                          <Loader2 size={16} className={styles.spinner} /> Loading available slots...
+                        </div>
+                      ) : slots.length === 0 ? (
+                        <div className={styles.noSlots}>No available slots for this date. Doctor may be unavailable or fully booked.</div>
+                      ) : (
+                        <div>
+                          {groupSlots(slots).map(group => (
+                            <div key={group.label} className={styles.timeGroup}>
+                              <span className={styles.timeGroupLabel}>{group.emoji} {group.label}</span>
+                              <div className={styles.timeGrid}>
+                                {group.slots.map(slot => {
+                                  const isBooked = bookedSlots.includes(slot);
+                                  const isPast = isSlotPassed(form.appointmentDate, slot);
+                                  const disabled = isBooked || isPast;
+                                  const selected = form.timeSlot === slot;
+                                  return (
+                                    <button key={slot} type="button" disabled={disabled}
+                                      onClick={() => !disabled && set("timeSlot", slot)}
+                                      title={isPast ? "Time has passed" : isBooked ? "Already booked" : "Available"}
+                                      className={`${styles.timeChip} ${selected ? styles.timeChipSelected : ""} ${disabled ? styles.timeChipDisabled : ""}`}>
+                                      {fmt12(slot)}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {errors.timeSlot && <span className={styles.errorMsg}>{errors.timeSlot}</span>}
+                    </div>
+                  )}
+
+                  <div className={styles.formRow}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Consultation Fee {selectedDoctor?.consultationFee ? `(₹${selectedDoctor.consultationFee})` : ""}</label>
+                      <div className={styles.inputWrap}>
+                        <span className={styles.fieldIconWrap}><IndianRupee size={15} /></span>
+                        <input className={styles.input} type="number" min="0" step="0.01"
+                          placeholder={selectedDoctor?.consultationFee?.toString() || "0"}
+                          value={form.consultationFee} onChange={e => set("consultationFee", e.target.value)} />
+                      </div>
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Notes / Reason</label>
+                      <div className={styles.inputWrap}>
+                        <span className={styles.fieldIconWrap}><FileText size={15} /></span>
+                        <input className={styles.input} placeholder="Chief complaint or notes..."
+                          value={form.notes} onChange={e => set("notes", e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {errors.submit && (
+                    <div className={styles.submitError} style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                      <AlertCircle size={14} /> {errors.submit}
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className={styles.footer} style={{ borderTop: "none", padding: "14px 0 0" }}>
+                    <button type="button" onClick={() => setStep(1)} className={styles.footerBtn}
+                      style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid var(--gray-200)", background: "#fff",
+                        color: "var(--gray-600)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                      <ArrowLeft size={14} /> Back
+                    </button>
+                    <div className={styles.footerSpacer} />
+                    <button type="submit" disabled={saving || !form.timeSlot} className={`${styles.footerBtn} ${styles.confirmBtn}`}
+                      style={{ padding: "10px 24px", borderRadius: 10, border: "none",
+                        background: !form.timeSlot ? "var(--gray-200)" : "linear-gradient(135deg,#0E898F,#0d7a7f)",
+                        color: !form.timeSlot ? "var(--gray-400)" : "#fff", fontSize: 13, fontWeight: 700,
+                        cursor: (saving || !form.timeSlot) ? "not-allowed" : "pointer",
+                        display: "flex", alignItems: "center", gap: 8,
+                        boxShadow: form.timeSlot ? "0 4px 14px rgba(14,137,143,.3)" : "none" }}>
+                      {saving ? <><Loader2 size={14} className={styles.spinner} /> Booking...</> : <>Book Appointment <Check size={14} /></>}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-/* ─── Summary Item ─── */
-function SummaryItem({ label, value, full }: { label: string; value: string; full?: boolean }) {
-  return (
-    <div className={`${styles.summaryItem} ${full ? styles.summaryItemFull : ""}`}>
-      <span className={styles.summaryLabel}>{label}</span>
-      <span className={styles.summaryValue}>{value}</span>
-    </div>
   );
 }

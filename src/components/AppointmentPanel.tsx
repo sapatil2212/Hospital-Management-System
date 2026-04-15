@@ -14,6 +14,9 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Document as DocxDocument, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel, BorderStyle, AlignmentType } from "docx";
 
+const toLocalDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
@@ -358,10 +361,10 @@ function BookingForm({ patient, onSuccess, onCancel }: { patient: Patient; onSuc
     setSaving(false);
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateStr(new Date());
   const tmrwDate = new Date();
   tmrwDate.setDate(tmrwDate.getDate() + 1);
-  const tomorrow = tmrwDate.toISOString().split("T")[0];
+  const tomorrow = toLocalDateStr(tmrwDate);
 
   const isSlotPassed = (dateStr: string, timeStr: string) => {
     if (!dateStr || !timeStr) return false;
@@ -559,7 +562,7 @@ function FollowUpModal({ appointment, onClose, onSuccess }: { appointment: Appoi
     setSaving(false);
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateStr(new Date());
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
@@ -721,7 +724,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split("T")[0]);
+  const [dateFilter, setDateFilter] = useState(toLocalDateStr(new Date()));
   const [showAll, setShowAll] = useState(false);
   const [followUpTarget, setFollowUpTarget] = useState<Appointment | null>(null);
   const [viewTarget, setViewTarget] = useState<Appointment | null>(null);
@@ -897,7 +900,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           <option value="">All Status</option>
           {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <button onClick={() => { setDateFilter(new Date().toISOString().split("T")[0]); setSearch(""); setStatusFilter(""); setShowAll(false); }}
+        <button onClick={() => { setDateFilter(toLocalDateStr(new Date())); setSearch(""); setStatusFilter(""); setShowAll(false); }}
           style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
           <RefreshCw size={12} />Clear
         </button>
@@ -1339,8 +1342,9 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
     return new Date(y, m - 1, d, h, min) < new Date();
   };
 
-  const today = new Date().toISOString().split("T")[0];
-  const tmrw = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const today = toLocalDateStr(new Date());
+  const tmrwDate2 = new Date(); tmrwDate2.setDate(tmrwDate2.getDate() + 1);
+  const tmrw = toLocalDateStr(tmrwDate2);
 
   const selectPatient = (p: Patient) => { setPatient(p); setStep(2); setMsg(""); };
   const selectDoctor = (d: Doctor) => {

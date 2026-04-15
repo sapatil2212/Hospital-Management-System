@@ -72,7 +72,7 @@ function QrCodeSection({ hospitalId }: { hospitalId: string }) {
 
   if (!hospitalId || !origin) return null;
 
-  const bookingUrl = `${origin}/appointment`;
+  const bookingUrl = `${origin}/appointment?hid=${hospitalId}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(bookingUrl)}&color=0E898F&bgcolor=ffffff&margin=12`;
 
   const copyUrl = () => {

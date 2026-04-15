@@ -55,28 +55,23 @@ export const bookAppointment = async (
     );
   }
 
-  // Verify patient exists
-  const patient = await findPatientById(input.patientId, hospitalId);
+  // Parallel: patient + doctor + slot conflict + token (all independent reads)
+  const [patient, doctor, hasConflict, tokenNumber] = await Promise.all([
+    findPatientById(input.patientId, hospitalId),
+    findDoctorById(input.doctorId, hospitalId),
+    checkSlotConflict(hospitalId, input.doctorId, appointmentDate, input.timeSlot),
+    getNextToken(hospitalId, input.doctorId, appointmentDate),
+  ]);
+
   if (!patient) {
     throw new AppointmentServiceError("Patient not found", "PATIENT_NOT_FOUND", 404);
   }
-
-  // Verify doctor exists and is active
-  const doctor = await findDoctorById(input.doctorId, hospitalId);
   if (!doctor) {
     throw new AppointmentServiceError("Doctor not found", "DOCTOR_NOT_FOUND", 404);
   }
   if (!doctor.isActive) {
     throw new AppointmentServiceError("Doctor is not currently active", "DOCTOR_INACTIVE", 400);
   }
-
-  // Check slot conflict
-  const hasConflict = await checkSlotConflict(
-    hospitalId,
-    input.doctorId,
-    appointmentDate,
-    input.timeSlot
-  );
   if (hasConflict) {
     throw new AppointmentServiceError(
       "This time slot is already booked for the selected doctor",
@@ -84,9 +79,6 @@ export const bookAppointment = async (
       409
     );
   }
-
-  // Generate token number for this doctor on this date
-  const tokenNumber = await getNextToken(hospitalId, input.doctorId, appointmentDate);
 
   // Use consultation fee from input, then doctor, then department
   const consultationFee =
@@ -108,31 +100,32 @@ export const bookAppointment = async (
     notes: input.notes || null,
   });
 
-  // Send confirmation email asynchronously
+  // Send confirmation email — fully fire-and-forget (no await)
   if (patient.email) {
     const deptName = (appointment as any).department?.name || "General";
-    // Fetch hospital settings to get logo
-    const settings = await getSettings(hospitalId);
-    const hospitalLogo = settings?.logo || null;
-
-    sendAppointmentConfirmation({
-      to: patient.email,
-      patientName: patient.name,
-      patientId: patient.patientId,
-      doctorName: doctor.name,
-      departmentName: deptName,
-      appointmentDate: appointmentDate.toLocaleDateString("en-IN", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      timeSlot: input.timeSlot,
-      tokenNumber,
-      type: input.type || "OPD",
-      hospitalName,
-      hospitalLogo,
-    }).catch(() => {});
+    (async () => {
+      try {
+        const settings = await getSettings(hospitalId);
+        await sendAppointmentConfirmation({
+          to: patient.email!,
+          patientName: patient.name,
+          patientId: patient.patientId,
+          doctorName: doctor.name,
+          departmentName: deptName,
+          appointmentDate: appointmentDate.toLocaleDateString("en-IN", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          timeSlot: input.timeSlot,
+          tokenNumber,
+          type: input.type || "OPD",
+          hospitalName,
+          hospitalLogo: settings?.logo || null,
+        });
+      } catch { /* ignore email failures */ }
+    })();
   }
 
   return appointment;
