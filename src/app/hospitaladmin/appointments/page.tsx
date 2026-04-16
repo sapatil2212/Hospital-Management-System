@@ -50,7 +50,7 @@ export default function AppointmentsPage() {
           })}
         </div>
         <button onClick={() => { setTab("appointments"); setSelectedPatientId(null); setBookTrigger(k => k + 1); }}
-          style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(14,137,143,.25)", transition: "all .15s" }}>
+          style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}>
           <Plus size={15} />Book Appointment
         </button>
       </div>

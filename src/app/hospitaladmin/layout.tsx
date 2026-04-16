@@ -66,6 +66,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [hospitalSettings, setHospitalSettings] = useState<any>(null);
 
   const tab = searchParams.get("tab");
   const activeId = getActiveId(pathname, tab);
@@ -82,6 +83,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         if (d.data.role !== "HOSPITAL_ADMIN") { router.push("/login"); return; }
         setUser(d.data);
         setLoading(false);
+        // Fetch hospital settings for logo and name
+        fetch("/api/config/settings", { credentials: "include" })
+          .then(r => r.json())
+          .then(settingsData => {
+            if (settingsData.success && settingsData.data?.settings) {
+              setHospitalSettings(settingsData.data.settings);
+            }
+          })
+          .catch(() => {});
       })
       .catch(() => router.push("/login"));
   };
@@ -228,8 +238,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         {/* ── Sidebar ── */}
         <aside className="hd-sb">
           <div className="hd-sb-logo">
-            <div className="hd-logo-ic"><Stethoscope size={18} color="white" /></div>
-            <div><div className="hd-logo-tx">MediCare+</div><div className="hd-logo-sub">Hospital Admin</div></div>
+            {hospitalSettings?.logo ? (
+              <img src={hospitalSettings.logo} alt="Hospital Logo" style={{ width: "100%", maxHeight: 52, objectFit: "contain", display: "block" }} />
+            ) : (
+              <>
+                <div className="hd-logo-ic"><Stethoscope size={18} color="white" /></div>
+                <div><div className="hd-logo-tx">{hospitalSettings?.hospitalName || user?.hospital?.name || "MediCare+"}</div><div className="hd-logo-sub">Hospital Admin</div></div>
+              </>
+            )}
           </div>
 
           <nav className="hd-nav">

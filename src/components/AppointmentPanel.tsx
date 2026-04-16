@@ -715,6 +715,163 @@ function EditAppointmentModal({ appointment, onClose, onSave }: { appointment: A
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RESCHEDULE MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function RescheduleModal({ appt, onClose, onConfirm }: { appt: Appointment; onClose: () => void; onConfirm: (date: string, time: string) => void }) {
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  const [newDate, setNewDate] = useState(toLocalDateStr(tomorrow));
+  const [selectedTime, setSelectedTime] = useState("");
+  const [allSlots, setAllSlots] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [noAvailability, setNoAvailability] = useState(false);
+  const [slotErr, setSlotErr] = useState("");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const isSameDate = (date: string) => {
+    const apptDate = appt.appointmentDate ? toLocalDateStr(new Date(appt.appointmentDate)) : "";
+    return date === apptDate;
+  };
+
+  const fetchSlots = useCallback(async (date: string) => {
+    setSlotsLoading(true);
+    setAllSlots([]); setBookedSlots([]); setSelectedTime("");
+    setNoAvailability(false); setSlotErr(""); setErr("");
+    try {
+      const r = await fetch(`/api/appointments/slots?doctorId=${appt.doctorId}&date=${date}`, { credentials: "include" }).then(x => x.json());
+      if (r.success) {
+        let all: string[] = r.data?.allSlots || [];
+        let booked: string[] = r.data?.bookedSlots || [];
+        if (isSameDate(date)) booked = booked.filter((s: string) => s !== appt.timeSlot);
+        const isToday = date === toLocalDateStr(new Date());
+        if (isToday) {
+          const now = new Date();
+          const nowMins = now.getHours() * 60 + now.getMinutes();
+          all = all.filter(s => { const [h, m] = s.split(":").map(Number); return h * 60 + m > nowMins; });
+          booked = booked.filter(s => { const [h, m] = s.split(":").map(Number); return h * 60 + m > nowMins; });
+        }
+        if (!all.length) setNoAvailability(true);
+        else { setAllSlots(all); setBookedSlots(booked); }
+      } else {
+        setSlotErr(r.message || "Could not load slots.");
+      }
+    } catch { setSlotErr("Network error loading slots."); }
+    finally { setSlotsLoading(false); }
+  }, [appt.doctorId, appt.timeSlot, appt.appointmentDate]);
+
+  useEffect(() => { if (newDate) fetchSlots(newDate); }, [newDate, fetchSlots]);
+
+  const handleConfirm = () => {
+    if (!newDate) { setErr("Please select a date."); return; }
+    if (!selectedTime) { setErr("Please select a time slot."); return; }
+    setSaving(true);
+    onConfirm(newDate, selectedTime);
+  };
+
+  const availableSlots = allSlots.filter(s => !bookedSlots.includes(s));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.55)", backdropFilter: "blur(4px)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={e => { if (e.target === e.currentTarget && !saving) onClose(); }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 460, boxShadow: "0 24px 60px rgba(0,0,0,.18)", fontFamily: "'Inter',sans-serif", maxHeight: "90vh", overflowY: "auto" }}>
+
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 3 }}>Reschedule Appointment</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{appt.patient?.name} &nbsp;·&nbsp; {appt.doctor?.name}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}><X size={14} /></button>
+        </div>
+
+        <div style={{ background: "#E6F4F4", borderRadius: 12, padding: "12px 14px", marginBottom: 20, border: "1px solid #B3E0E0" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#0A6B70", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Current Appointment</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#07595D" }}>
+            {new Date(appt.appointmentDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} &nbsp;at&nbsp; {fmt12(appt.timeSlot)}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Select New Date</label>
+          <input type="date" value={newDate} min={toLocalDateStr(new Date())}
+            onChange={e => { setNewDate(e.target.value); setErr(""); }}
+            style={{ width: "100%", padding: "10px 13px", borderRadius: 10, border: "1.5px solid #B3E0E0", background: "#f8fafc", fontSize: 14, color: "#334155", outline: "none", fontFamily: "'Inter',sans-serif", boxSizing: "border-box", cursor: "pointer" }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Available Time Slots</label>
+            {!slotsLoading && allSlots.length > 0 && (
+              <span style={{ fontSize: 10, color: "#0E898F", fontWeight: 600, background: "#E6F4F4", padding: "2px 8px", borderRadius: 100, border: "1px solid #B3E0E0" }}>
+                {availableSlots.length} available
+              </span>
+            )}
+          </div>
+
+          {slotsLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>
+              <Loader2 size={16} style={{ animation: "spin .7s linear infinite" }} /> Loading doctor schedule...
+            </div>
+          ) : slotErr ? (
+            <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 600, padding: "12px", background: "#fff5f5", borderRadius: 9, border: "1px solid #fecaca" }}>{slotErr}</div>
+          ) : noAvailability ? (
+            <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, padding: "14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a", textAlign: "center" }}>
+              Doctor is not available on this day. Please choose another date.
+            </div>
+          ) : allSlots.length === 0 ? null : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {allSlots.map(slot => {
+                const isBooked = bookedSlots.includes(slot);
+                const isSelected = selectedTime === slot;
+                return (
+                  <button key={slot} disabled={isBooked}
+                    onClick={() => { if (!isBooked) { setSelectedTime(slot); setErr(""); } }}
+                    style={{
+                      padding: "9px 6px", borderRadius: 9,
+                      border: isSelected ? "2px solid #0E898F" : isBooked ? "1px solid #e2e8f0" : "1.5px solid #B3E0E0",
+                      background: isSelected ? "#0E898F" : isBooked ? "#f1f5f9" : "#E6F4F4",
+                      color: isSelected ? "#fff" : isBooked ? "#cbd5e1" : "#0A6B70",
+                      fontSize: 12, fontWeight: 700,
+                      cursor: isBooked ? "not-allowed" : "pointer",
+                      textDecoration: isBooked ? "line-through" : "none",
+                      fontFamily: "'Inter',sans-serif", transition: "all .15s", position: "relative",
+                    }}>
+                    {slot}
+                    {isBooked && (
+                      <span style={{ position: "absolute", top: -6, right: -4, fontSize: 8, background: "#ef4444", color: "#fff", borderRadius: 100, padding: "1px 4px", fontWeight: 700 }}>Full</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedTime && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#059669", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+              <CheckCircle size={13} /> Selected: {fmt12(selectedTime)}
+            </div>
+          )}
+        </div>
+
+        {err && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 12, fontWeight: 600 }}>{err}</div>}
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} disabled={saving}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "2px solid #0E898F", background: "#fff", color: "#0E898F", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
+            Cancel
+          </button>
+          <button onClick={handleConfirm} disabled={saving || !selectedTime}
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: saving || !selectedTime ? "#94a3b8" : "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving || !selectedTime ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: saving || !selectedTime ? "none" : "0 4px 14px rgba(14,137,143,.35)" }}>
+            {saving ? <><Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} /> Saving…</> : <><RefreshCw size={13} /> Confirm Reschedule</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // APPOINTMENT TABLE
 // ─────────────────────────────────────────────────────────────────────────────
 function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onViewPatient: (id: string) => void }) {
@@ -731,6 +888,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<"appointment" | "complete" | null>(null);
   const [page, setPage] = useState(1);
   const [reminderSending, setReminderSending] = useState<Set<string>>(new Set());
   const [reminderMsg, setReminderMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
@@ -738,6 +896,9 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkDeleteMode, setBulkDeleteMode] = useState<"appointment" | "complete" | null>(null);
+  const [deleteAlert, setDeleteAlert] = useState<{ ok: boolean; text: string } | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -752,37 +913,71 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (id: string, status: string) => {
-    await api(`/api/appointments/${id}`, "PUT", { status });
-    load();
+  const updateStatus = async (id: string, status: string, appt?: Appointment) => {
+    if (status === "RESCHEDULED" && appt) {
+      setRescheduleTarget(appt);
+      return;
+    }
+    try {
+      const d = await api(`/api/appointments/${id}`, "PUT", { status });
+      if (!d.success) {
+        setDeleteAlert({ ok: false, text: d.message || "Failed to update status" });
+        setTimeout(() => setDeleteAlert(null), 5000);
+      }
+      load();
+    } catch (e: any) {
+      setDeleteAlert({ ok: false, text: e.message || "Network error updating status" });
+      setTimeout(() => setDeleteAlert(null), 5000);
+    }
   };
 
   const handleDelete = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || !deleteMode) return;
     setDeleting(true);
-    const d = await api(`/api/appointments/${deleteTarget.id}`, "DELETE");
+    const endpoint = deleteMode === "complete" 
+      ? `/api/appointments/${deleteTarget.id}/delete-complete`
+      : `/api/appointments/${deleteTarget.id}`;
+    const d = await api(endpoint, "DELETE");
     if (d.success) {
+      const name = deleteTarget.patient?.name || "Appointment";
+      const msg = deleteMode === "complete"
+        ? `Patient "${name}" and all related history permanently deleted`
+        : `Appointment for "${name}" cancelled — slot freed`;
       setDeleteTarget(null);
+      setDeleteMode(null);
       selectedIds.delete(deleteTarget.id);
       setSelectedIds(new Set(selectedIds));
+      setDeleteAlert({ ok: true, text: msg });
+      setTimeout(() => setDeleteAlert(null), 5000);
       load();
     } else {
-      alert(d.message || "Failed to delete appointment");
+      setDeleteAlert({ ok: false, text: d.message || "Failed to delete" });
+      setTimeout(() => setDeleteAlert(null), 5000);
     }
     setDeleting(false);
   };
 
   const handleBulkDelete = async () => {
+    if (!bulkDeleteMode) return;
     setBulkDeleting(true);
     const ids = Array.from(selectedIds);
-    let ok = 0;
+    let ok = 0, fail = 0;
     for (const id of ids) {
-      const d = await api(`/api/appointments/${id}`, "DELETE");
-      if (d.success) ok++;
+      const endpoint = bulkDeleteMode === "complete"
+        ? `/api/appointments/${id}/delete-complete`
+        : `/api/appointments/${id}`;
+      const d = await api(endpoint, "DELETE");
+      if (d.success) ok++; else fail++;
     }
+    const msg = bulkDeleteMode === "complete"
+      ? `${ok} patient(s) and all history permanently deleted${fail ? `, ${fail} failed` : ""}`
+      : `${ok} appointment(s) cancelled — slots freed${fail ? `, ${fail} failed` : ""}`;
     setSelectedIds(new Set());
     setShowBulkConfirm(false);
+    setBulkDeleteMode(null);
     setBulkDeleting(false);
+    setDeleteAlert({ ok: fail === 0, text: msg });
+    setTimeout(() => setDeleteAlert(null), 5000);
     load();
   };
 
@@ -880,6 +1075,19 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
 
   return (
     <div>
+      {/* Delete Alert */}
+      {deleteAlert && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, marginBottom: 14, background: deleteAlert.ok ? "#f0fdf4" : "#fef2f2", border: `1.5px solid ${deleteAlert.ok ? "#bbf7d0" : "#fecaca"}`, animation: "fadeIn .2s ease" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: deleteAlert.ok ? "#dcfce7" : "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            {deleteAlert.ok ? <CheckCircle size={14} color="#16a34a" /> : <AlertTriangle size={14} color="#ef4444" />}
+          </div>
+          <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: deleteAlert.ok ? "#166534" : "#991b1b" }}>{deleteAlert.text}</div>
+          <button onClick={() => setDeleteAlert(null)} style={{ background: "none", border: "none", cursor: "pointer", color: deleteAlert.ok ? "#16a34a" : "#ef4444", padding: 4 }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "8px 14px", flex: 1, minWidth: 200 }}>
@@ -977,7 +1185,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                         style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#0E898F" }} />
                     </td>
                     <td style={{ padding: "12px 14px" }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#7c3aed,#4c1d95)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 9, background: "#E6F4F4", border: "1px solid #B3E0E0", display: "flex", alignItems: "center", justifyContent: "center", color: "#0E898F", fontWeight: 800, fontSize: 13 }}>
                         {appt.tokenNumber || "—"}
                       </div>
                     </td>
@@ -1005,7 +1213,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                     </td>
                     <td style={{ padding: "12px 14px" }}>
                       <select value={appt.status}
-                        onChange={e => updateStatus(appt.id, e.target.value)}
+                        onChange={e => updateStatus(appt.id, e.target.value, appt)}
                         style={{ fontSize: 11, padding: "4px 10px", borderRadius: 100, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, fontWeight: 700, cursor: "pointer", outline: "none" }}>
                         {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
@@ -1016,6 +1224,12 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
                           style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#E6F4F4", color: "#0E898F", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Eye size={13} />
                         </button>
+                        {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED" || appt.status === "RESCHEDULED") && (
+                          <button onClick={() => setRescheduleTarget(appt)} title="Reschedule Appointment"
+                            style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#ecfeff", color: "#0891b2", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <RefreshCw size={13} />
+                          </button>
+                        )}
                         <button onClick={() => setEditTarget(appt)} title="Edit Appointment"
                           style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#fef3c7", color: "#d97706", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Edit size={13} />
@@ -1080,6 +1294,30 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           {reminderMsg.ok ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
           {reminderMsg.text}
         </div>
+      )}
+
+      {rescheduleTarget && (
+        <RescheduleModal
+          appt={rescheduleTarget}
+          onClose={() => setRescheduleTarget(null)}
+          onConfirm={async (newDate, newTime) => {
+            const d = await api(`/api/appointments/${rescheduleTarget.id}`, "PUT", {
+              status: "RESCHEDULED",
+              appointmentDate: newDate,
+              timeSlot: newTime,
+            });
+            if (d.success) {
+              setRescheduleTarget(null);
+              setDeleteAlert({ ok: true, text: `Appointment for "${rescheduleTarget.patient?.name}" rescheduled to ${new Date(newDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} at ${newTime}` });
+              setTimeout(() => setDeleteAlert(null), 5000);
+              load();
+            } else {
+              setRescheduleTarget(null);
+              setDeleteAlert({ ok: false, text: d.message || "Failed to reschedule" });
+              setTimeout(() => setDeleteAlert(null), 5000);
+            }
+          }}
+        />
       )}
 
       {followUpTarget && (
@@ -1159,35 +1397,72 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={e => { if (e.target === e.currentTarget) setDeleteTarget(null); }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+          onClick={e => { if (e.target === e.currentTarget && !deleting) { setDeleteTarget(null); setDeleteMode(null); } }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 520, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <AlertTriangle size={20} color="#ef4444" />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete Appointment?</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete Appointment</div>
                 <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
-                  Are you sure you want to delete this appointment for <strong>{deleteTarget.patient?.name}</strong>? This action cannot be undone.
+                  Choose how you want to delete this appointment for <strong>{deleteTarget.patient?.name}</strong>
                 </div>
               </div>
             </div>
+            
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: 12, marginBottom: 18 }}>
-              <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, marginBottom: 4 }}>⚠️ Appointment Details</div>
+              <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, marginBottom: 4 }}>📋 Appointment Details</div>
               <div style={{ fontSize: 11, color: "#a16207" }}>
                 {new Date(deleteTarget.appointmentDate).toLocaleDateString("en-IN")} at {fmt12(deleteTarget.timeSlot)} with Dr. {deleteTarget.doctor?.name}
               </div>
             </div>
+
+            {!deleteMode ? (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 12 }}>Select deletion option:</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button onClick={() => setDeleteMode("appointment")}
+                    style={{ padding: "14px 16px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#fff", textAlign: "left", cursor: "pointer", transition: "all .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b"; e.currentTarget.style.background = "#fffbeb"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#fff"; }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>🗑️ Cancel Appointment Only</div>
+                    <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>Marks appointment as cancelled and frees the date & time slot. Patient record and history remain intact.</div>
+                  </button>
+                  <button onClick={() => setDeleteMode("complete")}
+                    style={{ padding: "14px 16px", borderRadius: 10, border: "1.5px solid #fee2e2", background: "#fff5f5", textAlign: "left", cursor: "pointer", transition: "all .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.background = "#fef2f2"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#fee2e2"; e.currentTarget.style.background = "#fff5f5"; }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>⚠️ Delete Complete Patient History</div>
+                    <div style={{ fontSize: 11, color: "#991b1b", lineHeight: 1.4 }}><strong>PERMANENT:</strong> Deletes the patient record along with all appointments, prescriptions, bills, payments, procedures, visits, and follow-ups. This cannot be undone!</div>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: deleteMode === "complete" ? "#fef2f2" : "#f0fdf4", border: `1.5px solid ${deleteMode === "complete" ? "#fecaca" : "#bbf7d0"}`, borderRadius: 10, padding: 14, marginBottom: 18 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: deleteMode === "complete" ? "#991b1b" : "#166534", marginBottom: 6 }}>
+                  {deleteMode === "complete" ? "⚠️ Complete Deletion Selected" : "✓ Cancel Appointment Selected"}
+                </div>
+                <div style={{ fontSize: 11, color: deleteMode === "complete" ? "#991b1b" : "#166534", lineHeight: 1.4 }}>
+                  {deleteMode === "complete" 
+                    ? "This will permanently delete the patient and ALL related records (appointments, prescriptions, bills, visits, procedures). This cannot be undone."
+                    : "This appointment will be marked as cancelled and the slot will be freed. Patient record will remain intact."}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={() => setDeleteTarget(null)} disabled={deleting}
+              <button onClick={() => { if (deleteMode) setDeleteMode(null); else { setDeleteTarget(null); setDeleteMode(null); } }} disabled={deleting}
                 style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .5 : 1 }}>
-                Cancel
+                {deleteMode ? "Back" : "Cancel"}
               </button>
-              <button onClick={handleDelete} disabled={deleting}
-                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
-                {deleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
-                {deleting ? "Deleting..." : "Delete Appointment"}
-              </button>
+              {deleteMode && (
+                <button onClick={handleDelete} disabled={deleting}
+                  style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: deleteMode === "complete" ? "#dc2626" : "#f59e0b", color: "#fff", fontSize: 13, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                  {deleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+                  {deleting ? "Processing..." : (deleteMode === "complete" ? "Delete Everything" : "Cancel Appointment")}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1195,29 +1470,65 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
 
       {showBulkConfirm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={e => { if (e.target === e.currentTarget && !bulkDeleting) setShowBulkConfirm(false); }}>
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+          onClick={e => { if (e.target === e.currentTarget && !bulkDeleting) { setShowBulkConfirm(false); setBulkDeleteMode(null); } }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 520, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 18 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <AlertTriangle size={20} color="#ef4444" />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete {selectedIds.size} Appointments?</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Delete {selectedIds.size} Appointment(s)</div>
                 <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
-                  Are you sure you want to delete <strong>{selectedIds.size}</strong> selected appointment(s)? This action cannot be undone.
+                  Choose how you want to handle <strong>{selectedIds.size}</strong> selected appointment(s)
                 </div>
               </div>
             </div>
+
+            {!bulkDeleteMode ? (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 12 }}>Select deletion option:</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button onClick={() => setBulkDeleteMode("appointment")}
+                    style={{ padding: "14px 16px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#fff", textAlign: "left", cursor: "pointer", transition: "all .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b"; e.currentTarget.style.background = "#fffbeb"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#fff"; }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>🗑️ Cancel Appointments Only</div>
+                    <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>Marks all selected appointments as cancelled and frees their slots. Patient records remain intact.</div>
+                  </button>
+                  <button onClick={() => setBulkDeleteMode("complete")}
+                    style={{ padding: "14px 16px", borderRadius: 10, border: "1.5px solid #fee2e2", background: "#fff5f5", textAlign: "left", cursor: "pointer", transition: "all .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.background = "#fef2f2"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#fee2e2"; e.currentTarget.style.background = "#fff5f5"; }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>⚠️ Delete Complete Patient History</div>
+                    <div style={{ fontSize: 11, color: "#991b1b", lineHeight: 1.4 }}><strong>PERMANENT:</strong> Deletes each patient record along with all their appointments, prescriptions, bills, payments, procedures, visits, and follow-ups. This cannot be undone!</div>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: bulkDeleteMode === "complete" ? "#fef2f2" : "#f0fdf4", border: `1.5px solid ${bulkDeleteMode === "complete" ? "#fecaca" : "#bbf7d0"}`, borderRadius: 10, padding: 14, marginBottom: 18 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: bulkDeleteMode === "complete" ? "#991b1b" : "#166534", marginBottom: 6 }}>
+                  {bulkDeleteMode === "complete" ? `⚠️ Complete Deletion — ${selectedIds.size} patient(s)` : `✓ Cancel ${selectedIds.size} Appointment(s)`}
+                </div>
+                <div style={{ fontSize: 11, color: bulkDeleteMode === "complete" ? "#991b1b" : "#166534", lineHeight: 1.4 }}>
+                  {bulkDeleteMode === "complete"
+                    ? "This will permanently delete each patient and ALL their related records. This cannot be undone."
+                    : "Selected appointments will be marked as cancelled and their slots freed. Patient records stay intact."}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={() => setShowBulkConfirm(false)} disabled={bulkDeleting}
+              <button onClick={() => { if (bulkDeleteMode) setBulkDeleteMode(null); else { setShowBulkConfirm(false); setBulkDeleteMode(null); } }} disabled={bulkDeleting}
                 style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: bulkDeleting ? "not-allowed" : "pointer", opacity: bulkDeleting ? .5 : 1 }}>
-                Cancel
+                {bulkDeleteMode ? "Back" : "Cancel"}
               </button>
-              <button onClick={handleBulkDelete} disabled={bulkDeleting}
-                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: bulkDeleting ? "not-allowed" : "pointer", opacity: bulkDeleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
-                {bulkDeleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
-                {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} Appointments`}
-              </button>
+              {bulkDeleteMode && (
+                <button onClick={handleBulkDelete} disabled={bulkDeleting}
+                  style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: bulkDeleteMode === "complete" ? "#dc2626" : "#f59e0b", color: "#fff", fontSize: 13, fontWeight: 700, cursor: bulkDeleting ? "not-allowed" : "pointer", opacity: bulkDeleting ? .7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                  {bulkDeleting && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}
+                  {bulkDeleting ? "Processing..." : (bulkDeleteMode === "complete" ? `Delete ${selectedIds.size} Patient(s)` : `Cancel ${selectedIds.size} Appointment(s)`)}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1407,18 +1718,18 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,.18)", width: "90%", maxWidth: 720, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg,#0E898F,#0A6B70)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: "#E6F4F4", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #B3E0E0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Zap size={18} color="#fff" />
-          <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Quick Book Appointment</span>
+          <Zap size={18} color="#0E898F" />
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#0E898F" }}>Quick Book Appointment</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {step > 1 && (
-            <button onClick={reset} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, padding: "6px 14px", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            <button onClick={reset} style={{ background: "#fff", border: "1px solid #B3E0E0", borderRadius: 8, padding: "6px 14px", color: "#0E898F", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
               <RefreshCw size={11} />Start Over
             </button>
           )}
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button onClick={onClose} style={{ background: "#fff", border: "1px solid #B3E0E0", borderRadius: 8, padding: "6px 10px", color: "#0E898F", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={14} />
           </button>
         </div>
