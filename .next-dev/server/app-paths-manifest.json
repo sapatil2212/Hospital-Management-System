@@ -1,1 +1,8 @@
-{}
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/subdept/dashboard/page": "app/subdept/dashboard/page.js",
+  "/api/dashboard/overview/route": "app/api/dashboard/overview/route.js",
+  "/api/pharmacy/stats/route": "app/api/pharmacy/stats/route.js",
+  "/api/pharmacy/queue/route": "app/api/pharmacy/queue/route.js",
+  "/api/pharmacy/notifications/stream/route": "app/api/pharmacy/notifications/stream/route.js"
+}

@@ -7,6 +7,7 @@ import {
   getDepartmentsForDropdown,
   seedDefaultDepartments,
   generateUniqueCode,
+  handleDeptCredentialsOnSave,
   DepartmentServiceError,
 } from "../../../../../backend/services/department.service";
 import {
@@ -154,7 +155,29 @@ export async function POST(req: NextRequest) {
 
     // Create department using service
     const data = await createDepartment(auth.hospitalId, result.data);
-    return successResponse(data, "Department created", 201);
+
+    // Auto-create DEPT_HEAD User if loginEmail + loginPassword provided
+    let credentialWarning: string | null = null;
+    if (result.data.loginEmail && result.data.loginPassword) {
+      try {
+        await handleDeptCredentialsOnSave(
+          data.id,
+          auth.hospitalId,
+          result.data.loginEmail,
+          result.data.loginPassword,
+          data.name
+        );
+      } catch (credErr: any) {
+        console.error("[DeptCredentials] Auto-create failed:", credErr.message, credErr.code);
+        credentialWarning = `Department created but login setup failed: ${credErr.message}`;
+      }
+    }
+
+    return successResponse(
+      { ...data, credentialWarning },
+      credentialWarning ? `Department created (Warning: ${credentialWarning})` : "Department created",
+      201
+    );
   } catch (e: any) {
     if (e instanceof DepartmentServiceError) {
       return errorResponse(e.message, e.status, { code: e.code });

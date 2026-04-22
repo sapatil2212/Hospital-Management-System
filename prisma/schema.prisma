@@ -54,6 +54,10 @@ model Hospital {
   treatmentSessions     TreatmentSession[]
   enquiries             Enquiry[]
   blogs                 Blog[]
+  stockLocations        StockLocation[]
+  stockTransfers        StockTransfer[]
+  stockTransferItems    StockTransferItem[]
+  stockReturns          StockReturn[]
 }
 
 model User {
@@ -138,6 +142,8 @@ model Department {
   customTypeName    String?
   location          String?
   billingCode       String?
+  loginEmail        String?         @unique
+  credentialsSent   Boolean         @default(false)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   hodDoctor         Doctor?         @relation("DepartmentHOD", fields: [hodDoctorId], references: [id])
@@ -151,6 +157,7 @@ model Department {
   Service           Service[]
   TreatmentPlan     TreatmentPlan[]
   bedAllocations    BedAllocation[]
+  stockLocations    StockLocation[]
 
   @@unique([hospitalId, code])
   @@index([hospitalId])
@@ -193,6 +200,8 @@ model SubDepartment {
   prescriptionWorkflows PrescriptionWorkflow[]
   services              Service[]
   treatmentPlans        TreatmentPlan[]
+  stockLocations        StockLocation[]
+  purchases             Purchase[]
 
   @@unique([hospitalId, name, type])
   @@index([hospitalId])
@@ -565,6 +574,8 @@ model InventoryItem {
   batches           StockBatch[]
   movements         StockMovement[]
   purchaseItems     PurchaseItem[]
+  transferItems     StockTransferItem[]
+  stockReturns      StockReturn[]
 
   @@unique([hospitalId, name, category])
   @@index([hospitalId])
@@ -577,6 +588,7 @@ enum Role {
   DOCTOR
   RECEPTIONIST
   STAFF
+  DEPT_HEAD
   SUB_DEPT_HEAD
   FINANCE_HEAD
 }
@@ -897,9 +909,9 @@ model Prescription {
   id              String                 @id @default(uuid())
   hospitalId      String
   prescriptionNo  String
-  appointmentId   String                 @unique
+  appointmentId   String?                @unique
   patientId       String
-  doctorId        String
+  doctorId        String?
   vitals          String?                @db.Text
   chiefComplaint  String?                @db.Text
   diagnosis       String?                @db.Text
@@ -922,9 +934,9 @@ model Prescription {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   hospital        Hospital               @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  appointment     Appointment            @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  appointment     Appointment?           @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   patient         Patient                @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor          Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  doctor          Doctor?                @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   workflows       PrescriptionWorkflow[]
   bill            Bill?
 
@@ -940,7 +952,7 @@ model PrescriptionWorkflow {
   id              String         @id @default(uuid())
   hospitalId      String
   prescriptionId  String
-  subDepartmentId String
+  subDepartmentId String?
   sequence        Int            @default(0)
   status          WorkflowStatus @default(PENDING)
   notes           String?        @db.Text
@@ -952,7 +964,7 @@ model PrescriptionWorkflow {
   updatedAt       DateTime       @updatedAt
   hospital        Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   prescription    Prescription   @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  subDepartment   SubDepartment  @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)
+  subDepartment   SubDepartment? @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)
 
   @@index([prescriptionId])
   @@index([subDepartmentId])
@@ -967,6 +979,7 @@ enum PrescriptionStatus {
   BILLING_PENDING
   BILLED
   CLOSED
+  CANCELLED
 }
 
 enum WorkflowStatus {
@@ -974,6 +987,7 @@ enum WorkflowStatus {
   IN_PROGRESS
   COMPLETED
   SKIPPED
+  HOLD
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1146,6 +1160,7 @@ enum ExpenseCategory {
   MAINTENANCE
   UTILITY
   MEDICINE
+  INVENTORY
   HOUSEKEEPING
   MARKETING
   INSURANCE_EXPENSE
@@ -1315,7 +1330,9 @@ model StockBatch {
   item          InventoryItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
   supplier      Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   hospital      Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  movements     StockMovement[]
+  movements      StockMovement[]
+  transferItems   StockTransferItem[]
+  stockReturns    StockReturn[]
 
   @@index([hospitalId])
   @@index([itemId])
@@ -1392,22 +1409,43 @@ model Supplier {
 }
 
 model Purchase {
-  id          String         @id @default(uuid())
-  hospitalId  String
-  supplierId  String
-  purchaseNo  String
-  totalAmount Float
-  status      String
-  notes       String?        @db.Text
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  supplier    Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  hospital    Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
-  items       PurchaseItem[]
+  id                String         @id @default(uuid())
+  hospitalId        String
+  supplierId        String?
+  subDepartmentId   String?
+  purchaseNo        String
+  totalAmount       Float
+  status            String
+  notes             String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Payment fields
+  paymentType     String         @default("CREDIT")   // CREDIT, PAID
+  paymentStatus   String         @default("PENDING")   // PENDING, PARTIAL, PAID
+  paymentMethod   String?                              // CASH, UPI, CARD, BANK_TRANSFER, CHEQUE
+  amountPaid      Float          @default(0)
+  dueDate         DateTime?
+  paidAt          DateTime?
+  transactionId   String?
+  invoiceNumber   String?
+  invoiceDate     DateTime?
+  discount        Float          @default(0)
+  taxPercent      Float          @default(0)
+  taxAmount       Float          @default(0)
+  grandTotal      Float          @default(0)
+  reminderSent    Boolean        @default(false)
+
+  supplier      Supplier?      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  hospital      Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  subDepartment SubDepartment? @relation(fields: [subDepartmentId], references: [id], onDelete: SetNull)
+  items         PurchaseItem[]
 
   @@unique([hospitalId, purchaseNo])
   @@index([hospitalId])
   @@index([supplierId])
+  @@index([paymentStatus])
+  @@index([dueDate])
 }
 
 model PurchaseItem {
@@ -1680,4 +1718,108 @@ enum BlogStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CENTRAL INVENTORY — LOCATIONS, TRANSFERS, RETURNS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model StockLocation {
+  id               String              @id @default(uuid())
+  hospitalId       String
+  name             String
+  code             String
+  type             String              @default("CENTRAL")
+  subDepartmentId  String?
+  departmentId     String?
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  hospital         Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  subDepartment    SubDepartment?      @relation(fields: [subDepartmentId], references: [id], onDelete: SetNull)
+  department       Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  transfersFrom    StockTransfer[]     @relation("TransferFrom")
+  transfersTo      StockTransfer[]     @relation("TransferTo")
+  returnsFrom      StockReturn[]       @relation("ReturnFrom")
+  returnsTo        StockReturn[]       @relation("ReturnTo")
+
+  @@unique([hospitalId, code])
+  @@index([hospitalId])
+  @@index([subDepartmentId])
+  @@index([departmentId])
+}
+
+model StockTransfer {
+  id             String              @id @default(uuid())
+  hospitalId     String
+  transferNo     String
+  fromLocationId String
+  toLocationId   String
+  status         String              @default("PENDING")
+  notes          String?             @db.Text
+  requestedBy    String?
+  approvedBy     String?
+  transferredAt  DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  hospital       Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  fromLocation   StockLocation       @relation("TransferFrom", fields: [fromLocationId], references: [id], onDelete: Cascade)
+  toLocation     StockLocation       @relation("TransferTo", fields: [toLocationId], references: [id], onDelete: Cascade)
+  items          StockTransferItem[]
+
+  @@unique([hospitalId, transferNo])
+  @@index([hospitalId])
+  @@index([fromLocationId])
+  @@index([toLocationId])
+  @@index([status])
+}
+
+model StockTransferItem {
+  id             String        @id @default(uuid())
+  hospitalId     String
+  transferId     String
+  itemId         String
+  batchId        String?
+  quantity       Int
+  receivedQty    Int           @default(0)
+  notes          String?
+  transfer       StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  item           InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  batch          StockBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  hospital       Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+  @@index([itemId])
+  @@index([hospitalId])
+}
+
+model StockReturn {
+  id             String        @id @default(uuid())
+  hospitalId     String
+  returnNo       String
+  fromLocationId String
+  toLocationId   String
+  type           String        @default("EXCESS")
+  status         String        @default("PENDING")
+  notes          String?       @db.Text
+  requestedBy    String?
+  approvedBy     String?
+  returnedAt     DateTime?
+  itemId         String
+  batchId        String?
+  quantity       Int
+  reason         String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  hospital       Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  fromLocation   StockLocation @relation("ReturnFrom", fields: [fromLocationId], references: [id], onDelete: Cascade)
+  toLocation     StockLocation @relation("ReturnTo", fields: [toLocationId], references: [id], onDelete: Cascade)
+  item           InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  batch          StockBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@unique([hospitalId, returnNo])
+  @@index([hospitalId])
+  @@index([fromLocationId])
+  @@index([toLocationId])
+  @@index([status])
 }

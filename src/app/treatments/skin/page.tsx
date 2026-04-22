@@ -3,7 +3,6 @@ import {
   Sparkles, 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Microscope, 
   Shield, 
   Zap, 
@@ -14,10 +13,10 @@ import {
   Target,
   Users
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import SkinHero from "./SkinHero";
 
@@ -507,33 +506,13 @@ export default function SkinTreatmentsPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Book Your Skin Consultation Today
-              </h2>
-              <p className={styles.ctaDescription}>
-                Take the first step toward healthy, glowing, and youthful skin with expert care at Celeb Aesthetica. Experience advanced dermatology like never before.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/treatment-dermatology.png"
-                alt="Expert skin care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Book Your Skin Consultation <br /> Today"
+          description="Take the first step toward healthy, glowing, and youthful skin with expert care at Celeb Aesthetica. Experience advanced dermatology like never before."
+          imageSrc="/images/treatment-dermatology.png"
+          imageAlt="Expert skin care"
+        />
       </main>
       <Footer />
     </>

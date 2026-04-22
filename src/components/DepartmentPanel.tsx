@@ -5,7 +5,8 @@ import {
   ChevronLeft, ChevronRight, Building2, DollarSign, MapPin, User,
   Settings2, ToggleLeft, ToggleRight, Filter, Eye, Download,
   ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, FileType,
-  ShieldAlert, Users, Layers, Info
+  ShieldAlert, Users, Layers, Info, Mail, Send, KeyRound,
+  EyeOff, Copy, RefreshCw, Lock, ShieldCheck
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -34,6 +35,9 @@ interface Department {
   hodUser?: { id: string; name: string; role?: string } | null;
   location?: string | null;
   billingCode?: string | null;
+  loginEmail?: string | null;
+  credentialsSent?: boolean;
+  userId?: string | null;
   _count?: { doctors: number; staff: number; subDepartments: number };
 }
 
@@ -60,6 +64,8 @@ interface FormData {
   location: string;
   billingCode: string;
   isActive: boolean;
+  loginEmail: string;
+  loginPassword: string;
 }
 
 interface Pagination {
@@ -115,7 +121,7 @@ const emptyForm: FormData = {
   type: "CLINICAL",
   customTypeName: "",
   consultationFee: "",
-  allowAppointments: true,
+  allowAppointments: false,
   isIPD: false,
   showIPDOptions: false,
   showAppointmentOptions: false,
@@ -124,6 +130,8 @@ const emptyForm: FormData = {
   location: "",
   billingCode: "",
   isActive: true,
+  loginEmail: "",
+  loginPassword: "",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -401,6 +409,24 @@ export default function DepartmentPanel() {
   // Export dropdown
   const [showExport, setShowExport] = useState(false);
 
+  // Send credentials
+  const [sendingCredId, setSendingCredId] = useState<string | null>(null);
+
+  // Password helpers
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedPw, setCopiedPw] = useState(false);
+  const generatePassword = (name: string) => {
+    const year = new Date().getFullYear();
+    const prefix = (name || "Dept").split(" ")[0].replace(/[^a-zA-Z0-9]/g, "") || "Dept";
+    return `${prefix}@${year}`;
+  };
+  const copyPassword = async () => {
+    if (!form.loginPassword) return;
+    await navigator.clipboard.writeText(form.loginPassword);
+    setCopiedPw(true);
+    setTimeout(() => setCopiedPw(false), 2000);
+  };
+
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
   const addToast = (type: Toast["type"], message: string) => {
@@ -457,7 +483,7 @@ export default function DepartmentPanel() {
   // Open add modal
   const openAdd = () => {
     setEditItem(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, loginPassword: generatePassword("Dept") });
     setErrors({});
     setModal(true);
   };
@@ -474,15 +500,18 @@ export default function DepartmentPanel() {
       consultationFee: item.consultationFee?.toString() || "",
       allowAppointments: item.allowAppointments,
       isIPD: item.isIPD,
-      showIPDOptions: item.isIPD,
-      showAppointmentOptions: item.allowAppointments,
-      showFinancialOptions: !!(item.consultationFee || item.billingCode),
+      showIPDOptions: false,
+      showAppointmentOptions: false,
+      showFinancialOptions: false,
       hodUserId: item.hodUserId || "",
       location: item.location || "",
       billingCode: item.billingCode || "",
       isActive: item.isActive,
+      loginEmail: item.loginEmail || "",
+      loginPassword: "",
     });
     setErrors({});
+    setShowPassword(false);
     setModal(true);
   };
 
@@ -522,6 +551,9 @@ export default function DepartmentPanel() {
       location: form.location || null,
       billingCode: form.showFinancialOptions ? (form.billingCode || null) : null,
       isActive: form.isActive,
+      loginEmail: form.loginEmail || null,
+      // Only send password if filled — on edit, empty = keep existing
+      ...(form.loginPassword ? { loginPassword: form.loginPassword } : {}),
     };
     if (!form.showFinancialOptions) {
       delete payload.consultationFee;
@@ -543,7 +575,15 @@ export default function DepartmentPanel() {
 
     setSaving(false);
     if (res.success) {
-      addToast("success", editItem ? "Department updated successfully" : "Department created successfully");
+      const warn = res.data?.credentialWarning;
+      if (warn) {
+        addToast("error", `Saved but login setup failed: ${warn}`);
+      } else {
+        const credMsg = form.loginPassword
+          ? " + login credentials set"
+          : (editItem ? " (password unchanged)" : "");
+        addToast("success", (editItem ? "Department updated" : "Department created") + credMsg);
+      }
       setModal(false);
       load();
     } else {
@@ -586,6 +626,26 @@ export default function DepartmentPanel() {
       load();
     } else {
       addToast("error", res.message || "Failed to delete department");
+    }
+  };
+
+  // Send credentials (customPw passed only when called from modal context)
+  const handleSendCredentials = async (item: Department, resend = false, customPw?: string) => {
+    if (!item.loginEmail) {
+      addToast("error", "Set a login email first (edit department)");
+      return;
+    }
+    setSendingCredId(item.id);
+    const url = `/api/config/departments/${item.id}/send-credentials${resend ? "?resend=true" : ""}`;
+    const body = customPw ? { password: customPw } : {};
+    const res = await api(url, "POST", body);
+    setSendingCredId(null);
+    if (res.success) {
+      const pw = res.data?.password;
+      addToast("success", `Credentials ${resend ? "resent" : "sent"} to ${res.data?.email || item.loginEmail}${pw ? ` (Password: ${pw})` : ""}`);
+      load();
+    } else {
+      addToast("error", res.message || "Failed to send credentials");
     }
   };
 
@@ -733,6 +793,8 @@ export default function DepartmentPanel() {
         .dept-icon-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;color:#94a3b8;transition:all .15s}
         .dept-edit{background:#E6F4F4;color:#0E898F}.dept-edit:hover{background:#B3E0E0}
         .dept-del{background:#fff5f5;color:#ef4444}.dept-del:hover{background:#fee2e2}
+        .dept-cred{background:#eff6ff;color:#2563eb}.dept-cred:hover{background:#dbeafe}
+        .dept-cred-sent{background:#f0fdf4;color:#16a34a}.dept-cred-sent:hover{background:#dcfce7}
         .dept-actions{display:flex;gap:6px;align-items:center}
         .dept-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:#94a3b8;font-size:14px}
         .dept-empty{text-align:center;padding:60px 20px;color:#94a3b8;font-size:14px;background:#fff;border-radius:14px;border:1px solid #e2e8f0}
@@ -1063,6 +1125,27 @@ export default function DepartmentPanel() {
                   <td>{row._count?.doctors || 0}</td>
                   <td>
                     <div className="dept-actions">
+                      {row.loginEmail && (
+                        row.credentialsSent ? (
+                          <button
+                            className="dept-icon-btn dept-cred-sent"
+                            onClick={() => handleSendCredentials(row, true)}
+                            disabled={sendingCredId === row.id}
+                            title="Resend credentials"
+                          >
+                            {sendingCredId === row.id ? <Loader2 size={13} className="dept-spin" /> : <Check size={13} />}
+                          </button>
+                        ) : (
+                          <button
+                            className="dept-icon-btn dept-cred"
+                            onClick={() => handleSendCredentials(row)}
+                            disabled={sendingCredId === row.id}
+                            title="Send login credentials"
+                          >
+                            {sendingCredId === row.id ? <Loader2 size={13} className="dept-spin" /> : <Send size={13} />}
+                          </button>
+                        )
+                      )}
                       <button className="dept-icon-btn dept-view" onClick={() => setViewItem(row)} title="View details">
                         <Eye size={13} />
                       </button>
@@ -1203,109 +1286,8 @@ export default function DepartmentPanel() {
                     <span style={{fontSize:11,color:"#94a3b8",marginTop:3}}>This label will be displayed as the department type.</span>
                   </div>
                 )}
-
-                {/* Appointment Booking Toggle - Available for all types */}
-                <div className="dept-field full">
-                  <div className="dept-toggle-row">
-                    <div>
-                      <div className="dept-toggle-label">Enable Appointment Booking <span style={{fontWeight:400,color:"#94a3b8",fontSize:11}}>(Optional)</span></div>
-                      <div className="dept-toggle-desc">Allow patients to book appointments for this department</div>
-                    </div>
-                    <Toggle
-                      checked={form.showAppointmentOptions}
-                      onChange={(v) => setForm((f) => ({ ...f, showAppointmentOptions: v, allowAppointments: v ? f.allowAppointments : false }))}
-                    />
-                  </div>
-                </div>
-                {form.showAppointmentOptions && (
-                  <div className="dept-field full" style={{paddingLeft:12,borderLeft:"3px solid #e2e8f0"}}>
-                    <div className="dept-toggle-row" style={{background:"#eff6ff",borderColor:"#bfdbfe"}}>
-                      <div>
-                        <div className="dept-toggle-label" style={{color:"#1d4ed8"}}>Appointments Active</div>
-                        <div className="dept-toggle-desc">Patients can currently book appointments</div>
-                      </div>
-                      <Toggle checked={form.allowAppointments} onChange={(v) => setForm((f) => ({ ...f, allowAppointments: v }))} />
-                    </div>
-                  </div>
-                )}
-
-                {/* IPD Toggle - Available for all types */}
-                <div className="dept-field full">
-                  <div className="dept-toggle-row">
-                    <div>
-                      <div className="dept-toggle-label">Enable IPD (Inpatient) <span style={{fontWeight:400,color:"#94a3b8",fontSize:11}}>(Optional)</span></div>
-                      <div className="dept-toggle-desc">Does this department handle inpatient admissions?</div>
-                    </div>
-                    <Toggle
-                      checked={form.showIPDOptions}
-                      onChange={(v) => setForm((f) => ({ ...f, showIPDOptions: v, isIPD: v ? f.isIPD : false }))}
-                    />
-                  </div>
-                </div>
-                {form.showIPDOptions && (
-                  <div className="dept-field full" style={{paddingLeft:12,borderLeft:"3px solid #e2e8f0"}}>
-                    <div className="dept-toggle-row" style={{background:"#f0fdf4",borderColor:"#bbf7d0"}}>
-                      <div>
-                        <div className="dept-toggle-label" style={{color:"#16a34a"}}>Mark as IPD</div>
-                        <div className="dept-toggle-desc">Enable IPD workflows and inpatient admission tracking</div>
-                      </div>
-                      <Toggle checked={form.isIPD} onChange={(v) => setForm((f) => ({ ...f, isIPD: v }))} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Financial Settings Toggle - Available for all types */}
-                <div className="dept-field full">
-                  <div className="dept-toggle-row">
-                    <div>
-                      <div className="dept-toggle-label">Enable Financial Settings <span style={{fontWeight:400,color:"#94a3b8",fontSize:11}}>(Optional)</span></div>
-                      <div className="dept-toggle-desc">Add consultation fees and billing codes</div>
-                    </div>
-                    <Toggle
-                      checked={form.showFinancialOptions}
-                      onChange={(v) => setForm((f) => ({ ...f, showFinancialOptions: v }))}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
-
-            {/* Section 3: Financial Settings - Shown when toggle is enabled */}
-            {form.showFinancialOptions && (
-              <div className="dept-section">
-                <div className="dept-section-title">
-                  <span className="dept-section-icon green">
-                    <DollarSign size={16} />
-                  </span>
-                  Financial Settings
-                </div>
-                <div className="dept-form-grid">
-                  <div className="dept-field">
-                    <label className="dept-lbl">Default Consultation Fee (₹)</label>
-                    <input
-                      className={`dept-input ${errors.consultationFee ? "error" : ""}`}
-                      type="number"
-                      placeholder="e.g., 500"
-                      value={form.consultationFee}
-                      onChange={(e) => setForm((f) => ({ ...f, consultationFee: e.target.value }))}
-                      min="0"
-                      step="0.01"
-                    />
-                    {errors.consultationFee && <span className="dept-error">{errors.consultationFee}</span>}
-                  </div>
-                  <div className="dept-field">
-                    <label className="dept-lbl">Billing Code</label>
-                    <input
-                      className="dept-input"
-                      placeholder="e.g., DEPT-001"
-                      value={form.billingCode}
-                      onChange={(e) => setForm((f) => ({ ...f, billingCode: e.target.value }))}
-                      maxLength={20}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Section 4: Management */}
             <div className="dept-section">
@@ -1337,7 +1319,82 @@ export default function DepartmentPanel() {
               </div>
             </div>
 
-            {/* Section 5: Advanced */}
+            {/* Section 5: Login Credentials */}
+            <div className="dept-section">
+              <div className="dept-section-title">
+                <span className="dept-section-icon blue">
+                  <ShieldCheck size={16} />
+                </span>
+                Department Head Login Credentials
+                <span style={{ marginLeft: "auto", fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 100, fontWeight: 700, border: "1px solid #fde68a" }}>Admin Only</span>
+              </div>
+              <div className="dept-form-grid">
+                <div className="dept-field full">
+                  <label className="dept-lbl">Login Email / Department ID</label>
+                  <input
+                    className={`dept-input ${errors.loginEmail ? "error" : ""}`}
+                    type="email"
+                    placeholder="e.g., support-head@hospital.com"
+                    value={form.loginEmail}
+                    onChange={(e) => setForm((f) => ({ ...f, loginEmail: e.target.value }))}
+                  />
+                  {errors.loginEmail && <span className="dept-error">{errors.loginEmail}</span>}
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                    <Lock size={10} />Login at <strong>http://localhost:3000/parentdept/login</strong> · Credentials sent via email on "Send Credentials"
+                  </div>
+                </div>
+                <div className="dept-field full">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <label className="dept-lbl" style={{ margin: 0 }}>Password</label>
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, loginPassword: generatePassword(f.name || "Dept") }))}
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}>
+                      <RefreshCw size={11} />Regenerate
+                    </button>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      className="dept-input"
+                      type={showPassword ? "text" : "password"}
+                      value={form.loginPassword || ""}
+                      onChange={(e) => setForm((f) => ({ ...f, loginPassword: e.target.value }))}
+                      placeholder={editItem ? "Leave blank to keep existing password" : "Auto-generated or enter custom"}
+                      style={{ paddingRight: 72, fontFamily: (showPassword || !form.loginPassword) ? "inherit" : "monospace", letterSpacing: (showPassword || !form.loginPassword) ? "normal" : "0.1em" }}
+                    />
+                    <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 4 }}>
+                      <button type="button" onClick={() => setShowPassword((p) => !p)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 2 }}>
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                      <button type="button" onClick={copyPassword} style={{ background: "none", border: "none", cursor: "pointer", color: copiedPw ? "#10b981" : "#94a3b8", padding: 2 }} title="Copy password">
+                        {copiedPw ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                  {editItem
+                    ? <div style={{ fontSize: 11, color: form.loginPassword ? "#0A6B70" : "#94a3b8", marginTop: 4 }}>{form.loginPassword ? "✓ New password will be set on save" : "Password unchanged — fill to reset it"}</div>
+                    : <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Pattern: <code style={{ background: "#f1f5f9", padding: "1px 5px", borderRadius: 4, color: "#334155" }}>DeptName@Year</code> · e.g. <em>Pharmacy@2026</em> — or type a custom password</div>
+                  }
+                </div>
+                {editItem && form.loginEmail && (
+                  <div className="dept-field full" style={{ marginTop: 4 }}>
+                    <button
+                      type="button"
+                      className="dept-btn-outline"
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 9, border: "1.5px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", cursor: sendingCredId ? "not-allowed" : "pointer", opacity: sendingCredId ? 0.6 : 1, fontFamily: "inherit" }}
+                      disabled={!!sendingCredId}
+                      onClick={() => handleSendCredentials(editItem, !!editItem.credentialsSent, form.loginPassword || undefined)}
+                    >
+                      {sendingCredId === editItem.id ? <Loader2 size={13} className="dept-spin" /> : <Send size={13} />}
+                      {editItem.credentialsSent ? "Resend Credentials" : "Send Credentials"}
+                    </button>
+                    {editItem.credentialsSent && (
+                      <span style={{ fontSize: 11, color: "#16a34a", display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}><Check size={11} /> Credentials previously sent</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Section 6: Advanced */}
             <div className="dept-section">
               <div className="dept-section-title">
                 <span className="dept-section-icon gray">

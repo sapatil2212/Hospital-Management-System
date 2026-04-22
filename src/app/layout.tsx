@@ -3,6 +3,7 @@ import { AppointmentProvider } from "@/components/AppointmentProvider";
 import MobileAppointment from "@/components/mobile-appointment";
 import WhatsAppWidget from "@/components/whatsapp-widget";
 import AIChatbot from "@/components/ai-chatbot";
+import Preloader from "@/components/Preloader";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -46,6 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Preloader />
         <AppointmentProvider>
           {children}
           <WhatsAppWidget />

@@ -3,7 +3,6 @@ import {
   Activity, 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Shield, 
   Zap, 
   HeartPulse, 
@@ -13,10 +12,10 @@ import {
   Users,
   Scissors
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import FacialTraumaHero from "./FacialTraumaHero";
 
@@ -406,33 +405,13 @@ export default function FacialTraumaPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Get Immediate Help for Facial Injuries
-              </h2>
-              <p className={styles.ctaDescription}>
-                In case of facial trauma or emergency, timely care is crucial. Trust the experts at Celeb Aesthetica for rapid, safe, and effective treatment.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/Quick-Treatments/Trauma.png"
-                alt="Emergency facial care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Get Immediate Help for <br /> Facial Injuries"
+          description="In case of facial trauma or emergency, timely care is crucial. Trust the experts at Celeb Aesthetica for rapid, safe, and effective treatment."
+          imageSrc="/images/Quick-Treatments/Trauma.png"
+          imageAlt="Emergency facial care"
+        />
       </main>
       <Footer />
     </>

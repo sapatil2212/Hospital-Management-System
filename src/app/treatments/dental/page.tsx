@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { SmilePlus, CheckCircle, ArrowRight, Calendar, Shield, Scissors, HeartPulse, Wrench, Ruler, Baby, Sparkles, Cpu, Gem, Zap, AlertCircle, Pill, Microscope } from "lucide-react";
-import Link from "next/link";
+import { SmilePlus, CheckCircle, ArrowRight, Shield, Scissors, HeartPulse, Wrench, Ruler, Baby, Sparkles, Cpu, Gem, Zap, AlertCircle, Pill, Microscope } from "lucide-react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "../treatments.module.css";
 import DentalHero from "./DentalHero";
+import CTASection from "../CTASection";
 
 export const metadata: Metadata = {
   title: "Best Dental Clinic in India | Advanced Dental Care & Surgery",
@@ -689,33 +689,13 @@ export default function DentalTreatmentsPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Ready for a Perfect Smile? <br /> Book Your Consultation Today
-              </h2>
-              <p className={styles.ctaDescription}>
-                Experience advanced, ethical, and personalized dental treatment designed for your health, confidence, and long-term results.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Book Appointment Now
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/treatments/dental/CTA.png"
-                alt="Expert dental care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Ready for a Perfect Smile? <br /> Book Your Consultation Today"
+          description="Experience advanced, ethical, and personalized dental treatment designed for your health, confidence, and long-term results."
+          imageSrc="/treatments/dental/CTA.png"
+          imageAlt="Expert dental care"
+        />
       </main>
       <Footer />
     </>

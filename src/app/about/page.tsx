@@ -230,7 +230,7 @@ export default function AboutPage() {
               <h2 className="section-title">
                 World-Class <span className={styles.accent}>Infrastructure</span>
               </h2>
-              <p className={styles.infraSubtext}>
+              <p className="section-subtitle">
                 Complete in-house care with surgical-grade hygiene and advanced diagnostics.
               </p>
             </div>

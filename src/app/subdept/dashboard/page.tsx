@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ViewRecordModal, EditRecordModal, TransferPatientModal, ViewPrescriptionModal } from "./modals";
 import NotificationBell from "@/components/NotificationBell";
+import Preloader from "@/components/Preloader";
 import {
   ResponsiveContainer as RechartsResponsiveContainer,
   AreaChart as RechartsAreaChart,
@@ -35,6 +36,11 @@ import {
 const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Queue...</span></div> });
 const AppointmentPanelLazy = dynamic(() => import("@/components/AppointmentPanel"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Appointments...</span></div> });
 const PatientsManagementPanelLazy = dynamic(() => import("./PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Patient Management...</span></div> });
+const PharmacyDashboardLazy = dynamic(() => import("@/components/PharmacyDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Pharmacy Dashboard...</span></div> });
+const NursingDashboardLazy = dynamic(() => import("@/components/NursingDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Nursing Dashboard...</span></div> });
+const HousekeepingDashboardLazy = dynamic(() => import("@/components/HousekeepingDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Housekeeping Dashboard...</span></div> });
+const AmbulanceDashboardLazy = dynamic(() => import("@/components/AmbulanceDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Ambulance Dashboard...</span></div> });
+const BiomedicalDashboardLazy = dynamic(() => import("@/components/BiomedicalDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Biomedical Dashboard...</span></div> });
 
 // ─── Department metadata ──────────────────────────────────────────────────────
 type DeptMeta = { Icon: any; gradient: string; accent: string; lightBg: string; borderColor: string };
@@ -51,6 +57,10 @@ const SUB_DEPT_META: Record<string, DeptMeta> = {
   LABORATORY:  { Icon: TestTube2,   gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
   PROCEDURE:   { Icon: Stethoscope, gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
   RECEPTION:   { Icon: Users,       gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
+  NURSING:     { Icon: Heart,       gradient: "linear-gradient(135deg,#ec4899,#be185d)", accent: "#be185d", lightBg: "#fdf2f8", borderColor: "#fbcfe8" },
+  HOUSEKEEPING:{ Icon: ClipboardList,gradient: "linear-gradient(135deg,#f97316,#c2410c)", accent: "#c2410c", lightBg: "#fff7ed", borderColor: "#fed7aa" },
+  AMBULANCE:   { Icon: Activity,    gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
+  BIOMEDICAL:  { Icon: FlaskConical,gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
   OTHER:       { Icon: Layers,      gradient: "linear-gradient(135deg,#64748b,#334155)", accent: "#334155", lightBg: "#f8fafc", borderColor: "#e2e8f0" },
 };
 
@@ -74,6 +84,8 @@ const calcAge  = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).g
 const BLANK_PROC = { name:"", description:"", type:"OTHER", fee:"", duration:"", sequence:"0", isActive:true };
 const BLANK_REC  = { patientId:"", patientSearch:"", procedureId:"", appointmentId:"", amount:"", notes:"", performedBy:"", status:"COMPLETED" };
 
+const toSlug = (name: string) => (name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "dept";
+
 function SubDeptDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -81,7 +93,7 @@ function SubDeptDashboardContent() {
   const [profile, setProfile] = useState<any>(null);
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"finance"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept">("overview");
+  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"finance"|"revenue"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept">("overview");
 
   // Sync tab from URL on mount
   useEffect(() => {
@@ -89,15 +101,35 @@ function SubDeptDashboardContent() {
     if (t) setTab(t as any);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Build the slug-based path
+  const slugPath = profile ? `/subdept/${toSlug(profile.name)}/dashboard` : null;
+
+  // Redirect to slug-based URL once profile is loaded
+  useEffect(() => {
+    if (!profile) return;
+    const slug = toSlug(profile.name);
+    const expectedPrefix = `/subdept/${slug}/dashboard`;
+    if (!pathname.startsWith(expectedPrefix)) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (tab) params.set("tab", tab);
+      router.replace(`${expectedPrefix}?${params.toString()}`, { scroll: false });
+    }
+  }, [profile]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync tab to URL when it changes
   useEffect(() => {
     if (tab) {
+      const base = slugPath || pathname;
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", tab);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      router.replace(`${base}?${params.toString()}`, { scroll: false });
     }
-  }, [tab, pathname, router, searchParams]);
+  }, [tab, slugPath, pathname, router, searchParams]);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  // Department Stock (from Central Store transfers)
+  const [deptStock, setDeptStock] = useState<any>(null);
+  const [deptStockLoading, setDeptStockLoading] = useState(false);
 
   // Queue
   const [queue, setQueue] = useState<any[]>([]);
@@ -168,6 +200,14 @@ function SubDeptDashboardContent() {
   const [reportData, setReportData] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
 
+  // Revenue / Expense tab
+  const [revExpData, setRevExpData] = useState<any>(null);
+  const [revExpLoading, setRevExpLoading] = useState(false);
+  const [revExpPeriod, setRevExpPeriod] = useState<"today"|"week"|"month"|"all">("month");
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({ title:"", amount:"", category:"OTHER", date: new Date().toISOString().split("T")[0], description:"" });
+  const [expenseSaving, setExpenseSaving] = useState(false);
+
   // Reception-specific: Doctors
   const [docList, setDocList] = useState<any[]>([]);
   const [docLoading, setDocLoading] = useState(false);
@@ -194,6 +234,16 @@ function SubDeptDashboardContent() {
     if (res.success) setBillingQueue(res.data || []);
     setBillingQueueLoading(false);
   }, []);
+
+  // ── Revenue / Expense ──
+  const loadRevExp = useCallback(async (period = "month") => {
+    setRevExpLoading(true);
+    const res = await fetch(`/api/pharmacy/revenue-expense?period=${period}`, { credentials: "include" }).then(r => r.json());
+    if (res.success) setRevExpData(res.data);
+    setRevExpLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "revenue") loadRevExp(revExpPeriod); }, [tab, revExpPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load upcoming sessions ──
   const loadSessions = useCallback(async (subDeptId: string) => {
@@ -326,6 +376,15 @@ function SubDeptDashboardContent() {
   }, []);
 
   useEffect(() => { if (tab === "procedures") loadProcs(); }, [tab, loadProcs]);
+
+  // ── Load Department Stock (from Central Store transfers) ──
+  const loadDeptStock = useCallback(async () => {
+    setDeptStockLoading(true);
+    const res = await fetch("/api/dept-inventory", { credentials: "include" }).then(r => r.json());
+    if (res.success) setDeptStock(res.data);
+    setDeptStockLoading(false);
+  }, []);
+  useEffect(() => { if (tab === "inventory") loadDeptStock(); }, [tab, loadDeptStock]);
 
   // ── Load reports ──
   const loadReports = useCallback(async () => {
@@ -683,25 +742,29 @@ function SubDeptDashboardContent() {
   // Type-based predefined tabs
   const deptType = profile?.type || "OTHER";
   const TYPE_TABS: Record<string, string[]> = {
-    DENTAL:      ["overview","queue","procedures","records","reports","dept"],
-    DERMATOLOGY: ["overview","queue","procedures","records","reports","dept"],
-    HAIR:        ["overview","queue","procedures","records","reports","dept"],
-    ONCOLOGY:    ["overview","queue","procedures","records","reports","dept"],
-    CARDIOLOGY:  ["overview","queue","procedures","records","reports","dept"],
+    DENTAL:      ["overview","queue","procedures","records","inventory","reports","dept"],
+    DERMATOLOGY: ["overview","queue","procedures","records","inventory","reports","dept"],
+    HAIR:        ["overview","queue","procedures","records","inventory","reports","dept"],
+    ONCOLOGY:    ["overview","queue","procedures","records","inventory","reports","dept"],
+    CARDIOLOGY:  ["overview","queue","procedures","records","inventory","reports","dept"],
     RECEPTION:   ["overview","appointments","billing","patients","doctors","inventory","reports","dept"],
-    PHARMACY:    ["overview","queue","procedures","records","reports","dept"],
-    BILLING:     ["overview","queue","billing","records","reports","dept"],
-    PATHOLOGY:   ["overview","queue","procedures","records","reports","dept"],
-    RADIOLOGY:   ["overview","queue","procedures","records","reports","dept"],
-    LABORATORY:  ["overview","queue","procedures","records","reports","dept"],
-    PROCEDURE:   ["overview","queue","procedures","records","reports","dept"],
-    OTHER:       ["overview","queue","procedures","records","reports","dept"],
+    PHARMACY:    ["overview","queue","inventory","billing","revenue","reports","dept"],
+    NURSING:     ["overview","inventory","dept"],
+    HOUSEKEEPING:["overview","inventory","dept"],
+    AMBULANCE:   ["overview","inventory","dept"],
+    BIOMEDICAL:  ["overview","inventory","dept"],
+    BILLING:     ["overview","queue","billing","records","inventory","reports","dept"],
+    PATHOLOGY:   ["overview","queue","procedures","records","inventory","reports","dept"],
+    RADIOLOGY:   ["overview","queue","procedures","records","inventory","reports","dept"],
+    LABORATORY:  ["overview","queue","procedures","records","inventory","reports","dept"],
+    PROCEDURE:   ["overview","queue","procedures","records","inventory","reports","dept"],
+    OTHER:       ["overview","queue","procedures","records","inventory","reports","dept"],
   };
   const enabledTabs = new Set(TYPE_TABS[deptType] || TYPE_TABS.OTHER);
 
   const allNavItems: {id:string;label:string;icon:any;badge?:any}[] = [
     { id: "overview",      label: "Overview",           icon: <LayoutDashboard size={16}/> },
-    { id: "queue",         label: "Referrals Today",    icon: <UserCheck size={16}/>,      badge: queue.length || null },
+    { id: "queue",         label: deptType === "PHARMACY" ? "Rx Queue" : "Referrals Today", icon: <UserCheck size={16}/>, badge: queue.length || null },
     { id: "procedures",    label: "Procedures",         icon: <ClipboardList size={16}/> },
     { id: "records",       label: "Patient Records",    icon: <IndianRupee size={16}/>,    badge: recordsMeta.todayRecords || null },
     { id: "appointments",  label: "Appointments",       icon: <CalendarDays size={16}/> },
@@ -709,7 +772,9 @@ function SubDeptDashboardContent() {
     { id: "patients",      label: "Patient Management", icon: <Users size={16}/> },
     { id: "doctors",       label: "Doctors",            icon: <Stethoscope size={16}/> },
     { id: "inventory",     label: "Inventory",          icon: <Package size={16}/> },
+    { id: "purchases",    label: "Purchases",          icon: <Package size={16}/> },
     { id: "reports",       label: "Reports",            icon: <BarChart2 size={16}/> },
+    { id: "revenue",       label: "Revenue / Expense",  icon: <IndianRupee size={16}/> },
     { id: "finance",       label: "Finance",            icon: <TrendingUp size={16}/> },
     { id: "dept",          label: "Department",         icon: <Building2 size={16}/> },
   ];
@@ -722,20 +787,9 @@ function SubDeptDashboardContent() {
       String(q.tokenNumber || "").includes(queueSearch);
   });
 
-  if (loading) return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Inter',sans-serif", background:"#f0f4f8" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{ textAlign:"center" }}>
-        <div style={{ width:52, height:52, borderRadius:14, background:meta.gradient, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px", boxShadow:"0 8px 24px rgba(0,0,0,.12)" }}>
-          <Loader2 size={22} color="#fff" style={{ animation:"spin .7s linear infinite" }} />
-        </div>
-        <div style={{ fontSize:14, fontWeight:600, color:"#475569" }}>Loading portal...</div>
-      </div>
-    </div>
-  );
-
   return (
     <>
+      <Preloader loading={loading} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
@@ -814,8 +868,7 @@ function SubDeptDashboardContent() {
                 {n.badge ? <span style={{marginLeft:"auto",minWidth:18,height:18,borderRadius:9,background:meta.accent,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px"}}>{n.badge}</span> : null}
               </button>
             ))}
-            <div className="sd2-nav-sec">Help</div>
-            <button className="sd2-nb"><span style={{display:"flex"}}><HelpCircle size={16}/></span>Support</button>
+
           </nav>
 
           <div className="sd2-foot">
@@ -839,13 +892,21 @@ function SubDeptDashboardContent() {
               <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{{
                 overview:"Overview",queue:"Patient Queue",procedures:"Procedures",records:"Patient Records",
                 appointments:"Appointments",billing:"Billing",finance:"Finance",doctors:"Doctors",
-                patients:"Patient Management",inventory:"Inventory",reports:"Reports",dept:"Department Info"
+                patients:"Patient Management",inventory:"Inventory",reports:"Reports",revenue:"Revenue",dept:"Department Info"
               }[tab] || "Overview"}</div>
               <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{today}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               
-              <NotificationBell accentColor={meta.accent} bgColor={meta.lightBg} borderColor={meta.borderColor} types={["PROCEDURE_COMPLETED","APPOINTMENT_UPDATED"]} />
+              <NotificationBell 
+                accentColor={meta.accent} 
+                bgColor={meta.lightBg} 
+                borderColor={meta.borderColor} 
+                types={profile?.type === "PHARMACY" 
+                  ? ["NEW_PRESCRIPTION","PRESCRIPTION_COMPLETED","LOW_STOCK","EXPIRING_MEDICINE","BILLING_TRANSFER"] 
+                  : ["PROCEDURE_COMPLETED","APPOINTMENT_UPDATED"]
+                } 
+              />
               <div 
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,cursor:"pointer",position:"relative"}}
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
@@ -934,6 +995,19 @@ function SubDeptDashboardContent() {
           </header>
 
           <div className="sd2-body">
+
+            {/* ═══════════════════ SUPPORT DEPARTMENT DASHBOARDS ═══════════════════ */}
+            {deptType === "PHARMACY" && tab !== "dept" ? (
+              <PharmacyDashboardLazy profile={profile} user={user} activeTab={tab} />
+            ) : deptType === "NURSING" ? (
+              <NursingDashboardLazy profile={profile} user={user} />
+            ) : deptType === "HOUSEKEEPING" ? (
+              <HousekeepingDashboardLazy profile={profile} user={user} />
+            ) : deptType === "AMBULANCE" ? (
+              <AmbulanceDashboardLazy profile={profile} user={user} />
+            ) : deptType === "BIOMEDICAL" ? (
+              <BiomedicalDashboardLazy profile={profile} user={user} />
+            ) : (<>
 
             {/* ═══════════════════ OVERVIEW ═══════════════════ */}
             {tab==="overview" && (<>
@@ -2556,15 +2630,265 @@ function SubDeptDashboardContent() {
               </div>
             </>)}
 
-            {/* ═══════════════════ INVENTORY (Placeholder) ═══════════════════ */}
+            {/* ═══════════════════ INVENTORY (Department Stock) ═══════════════════ */}
             {tab==="inventory" && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:360}}>
-                <div style={{textAlign:"center",maxWidth:400}}>
-                  <div style={{width:72,height:72,borderRadius:20,background:"#f0fdf4",border:"2px solid #bbf7d022",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:"#10b981"}}><Package size={28}/></div>
-                  <div style={{fontSize:22,fontWeight:800,color:"#1e293b",marginBottom:8}}>Inventory Management</div>
-                  <div style={{fontSize:14,color:"#64748b",lineHeight:1.6,marginBottom:20}}>Track and manage department stock, medical supplies, and equipment. This module is being set up for your department.</div>
-                  <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 18px",borderRadius:100,background:"#f0fdf4",border:"1.5px solid #bbf7d0",color:"#16a34a",fontSize:12,fontWeight:700}}>
-                    <Clock size={14}/> Coming Soon
+              <div>
+                {deptStockLoading ? (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:300,gap:8,color:"#94a3b8",fontSize:13}}><Loader2 size={18} className="spin"/> Loading department stock...</div>
+                ) : !deptStock?.location ? (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:360}}>
+                    <div style={{textAlign:"center",maxWidth:400}}>
+                      <div style={{width:72,height:72,borderRadius:20,background:meta.lightBg,border:`2px solid ${meta.borderColor}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:meta.accent}}><Package size={28}/></div>
+                      <div style={{fontSize:18,fontWeight:800,color:"#1e293b",marginBottom:8}}>No Stock Location Linked</div>
+                      <div style={{fontSize:13,color:"#64748b",lineHeight:1.6,marginBottom:20}}>Ask your Hospital Admin to create a Stock Location linked to this department, then transfer stock from the Central Store.</div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Location Banner + Stats */}
+                    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,padding:"14px 18px",background:`linear-gradient(135deg,${meta.accent}11,${meta.accent}06)`,borderRadius:14,border:`1px solid ${meta.accent}22`}}>
+                      <div style={{width:42,height:42,borderRadius:12,background:meta.accent,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",flexShrink:0}}><Package size={20}/></div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14,fontWeight:800,color:"#1e293b"}}>{deptStock.location.name}</div>
+                        <div style={{fontSize:11,color:"#64748b"}}>Stock received from Central Store · {deptStock.location.subDepartment?.name || "Department"}</div>
+                      </div>
+                      <div style={{display:"flex",gap:16,flexShrink:0}}>
+                        {[
+                          {label:"Items",val:deptStock.stats.totalItems,color:meta.accent},
+                          {label:"Total Qty",val:deptStock.stats.totalQty,color:"#10b981"},
+                          {label:"Value",val:`₹${(deptStock.stats.totalValue||0).toLocaleString("en-IN")}`,color:"#f59e0b"},
+                          {label:"Pending",val:deptStock.stats.pendingTransfers,color:"#3b82f6"},
+                        ].map((s,i)=>(
+                          <div key={i} style={{textAlign:"center"}}>
+                            <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".06em"}}>{s.label}</div>
+                            <div style={{fontSize:16,fontWeight:800,color:s.color,marginTop:2}}>{s.val}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Stock Items Table */}
+                    {deptStock.items.length === 0 ? (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:200,flexDirection:"column",gap:8,color:"#94a3b8"}}>
+                        <Package size={28} color="#cbd5e1"/>
+                        <div style={{fontSize:13}}>No stock received yet</div>
+                        <div style={{fontSize:11,color:"#b0b8c4"}}>Stock will appear here after the admin approves transfers to this location</div>
+                      </div>
+                    ) : (
+                      <div style={{overflowX:"auto",borderRadius:12,border:"1px solid #e2e8f0"}}>
+                        <table style={{width:"100%",borderCollapse:"collapse",minWidth:650}}>
+                          <thead>
+                            <tr style={{background:"#f8fafc"}}>
+                              {["Item","Category","Received","Returned","Available","MRP","Value","Last Transfer"].map(h=>(
+                                <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:10,fontWeight:600,color:"#94a3b8",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {deptStock.items.map((item:any)=>{
+                              const isLow = item.availableQty <= item.minStock;
+                              return (
+                                <tr key={item.itemId} style={{borderBottom:"1px solid #f8fafc"}}>
+                                  <td style={{padding:"12px",fontSize:12}}>
+                                    <div style={{fontWeight:700,color:"#1e293b"}}>{item.name}</div>
+                                    {item.genericName && <div style={{fontSize:10,color:"#94a3b8"}}>{item.genericName}</div>}
+                                  </td>
+                                  <td style={{padding:"12px"}}><span style={{padding:"2px 8px",borderRadius:100,fontSize:9,fontWeight:700,background:"#eff6ff",color:"#3b82f6"}}>{item.category}</span></td>
+                                  <td style={{padding:"12px",fontWeight:600,color:"#64748b",fontSize:12}}>{item.receivedQty} {item.unit}</td>
+                                  <td style={{padding:"12px",color:item.returnedQty > 0 ? "#f59e0b" : "#cbd5e1",fontSize:12}}>{item.returnedQty}</td>
+                                  <td style={{padding:"12px",fontWeight:700,color:isLow?"#ef4444":"#10b981",fontSize:13}}>{item.availableQty} {item.unit}</td>
+                                  <td style={{padding:"12px",fontWeight:600,fontSize:12}}>₹{item.mrp}</td>
+                                  <td style={{padding:"12px",fontWeight:600,color:meta.accent,fontSize:12}}>₹{(item.totalValue||0).toLocaleString("en-IN")}</td>
+                                  <td style={{padding:"12px",fontSize:10,color:"#94a3b8"}}>{item.lastTransferDate ? new Date(item.lastTransferDate).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—"}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Recent Transfers */}
+                    {deptStock.transfers?.length > 0 && (
+                      <div style={{marginTop:20}}>
+                        <div style={{fontSize:12,fontWeight:700,color:"#1e293b",marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+                          <ArrowRight size={14} color={meta.accent}/> Recent Transfers Received
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {deptStock.transfers.slice(0,5).map((t:any)=>(
+                            <div key={t.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0"}}>
+                              <div style={{width:32,height:32,borderRadius:8,background:`${meta.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",color:meta.accent,flexShrink:0}}>
+                                <ArrowRight size={14}/>
+                              </div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{t.transferNo}</div>
+                                <div style={{fontSize:10,color:"#94a3b8"}}>From: {t.fromLocation?.name} · {t.itemCount} items · {t.totalQty} units</div>
+                              </div>
+                              <div style={{fontSize:10,color:"#94a3b8",flexShrink:0}}>
+                                {t.transferredAt ? new Date(t.transferredAt).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"2-digit"}) : "—"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ═══════════════════ REVENUE / EXPENSE ═══════════════════ */}
+            {tab === "revenue" && (
+              <div style={{animation:"fadeUp .25s ease"}}>
+                {/* Header */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:10}}>
+                  <div>
+                    <div style={{fontSize:18,fontWeight:800,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><IndianRupee size={18} color={meta.accent}/> Revenue &amp; Expenses</div>
+                    <div style={{fontSize:12,color:"#64748b",marginTop:2}}>Pharmacy financial overview — sales revenue vs. purchase expenses</div>
+                  </div>
+                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                    {(["today","week","month","all"] as const).map(p=>(
+                      <button key={p} onClick={()=>setRevExpPeriod(p)} style={{padding:"6px 14px",borderRadius:20,border:`1.5px solid ${revExpPeriod===p?meta.accent:"#e2e8f0"}`,background:revExpPeriod===p?meta.lightBg:"#fff",color:revExpPeriod===p?meta.accent:"#64748b",fontSize:11,fontWeight:600,cursor:"pointer",textTransform:"capitalize"}}>{p==="all"?"All Time":p.charAt(0).toUpperCase()+p.slice(1)}</button>
+                    ))}
+                    <button onClick={()=>loadRevExp(revExpPeriod)} style={{padding:"6px 12px",borderRadius:20,border:"1.5px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><RefreshCw size={12}/> Refresh</button>
+                    <button onClick={()=>{setShowAddExpense(true);setExpenseForm({title:"",amount:"",category:"OTHER",date:new Date().toISOString().split("T")[0],description:""});}} style={{padding:"6px 14px",borderRadius:20,border:"none",background:meta.accent,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><Plus size={12}/> Add Expense</button>
+                  </div>
+                </div>
+
+                {revExpLoading ? (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"60px 0",color:"#94a3b8",gap:10}}><Loader2 size={20} style={{animation:"spin .7s linear infinite"}}/> Loading financial data...</div>
+                ) : !revExpData ? (
+                  <div style={{textAlign:"center",padding:"60px 0",color:"#94a3b8",fontSize:14}}>No data yet. Make some sales or purchases to see your financial overview.</div>
+                ) : (<>
+                  {/* Summary Cards */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:20}}>
+                    {[
+                      {label:"Total Revenue",val:revExpData.revenue?.total||0,color:"#16a34a",bg:"#f0fdf4",border:"#bbf7d0",icon:<TrendingUp size={18} color="#16a34a"/>},
+                      {label:"Total Expenses",val:revExpData.expenses?.total||0,color:"#ef4444",bg:"#fff5f5",border:"#fecaca",icon:<AlertTriangle size={18} color="#ef4444"/>},
+                      {label:"Net Profit",val:revExpData.net||0,color:(revExpData.net||0)>=0?"#16a34a":"#ef4444",bg:(revExpData.net||0)>=0?"#f0fdf4":"#fff5f5",border:(revExpData.net||0)>=0?"#bbf7d0":"#fecaca",icon:<IndianRupee size={18} color={(revExpData.net||0)>=0?"#16a34a":"#ef4444"}/>},
+                    ].map((c,i)=>(
+                      <div key={i} style={{background:c.bg,border:`1px solid ${c.border}`,borderRadius:14,padding:"18px 20px",display:"flex",alignItems:"center",gap:14}}>
+                        <div style={{width:44,height:44,borderRadius:12,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.06)",flexShrink:0}}>{c.icon}</div>
+                        <div>
+                          <div style={{fontSize:10,fontWeight:600,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em"}}>{c.label}</div>
+                          <div style={{fontSize:22,fontWeight:800,color:c.color,marginTop:2}}>₹{(c.val).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Two column: Revenue table + Expense table */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+                    {/* Revenue — Bills */}
+                    <div className="sd2-card">
+                      <div className="sd2-card-hd" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <span className="sd2-card-title"><TrendingUp size={14} color="#16a34a"/> Sales Revenue ({revExpData.revenue?.items?.length||0})</span>
+                      </div>
+                      {(revExpData.revenue?.items||[]).length===0 ? (
+                        <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:12}}>No sales yet for this period</div>
+                      ) : (
+                        <div style={{maxHeight:400,overflowY:"auto"}}>
+                          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                            <thead><tr style={{background:"#f8fafc"}}>
+                              <th style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10}}>Bill No</th>
+                              <th style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10}}>Patient</th>
+                              <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#64748b",fontSize:10}}>Amount</th>
+                              <th style={{padding:"8px 12px",textAlign:"center",fontWeight:700,color:"#64748b",fontSize:10}}>Status</th>
+                            </tr></thead>
+                            <tbody>
+                              {(revExpData.revenue?.items||[]).map((b:any,i:number)=>(
+                                <tr key={i} style={{borderTop:"1px solid #f1f5f9"}}>
+                                  <td style={{padding:"8px 12px",fontWeight:600,color:"#1e293b"}}>{b.billNo}</td>
+                                  <td style={{padding:"8px 12px",color:"#475569"}}>{b.patient?.name||"—"}</td>
+                                  <td style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#16a34a"}}>₹{(b.paidAmount||0).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                                  <td style={{padding:"8px 12px",textAlign:"center"}}>
+                                    <span style={{padding:"2px 8px",borderRadius:100,fontSize:9,fontWeight:700,background:b.status==="PAID"?"#dcfce7":b.status==="PENDING"?"#fff7ed":"#eff6ff",color:b.status==="PAID"?"#16a34a":b.status==="PENDING"?"#ea580c":"#2563eb"}}>{b.status}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Expenses — Purchases */}
+                    <div className="sd2-card">
+                      <div className="sd2-card-hd" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <span className="sd2-card-title"><AlertTriangle size={14} color="#ef4444"/> Purchase Expenses ({revExpData.expenses?.items?.length||0})</span>
+                        {revExpData.expenses?.pendingPayouts>0 && <span style={{fontSize:10,fontWeight:700,color:"#ea580c",background:"#fff7ed",padding:"2px 8px",borderRadius:100}}>₹{revExpData.expenses.pendingPayouts.toLocaleString("en-IN")} due</span>}
+                      </div>
+                      {(revExpData.expenses?.items||[]).length===0 ? (
+                        <div style={{padding:"28px",textAlign:"center",color:"#94a3b8",fontSize:12}}>No purchases yet for this period</div>
+                      ) : (
+                        <div style={{maxHeight:400,overflowY:"auto"}}>
+                          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                            <thead><tr style={{background:"#f8fafc"}}>
+                              <th style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10}}>PO No</th>
+                              <th style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10}}>Supplier</th>
+                              <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#64748b",fontSize:10}}>Amount</th>
+                              <th style={{padding:"8px 12px",textAlign:"center",fontWeight:700,color:"#64748b",fontSize:10}}>Payment</th>
+                            </tr></thead>
+                            <tbody>
+                              {(revExpData.expenses?.items||[]).map((p:any,i:number)=>(
+                                <tr key={i} style={{borderTop:"1px solid #f1f5f9"}}>
+                                  <td style={{padding:"8px 12px",fontWeight:600,color:"#1e293b"}}>{p.purchaseNo}</td>
+                                  <td style={{padding:"8px 12px",color:"#475569"}}>{p.supplier?.name||"—"}</td>
+                                  <td style={{padding:"8px 12px",textAlign:"right",fontWeight:700,color:"#ef4444"}}>₹{(p.grandTotal||p.totalAmount||0).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                                  <td style={{padding:"8px 12px",textAlign:"center"}}>
+                                    <span style={{padding:"2px 8px",borderRadius:100,fontSize:9,fontWeight:700,background:p.paymentStatus==="PAID"?"#dcfce7":p.paymentStatus==="PENDING"?"#fff7ed":"#eff6ff",color:p.paymentStatus==="PAID"?"#16a34a":p.paymentStatus==="PENDING"?"#ea580c":"#2563eb"}}>{p.paymentStatus||"—"}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>)}
+              </div>
+            )}
+
+            {/* Add Expense Modal */}
+            {showAddExpense && (
+              <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowAddExpense(false)}>
+                <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:440,border:"1px solid #e2e8f0",boxShadow:"0 20px 60px rgba(0,0,0,.18)"}} onClick={e=>e.stopPropagation()}>
+                  <div style={{padding:"16px 20px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <span style={{fontSize:15,fontWeight:800,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Plus size={16} color={meta.accent}/> Add Expense</span>
+                    <button onClick={()=>setShowAddExpense(false)} style={{background:"none",border:"none",cursor:"pointer",color:"#94a3b8"}}><X size={16}/></button>
+                  </div>
+                  <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:12}}>
+                    <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:4}}>Title *</label>
+                      <input value={expenseForm.title} onChange={e=>setExpenseForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Medical supplies, Utility bill" style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,outline:"none"}}/>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:4}}>Amount (₹) *</label>
+                        <input type="number" value={expenseForm.amount} onChange={e=>setExpenseForm(f=>({...f,amount:e.target.value}))} min="0" step="0.01" style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,outline:"none"}}/>
+                      </div>
+                      <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:4}}>Date *</label>
+                        <input type="date" value={expenseForm.date} onChange={e=>setExpenseForm(f=>({...f,date:e.target.value}))} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,outline:"none"}}/>
+                      </div>
+                    </div>
+                    <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:4}}>Category</label>
+                      <select value={expenseForm.category} onChange={e=>setExpenseForm(f=>({...f,category:e.target.value}))} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,outline:"none"}}>
+                        {["SALARIES","RENT","UTILITIES","SUPPLIES","MAINTENANCE","EQUIPMENT","TRANSPORT","MARKETING","OTHER"].map(c=><option key={c} value={c}>{c.charAt(0)+c.slice(1).toLowerCase()}</option>)}
+                      </select>
+                    </div>
+                    <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:4}}>Description</label>
+                      <input value={expenseForm.description} onChange={e=>setExpenseForm(f=>({...f,description:e.target.value}))} placeholder="Optional notes" style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,outline:"none"}}/>
+                    </div>
+                  </div>
+                  <div style={{padding:"12px 20px",borderTop:"1px solid #f1f5f9",display:"flex",justifyContent:"flex-end",gap:8}}>
+                    <button onClick={()=>setShowAddExpense(false)} style={{padding:"8px 18px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+                    <button disabled={expenseSaving||!expenseForm.title||!expenseForm.amount||!expenseForm.date} onClick={async()=>{
+                      setExpenseSaving(true);
+                      const res = await fetch("/api/pharmacy/revenue-expense",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(expenseForm)}).then(r=>r.json());
+                      setExpenseSaving(false);
+                      if(res.success){setShowAddExpense(false);loadRevExp(revExpPeriod);}
+                    }} style={{padding:"8px 20px",borderRadius:8,border:"none",background:expenseSaving?"#94a3b8":meta.accent,color:"#fff",fontSize:12,fontWeight:700,cursor:expenseSaving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+                      {expenseSaving?<><Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>Saving…</>:<><Plus size={13}/>Add Expense</>}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2592,72 +2916,108 @@ function SubDeptDashboardContent() {
 
             {/* ═══════════════════ DEPARTMENT INFO ═══════════════════ */}
             {tab==="dept" && (
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
-                {/* HOD */}
-                <div className="sd2-card">
-                  <div className="sd2-card-hd"><span className="sd2-card-title"><User size={14} color={meta.accent}/>Head of Department</span></div>
-                  <div style={{padding:"20px"}}>
-                    {profile?.hodName ? (<>
-                      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16,padding:14,background:meta.lightBg,borderRadius:12,border:`1px solid ${meta.borderColor}`}}>
-                        <div style={{width:56,height:56,borderRadius:14,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:20,color:"#fff",flexShrink:0}}>{initials(profile.hodName)}</div>
-                        <div>
-                          <div style={{fontSize:16,fontWeight:700,color:"#1e293b"}}>{profile.hodName}</div>
-                          <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Head of Department</div>
-                          <span style={{display:"inline-block",marginTop:6,padding:"2px 8px",borderRadius:100,background:meta.lightBg,color:meta.accent,fontSize:10,fontWeight:700,border:`1px solid ${meta.borderColor}`}}>{deptName}</span>
-                        </div>
-                      </div>
-                      {[["Email",profile.hodEmail,<Mail key="m" size={13}/>],["Phone",profile.hodPhone,<Phone key="p" size={13}/>]].map(([k,v,icon])=>
-                        v ? <div key={String(k)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #f1f5f9",fontSize:13,color:"#334155"}}><span style={{color:meta.accent,display:"flex"}}>{icon}</span>{v}</div> : null
-                      )}
-                    </>) : <div style={{padding:"32px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No HOD assigned yet</div>}
+              <div style={{animation:"fadeUp .25s ease"}}>
+                {/* Dept hero banner */}
+                <div style={{background:meta.gradient,borderRadius:16,padding:"24px 28px",marginBottom:18,display:"flex",alignItems:"center",gap:20,color:"#fff",position:"relative",overflow:"hidden"}}>
+                  <div style={{width:64,height:64,borderRadius:16,background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <DeptIcon size={30} color="#fff"/>
                   </div>
-                </div>
-
-                {/* Department details */}
-                <div className="sd2-card">
-                  <div className="sd2-card-hd"><span className="sd2-card-title"><Building2 size={14} color={meta.accent}/>Department Details</span></div>
-                  <div style={{padding:"20px"}}>
-                    {[
-                      ["Name",       deptName],
-                      ["Type",       profile?.type?.replace(/_/g," ")],
-                      ["Short Code", profile?.code||"—"],
-                      ["Parent Dept",profile?.department?.name||"Independent"],
-                      ["Status",     profile?.isActive?"Active":"Inactive"],
-                      ["Login Email",profile?.loginEmail||user?.email||"—"],
-                    ].map(([k,v])=>(
-                      <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f8fafc"}}>
-                        <span style={{fontSize:12,color:"#64748b"}}>{k}</span>
-                        <span style={{fontSize:13,fontWeight:600,color:k==="Status"?(profile?.isActive?"#16a34a":"#ef4444"):"#1e293b"}}>{v}</span>
-                      </div>
-                    ))}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:22,fontWeight:800,letterSpacing:"-.01em"}}>{deptName}</div>
+                    <div style={{fontSize:13,opacity:.85,marginTop:2}}>{profile?.type?.replace(/_/g," ")} Department{profile?.code ? ` · ${profile.code}` : ""}</div>
+                    {profile?.description && <div style={{fontSize:12,opacity:.75,marginTop:6,lineHeight:1.5}}>{profile.description}</div>}
                   </div>
-                </div>
-
-                {/* Patient flow */}
-                {profile?.flow && (
-                  <div className="sd2-card" style={{gridColumn:"1/-1"}}>
-                    <div className="sd2-card-hd"><span className="sd2-card-title"><TrendingUp size={14} color={meta.accent}/>Patient Flow &amp; Workflow</span></div>
-                    <div style={{padding:"20px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                        {profile.flow.split("→").map((step:string,i:number,arr:string[])=>(
-                          <span key={i} style={{display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{display:"flex",alignItems:"center",gap:8,background:meta.lightBg,border:`1.5px solid ${meta.borderColor}`,borderRadius:10,padding:"10px 16px"}}>
-                              <div style={{width:24,height:24,borderRadius:"50%",background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:"#fff"}}>{i+1}</div>
-                              <span style={{fontSize:13,fontWeight:600,color:meta.accent}}>{step.trim()}</span>
-                            </div>
-                            {i<arr.length-1 && <ChevronRight size={16} color="#94a3b8"/>}
-                          </span>
-                        ))}
-                      </div>
-                      <div style={{marginTop:16,padding:"12px 16px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0",fontSize:12,color:"#64748b",lineHeight:1.6}}>
-                        <strong style={{color:"#334155"}}>How it works:</strong> Patients arrive after OPD consultation or doctor referral. The sub-department team performs the assigned procedures, updates status to &ldquo;Completed&rdquo;, and directs the patient to the next stage as shown above.
-                      </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:100,background:"rgba(255,255,255,.2)",fontSize:12,fontWeight:700}}>
+                      {profile?.isActive ? <><CheckCircle size={13}/> Active</> : <><X size={13}/> Inactive</>}
                     </div>
                   </div>
-                )}
+                </div>
+
+                {/* 3-col info grid */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
+                  {/* HOD Card */}
+                  <div className="sd2-card" style={{gridColumn:"1/2"}}>
+                    <div className="sd2-card-hd"><span className="sd2-card-title"><User size={14} color={meta.accent}/>Head of Department</span></div>
+                    <div style={{padding:"16px 20px"}}>
+                      {profile?.hodName ? (
+                        <>
+                          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,padding:"12px 14px",background:meta.lightBg,borderRadius:10,border:`1px solid ${meta.borderColor}`}}>
+                            <div style={{width:44,height:44,borderRadius:11,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:"#fff",flexShrink:0}}>{initials(profile.hodName)}</div>
+                            <div>
+                              <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{profile.hodName}</div>
+                              <div style={{fontSize:11,color:"#94a3b8"}}>Head of Department</div>
+                            </div>
+                          </div>
+                          {profile.hodEmail && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #f1f5f9",fontSize:12,color:"#475569"}}><Mail size={12} color={meta.accent}/>{profile.hodEmail}</div>}
+                          {profile.hodPhone && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",fontSize:12,color:"#475569"}}><Phone size={12} color={meta.accent}/>{profile.hodPhone}</div>}
+                        </>
+                      ) : <div style={{padding:"24px",textAlign:"center",color:"#94a3b8",fontSize:12}}>No HOD assigned yet</div>}
+                    </div>
+                  </div>
+
+                  {/* Dept Details Card */}
+                  <div className="sd2-card" style={{gridColumn:"2/3"}}>
+                    <div className="sd2-card-hd"><span className="sd2-card-title"><Building2 size={14} color={meta.accent}/>Department Details</span></div>
+                    <div style={{padding:"16px 20px"}}>
+                      {[
+                        ["Name",        deptName],
+                        ["Type",        profile?.type?.replace(/_/g," ") || "—"],
+                        ["Short Code",  profile?.code || "—"],
+                        ["Parent Dept", profile?.department?.name || "Independent"],
+                        ["Login Email", profile?.loginEmail || user?.email || "—"],
+                        ["Status",      profile?.isActive ? "Active" : "Inactive"],
+                      ].map(([k,v])=>(
+                        <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #f8fafc"}}>
+                          <span style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{k}</span>
+                          <span style={{fontSize:12,fontWeight:600,color:k==="Status"?(profile?.isActive?"#16a34a":"#ef4444"):"#1e293b",maxWidth:160,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v as string}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Services / Procedures Card */}
+                  <div className="sd2-card" style={{gridColumn:"3/4"}}>
+                    <div className="sd2-card-hd"><span className="sd2-card-title"><ClipboardList size={14} color={meta.accent}/>Services Offered</span></div>
+                    <div style={{padding:"16px 20px"}}>
+                      {displayProcs.length === 0 ? (
+                        <div style={{padding:"24px",textAlign:"center",color:"#94a3b8",fontSize:12}}>No procedures configured yet</div>
+                      ) : (
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {displayProcs.slice(0,8).map((p:any,i:number)=>(
+                            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #f8fafc"}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
+                                <span style={{width:6,height:6,borderRadius:"50%",background:p.isActive?meta.accent:"#cbd5e1",flexShrink:0,display:"inline-block"}}/>
+                                <span style={{fontSize:12,fontWeight:500,color:p.isActive?"#1e293b":"#94a3b8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
+                              </div>
+                              {p.fee>0 && <span style={{fontSize:11,fontWeight:700,color:meta.accent,flexShrink:0,marginLeft:8}}>₹{p.fee}</span>}
+                            </div>
+                          ))}
+                          {displayProcs.length > 8 && <div style={{fontSize:11,color:"#94a3b8",marginTop:4,textAlign:"center"}}>+{displayProcs.length-8} more services</div>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats bar */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+                  {[
+                    {label:"Active Services",val:activeProcs.length,color:meta.accent,bg:meta.lightBg,border:meta.borderColor},
+                    {label:"Today's Queue",val:queue.length,color:"#2563eb",bg:"#eff6ff",border:"#bfdbfe"},
+                    {label:"Total Records",val:recordsMeta.total||0,color:"#16a34a",bg:"#f0fdf4",border:"#bbf7d0"},
+                    {label:"Today's Revenue",val:`₹${((records.filter((r:any)=>new Date(r.performedAt).toDateString()===new Date().toDateString()).reduce((s:number,r:any)=>s+(r.amount||0),0))).toLocaleString("en-IN")}`,color:"#7c3aed",bg:"#faf5ff",border:"#e9d5ff"},
+                  ].map((s,i)=>(
+                    <div key={i} style={{background:s.bg,border:`1px solid ${s.border}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}>
+                      <div style={{fontSize:20,fontWeight:800,color:s.color}}>{s.val}</div>
+                      <div style={{fontSize:10,fontWeight:600,color:s.color,opacity:.8,marginTop:2,textTransform:"uppercase",letterSpacing:".05em"}}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
+            </>)}
           </div>
         </main>
       </div>

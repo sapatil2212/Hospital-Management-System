@@ -12,6 +12,7 @@ import FollowUpDashboard from "@/components/FollowUpDashboard";
 import PatientProfilePanel from "@/components/PatientProfilePanel";
 import NotificationBell from "@/components/NotificationBell";
 import BillingModule from "@/components/BillingModule";
+import BillingQueue from "@/components/BillingQueue";
 import EnquiryPanel from "@/components/EnquiryPanel";
 
 interface StaffProfile {
@@ -85,6 +86,7 @@ export default function StaffDashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [patientSearch, setPatientSearch] = useState("");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [billingSubTab, setBillingSubTab] = useState<"bills"|"queue">("queue");
   const [liveStats, setLiveStats] = useState<{ todayAppts: number; pendingFollowUps: number; overdueFollowUps: number; totalPatients: number } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -594,7 +596,18 @@ export default function StaffDashboard() {
               {/* ── BILLING TAB ── */}
               {tab === "billing" && (
                 <div style={{ animation: "fadeIn .25s ease" }}>
-                  <BillingModule />
+                  <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+                    {([{ id: "queue" as const, label: "Billing Queue" }, { id: "bills" as const, label: "All Bills" }]).map(st => (
+                      <button key={st.id} onClick={() => setBillingSubTab(st.id)}
+                        style={{ padding: "7px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1.5px solid",
+                          cursor: "pointer", transition: "all .15s",
+                          background: billingSubTab === st.id ? roleColors.accent : "#fff",
+                          color: billingSubTab === st.id ? "#fff" : roleColors.accent,
+                          borderColor: billingSubTab === st.id ? roleColors.accent : "#e2e8f0",
+                        }}>{st.label}</button>
+                    ))}
+                  </div>
+                  {billingSubTab === "queue" ? <BillingQueue /> : <BillingModule />}
                 </div>
               )}
 

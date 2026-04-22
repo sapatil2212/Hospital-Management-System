@@ -345,7 +345,7 @@ function DoctorForm({ editItem, departments, onSuccess, onCancel, addToast }: {
             </div>
             <div className="dp-field">
               <label className="dp-lbl">Email Address <span className="dp-req">*</span></label>
-              <input className={`dp-input${errors.email ? " err" : ""}`} type="email" placeholder="doctor@hospital.com" value={form.email} onChange={e => sf("email", e.target.value)} disabled={!!editItem} />
+              <input className={`dp-input${errors.email ? " err" : ""}`} type="email" placeholder="doctor@hospital.com" value={form.email} onChange={e => sf("email", e.target.value)} />
               {errors.email && <span className="dp-error">{errors.email}</span>}
             </div>
             <div className="dp-field">

@@ -54,17 +54,15 @@ export default function AboutHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Badge */}
-          <motion.div
-            className={styles.badgeWrapper}
+          {/* Tagline */}
+          <motion.p
+            className={styles.heroTagline}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            <span className={styles.heroBadge}>
-              Compassionate home nursing care
-            </span>
-          </motion.div>
+            Where Aesthetics Meet Medical Excellence
+          </motion.p>
 
           <motion.h1
             className={styles.heroHeading}
@@ -72,7 +70,7 @@ export default function AboutHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Bringing heartfelt care to your doorstep
+            Redefining Beauty with Precision & Care
           </motion.h1>
 
           <motion.p
@@ -81,8 +79,9 @@ export default function AboutHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            At Nursing Care, we understand the importance of compassionate care that goes 
-            beyond just medical assistance
+            At our aesthetic hospital, we believe beauty is deeply personal and deserves expert care. 
+            We combine advanced medical technology with artistic precision to deliver natural, 
+            refined results tailored to every individual.
           </motion.p>
 
           {/* Removed Learn More Button as per user request */}

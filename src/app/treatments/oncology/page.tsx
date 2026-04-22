@@ -3,7 +3,6 @@ import {
   HeartPulse, 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Microscope, 
   Shield, 
   Activity, 
@@ -14,10 +13,10 @@ import {
   Search,
   Zap
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import OncologyHero from "./OncologyHero";
 
@@ -458,33 +457,13 @@ export default function OncologyPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Book a Cancer Screening Consultation
-              </h2>
-              <p className={styles.ctaDescription}>
-                Early detection can make a life-saving difference. Take the first step toward timely diagnosis and expert care at Celeb Aesthetica.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/Quick-Treatments/Hnfcancer.png"
-                alt="Expert Oncology Care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Book a Cancer Screening <br /> Consultation"
+          description="Early detection can make a life-saving difference. Take the first step toward timely diagnosis and expert care at Celeb Aesthetica."
+          imageSrc="/images/Quick-Treatments/Hnfcancer.png"
+          imageAlt="Expert Oncology Care"
+        />
       </main>
       <Footer />
     </>

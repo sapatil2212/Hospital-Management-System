@@ -204,10 +204,10 @@
     padding: var(--space-12) 0;
   }
 
-  /* Center align title and description on mobile */
+  /* Left-align content on mobile for proper alignment */
   .content {
-    text-align: center;
-    align-items: center;
+    text-align: left;
+    align-items: flex-start;
   }
 
   /* Keep features left-aligned on mobile */

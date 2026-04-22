@@ -181,7 +181,7 @@ const PREDEFINED_ACCESS: Record<string, string[]> = {
   ONCOLOGY:        ["appointments", "procedures", "patients"],
   CARDIOLOGY:      ["appointments", "procedures", "patients"],
   RECEPTION:       ["appointments", "billing", "patients", "inventory", "doctors"],
-  PHARMACY:        ["procedures", "inventory", "patients"],
+  PHARMACY:        ["procedures", "inventory", "patients", "billing", "reports"],
   BILLING:         ["billing", "finance", "patients"],
   PATHOLOGY:       ["procedures", "patients", "reports"],
   RADIOLOGY:       ["procedures", "patients", "reports"],
@@ -190,10 +190,10 @@ const PREDEFINED_ACCESS: Record<string, string[]> = {
   OTHER:           ["appointments", "procedures", "patients", "billing", "doctors", "inventory", "reports"],
   HR:              ["doctors", "patients"],
   ACCOUNTS:        ["billing", "finance"],
-  NURSING:         ["appointments", "patients", "procedures"],
-  HOUSEKEEPING:    [],
-  AMBULANCE:       ["patients"],
-  BIOMEDICAL:      ["procedures", "inventory"],
+  NURSING:         ["appointments", "patients", "procedures", "reports"],
+  HOUSEKEEPING:    ["reports"],
+  AMBULANCE:       ["patients", "billing", "reports"],
+  BIOMEDICAL:      ["procedures", "inventory", "reports"],
   OT:              ["procedures", "patients", "appointments"],
   DIALYSIS:        ["procedures", "patients", "appointments"],
   PHYSIOTHERAPY:   ["procedures", "patients", "appointments"],
@@ -451,9 +451,19 @@ export default function SubDepartmentPanel() {
     const dept = departments.find(d => d.id === deptId);
     const newParentType = dept?.type || "";
     const options = DEPT_SUBDEPT_MAP[newParentType] || ALL_SUBDEPT_OPTIONS;
+    const isSupport = ["SUPPORT", "ADMINISTRATIVE"].includes(newParentType);
     setForm((f: any) => {
       const currentValid = options.some((t: any) => t.value === f.type);
-      return { ...f, departmentId: deptId, parentDeptType: newParentType, type: currentValid ? f.type : (options[0]?.value || "CUSTOM"), customName: "" };
+      const newType = currentValid ? f.type : (options[0]?.value || "CUSTOM");
+      const typeColor = options.find((o: any) => o.value === newType)?.color || f.color;
+      return {
+        ...f,
+        departmentId: deptId,
+        parentDeptType: newParentType,
+        type: newType,
+        customName: "",
+        ...(isSupport ? { color: typeColor, flow: "", isActive: true, accessFeatures: PREDEFINED_ACCESS[newType] || [] } : {}),
+      };
     });
   };
 
@@ -1165,6 +1175,7 @@ export default function SubDepartmentPanel() {
                       <label className="sd-lbl">Description</label>
                       <textarea className="sd-input sd-textarea" placeholder="Brief description..." value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
                     </div>
+                    {!["SUPPORT", "ADMINISTRATIVE"].includes(form.parentDeptType) && (<>
                     <div className="sd-field">
                       <label className="sd-lbl">Accent Color</label>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1182,10 +1193,12 @@ export default function SubDepartmentPanel() {
                         <button type="button" className={`sd-toggle ${form.isActive ? "on" : ""}`} onClick={() => setForm((f: any) => ({ ...f, isActive: !f.isActive }))}><span className="sd-toggle-thumb" /></button>
                       </div>
                     </div>
+                    </>)}
                   </div>
                 </div>
 
-                {/* Dashboard Access — manual selection */}
+                {/* Dashboard Access — manual selection (hidden for SUPPORT/ADMINISTRATIVE) */}
+                {!["SUPPORT", "ADMINISTRATIVE"].includes(form.parentDeptType) && (
                 <div className="sd-section">
                   <div className="sd-section-title">
                     <ShieldCheck size={14} />Dashboard Access
@@ -1211,6 +1224,7 @@ export default function SubDepartmentPanel() {
                     })}
                   </div>
                 </div>
+                )}
 
                 {/* HOD */}
                 <div className="sd-section">

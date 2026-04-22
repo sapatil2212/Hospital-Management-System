@@ -483,11 +483,15 @@ export async function recordPayment(
 // ── Get bills list ─────────────────────────────────────────────────────────
 export async function getBills(
   hospitalId: string,
-  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string }
+  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string; pharmacyOnly?: boolean }
 ) {
   const page  = Math.max(1, opts.page  || 1);
-  const limit = Math.min(50, opts.limit || 20);
+  const limit = Math.min(opts.pharmacyOnly ? 200 : 50, opts.limit || 20);
   const where: any = { hospitalId };
+
+  if (opts.pharmacyOnly) {
+    where.billItems = { some: { type: "PHARMACY" } };
+  }
 
   if (opts.patientId) where.patientId = opts.patientId;
   if (opts.status) where.status = opts.status;
@@ -497,10 +501,16 @@ export async function getBills(
     if (opts.dateTo)   where.createdAt.lte = new Date(opts.dateTo + "T23:59:59");
   }
   if (opts.search) {
-    where.OR = [
+    const searchOr = [
       { billNo: { contains: opts.search } },
       { patient: { OR: [{ name: { contains: opts.search } }, { patientId: { contains: opts.search } }] } },
     ];
+    if (where.OR) {
+      where.AND = [{ OR: where.OR }, { OR: searchOr }];
+      delete where.OR;
+    } else {
+      where.OR = searchOr;
+    }
   }
 
   const [bills, total] = await Promise.all([
@@ -554,7 +564,7 @@ export async function getBillById(billId: string, hospitalId: string): Promise<a
       patient:  { select: { id: true, name: true, patientId: true, phone: true, gender: true, dateOfBirth: true } },
       billItems: { orderBy: { createdAt: "asc" } },
       payments:  { orderBy: { paidAt: "desc" } },
-      prescription: { select: { prescriptionNo: true, doctorId: true, doctor: { select: { name: true } } } },
+      prescription: { select: { prescriptionNo: true, doctorId: true, medications: true, diagnosis: true, doctor: { select: { name: true } } } },
     },
   });
   if (!bill) throw new BillingServiceError("Bill not found", 404);
@@ -684,12 +694,13 @@ export async function transferToBilling(
   return bill;
 }
 
-// ── Get billing queue (transferred appointments) ──────────────────────────
+// ── Get billing queue (transferred appointments + pharmacy walk-in bills) ──
 export async function getBillingQueue(
   hospitalId: string,
   opts: { search?: string; date?: string }
 ): Promise<any[]> {
-  const where: any = {
+  // ── 1. Appointment-based queue (billingTransferred = true) ──
+  const apptWhere: any = {
     hospitalId,
     billingTransferred: true,
   };
@@ -698,11 +709,11 @@ export async function getBillingQueue(
     const d = new Date(opts.date);
     const nextDay = new Date(d);
     nextDay.setDate(nextDay.getDate() + 1);
-    where.appointmentDate = { gte: d, lt: nextDay };
+    apptWhere.appointmentDate = { gte: d, lt: nextDay };
   }
 
   if (opts.search) {
-    where.OR = [
+    apptWhere.OR = [
       { patient: { name: { contains: opts.search } } },
       { patient: { patientId: { contains: opts.search } } },
       { patient: { phone: { contains: opts.search } } },
@@ -711,7 +722,7 @@ export async function getBillingQueue(
   }
 
   const appointments = await (prisma as any).appointment.findMany({
-    where,
+    where: apptWhere,
     include: {
       patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
       doctor: { select: { id: true, name: true, specialization: true, consultationFee: true } },
@@ -724,19 +735,162 @@ export async function getBillingQueue(
 
   // Attach bill info for each appointment
   const apptIds = appointments.map((a: any) => a.id);
-  const bills = apptIds.length > 0
+  const apptBills = apptIds.length > 0
     ? await (prisma as any).bill.findMany({
         where: { visitId: { in: apptIds }, hospitalId },
         include: { billItems: true, payments: true },
       })
     : [];
 
-  const billMap = new Map(bills.map((b: any) => [b.visitId, b]));
+  const billMap = new Map(apptBills.map((b: any) => [b.visitId, b]));
 
-  return appointments.map((a: any) => ({
+  const apptQueue = appointments.map((a: any) => ({
     ...a,
     bill: billMap.get(a.id) || null,
+    source: "appointment",
   }));
+
+  // ── 2. Pharmacy walk-in bills (no appointment, created from pharmacy queue) ──
+  const rxBillWhere: any = {
+    hospitalId,
+    prescriptionId: { not: null },
+    visitId: null,       // no appointment link — these are pharmacy walk-ins
+  };
+
+  if (opts.date) {
+    const d = new Date(opts.date);
+    const nextDay = new Date(d);
+    nextDay.setDate(nextDay.getDate() + 1);
+    rxBillWhere.createdAt = { gte: d, lt: nextDay };
+  }
+
+  if (opts.search) {
+    rxBillWhere.OR = [
+      { patient: { name: { contains: opts.search } } },
+      { patient: { patientId: { contains: opts.search } } },
+      { patient: { phone: { contains: opts.search } } },
+      { billNo: { contains: opts.search } },
+    ];
+  }
+
+  const pharmacyBills = await (prisma as any).bill.findMany({
+    where: rxBillWhere,
+    include: {
+      patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
+      billItems: true,
+      payments: true,
+      prescription: {
+        select: { id: true, prescriptionNo: true, diagnosis: true, medications: true, doctorId: true,
+          doctor: { select: { id: true, name: true, specialization: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  // Shape pharmacy bills to look like queue items (compatible with BillingQueue component)
+  const rxQueue = pharmacyBills.map((b: any) => ({
+    id: b.prescriptionId || b.id,
+    appointmentDate: b.createdAt,
+    type: "WALK_IN_RX",
+    status: "COMPLETED",
+    consultationFee: 0,
+    billingNote: b.notes || "Walk-in Pharmacy",
+    patient: b.patient,
+    doctor: b.prescription?.doctor || null,
+    department: null,
+    subDepartment: { name: "Pharmacy" },
+    bill: b,
+    source: "pharmacy",
+    prescriptionNo: b.prescription?.prescriptionNo || b.billNo,
+  }));
+
+  // ── 3. Pharmacy counter-sale bills (no prescription, no visit — direct POS) ──
+  const csBillWhere: any = {
+    hospitalId,
+    prescriptionId: null,
+    visitId: null,
+    notes: { contains: "PHARMACY_COUNTER_SALE" },
+  };
+
+  if (opts.date) {
+    const d = new Date(opts.date);
+    const nextDay = new Date(d);
+    nextDay.setDate(nextDay.getDate() + 1);
+    csBillWhere.createdAt = { gte: d, lt: nextDay };
+  }
+
+  if (opts.search) {
+    csBillWhere.OR = [
+      { patient: { name: { contains: opts.search } } },
+      { patient: { patientId: { contains: opts.search } } },
+      { patient: { phone: { contains: opts.search } } },
+      { billNo: { contains: opts.search } },
+    ];
+  }
+
+  const counterSaleBills = await (prisma as any).bill.findMany({
+    where: csBillWhere,
+    include: {
+      patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
+      billItems: true,
+      payments: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  const csQueue = counterSaleBills.map((b: any) => ({
+    id: b.id,
+    appointmentDate: b.createdAt,
+    type: "COUNTER_SALE",
+    status: "COMPLETED",
+    consultationFee: 0,
+    billingNote: b.notes || "Pharmacy Counter Sale",
+    patient: b.patient,
+    doctor: null,
+    department: null,
+    subDepartment: { name: "Pharmacy" },
+    bill: b,
+    source: "pharmacy_counter",
+    prescriptionNo: b.billNo,
+  }));
+
+  return [...apptQueue, ...rxQueue, ...csQueue];
+}
+
+// ── Revert bill to PENDING (for regeneration) ───────────────────────────
+export async function revertBillToPending(billId: string, hospitalId: string): Promise<any> {
+  const bill = await (prisma as any).bill.findFirst({
+    where: { id: billId, hospitalId },
+    include: { payments: true },
+  });
+  if (!bill) throw new BillingServiceError("Bill not found", 404);
+  if (bill.status !== "PAID" && bill.status !== "PARTIALLY_PAID") {
+    throw new BillingServiceError("Bill is already pending", 400);
+  }
+
+  // Delete all payment records for this bill
+  await (prisma as any).payment.deleteMany({ where: { billId } });
+
+  // Reset bill payment state
+  const updated = await (prisma as any).bill.update({
+    where: { id: billId },
+    data: {
+      status: "PENDING",
+      paidAmount: 0,
+      paidAt: null,
+      paymentMethod: null,
+    },
+    include: {
+      billItems: true,
+      payments: true,
+      patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
+    },
+  });
+
+  return updated;
 }
 
 // ── Delete bill ────────────────────────────────────────────────────────────

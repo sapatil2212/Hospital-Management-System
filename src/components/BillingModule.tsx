@@ -6,7 +6,7 @@ import {
   Clock, AlertCircle, Filter, RefreshCw, Loader2, Tag, Stethoscope,
   FlaskConical, Pill, Scan, BedDouble, Scissors, MoreHorizontal,
   Trash2, Pencil, Check, ChevronDown, Package, Eye, Edit, FileSpreadsheet,
-  FileJson, FileText as FileTextIcon
+  FileJson, FileText as FileTextIcon, AlertTriangle
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,6 +62,7 @@ export default function BillingModule() {
   const [selectedBill, setSelectedBill] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [hospitalInfo, setHospitalInfo] = useState<any>(null);
+  const [confirmModal, setConfirmModal] = useState(false);
 
   useEffect(() => {
     // Try settings first (has letterhead), fall back to hospital details
@@ -768,7 +769,29 @@ function BillDetail({ bill, loading, hospitalInfo, onBack, onRefresh }:any) {
   const [taxEdit, setTaxEdit] = useState(0);
   const [notesEdit, setNotesEdit] = useState("");
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [reverting, setReverting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
   const autoSaveTimerRef = useRef<any>(null);
+
+  const handleRevert = () => {
+    if (!bill?.id) return;
+    setConfirmModal(true);
+  };
+
+  const confirmRevert = async () => {
+    if (!bill?.id) return;
+    setConfirmModal(false);
+    setReverting(true);
+    try {
+      const res = await apiFetch(`/api/billing/${bill.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revert: true }),
+      });
+      if (res.success) { onRefresh(); }
+    } catch {}
+    setReverting(false);
+  };
 
   useEffect(() => {
     if (!bill) return;
@@ -1019,6 +1042,11 @@ ${printContent}
             )}
           </div>
           <button className="bm-btn-secondary" disabled={!canEditBill} onClick={()=>canEditBill&&setEditMode(v=>!v)} style={!canEditBill?{opacity:.55,cursor:"not-allowed"}:undefined}><Pencil size={14}/>{editMode?"Finish Edit":"Edit Bill"}</button>
+          {(bill.status === "PAID" || bill.status === "PARTIALLY_PAID") && (
+            <button className="bm-btn-secondary" onClick={handleRevert} disabled={reverting}>
+              {reverting ? <Loader2 size={14} className="bm-spin"/> : <RefreshCw size={14}/>}Regenerate
+            </button>
+          )}
           {bill.status!=="PAID" && bill.status!=="CANCELLED" && (
             <button className="bm-btn-primary" onClick={()=>setPayModal(true)}><CreditCard size={14}/>Record Payment</button>
           )}
@@ -1057,7 +1085,7 @@ ${printContent}
                 <tr><th>#</th><th>Description</th><th>Type</th><th>Qty</th><th>Rate</th><th>Amount</th>{editMode && <th></th>}</tr>
               </thead>
               <tbody>
-                {(editMode ? itemsEdit : (bill.billItems||[])).map((item:any, idx:number)=>{
+                {(editMode ? itemsEdit : (bill.billItems||[]).filter((it:any) => it.type !== "PHARMACY")).map((item:any, idx:number)=>{
                   const ti = typeInfo(item.type);
                   return (
                     <tr key={item.id||idx}>
@@ -1094,6 +1122,74 @@ ${printContent}
               </div>
             )}
           </div>
+
+          {/* Pharmacy Medicines Detail — uses PHARMACY billItems for prices, enriched with dosage/frequency from medications JSON */}
+          {(() => {
+            const pharmaItems = (bill.billItems || []).filter((it: any) => it.type === "PHARMACY");
+            if (pharmaItems.length === 0) return null;
+            let medsMap: Record<string, any> = {};
+            if (bill.prescription?.medications) {
+              try {
+                const raw = typeof bill.prescription.medications === "string" ? JSON.parse(bill.prescription.medications) : bill.prescription.medications;
+                if (Array.isArray(raw)) raw.forEach((m: any) => { medsMap[(m.name || "").toLowerCase().trim()] = m; });
+              } catch {}
+            }
+            const enriched = pharmaItems.map((it: any) => {
+              const med = medsMap[(it.name || "").toLowerCase().trim()] || {};
+              return { ...it, dosage: med.dosage || "—", frequency: med.frequency || "—" };
+            });
+            const pharmaTotal = enriched.reduce((s: number, it: any) => s + (it.amount || 0), 0);
+            return (
+              <div className="bm-section-card" style={{marginTop:14}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div className="bm-section-head"><Pill size={15} color="#ec4899"/><span>Pharmacy — Medicine Details</span></div>
+                  {bill.prescription?.prescriptionNo && <span style={{fontSize:11,fontWeight:600,color:"#ec4899",background:"#fdf2f8",padding:"3px 10px",borderRadius:6}}>Rx #{bill.prescription.prescriptionNo}</span>}
+                </div>
+                {bill.prescription?.diagnosis && (
+                  <div style={{fontSize:12,color:"#64748b",marginBottom:10,padding:"8px 12px",background:"#fdf2f8",borderRadius:8,border:"1px solid #fce7f3"}}>
+                    <b style={{color:"#be185d"}}>Diagnosis:</b> {bill.prescription.diagnosis}
+                  </div>
+                )}
+                {bill.prescription?.doctor?.name && (
+                  <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>
+                    <b style={{color:"#1e293b"}}>Prescribed by:</b> {bill.prescription.doctor.name}
+                  </div>
+                )}
+                <table className="bm-tbl" style={{marginTop:4}}>
+                  <thead>
+                    <tr>
+                      <th style={{width:30}}>#</th>
+                      <th>Medicine Name</th>
+                      <th>Dosage</th>
+                      <th>Frequency</th>
+                      <th style={{textAlign:"center"}}>Qty</th>
+                      <th style={{textAlign:"right"}}>Unit Price</th>
+                      <th style={{textAlign:"right"}}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enriched.map((m: any, idx: number) => (
+                      <tr key={m.id || idx}>
+                        <td style={{fontSize:11,color:"#94a3b8"}}>{idx + 1}</td>
+                        <td style={{fontWeight:600,color:"#1e293b"}}>{m.name}</td>
+                        <td style={{fontSize:12,color:"#475569"}}>{m.dosage}</td>
+                        <td style={{fontSize:12,color:"#475569"}}>{m.frequency}</td>
+                        <td style={{textAlign:"center",fontSize:12,color:"#475569"}}>{m.quantity}</td>
+                        <td style={{textAlign:"right",fontSize:12,color:"#475569"}}>{fmtCur(m.unitPrice)}</td>
+                        <td style={{textAlign:"right",fontWeight:700,color:"#1e293b"}}>{fmtCur(m.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{borderTop:"2px solid #fce7f3"}}>
+                      <td colSpan={6} style={{textAlign:"right",fontWeight:700,fontSize:13,color:"#be185d",paddingRight:12}}>Medicine Total</td>
+                      <td style={{textAlign:"right",fontWeight:800,fontSize:14,color:"#be185d"}}>{fmtCur(pharmaTotal)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            );
+          })()}
 
           {/* Payments */}
           {(bill.payments||[]).length>0 && (
@@ -1167,6 +1263,31 @@ ${printContent}
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <div className="bm-modal-bg" onClick={() => setConfirmModal(false)}>
+          <div className="bm-modal" style={{maxWidth:480}} onClick={e => e.stopPropagation()}>
+            <div style={{padding:24,textAlign:"center"}}>
+              <div style={{width:56,height:56,borderRadius:14,background:"#fef3c7",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+                <AlertTriangle size={28} color="#a16207" />
+              </div>
+              <div style={{fontSize:18,fontWeight:700,color:"#1e293b",marginBottom:8}}>Regenerate Bill?</div>
+              <div style={{fontSize:14,color:"#64748b",lineHeight:1.6,marginBottom:24}}>
+                This will revert the bill to PENDING status, remove all existing payments, and allow you to edit charges and re-collect payment. This action cannot be undone.
+              </div>
+              <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                <button className="bm-btn-secondary" onClick={() => setConfirmModal(false)}>
+                  Cancel
+                </button>
+                <button className="bm-btn-primary" style={{background:"#a16207"}} onClick={confirmRevert}>
+                  Yes, Regenerate
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {payModal && (
@@ -1326,34 +1447,98 @@ function PrintBill({ bill, hospitalInfo }:{ bill:any; hospitalInfo:any }) {
         </div>
       </div>
 
-      {/* Items Table */}
-      <table className="items-table">
-        <thead>
-          <tr>
-            <th style={{width:32}}>#</th>
-            <th>Description</th>
-            <th style={{width:100}}>Type</th>
-            <th style={{width:50,textAlign:"center"}}>Qty</th>
-            <th style={{width:90,textAlign:"right"}}>Unit Price</th>
-            <th style={{width:100,textAlign:"right"}}>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(bill.billItems||[]).map((item:any, idx:number)=>{
-            const ti = typeInfo(item.type);
-            return (
-              <tr key={item.id||idx}>
-                <td style={{color:"#94a3b8",textAlign:"center"}}>{idx+1}</td>
-                <td style={{fontWeight:500}}>{item.name}</td>
-                <td style={{color:"#64748b"}}>{ti.label}</td>
-                <td style={{textAlign:"center"}}>{item.quantity}</td>
-                <td style={{textAlign:"right"}}>₹{Number(item.unitPrice).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
-                <td style={{textAlign:"right",fontWeight:600}}>₹{Number(item.amount).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* Items Table + Pharmacy Detail (Print) */}
+      {(() => {
+        const allItems = bill.billItems || [];
+        const npItems = allItems.filter((it: any) => it.type !== "PHARMACY");
+        const pItems = allItems.filter((it: any) => it.type === "PHARMACY");
+        let mMap: Record<string, any> = {};
+        if (bill.prescription?.medications) {
+          try {
+            const raw = typeof bill.prescription.medications === "string" ? JSON.parse(bill.prescription.medications) : bill.prescription.medications;
+            if (Array.isArray(raw)) raw.forEach((m: any) => { mMap[(m.name || "").toLowerCase().trim()] = m; });
+          } catch {}
+        }
+        const enrichedP = pItems.map((it: any) => {
+          const med = mMap[(it.name || "").toLowerCase().trim()] || {};
+          return { ...it, dosage: med.dosage || "—", frequency: med.frequency || "—" };
+        });
+        const pTotal = enrichedP.reduce((s: number, it: any) => s + (it.amount || 0), 0);
+        return (<>
+          {npItems.length > 0 && (
+            <table className="items-table">
+              <thead>
+                <tr>
+                  <th style={{width:32}}>#</th><th>Description</th><th style={{width:100}}>Type</th>
+                  <th style={{width:50,textAlign:"center"}}>Qty</th><th style={{width:90,textAlign:"right"}}>Unit Price</th><th style={{width:100,textAlign:"right"}}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {npItems.map((item: any, idx: number) => {
+                  const ti = typeInfo(item.type);
+                  return (
+                    <tr key={item.id || idx}>
+                      <td style={{color:"#94a3b8",textAlign:"center"}}>{idx+1}</td>
+                      <td style={{fontWeight:500}}>{item.name}</td>
+                      <td style={{color:"#64748b"}}>{ti.label}</td>
+                      <td style={{textAlign:"center"}}>{item.quantity}</td>
+                      <td style={{textAlign:"right"}}>₹{Number(item.unitPrice).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                      <td style={{textAlign:"right",fontWeight:600}}>₹{Number(item.amount).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+          {enrichedP.length > 0 && (
+            <div style={{marginTop:20,marginBottom:20}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#be185d",display:"flex",alignItems:"center",gap:6}}>💊 Pharmacy — Medicine Details</div>
+                {bill.prescription?.prescriptionNo && <span style={{fontSize:11,fontWeight:600,color:"#be185d",background:"#fdf2f8",padding:"3px 10px",borderRadius:6,border:"1px solid #fce7f3"}}>Rx #{bill.prescription.prescriptionNo}</span>}
+              </div>
+              {bill.prescription?.diagnosis && (
+                <div style={{fontSize:12,color:"#64748b",marginBottom:8,padding:"6px 12px",background:"#fdf2f8",borderRadius:6,border:"1px solid #fce7f3"}}>
+                  <b style={{color:"#be185d"}}>Diagnosis:</b> {bill.prescription.diagnosis}
+                </div>
+              )}
+              {bill.prescription?.doctor?.name && (
+                <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>
+                  <b style={{color:"#1e293b"}}>Prescribed by:</b> {bill.prescription.doctor.name}
+                </div>
+              )}
+              <table className="items-table">
+                <thead>
+                  <tr style={{background:"#fdf2f8"}}>
+                    <th style={{width:32,color:"#be185d"}}>#</th><th style={{color:"#be185d"}}>Medicine Name</th>
+                    <th style={{width:90,color:"#be185d"}}>Dosage</th><th style={{width:90,color:"#be185d"}}>Frequency</th>
+                    <th style={{width:50,textAlign:"center",color:"#be185d"}}>Qty</th><th style={{width:90,textAlign:"right",color:"#be185d"}}>Unit Price</th>
+                    <th style={{width:100,textAlign:"right",color:"#be185d"}}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enrichedP.map((m: any, idx: number) => (
+                    <tr key={m.id || idx}>
+                      <td style={{color:"#94a3b8",textAlign:"center"}}>{idx + 1}</td>
+                      <td style={{fontWeight:600}}>{m.name}</td>
+                      <td style={{color:"#64748b",fontSize:12}}>{m.dosage}</td>
+                      <td style={{color:"#64748b",fontSize:12}}>{m.frequency}</td>
+                      <td style={{textAlign:"center"}}>{m.quantity}</td>
+                      <td style={{textAlign:"right"}}>₹{Number(m.unitPrice).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                      <td style={{textAlign:"right",fontWeight:600}}>₹{Number(m.amount).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{borderTop:"2px solid #fce7f3"}}>
+                    <td colSpan={6} style={{textAlign:"right",fontWeight:700,fontSize:13,color:"#be185d",paddingRight:12}}>Medicine Total</td>
+                    <td style={{textAlign:"right",fontWeight:800,fontSize:14,color:"#be185d"}}>₹{pTotal.toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </>);
+      })()}
 
       {/* Totals */}
       <div className="totals-section">

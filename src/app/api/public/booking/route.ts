@@ -7,17 +7,20 @@ import { findPatientByPhone, generatePatientId, createPatient } from "../../../.
 
 export const dynamic = "force-dynamic";
 
-// Single-tenant: Celeb Aesthecia
-const DEFAULT_HOSPITAL_ID = "c61cb493-dcf1-4ac1-a82d-a2a81caf07ed";
+const APPOINTMENT_DEPT_TYPES = ["CLINICAL", "DIAGNOSTIC"];
 
-const APPOINTMENT_DEPT_TYPES = ["CLINICAL", "DIAGNOSTIC", "PROCEDURE", "SUPPORT"];
+async function resolveHospitalId(hid: string | null): Promise<string | null> {
+  if (hid) return hid;
+  const first = await prisma.hospital.findFirst({ select: { id: true }, orderBy: { createdAt: "desc" } });
+  return first?.id || null;
+}
 
 /* ── GET /api/public/booking?hid=HOSPITAL_ID ── */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const hid = searchParams.get("hid") || DEFAULT_HOSPITAL_ID;
-
   try {
+    const hid = await resolveHospitalId(searchParams.get("hid"));
+    if (!hid) return errorResponse("No hospital found", 404);
     const hospital = await prisma.hospital.findUnique({
       where: { id: hid },
       select: { id: true, name: true },
@@ -55,8 +58,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, phone, email, doctorId, departmentId, appointmentDate, timeSlot, type, consultationFee, notes } = body;
-    // Always use the default hospital — ignore any hospitalId from client
-    const hospitalId = DEFAULT_HOSPITAL_ID;
+    const hospitalId = await resolveHospitalId(body.hospitalId || null);
+    if (!hospitalId) return errorResponse("No hospital found", 404);
 
     if (!name || !phone || !doctorId || !appointmentDate || !timeSlot) {
       return errorResponse("Missing required fields", 400);

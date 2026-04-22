@@ -51,37 +51,30 @@
 .heroContent {
   padding: var(--space-12) var(--space-16);
   padding-bottom: var(--space-8);
-  max-width: 680px;
+  max-width: 800px;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+  margin: 0;
 }
 
-/* Badge */
-.badgeWrapper {
-  margin-bottom: var(--space-6);
-}
-
-.heroBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 22px;
-  background: rgba(14, 137, 143, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(14, 137, 143, 0.4);
-  color: var(--white);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  border-radius: var(--radius-full);
-  letter-spacing: 0.01em;
+/* Tagline */
+.heroTagline {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-4);
 }
 
 /* Heading */
 .heroHeading {
-  font-size: clamp(2rem, 4.5vw, 3.2rem);
-  font-weight: 700;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
   color: var(--white);
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -90,11 +83,11 @@
 
 /* Description */
 .heroDescription {
-  font-size: var(--font-size-base);
-  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--font-size-lg);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.7;
   margin-bottom: var(--space-8);
-  max-width: 520px;
+  max-width: 700px;
 }
 
 /* Learn More Button */
@@ -255,6 +248,8 @@
 
   .heroContent {
     padding: var(--space-10) var(--space-8);
+    align-items: flex-start;
+    text-align: left;
   }
 
   .heroBackground {
@@ -302,6 +297,12 @@
   .heroContent {
     padding: var(--space-8) var(--space-6);
     padding-bottom: var(--space-4);
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .heroTagline {
+    font-size: var(--font-size-sm);
   }
 
   .heroHeading {
@@ -309,13 +310,8 @@
   }
 
   .heroDescription {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     margin-bottom: var(--space-6);
-  }
-
-  .heroBadge {
-    font-size: var(--font-size-xs);
-    padding: 6px 16px;
   }
 
   .learnMoreBtn {
@@ -366,6 +362,12 @@
 
   .heroContent {
     padding: var(--space-6) var(--space-4);
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .heroTagline {
+    font-size: var(--font-size-xs);
   }
 
   .heroHeading {

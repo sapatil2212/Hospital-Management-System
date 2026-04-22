@@ -24,7 +24,18 @@ export default function SubDeptLoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/subdept/dashboard");
+        // Fetch subdept profile to get name for slug-based URL
+        try {
+          const prof = await fetch("/api/subdept/me", { credentials: "include" }).then(r => r.json());
+          if (prof.success && prof.data?.name) {
+            const slug = (prof.data.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "dept";
+            router.push(`/subdept/${slug}/dashboard`);
+          } else {
+            router.push("/subdept/dashboard");
+          }
+        } catch {
+          router.push("/subdept/dashboard");
+        }
       } else {
         setError(data.message || "Invalid credentials");
       }

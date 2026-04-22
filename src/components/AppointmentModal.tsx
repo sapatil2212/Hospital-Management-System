@@ -586,16 +586,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                   )}
 
                   <div className={styles.formRow}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Consultation Fee {selectedDoctor?.consultationFee ? `(₹${selectedDoctor.consultationFee})` : ""}</label>
-                      <div className={styles.inputWrap}>
-                        <span className={styles.fieldIconWrap}><IndianRupee size={15} /></span>
-                        <input className={styles.input} type="number" min="0" step="0.01"
-                          placeholder={selectedDoctor?.consultationFee?.toString() || "0"}
-                          value={form.consultationFee} onChange={e => set("consultationFee", e.target.value)} />
-                      </div>
-                    </div>
-                    <div className={styles.field}>
+                    <div className={styles.field} style={{ gridColumn: "1 / -1" }}>
                       <label className={styles.label}>Notes / Reason</label>
                       <div className={styles.inputWrap}>
                         <span className={styles.fieldIconWrap}><FileText size={15} /></span>

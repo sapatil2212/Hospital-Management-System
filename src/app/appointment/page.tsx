@@ -434,7 +434,6 @@ function AppointmentForm() {
                   <label style={labelStyle}>Appointment Type</label>
                   <select style={inputStyle} value={form.type} onChange={e => set("type", e.target.value)}>
                     <option value="OPD">OPD</option>
-                    <option value="ONLINE">Online</option>
                     <option value="FOLLOW_UP">Follow-up</option>
                     <option value="EMERGENCY">Emergency</option>
                   </select>
@@ -482,16 +481,6 @@ function AppointmentForm() {
                     {errors.timeSlot && <span style={errStyle}>{errors.timeSlot}</span>}
                   </div>
                 )}
-
-                {/* Fee */}
-                <div style={fieldStyle}>
-                  <label style={labelStyle}>
-                    Consultation Fee {selectedDoctor?.consultationFee ? `(₹${selectedDoctor.consultationFee})` : ""}
-                  </label>
-                  <input type="number" min="0" step="0.01" style={inputStyle}
-                    placeholder={selectedDoctor?.consultationFee?.toString() || "0"}
-                    value={form.consultationFee} onChange={e => set("consultationFee", e.target.value)} />
-                </div>
 
                 {/* Notes */}
                 <div style={fieldStyle}>

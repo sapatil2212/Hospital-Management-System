@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { id: "inventory",    label: "Inventory",         Icon: ClipboardList,   section: "General", route: "/hospitaladmin/dashboard?tab=inventory" },
   { id: "billing",      label: "Billing",           Icon: CreditCard,      section: "General", route: "/hospitaladmin/dashboard?tab=billing" },
   { id: "ipd",          label: "IPD / Wards",       Icon: BedDouble,       section: "General", route: "/hospitaladmin/dashboard?tab=ipd" },
+  { id: "departments", label: "Departments",       Icon: Building2,       section: "General", route: "/hospitaladmin/dashboard?tab=departments" },
   { id: "enquiries",    label: "Enquiries",         Icon: FileQuestion,    section: "General", route: "/hospitaladmin/dashboard?tab=enquiries" },
   { id: "blogs",        label: "Blogs",              Icon: BookOpen,        section: "General", route: "/hospitaladmin/dashboard?tab=blogs" },
   { id: "reports",      label: "Reports",           Icon: BarChart2,       section: "System",  route: "/hospitaladmin/dashboard?tab=reports" },
@@ -34,15 +35,16 @@ function getActiveId(pathname: string, tab: string | null): string {
   if (pathname.startsWith("/hospitaladmin/configure"))    return "configure";
   if (pathname.startsWith("/hospitaladmin/profile"))      return "profile";
   if (pathname.startsWith("/hospitaladmin/dashboard")) {
-    if (tab === "inventory") return "inventory";
-    if (tab === "billing")   return "billing";
-    if (tab === "ipd")       return "ipd";
-    if (tab === "enquiries") return "enquiries";
-    if (tab === "blogs")     return "blogs";
-    if (tab === "reports")   return "reports";
-    if (tab === "finance")   return "finance";
-    if (tab === "settings")  return "settings";
-    if (tab === "patients")  return "patients";
+    if (tab === "inventory")    return "inventory";
+    if (tab === "billing")      return "billing";
+    if (tab === "ipd")          return "ipd";
+    if (tab === "departments")  return "departments";
+    if (tab === "enquiries")    return "enquiries";
+    if (tab === "blogs")        return "blogs";
+    if (tab === "reports")      return "reports";
+    if (tab === "finance")      return "finance";
+    if (tab === "settings")     return "settings";
+    if (tab === "patients")     return "patients";
     return "overview";
   }
   return "overview";

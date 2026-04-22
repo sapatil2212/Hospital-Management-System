@@ -2,10 +2,8 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft, Save, X, Upload, Plus, Package, 
-  Info, Barcode, AlertTriangle, IndianRupee, 
-  Calendar, MapPin, ShieldCheck, Settings2, FileText,
-  CheckCircle2, Building2, Stethoscope, Search, Bell, MessageSquare, ChevronRight, Loader2
+  ChevronLeft, Save, Upload, Package,
+  AlertTriangle, IndianRupee, ChevronDown, Loader2, CheckCircle2
 } from "lucide-react";
 
 const api = async (url: string, method = "GET", body?: any) => {
@@ -15,27 +13,19 @@ const api = async (url: string, method = "GET", body?: any) => {
   return r.json();
 };
 
-const SECTIONS = [
-  { id: "basic", label: "Basic Information", icon: <Info size={16} /> },
-  { id: "unit", label: "Unit & Packaging", icon: <Package size={16} /> },
-  { id: "id", label: "Identification", icon: <Barcode size={16} /> },
-  { id: "stock", label: "Stock & Alerts", icon: <AlertTriangle size={16} /> },
-  { id: "purchase", label: "Purchase Details", icon: <Building2 size={16} /> },
-  { id: "pricing", label: "Pricing & Billing", icon: <IndianRupee size={16} /> },
-  { id: "batch", label: "Batch & Expiry", icon: <Calendar size={16} /> },
-  { id: "storage", label: "Storage & Location", icon: <MapPin size={16} /> },
-  { id: "compliance", label: "Compliance & Safety", icon: <ShieldCheck size={16} /> },
-  { id: "status", label: "Status & Control", icon: <Settings2 size={16} /> },
-  { id: "extra", label: "Additional Info", icon: <FileText size={16} /> },
-];
+const CATEGORIES = ["Medicine", "Consumables", "Surgical Items", "Equipment", "Lab Items"];
+const UNITS = ["pcs", "strip", "box", "bottle", "vial", "ampoule", "tube", "kg", "gm", "ml", "ltr", "pair", "set"];
+const DRUG_SCHEDULES = ["OTC", "Schedule H", "Schedule H1", "Schedule X"];
+const TEMP_OPTIONS = ["Room Temp", "Refrigerated (2-8°C)", "Frozen (-20°C)"];
 
 export default function AddInventoryPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeSection, setActiveSection] = useState("basic");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [form, setForm] = useState({
     name: "", genericName: "", brandName: "", category: "Medicine", subCategory: "", itemType: "Consumable",
@@ -45,10 +35,10 @@ export default function AddInventoryPage() {
     purchasePrice: 0, supplierName: "", preferredVendor: "", purchaseUnit: "",
     mrp: 0, sellingPrice: 0, discount: 0, gst: 0, billingType: "Tax Inclusive",
     batchNumber: "", mfgDate: "", expiryDate: "", expiryAlertDays: 60,
-    location: "Pharmacy Store", rackNumber: "", tempRequirement: "Room Temp",
+    location: "Central Store", rackNumber: "", tempRequirement: "Room Temp",
     drugSchedule: "OTC", requiresRx: "No",
     status: "Active", isReturnable: "Yes", isCritical: "No",
-    description: "", image: "", documents: []
+    description: "", image: "", documents: [] as string[]
   });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,6 +160,9 @@ export default function AddInventoryPage() {
     }
   };
 
+  const margin = () => parseFloat(String(form.mrp)) > 0 && parseFloat(String(form.purchasePrice)) > 0
+    ? (((parseFloat(String(form.mrp)) - parseFloat(String(form.purchasePrice))) / parseFloat(String(form.mrp))) * 100).toFixed(1) : null;
+
   return (
     <>
       <style>{`
@@ -177,491 +170,416 @@ export default function AddInventoryPage() {
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
         input,select,button,textarea{font-family:'Inter',sans-serif}
-        .hd{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0f4f8}
-        .hd-sb{width:240px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
-        .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;cursor:pointer}
-        .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
-        .hd-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
-        .hd-logo-sub{font-size:10px;color:#94a3b8}
-        .hd-nav{flex:1;padding:12px 12px;overflow-y:auto}
-        .hd-nav-sec{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 6px}
-        .hd-nb{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;border:none;background:none;color:#64748b;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
-        .hd-nb:hover{background:#f8fafc;color:#334155}
-        .hd-nb.on{background:#E6F4F4;color:#0A6B70;font-weight:600}
-        .hd-nb-dot{display:none;width:3px;border-radius:4px;height:22px;background:#0E898F;position:absolute;right:8px}
-        .hd-nb.on .hd-nb-dot{display:block}
-        .hd-main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-        .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
-        .hd-topbar-left{display:flex;align-items:center;gap:12px}
-        .hd-pg-title{font-size:16px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
-        .hd-pg-sub{font-size:10px;color:#94a3b8;margin-top:1px}
-        .hd-body{padding:40px 24px;max-width:1000px;margin:0 auto;width:100%}
-        .hd-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);padding:32px 24px;margin-bottom:24px}
-        .hd-sec-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #f1f5f9}
-        .hd-sec-num{width:26px;height:26px;background:#E6F4F4;color:#0E898F;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
-        .hd-sec-title{font-size:13px;font-weight:700;color:#1e293b}
-        .hd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-        @media(max-width:768px){.hd-grid{grid-template-columns:1fr}}
-        .hd-mf{margin-bottom:4px}
-        .hd-ml{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
-        .hd-mi{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:12px;color:#1e293b;outline:none;transition:all .2s}
-        .hd-mi:focus{border-color:#0E898F;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
-        .hd-mi::placeholder{color:#cbd5e1}
-        .hd-radio-group{display:flex;gap:16px;margin-top:6px}
-        .hd-radio-label{display:flex;align-items:center;gap:8px;font-size:11px;color:#475569;cursor:pointer}
-        .hd-radio-label input{accent-color:#0E898F;width:15px;height:15px}
-        .hd-btn-primary{padding:10px 24px;border-radius:10px;border:none;background:#0E898F;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
-        .hd-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
-        .hd-btn-sec{padding:10px 20px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
-        .hd-btn-sec:hover{background:#f8fafc;color:#1e293b}
-        .hd-upload-box{border:2px dashed #e2e8f0;border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .2s}
-        .hd-upload-box:hover{border-color:#0E898F;background:#E6F4F4}
-        .hd-upload-icon{width:48px;height:48px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#64748b}
-        .hd-upload-text{font-size:11px;font-weight:600;color:#475569}
-        .hd-upload-sub{font-size:10px;color:#94a3b8;margin-top:4px}
-        .hd-msg-err{padding:12px 16px;background:#fff5f5;border:1px solid #fee2e2;border-radius:12px;color:#ef4444;font-size:12px;font-weight:500;margin-bottom:20px;display:flex;align-items:center;gap:10px}
-        .hd-spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
-        @keyframes sp{to{transform:rotate(360deg)}}
+        body{background:#f0f4f8;font-family:'Inter',sans-serif}
+        .aip-wrap{min-height:100vh;padding:24px;max-width:820px;margin:0 auto}
+        .aip-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+        .aip-topbar-left{display:flex;align-items:center;gap:14px}
+        .aip-back{width:40px;height:40px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all .15s}
+        .aip-back:hover{background:#f8fafc;color:#1e293b;border-color:#cbd5e1}
+        .aip-title{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.03em}
+        .aip-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+        .aip-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);margin-bottom:20px;overflow:hidden}
+        .aip-card-head{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid #f1f5f9}
+        .aip-card-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .aip-card-title{font-size:14px;font-weight:700;color:#1e293b}
+        .aip-card-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+        .aip-card-body{padding:20px 24px}
+        .aip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .aip-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+        @media(max-width:768px){.aip-grid,.aip-grid-2{grid-template-columns:1fr}}
+        .aip-field{margin-bottom:0}
+        .aip-label{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:5px}
+        .aip-label span{color:#ef4444}
+        .aip-input{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e293b;outline:none;transition:all .2s}
+        .aip-input:focus{border-color:#0E898F;background:#fff;box-shadow:0 0 0 3px rgba(14,137,143,0.08)}
+        .aip-input::placeholder{color:#cbd5e1}
+        .aip-input-money{padding-left:28px}
+        .aip-money-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px;font-weight:600}
+        .aip-radio-row{display:flex;gap:6px;flex-wrap:wrap}
+        .aip-radio-pill{padding:7px 16px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+        .aip-radio-pill:hover{border-color:#cbd5e1;background:#f8fafc}
+        .aip-radio-pill.on{border-color:#0E898F;background:#E6F4F4;color:#0A6B70}
+        .aip-btn-primary{padding:11px 28px;border-radius:12px;border:none;background:#0E898F;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 4px 14px rgba(14,137,143,0.25)}
+        .aip-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
+        .aip-btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+        .aip-btn-ghost{padding:11px 20px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+        .aip-btn-ghost:hover{background:#f8fafc;color:#1e293b}
+        .aip-expand-btn{width:100%;padding:12px 24px;background:none;border:none;border-top:1px solid #f1f5f9;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:600;color:#64748b;transition:all .15s}
+        .aip-expand-btn:hover{background:#f8fafc;color:#0E898F}
+        .aip-upload{border:2px dashed #e2e8f0;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s}
+        .aip-upload:hover{border-color:#0E898F;background:#E6F4F4}
+        .aip-err{padding:12px 16px;background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;color:#dc2626;font-size:12px;font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+        .aip-success{padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;color:#166534;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+        .aip-margin-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+        .aip-spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite}
+        @keyframes aispin{to{transform:rotate(360deg)}}
       `}</style>
 
-      <div className="hd">
-        <aside className="hd-sb">
-          <div className="hd-sb-logo" onClick={() => router.push("/hospitaladmin/dashboard")}>
-            <div className="hd-logo-ic"><Stethoscope size={18} color="white"/></div>
-            <div><div className="hd-logo-tx">MediCare+</div><div className="hd-logo-sub">Hospital Admin</div></div>
+      <div className="aip-wrap">
+        {/* Top Bar */}
+        <div className="aip-topbar">
+          <div className="aip-topbar-left">
+            <button className="aip-back" onClick={() => router.back()}><ChevronLeft size={18} /></button>
+            <div>
+              <div className="aip-title">Add Inventory Item</div>
+              <div className="aip-sub">Add a new product to the central inventory master</div>
+            </div>
           </div>
-          <nav className="hd-nav">
-            <div className="hd-nav-sec">Form Sections</div>
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => {
-                  setActiveSection(section.id);
-                  document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                className={`hd-nb${activeSection === section.id ? " on" : ""}`}
-              >
-                <span style={{color: activeSection === section.id ? "#0A6B70" : "#94a3b8", display: "flex"}}>{section.icon}</span>
-                {section.label}
-                {activeSection === section.id && <div className="hd-nb-dot" />}
-              </button>
-            ))}
-          </nav>
-        </aside>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="button" className="aip-btn-ghost" onClick={() => router.back()}>Cancel</button>
+            <button type="button" className="aip-btn-primary" disabled={saving || !form.name} onClick={handleSubmit}>
+              {saving ? <span className="aip-spin" /> : <Save size={15} />}
+              {saving ? "Saving..." : "Save Item"}
+            </button>
+          </div>
+        </div>
 
-        <main className="hd-main">
-          <header className="hd-topbar">
-            <div className="hd-topbar-left">
-              <button onClick={() => router.back()} className="hd-btn-sec" style={{padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                <ChevronLeft size={18} />
-              </button>
+        {error && <div className="aip-err"><AlertTriangle size={16} /> {error}</div>}
+        {success && <div className="aip-success"><CheckCircle2 size={16} /> Item saved successfully! Redirecting...</div>}
+
+        <form onSubmit={handleSubmit}>
+
+          {/* ── Section 1: Essential Info ── */}
+          <div className="aip-card">
+            <div className="aip-card-head">
+              <div className="aip-card-icon" style={{ background: "#E6F4F4", color: "#0E898F" }}><Package size={17} /></div>
               <div>
-                <div className="hd-pg-title">Add Inventory Item</div>
-                <div className="hd-pg-sub">Create a new product in the master database</div>
+                <div className="aip-card-title">Item Details</div>
+                <div className="aip-card-sub">Name, category, and unit information</div>
               </div>
             </div>
-            <div style={{display: "flex", gap: "12px"}}>
-              <button onClick={() => router.back()} className="hd-btn-sec">Cancel</button>
-              <button onClick={handleSubmit} disabled={saving} className="hd-btn-primary">
-                {saving ? <span className="hd-spin" /> : <Save size={16} />}
-                {saving ? "Saving..." : "Save Item"}
-              </button>
+            <div className="aip-card-body">
+              {/* Row 1: Name (full width) */}
+              <div style={{ marginBottom: 16 }}>
+                <label className="aip-label">Item Name <span>*</span></label>
+                <input type="text" name="name" value={form.name} onChange={handleChange} required placeholder="e.g., Paracetamol 500mg Tablet" className="aip-input" autoFocus />
+              </div>
+
+              {/* Row 2: Generic, Brand */}
+              <div className="aip-grid-2" style={{ marginBottom: 16 }}>
+                <div>
+                  <label className="aip-label">Generic Name</label>
+                  <input type="text" name="genericName" value={form.genericName} onChange={handleChange} placeholder="e.g., Paracetamol" className="aip-input" />
+                </div>
+                <div>
+                  <label className="aip-label">Brand Name</label>
+                  <input type="text" name="brandName" value={form.brandName} onChange={handleChange} placeholder="e.g., Crocin / Dolo" className="aip-input" />
+                </div>
+              </div>
+
+              {/* Row 3: Category, Sub Cat, Unit */}
+              <div className="aip-grid" style={{ marginBottom: 16 }}>
+                <div>
+                  <label className="aip-label">Category <span>*</span></label>
+                  <select name="category" value={form.category} onChange={handleChange} required className="aip-input">
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="aip-label">Sub Category</label>
+                  <input type="text" name="subCategory" value={form.subCategory} onChange={handleChange} placeholder="Tablet / Syrup / Injection" className="aip-input" />
+                </div>
+                <div>
+                  <label className="aip-label">Unit <span>*</span></label>
+                  <select name="unit" value={form.unit} onChange={handleChange} required className="aip-input">
+                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 4: Item Type */}
+              <div>
+                <label className="aip-label">Item Type</label>
+                <div className="aip-radio-row">
+                  {["Consumable", "Non-Consumable"].map(t => (
+                    <button key={t} type="button" className={`aip-radio-pill${form.itemType === t ? " on" : ""}`} onClick={() => setForm({ ...form, itemType: t })}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </header>
+          </div>
 
-          <div className="hd-body">
-            {error && <div className="hd-msg-err"><AlertTriangle size={18} /> {error}</div>}
-
-            <form onSubmit={handleSubmit}>
-              {/* 1. Basic Information */}
-              <div className="hd-card" id="basic">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">1</div>
-                  <div className="hd-sec-title">Basic Information</div>
+          {/* ── Section 2: Pricing & Stock ── */}
+          <div className="aip-card">
+            <div className="aip-card-head">
+              <div className="aip-card-icon" style={{ background: "#fef3c7", color: "#d97706" }}><IndianRupee size={17} /></div>
+              <div>
+                <div className="aip-card-title">Pricing & Stock</div>
+                <div className="aip-card-sub">Purchase price, MRP, GST, and stock levels</div>
+              </div>
+            </div>
+            <div className="aip-card-body">
+              {/* Pricing Row */}
+              <div className="aip-grid" style={{ marginBottom: 16 }}>
+                <div>
+                  <label className="aip-label">Purchase Price (Cost)</label>
+                  <div style={{ position: "relative" }}>
+                    <span className="aip-money-sym">₹</span>
+                    <input type="number" name="purchasePrice" value={form.purchasePrice} onChange={handleChange} className="aip-input aip-input-money" placeholder="0" min="0" step="0.01" />
+                  </div>
                 </div>
-                <div className="hd-grid">
-                  <div style={{gridColumn: "span 2"}}>
-                    <label className="hd-ml">Item Name*</label>
-                    <input type="text" name="name" value={form.name} onChange={handleChange} required placeholder="e.g., Paracetamol 500mg" className="hd-mi" />
+                <div>
+                  <label className="aip-label">MRP</label>
+                  <div style={{ position: "relative" }}>
+                    <span className="aip-money-sym">₹</span>
+                    <input type="number" name="mrp" value={form.mrp} onChange={handleChange} className="aip-input aip-input-money" placeholder="0" min="0" step="0.01" />
                   </div>
-                  <div>
-                    <label className="hd-ml">Generic Name</label>
-                    <input type="text" name="genericName" value={form.genericName} onChange={handleChange} placeholder="e.g., Paracetamol" className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Brand Name</label>
-                    <input type="text" name="brandName" value={form.brandName} onChange={handleChange} placeholder="e.g., Crocin" className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Category*</label>
-                    <select name="category" value={form.category} onChange={handleChange} required className="hd-mi">
-                      {["Medicine", "Consumables", "Surgical Items", "Equipment", "Lab Items"].map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Sub Category</label>
-                    <input type="text" name="subCategory" value={form.subCategory} onChange={handleChange} placeholder="e.g., Tablet / Injection / Syrup" className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Item Type</label>
-                    <div className="hd-radio-group">
-                      {["Consumable", "Non-Consumable"].map(type => (
-                        <label key={type} className="hd-radio-label">
-                          <input type="radio" name="itemType" value={type} checked={form.itemType === type} onChange={handleChange} />
-                          {type}
-                        </label>
-                      ))}
-                    </div>
+                </div>
+                <div>
+                  <label className="aip-label">GST %</label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[0, 5, 12, 18, 28].map(g => (
+                      <button key={g} type="button" className={`aip-radio-pill${parseFloat(String(form.gst)) === g ? " on" : ""}`}
+                        style={{ padding: "6px 12px", fontSize: 11 }}
+                        onClick={() => setForm({ ...form, gst: g })}>
+                        {g}%
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* 2. Unit & Packaging */}
-              <div className="hd-card" id="unit">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">2</div>
-                  <div className="hd-sec-title">Unit & Packaging</div>
+              {/* Margin indicator */}
+              {margin() && (
+                <div style={{ marginBottom: 16, padding: "10px 14px", background: "#f0fdf4", borderRadius: 10, border: "1px solid #dcfce7", display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 11, color: "#6b7280" }}>Profit Margin:</span>
+                  <span className="aip-margin-badge" style={{ background: parseFloat(margin()!) > 20 ? "#dcfce7" : "#fef3c7", color: parseFloat(margin()!) > 20 ? "#166534" : "#92400e" }}>
+                    {margin()}%
+                  </span>
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                    (₹{(parseFloat(String(form.mrp)) - parseFloat(String(form.purchasePrice))).toFixed(2)} per unit)
+                  </span>
                 </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">Unit*</label>
-                    <input type="text" name="unit" value={form.unit} onChange={handleChange} required placeholder="e.g., pcs, box, bottle" className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Pack Size</label>
-                    <input type="text" name="packSize" value={form.packSize} onChange={handleChange} placeholder="e.g., 10 tablets per strip" className="hd-mi" />
-                  </div>
-                  <div style={{gridColumn: "span 2"}}>
-                    <label className="hd-ml">Unit Conversion (Optional)</label>
-                    <input type="text" name="conversion" value={form.conversion} onChange={handleChange} placeholder="1 Box = 10 strips" className="hd-mi" />
-                  </div>
+              )}
+
+              {/* Stock Row */}
+              <div className="aip-grid" style={{ marginBottom: 16 }}>
+                <div>
+                  <label className="aip-label">Opening Stock</label>
+                  <input type="number" name="openingStock" value={form.openingStock} onChange={handleChange} className="aip-input" min="0" />
+                </div>
+                <div>
+                  <label className="aip-label">Min Stock Alert <span>*</span></label>
+                  <input type="number" name="minStock" value={form.minStock} onChange={handleChange} required className="aip-input" min="0" />
+                </div>
+                <div>
+                  <label className="aip-label">Reorder Quantity</label>
+                  <input type="number" name="reorderQty" value={form.reorderQty} onChange={handleChange} className="aip-input" min="0" />
                 </div>
               </div>
 
-              {/* 3. Identification */}
-              <div className="hd-card" id="id">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">3</div>
-                  <div className="hd-sec-title">Identification</div>
+              {/* Selling Price + Discount */}
+              <div className="aip-grid-2">
+                <div>
+                  <label className="aip-label">Selling Price</label>
+                  <div style={{ position: "relative" }}>
+                    <span className="aip-money-sym">₹</span>
+                    <input type="number" name="sellingPrice" value={form.sellingPrice} onChange={handleChange} className="aip-input aip-input-money" placeholder="0" min="0" step="0.01" />
+                  </div>
                 </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">SKU Code (Optional)</label>
-                    <input type="text" name="sku" value={form.sku} onChange={handleChange} placeholder="Auto / Manual" className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Barcode / QR Code</label>
-                    <input type="text" name="barcode" value={form.barcode} onChange={handleChange} placeholder="Scan / Generate" className="hd-mi" />
-                  </div>
-                  <div style={{gridColumn: "span 2"}}>
-                    <label className="hd-ml">HSN Code / GST Code</label>
-                    <input type="text" name="hsnCode" value={form.hsnCode} onChange={handleChange} placeholder="For billing compliance" className="hd-mi" />
-                  </div>
+                <div>
+                  <label className="aip-label">Discount %</label>
+                  <input type="number" name="discount" value={form.discount} onChange={handleChange} className="aip-input" min="0" max="100" />
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* 4. Stock & Alerts */}
-              <div className="hd-card" id="stock">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">4</div>
-                  <div className="hd-sec-title">Stock & Alerts</div>
-                </div>
-                <div className="hd-grid" style={{gridTemplateColumns: "repeat(3, 1fr)"}}>
-                  <div>
-                    <label className="hd-ml">Opening Stock</label>
-                    <input type="number" name="openingStock" value={form.openingStock} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Min Stock Alert*</label>
-                    <input type="number" name="minStock" value={form.minStock} onChange={handleChange} required className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Max Stock Level</label>
-                    <input type="number" name="maxStock" value={form.maxStock} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Reorder Level</label>
-                    <input type="number" name="reorderLevel" value={form.reorderLevel} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Reorder Quantity</label>
-                    <input type="number" name="reorderQty" value={form.reorderQty} onChange={handleChange} className="hd-mi" />
-                  </div>
-                </div>
-              </div>
+          {/* ── Section 3: Advanced (Collapsible) ── */}
+          <div className="aip-card">
+            <button type="button" className="aip-expand-btn" onClick={() => setShowAdvanced(!showAdvanced)} style={{ borderTop: "none", padding: "16px 24px" }}>
+              <ChevronDown size={16} style={{ transform: showAdvanced ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+              {showAdvanced ? "Hide" : "Show"} Advanced Details
+              <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 400 }}>(batch, storage, compliance, identifiers)</span>
+            </button>
 
-              {/* 5. Purchase Details */}
-              <div className="hd-card" id="purchase">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">5</div>
-                  <div className="hd-sec-title">Purchase Details</div>
-                </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">Purchase Price (CP)</label>
-                    <div style={{position: 'relative'}}>
-                      <span style={{position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px'}}>₹</span>
-                      <input type="number" name="purchasePrice" value={form.purchasePrice} onChange={handleChange} style={{paddingLeft: '28px'}} className="hd-mi" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Supplier Name</label>
-                    <input type="text" name="supplierName" value={form.supplierName} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Preferred Vendor</label>
-                    <input type="text" name="preferredVendor" value={form.preferredVendor} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Purchase Unit</label>
-                    <input type="text" name="purchaseUnit" value={form.purchaseUnit} onChange={handleChange} placeholder="if different from selling unit" className="hd-mi" />
-                  </div>
-                </div>
-              </div>
+            {showAdvanced && (
+              <div className="aip-card-body" style={{ borderTop: "1px solid #f1f5f9" }}>
 
-              {/* 6. Pricing & Billing */}
-              <div className="hd-card" id="pricing">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">6</div>
-                  <div className="hd-sec-title">Pricing & Billing</div>
-                </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">MRP</label>
-                    <div style={{position: 'relative'}}>
-                      <span style={{position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px'}}>₹</span>
-                      <input type="number" name="mrp" value={form.mrp} onChange={handleChange} style={{paddingLeft: '28px'}} className="hd-mi" />
+                {/* Batch & Expiry */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Batch & Expiry</div>
+                  <div className="aip-grid">
+                    <div>
+                      <label className="aip-label">Batch Number</label>
+                      <input type="text" name="batchNumber" value={form.batchNumber} onChange={handleChange} placeholder="e.g., BT-2026-001" className="aip-input" />
                     </div>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Selling Price</label>
-                    <div style={{position: 'relative'}}>
-                      <span style={{position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px'}}>₹</span>
-                      <input type="number" name="sellingPrice" value={form.sellingPrice} onChange={handleChange} style={{paddingLeft: '28px'}} className="hd-mi" />
+                    <div>
+                      <label className="aip-label">Manufacturing Date</label>
+                      <input type="date" name="mfgDate" value={form.mfgDate} onChange={handleChange} className="aip-input" />
                     </div>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Discount (%)</label>
-                    <input type="number" name="discount" value={form.discount} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">GST (%)</label>
-                    <input type="number" name="gst" value={form.gst} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div style={{gridColumn: "span 2"}}>
-                    <label className="hd-ml">Billing Type</label>
-                    <div className="hd-radio-group">
-                      {["Tax Inclusive", "Tax Exclusive"].map(type => (
-                        <label key={type} className="hd-radio-label">
-                          <input type="radio" name="billingType" value={type} checked={form.billingType === type} onChange={handleChange} />
-                          {type}
-                        </label>
-                      ))}
+                    <div>
+                      <label className="aip-label">Expiry Date</label>
+                      <input type="date" name="expiryDate" value={form.expiryDate} onChange={handleChange} className="aip-input" />
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 7. Batch & Expiry */}
-              <div className="hd-card" id="batch">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">7</div>
-                  <div className="hd-sec-title">Batch & Expiry</div>
-                </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">Batch Number</label>
-                    <input type="text" name="batchNumber" value={form.batchNumber} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Manufacturing Date</label>
-                    <input type="date" name="mfgDate" value={form.mfgDate} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Expiry Date</label>
-                    <input type="date" name="expiryDate" value={form.expiryDate} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div>
-                    <label className="hd-ml">Expiry Alert (Days Before)</label>
-                    <input type="number" name="expiryAlertDays" value={form.expiryAlertDays} onChange={handleChange} className="hd-mi" />
+                {/* Identification */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Identification</div>
+                  <div className="aip-grid">
+                    <div>
+                      <label className="aip-label">SKU Code</label>
+                      <input type="text" name="sku" value={form.sku} onChange={handleChange} placeholder="Auto or manual" className="aip-input" />
+                    </div>
+                    <div>
+                      <label className="aip-label">Barcode</label>
+                      <input type="text" name="barcode" value={form.barcode} onChange={handleChange} placeholder="Scan or enter" className="aip-input" />
+                    </div>
+                    <div>
+                      <label className="aip-label">HSN Code</label>
+                      <input type="text" name="hsnCode" value={form.hsnCode} onChange={handleChange} placeholder="For GST billing" className="aip-input" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 8. Storage & Location */}
-              <div className="hd-card" id="storage">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">8</div>
-                  <div className="hd-sec-title">Storage & Location</div>
-                </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">Storage Location</label>
-                    <select name="location" value={form.location} onChange={handleChange} className="hd-mi">
-                      {["Pharmacy Store", "OT Store", "Ward Stock"].map(loc => (
-                        <option key={loc} value={loc}>{loc}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Rack / Shelf Number</label>
-                    <input type="text" name="rackNumber" value={form.rackNumber} onChange={handleChange} className="hd-mi" />
-                  </div>
-                  <div style={{gridColumn: "span 2"}}>
-                    <label className="hd-ml">Temperature Requirement</label>
-                    <div className="hd-radio-group">
-                      {["Room Temp", "Refrigerated"].map(temp => (
-                        <label key={temp} className="hd-radio-label">
-                          <input type="radio" name="tempRequirement" value={temp} checked={form.tempRequirement === temp} onChange={handleChange} />
-                          {temp}
-                        </label>
-                      ))}
+                {/* Storage */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Storage</div>
+                  <div className="aip-grid">
+                    <div>
+                      <label className="aip-label">Storage Location</label>
+                      <input type="text" name="location" value={form.location} onChange={handleChange} className="aip-input" />
+                    </div>
+                    <div>
+                      <label className="aip-label">Rack / Shelf</label>
+                      <input type="text" name="rackNumber" value={form.rackNumber} onChange={handleChange} placeholder="e.g., A3-Shelf 2" className="aip-input" />
+                    </div>
+                    <div>
+                      <label className="aip-label">Temperature</label>
+                      <select name="tempRequirement" value={form.tempRequirement} onChange={handleChange} className="aip-input">
+                        {TEMP_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 9. Compliance & Safety */}
-              <div className="hd-card" id="compliance">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">9</div>
-                  <div className="hd-sec-title">Compliance & Safety</div>
-                </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">Drug Schedule Type</label>
-                    <select name="drugSchedule" value={form.drugSchedule} onChange={handleChange} className="hd-mi">
-                      {["Schedule H", "Schedule X", "OTC"].map(sch => (
-                        <option key={sch} value={sch}>{sch}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Requires Prescription</label>
-                    <div className="hd-radio-group">
-                      {["Yes", "No"].map(opt => (
-                        <label key={opt} className="hd-radio-label">
-                          <input type="radio" name="requiresRx" value={opt} checked={form.requiresRx === opt} onChange={handleChange} />
-                          {opt}
-                        </label>
-                      ))}
+                {/* Packaging */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Packaging</div>
+                  <div className="aip-grid-2">
+                    <div>
+                      <label className="aip-label">Pack Size</label>
+                      <input type="text" name="packSize" value={form.packSize} onChange={handleChange} placeholder="e.g., 10 tablets per strip" className="aip-input" />
+                    </div>
+                    <div>
+                      <label className="aip-label">Unit Conversion</label>
+                      <input type="text" name="conversion" value={form.conversion} onChange={handleChange} placeholder="e.g., 1 Box = 10 strips" className="aip-input" />
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 10. Status & Control */}
-              <div className="hd-card" id="status">
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">10</div>
-                  <div className="hd-sec-title">Status & Control</div>
-                </div>
-                <div className="hd-grid">
-                  <div>
-                    <label className="hd-ml">Item Status</label>
-                    <div className="hd-radio-group">
-                      {["Active", "Inactive"].map(st => (
-                        <label key={st} className="hd-radio-label">
-                          <input type="radio" name="status" value={st} checked={form.status === st} onChange={handleChange} />
-                          {st}
-                        </label>
-                      ))}
+                {/* Compliance & Flags */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Compliance & Flags</div>
+                  <div className="aip-grid">
+                    <div>
+                      <label className="aip-label">Drug Schedule</label>
+                      <select name="drugSchedule" value={form.drugSchedule} onChange={handleChange} className="aip-input">
+                        {DRUG_SCHEDULES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
                     </div>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Is Returnable</label>
-                    <div className="hd-radio-group">
-                      {["Yes", "No"].map(opt => (
-                        <label key={opt} className="hd-radio-label">
-                          <input type="radio" name="isReturnable" value={opt} checked={form.isReturnable === opt} onChange={handleChange} />
-                          {opt}
-                        </label>
-                      ))}
+                    <div>
+                      <label className="aip-label">Requires Prescription</label>
+                      <div className="aip-radio-row">
+                        {["Yes", "No"].map(o => (
+                          <button key={o} type="button" className={`aip-radio-pill${form.requiresRx === o ? " on" : ""}`} onClick={() => setForm({ ...form, requiresRx: o })}>{o}</button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="hd-ml">Is Critical Item</label>
-                    <div className="hd-radio-group">
-                      {["Yes", "No"].map(opt => (
-                        <label key={opt} className="hd-radio-label">
-                          <input type="radio" name="isCritical" value={opt} checked={form.isCritical === opt} onChange={handleChange} />
-                          {opt}
-                        </label>
-                      ))}
+                    <div>
+                      <label className="aip-label">Is Critical</label>
+                      <div className="aip-radio-row">
+                        {["Yes", "No"].map(o => (
+                          <button key={o} type="button" className={`aip-radio-pill${form.isCritical === o ? " on" : ""}`} onClick={() => setForm({ ...form, isCritical: o })}>{o}</button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 11. Additional Info */}
-              <div className="hd-card" id="extra" style={{marginBottom: '80px'}}>
-                <div className="hd-sec-head">
-                  <div className="hd-sec-num">11</div>
-                  <div className="hd-sec-title">Additional Info</div>
+                {/* Billing & Status */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Billing & Status</div>
+                  <div className="aip-grid">
+                    <div>
+                      <label className="aip-label">Billing Type</label>
+                      <div className="aip-radio-row">
+                        {["Tax Inclusive", "Tax Exclusive"].map(t => (
+                          <button key={t} type="button" className={`aip-radio-pill${form.billingType === t ? " on" : ""}`} onClick={() => setForm({ ...form, billingType: t })}>{t}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="aip-label">Status</label>
+                      <div className="aip-radio-row">
+                        {["Active", "Inactive"].map(s => (
+                          <button key={s} type="button" className={`aip-radio-pill${form.status === s ? " on" : ""}`} onClick={() => setForm({ ...form, status: s })}>{s}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="aip-label">Returnable</label>
+                      <div className="aip-radio-row">
+                        {["Yes", "No"].map(o => (
+                          <button key={o} type="button" className={`aip-radio-pill${form.isReturnable === o ? " on" : ""}`} onClick={() => setForm({ ...form, isReturnable: o })}>{o}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                  <div>
-                    <label className="hd-ml">Description / Notes</label>
-                    <textarea name="description" value={form.description} onChange={handleChange} rows={4} className="hd-mi" style={{resize: 'none'}} />
+
+                {/* Notes & Image */}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Notes & Image</div>
+                  <div style={{ marginBottom: 14 }}>
+                    <label className="aip-label">Description</label>
+                    <textarea name="description" value={form.description} onChange={handleChange} rows={3} className="aip-input" style={{ resize: "none" }} placeholder="Optional notes about this item..." />
                   </div>
                   <div>
-                    <label className="hd-ml">Upload Image (Optional)</label>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <div 
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`hd-upload-box ${uploading ? 'opacity-50 cursor-wait' : ''}`}
-                    >
+                    <label className="aip-label">Image</label>
+                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" style={{ display: "none" }} />
+                    <div className="aip-upload" onClick={() => fileInputRef.current?.click()}>
                       {uploading ? (
-                        <div className="flex flex-col items-center">
-                          <Loader2 size={24} className="animate-spin text-blue-600 mb-2" />
-                          <p className="text-sm font-semibold text-slate-700">Uploading...</p>
-                        </div>
+                        <div><Loader2 size={20} className="aip-spin" style={{ margin: "0 auto 8px", display: "block" }} /><div style={{ fontSize: 12, color: "#475569" }}>Uploading...</div></div>
                       ) : form.image ? (
-                        <div className="relative group">
-                          <img 
-                            src={form.image} 
-                            alt="Preview" 
-                            className="h-32 w-32 object-cover rounded-xl mx-auto border border-slate-200" 
-                          />
-                          <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <p className="text-white text-xs font-bold">Change Image</p>
-                          </div>
+                        <div>
+                          <img src={form.image} alt="Preview" style={{ height: 80, width: 80, objectFit: "cover", borderRadius: 12, border: "1px solid #e2e8f0", margin: "0 auto 8px", display: "block" }} />
+                          <div style={{ fontSize: 11, color: "#64748b" }}>Click to change</div>
                         </div>
                       ) : (
-                        <>
-                          <div className="hd-upload-icon"><Upload size={24} /></div>
-                          <div className="hd-upload-text">Click to upload or drag and drop</div>
-                          <div className="hd-upload-sub">PNG, JPG or WEBP (max. 5MB)</div>
-                        </>
+                        <div>
+                          <div style={{ width: 40, height: 40, background: "#f1f5f9", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", color: "#94a3b8" }}><Upload size={18} /></div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>Upload Image</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>PNG, JPG or WEBP (max 5MB)</div>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div>
-                    <label className="hd-ml">Document Attachments</label>
-                    <button type="button" className="hd-btn-sec" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <Plus size={16} /> Add Documents
-                    </button>
-                  </div>
                 </div>
               </div>
-
-              <div style={{position: 'fixed', bottom: '0', left: '240px', right: '0', background: '#fff', borderTop: '1px solid #e2e8f0', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px', zIndex: '30'}}>
-                 <button type="button" onClick={() => router.back()} className="hd-btn-sec">Cancel</button>
-                 <button type="submit" disabled={saving} className="hd-btn-primary" style={{padding: '10px 40px'}}>
-                    {saving ? <span className="hd-spin" /> : "Save Item & Finish"}
-                 </button>
-              </div>
-            </form>
+            )}
           </div>
-        </main>
+
+          {/* ── Sticky Footer ── */}
+          <div style={{ position: "sticky", bottom: 0, background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 -4px 20px rgba(0,0,0,0.06)", zIndex: 10 }}>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>
+              {form.name ? <span style={{ color: "#1e293b", fontWeight: 600 }}>{form.name}</span> : "Fill in item details"}
+              {form.category && <span> · {form.category}</span>}
+              {parseFloat(String(form.mrp)) > 0 && <span> · ₹{form.mrp}</span>}
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" className="aip-btn-ghost" onClick={() => router.back()}>Cancel</button>
+              <button type="submit" className="aip-btn-primary" disabled={saving || !form.name}>
+                {saving ? <span className="aip-spin" /> : <Save size={15} />}
+                {saving ? "Saving..." : "Save Item"}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </>
   );

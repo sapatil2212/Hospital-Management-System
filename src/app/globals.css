@@ -202,10 +202,10 @@ input, textarea {
 }
 
 .section-subtitle {
-  font-size: var(--font-size-base);
-  color: var(--gray-500);
-  line-height: 1.5;
-  max-width: 600px;
+  font-size: var(--font-size-lg);
+  color: var(--gray-600);
+  line-height: 1.6;
+  max-width: 700px;
   margin: 0 auto;
 }
 

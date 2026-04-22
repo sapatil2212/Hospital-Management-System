@@ -1,0 +1,1752 @@
+/*!*****************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./src/app/globals.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************/
+/* ========================================
+   HEALTHCARE SAAS LANDING PAGE
+   Design System & Global Styles
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ---------- CSS Custom Properties ---------- */
+:root {
+  /* Primary Colors - Teal */
+  --primary: #0E898F;
+  --primary-dark: #0A6B70;
+  --primary-light: #14A3A8;
+  --primary-50: #E6F4F4;
+  --primary-100: #B3E0E0;
+  --primary-200: #80CCCC;
+  --primary-600: #0A6B70;
+  --primary-700: #07595D;
+  --primary-800: #054749;
+  --primary-900: #033536;
+
+  /* Neutral Colors */
+  --white: #FFFFFF;
+  /* Background Colors */
+  --bg-light: #F8FAFC;
+  --bg-blue: #E6F4F4;
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* Accent Colors */
+  --success: #10B981;
+  --success-light: #D1FAE5;
+  --warning: #F59E0B;
+  --warning-light: #FEF3C7;
+  --error: #EF4444;
+  --error-light: #FEE2E2;
+  --accent-purple: #8B5CF6;
+  --accent-purple-light: #EDE9FE;
+  --accent-teal: #14B8A6;
+  --accent-teal-light: #CCFBF1;
+  --accent-pink: #EC4899;
+  --accent-pink-light: #FCE7F3;
+  --accent-orange: #F97316;
+  --accent-orange-light: #FFF7ED;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  --font-size-6xl: 3.5rem;
+
+  /* Spacing (8px grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.08);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+  --shadow-blue: 0 10px 30px rgba(14, 137, 143, 0.2);
+  --shadow-blue-lg: 0 20px 40px rgba(14, 137, 143, 0.3);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Glass effect */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: 20px;
+}
+
+/* ---------- CSS Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--gray-800);
+  background-color: var(--white);
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: var(--font-family);
+}
+
+input, textarea {
+  font-family: var(--font-family);
+  outline: none;
+  border: none;
+}
+
+/* ---------- Container ---------- */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* ---------- Section ---------- */
+.section {
+  padding: var(--space-24) 0;
+}
+
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: rgba(14, 137, 143, 0.06);
+  color: var(--primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+  letter-spacing: 0.02em;
+}
+
+.section-label svg {
+  width: 16px;
+  height: 16px;
+}
+
+.section-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1.2;
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--gray-600);
+  line-height: 1.6;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-8);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%,
+    transparent 100%
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.btn:hover::after {
+  opacity: 1;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+  box-shadow: var(--shadow-blue);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-blue-lg);
+}
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--gray-800);
+  border: 2px solid var(--gray-200);
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-10);
+  font-size: var(--font-size-lg);
+}
+
+.btn-sm {
+  padding: var(--space-2) var(--space-6);
+  font-size: var(--font-size-sm);
+}
+
+/* ---------- Glass Card ---------- */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---------- Card ---------- */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-base);
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ---------- Animations ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delay {
+  animation: float 6s ease-in-out infinite 2s;
+}
+
+.animate-float-delay-2 {
+  animation: float 6s ease-in-out infinite 4s;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+  .section-title {
+    font-size: var(--font-size-3xl);
+  }
+  .section {
+    padding: var(--space-16) 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--space-4);
+  }
+  .section-title {
+    font-size: var(--font-size-2xl);
+  }
+  .section-subtitle {
+    font-size: var(--font-size-base);
+  }
+  .section {
+    padding: var(--space-12) 0;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin-anim { animation: spin .7s linear infinite; }
+
+/*!********************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/ai-chatbot.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************/
+.ai-chatbot_container__SJxtb {
+  position: fixed;
+  right: 24px;
+  bottom: 100px; /* Positioned above the WhatsApp widget (60px height + spacing) */
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.ai-chatbot_trigger__MlSio {
+  pointer-events: auto;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #0E898F; /* Primary clinic color */
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(14, 137, 143, 0.3);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.ai-chatbot_triggerActive__DYQqa {
+  background: #ff4d4d;
+  box-shadow: 0 4px 16px rgba(255, 77, 77, 0.3);
+}
+
+.ai-chatbot_trigger__MlSio:hover {
+  transform: scale(1.1);
+}
+
+.ai-chatbot_badge__WODZw {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ff4d4d;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.ai-chatbot_chatWindow__BsdHC {
+  pointer-events: auto;
+  width: 360px;
+  height: 520px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: ai-chatbot_slideUp__Xitj_ 0.3s ease-out;
+}
+
+@keyframes ai-chatbot_slideUp__Xitj_ {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-chatbot_header__3PIx8 {
+  padding: 20px;
+  background: #0E898F;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-chatbot_headerInfo__m3pcu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-chatbot_headerIcon__X1zev {
+  color: #a8f0f3;
+}
+
+.ai-chatbot_headerTitle__v_z4O {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ai-chatbot_headerStatus__U8IBD {
+  font-size: 12px;
+  margin: 2px 0 0;
+  opacity: 0.9;
+}
+
+.ai-chatbot_closeBtn__N5qpm {
+  background: transparent;
+  border: none;
+  color: white;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ai-chatbot_closeBtn__N5qpm:hover {
+  opacity: 1;
+}
+
+.ai-chatbot_messagesContainer__xSU_S {
+  flex: 1 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+}
+
+.ai-chatbot_messageWrapper__B2Pae {
+  display: flex;
+  gap: 10px;
+  max-width: 85%;
+}
+
+.ai-chatbot_userWrapper__yNyw1 {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.ai-chatbot_botWrapper__ClnMX {
+  align-self: flex-start;
+}
+
+.ai-chatbot_avatar__vfi6_ {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.ai-chatbot_userWrapper__yNyw1 .ai-chatbot_avatar__vfi6_ {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.ai-chatbot_botWrapper__ClnMX .ai-chatbot_avatar__vfi6_ {
+  background: #0E898F;
+  color: white;
+}
+
+.ai-chatbot_messageBubble__wxjoF {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.ai-chatbot_userWrapper__yNyw1 .ai-chatbot_messageBubble__wxjoF {
+  background: #0E898F;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-chatbot_botWrapper__ClnMX .ai-chatbot_messageBubble__wxjoF {
+  background: white;
+  color: #334155;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ai-chatbot_loadingBubble__npME7 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.ai-chatbot_spin__vWl4Q {
+  animation: ai-chatbot_spin__vWl4Q 1s linear infinite;
+}
+
+@keyframes ai-chatbot_spin__vWl4Q {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ai-chatbot_inputArea__PAZdg {
+  padding: 16px 20px;
+  background: white;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ai-chatbot_input__ib5rw {
+  flex: 1 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ai-chatbot_input__ib5rw:focus {
+  border-color: #0E898F;
+}
+
+.ai-chatbot_sendBtn__AKhvD {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #0E898F;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-chatbot_sendBtn__AKhvD:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.ai-chatbot_sendBtn__AKhvD:not(:disabled):hover {
+  background: #0b7176;
+  transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ai-chatbot_container__SJxtb {
+    right: 12px;
+    bottom: 104px;
+  }
+
+  .ai-chatbot_trigger__MlSio {
+    width: 42px;
+    height: 42px;
+  }
+
+  .ai-chatbot_trigger__MlSio svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ai-chatbot_badge__WODZw {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    top: -3px;
+    right: -3px;
+  }
+
+  .ai-chatbot_chatWindow__BsdHC {
+    width: calc(100vw - 24px);
+    height: 380px;
+    position: fixed;
+    bottom: 155px;
+    right: 12px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .ai-chatbot_header__3PIx8 {
+    padding: 14px 16px;
+  }
+
+  .ai-chatbot_headerTitle__v_z4O {
+    font-size: 14px;
+  }
+
+  .ai-chatbot_headerStatus__U8IBD {
+    font-size: 10px;
+  }
+
+  .ai-chatbot_messagesContainer__xSU_S {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .ai-chatbot_messageBubble__wxjoF {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+
+  .ai-chatbot_avatar__vfi6_ {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ai-chatbot_inputArea__PAZdg {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .ai-chatbot_input__ib5rw {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .ai-chatbot_sendBtn__AKhvD {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+}
+
+/*!**************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/AppointmentModal.module.css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************************/
+/* ─── Overlay ─── */
+.AppointmentModal_overlay__z5CQA {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* ─── Modal ─── */
+.AppointmentModal_modal__KJrrN {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 680px;
+  min-height: 420px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.AppointmentModal_closeBtn__Jq8yP {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.AppointmentModal_closeBtn__Jq8yP:hover {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+/* ─── Success ─── */
+.AppointmentModal_successOverlay__XZ1Wi {
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  text-align: center;
+  padding: var(--space-8);
+}
+
+.AppointmentModal_successIcon__v_t4q {
+  color: var(--success);
+  margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_successOverlay__XZ1Wi h3 {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.AppointmentModal_successOverlay__XZ1Wi p {
+  font-size: var(--font-size-base);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* ─── Stepper ─── */
+.AppointmentModal_stepper__XhwRH {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: var(--space-6) var(--space-8) var(--space-4);
+  border-bottom: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+
+.AppointmentModal_stepItem__MkHr0 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1;
+  position: relative;
+}
+
+.AppointmentModal_stepCircle__8atHH {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.AppointmentModal_stepLabel__tT_Fn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  max-width: 100px;
+  line-height: 1.3;
+  transition: color 0.3s ease;
+}
+
+.AppointmentModal_stepLine__CDlTA {
+  flex: 1 1;
+  height: 2px;
+  background: var(--gray-200);
+  margin: 0 var(--space-2);
+  border-radius: 1px;
+  transition: background 0.3s ease;
+}
+
+.AppointmentModal_stepLineDone__OYA62 {
+  background: var(--primary);
+}
+
+.AppointmentModal_stepActive__jfLkh .AppointmentModal_stepCircle__8atHH {
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+.AppointmentModal_stepActive__jfLkh .AppointmentModal_stepLabel__tT_Fn {
+  color: var(--gray-700);
+}
+
+.AppointmentModal_stepCurrent__DyVem .AppointmentModal_stepCircle__8atHH {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 0 0 4px var(--primary-100);
+}
+
+.AppointmentModal_stepCurrent__DyVem .AppointmentModal_stepLabel__tT_Fn {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ─── Step Body (scrollable) ─── */
+.AppointmentModal_stepBody__VSpBd {
+  flex: 1 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8);
+}
+
+.AppointmentModal_stepTitle__e8C78 {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_stepSubtext__Xwp4h {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  margin-bottom: var(--space-6);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+/* ─── Form Layout ─── */
+.AppointmentModal_formRow__1eprd {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-4);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* ─── Field ─── */
+.AppointmentModal_field__Fw8PL {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  position: relative;
+}
+
+.AppointmentModal_fieldFocused__n3124 .AppointmentModal_inputWrap__tv3Sa {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.AppointmentModal_fieldFocused__n3124 .AppointmentModal_label__dWlX8 {
+  color: var(--primary);
+}
+
+.AppointmentModal_fieldError__JKRe8 .AppointmentModal_inputWrap__tv3Sa {
+  border-color: var(--error) !important;
+}
+
+.AppointmentModal_fieldError__JKRe8 .AppointmentModal_label__dWlX8 {
+  color: var(--error) !important;
+}
+
+.AppointmentModal_label__dWlX8 {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--gray-600);
+  transition: color var(--transition-fast);
+}
+
+.AppointmentModal_inputWrap__tv3Sa {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: var(--white);
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_fieldIconWrap__oLWRP {
+  color: var(--gray-400);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.AppointmentModal_textareaIcon__4NSOv {
+  align-self: flex-start;
+  margin-top: var(--space-3);
+}
+
+.AppointmentModal_input__soHVO {
+  flex: 1 1;
+  padding: 6px var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  background: transparent;
+}
+
+.AppointmentModal_input__soHVO::placeholder {
+  color: var(--gray-400);
+  font-size: 11px;
+}
+
+.AppointmentModal_textarea__iuw_a {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.AppointmentModal_errorMsg__ZXDyA {
+  font-size: var(--font-size-xs);
+  color: var(--error);
+  font-weight: 500;
+}
+
+/* ─── Custom Select ─── */
+.AppointmentModal_customSelect__qrvpO {
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.AppointmentModal_customSelect__qrvpO:hover {
+  border-color: var(--gray-300);
+}
+
+.AppointmentModal_selectValue__rYtB1 {
+  flex: 1 1;
+  padding: 6px var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.AppointmentModal_placeholder__a4r07 {
+  color: var(--gray-400);
+}
+
+.AppointmentModal_selectChevron__VDXW1 {
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.AppointmentModal_selectChevronOpen__zguPC {
+  transform: rotate(180deg);
+}
+
+/* ─── Dropdown Panel ─── */
+.AppointmentModal_dropdownPanel__138J_ {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  padding: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+  transform-origin: bottom center;
+}
+
+/* ─── Dropdown Option ─── */
+.AppointmentModal_dropdownOption__yKSGy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--gray-700);
+  cursor: pointer;
+  background: none;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_dropdownOption__yKSGy:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_dropdownOptionSelected__ootID {
+  background: var(--primary-50);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.AppointmentModal_optionIcon__CIbQM {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_dropdownOption__yKSGy:hover .AppointmentModal_optionIcon__CIbQM,
+.AppointmentModal_dropdownOptionSelected__ootID .AppointmentModal_optionIcon__CIbQM {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.AppointmentModal_optionLabel__zgrxT {
+  flex: 1 1;
+}
+
+.AppointmentModal_optionDesc__hgOwG {
+  display: block;
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 1px;
+}
+
+.AppointmentModal_dropdownOptionSelected__ootID .AppointmentModal_optionDesc__hgOwG {
+  color: var(--primary-300);
+}
+
+.AppointmentModal_optionCheck__ZSqRk {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* ─── Calendar ─── */
+.AppointmentModal_calendarInner__zbdYQ {
+  padding: var(--space-1);
+}
+
+.AppointmentModal_calNav__Xz9EB {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.AppointmentModal_calNavBtn__MMVPL {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_calNavBtn__MMVPL:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_calNavTitle__2FRrQ {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.AppointmentModal_calDayNames__zN9o4 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 2px;
+}
+
+.AppointmentModal_calDayName___UnVE {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  padding: 4px 0;
+}
+
+.AppointmentModal_calGrid__HeCOh {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-gap: 2px;
+  gap: 2px;
+}
+
+.AppointmentModal_calDay__eLBQW {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-700);
+  background: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.AppointmentModal_calDay__eLBQW:hover:not(:disabled) {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.AppointmentModal_calDayOther__H3pnW {
+  color: var(--gray-300);
+}
+
+.AppointmentModal_calDayDisabled__TV1WK {
+  color: var(--gray-200) !important;
+  cursor: not-allowed;
+}
+
+.AppointmentModal_calDayToday__gIpaE {
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.AppointmentModal_calDaySelected__X3zJW {
+  background: var(--primary) !important;
+  color: var(--white) !important;
+  border-color: var(--primary) !important;
+  font-weight: 700;
+}
+
+/* ─── Time ─── */
+
+.AppointmentModal_timeGroup__7MCKA {
+  padding: var(--space-2);
+}
+
+.AppointmentModal_timeGroup__7MCKA+.AppointmentModal_timeGroup__7MCKA {
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_timeGroupLabel__DNa_E {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-400);
+  margin-bottom: var(--space-2);
+  padding-left: 2px;
+}
+
+.AppointmentModal_timeGrid__Lum9X {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: var(--space-2);
+  gap: var(--space-2);
+}
+
+.AppointmentModal_timeChip__wfNF8 {
+  padding: 6px 4px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-600);
+  background: var(--bg-light);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.AppointmentModal_timeChip__wfNF8:hover {
+  background: var(--primary-50);
+  color: var(--primary);
+  border-color: var(--primary-100);
+}
+
+.AppointmentModal_timeChipSelected__3kxfT {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.AppointmentModal_timeChipSelected__3kxfT:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+/* Custom time */
+.AppointmentModal_customTimeSection__tA6op {
+  padding: var(--space-2);
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_customTimeRow__7foVV {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.AppointmentModal_customTimeInput__2Dihw {
+  flex: 1 1;
+  padding: 6px var(--space-3);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  background: var(--bg-light);
+  transition: border-color var(--transition-fast);
+}
+
+.AppointmentModal_customTimeInput__2Dihw:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.AppointmentModal_customTimeConfirm__uL9TS {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px var(--space-3);
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.AppointmentModal_customTimeConfirm__uL9TS:hover {
+  background: var(--primary-dark);
+}
+
+/* ─── Footer ─── */
+.AppointmentModal_footer__1qAHF {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-8);
+  border-top: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+
+.AppointmentModal_footerSpacer__tXVsk {
+  flex: 1 1;
+}
+
+.AppointmentModal_footerBtn__A8Dqp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.AppointmentModal_confirmBtn__KRn8L {
+  padding: var(--space-3) var(--space-6) !important;
+}
+
+.AppointmentModal_spinner__PMmdd {
+  animation: AppointmentModal_spin__70hc_ 1s linear infinite;
+}
+
+@keyframes AppointmentModal_spin__70hc_ {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Step 3 Summary ─── */
+.AppointmentModal_confirmSubtext__CygaR {
+  font-size: var(--font-size-sm);
+  color: var(--gray-400);
+  margin-bottom: var(--space-4);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.AppointmentModal_summaryCard__Ohy5_ {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.AppointmentModal_summarySection__y97Nf {
+  padding: var(--space-4);
+}
+
+.AppointmentModal_summarySection__y97Nf+.AppointmentModal_summarySection__y97Nf {
+  border-top: 1px solid var(--gray-100);
+}
+
+.AppointmentModal_summarySectionHeader__VDD6s {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.AppointmentModal_summarySectionHeader__VDD6s span {
+  flex: 1 1;
+}
+
+.AppointmentModal_editBtn__WJ_I0 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  background: var(--primary-50);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.AppointmentModal_editBtn__WJ_I0:hover {
+  background: var(--primary-100);
+}
+
+.AppointmentModal_summaryGrid__zADZf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-4);
+}
+
+.AppointmentModal_summaryItem__H4gpY {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.AppointmentModal_summaryItemFull__uuDv9 {
+  grid-column: 1 / -1;
+}
+
+.AppointmentModal_summaryLabel__dr8WO {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.AppointmentModal_summaryValue__DgQaz {
+  font-size: var(--font-size-sm);
+  color: var(--gray-800);
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ─── Appointment Details ─── */
+.AppointmentModal_slotsSection__Cy93T {
+  margin-bottom: var(--space-4);
+}
+
+.AppointmentModal_noSlots__Vi0zi {
+  font-size: var(--font-size-sm);
+  color: var(--error);
+  padding: var(--space-3);
+  background: var(--error-50);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.AppointmentModal_timeChipDisabled__ewUJJ {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--gray-100);
+  color: var(--gray-400);
+  text-decoration: line-through;
+}
+
+.AppointmentModal_submitError__eLG9F {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .AppointmentModal_modal__KJrrN {
+    max-height: 95vh;
+  }
+
+  .AppointmentModal_stepper__XhwRH {
+    padding: var(--space-4);
+    gap: 0;
+  }
+
+  .AppointmentModal_stepLabel__tT_Fn {
+    display: none;
+  }
+
+  .AppointmentModal_stepBody__VSpBd {
+    padding: var(--space-4);
+  }
+
+  .AppointmentModal_footer__1qAHF {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .AppointmentModal_formRow__1eprd {
+    grid-template-columns: 1fr;
+  }
+
+  .AppointmentModal_summaryGrid__zADZf {
+    grid-template-columns: 1fr;
+  }
+
+  .AppointmentModal_timeGrid__Lum9X {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/*!****************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/mobile-appointment.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************/
+.mobile-appointment_mobileContainer__pUH1D {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 999;
+}
+
+.mobile-appointment_buttonGroup__n_xj8 {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.mobile-appointment_appointmentButton__248jk,
+.mobile-appointment_contactButton__nZcxh {
+  flex: 1 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mobile-appointment_appointmentButton__248jk {
+  background: #0E898F; /* Primary clinic color */
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(14, 137, 143, 0.2);
+}
+
+.mobile-appointment_contactButton__nZcxh {
+  background: #ffffff;
+  color: #0E898F;
+  border: 1px solid rgba(14, 137, 143, 0.2);
+}
+
+.mobile-appointment_appointmentButton__248jk:active,
+.mobile-appointment_contactButton__nZcxh:active {
+  transform: scale(0.98);
+}
+
+.mobile-appointment_appointmentButton__248jk:active {
+  background: #0b7176;
+}
+
+.mobile-appointment_contactButton__nZcxh:active {
+  background: #f0f9fa;
+}
+
+.mobile-appointment_icon__MEzih {
+  flex-shrink: 0;
+}
+
+/* Show only on mobile devices */
+@media (max-width: 768px) {
+  .mobile-appointment_mobileContainer__pUH1D {
+    display: block;
+  }
+}
+
+/*!*******************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/Preloader.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************/
+.Preloader_preloader__2Iqze {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.Preloader_content__ikS4k {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.Preloader_logoWrapper__u_Szo {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Preloader_logo__mWOw6 {
+  object-fit: contain;
+}
+
+.Preloader_loaderLine__JecIe {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  width: 150px;
+  max-width: 150px;
+  border-radius: var(--radius-full);
+}
+
+.Preloader_loadingText__mAGyk {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/*!*************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/whatsapp-widget.module.css ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************/
+.whatsapp-widget_whatsappWidget__V__cK {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 60px;
+  height: 60px;
+  background-color: #25d366; /* WhatsApp green */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-decoration: none;
+}
+
+.whatsapp-widget_whatsappLogo__Swtjc {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.whatsapp-widget_whatsappWidget__V__cK:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.whatsapp-widget_whatsappWidget__V__cK:hover .whatsapp-widget_tooltip__JR68L {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-10px);
+}
+
+.whatsapp-widget_iconWrapper__8Ol_M {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.whatsapp-widget_tooltip__JR68L {
+  position: absolute;
+  right: 100%;
+  background: #333;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+/* Adjust for mobile view when the bottom sticky bar is visible */
+@media (max-width: 768px) {
+  .whatsapp-widget_whatsappWidget__V__cK {
+    right: 12px;
+    bottom: 56px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .whatsapp-widget_whatsappLogo__Swtjc {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  
+  .whatsapp-widget_whatsappWidget__V__cK:hover .whatsapp-widget_tooltip__JR68L {
+    display: none;
+  }
+}
+

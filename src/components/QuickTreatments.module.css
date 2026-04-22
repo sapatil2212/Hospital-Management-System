@@ -1,5 +1,5 @@
 .section {
-  padding: 1rem 0 1.5rem;
+  padding: 2.5rem 0 1.5rem; /* Increased top padding from 0 to 2.5rem */
   background: #ffffff;
 }
 

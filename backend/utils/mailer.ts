@@ -171,6 +171,53 @@ export const sendAppointmentConfirmation = async (opts: {
   });
 };
 
+export const sendDeptCredentials = async (opts: {
+  to: string;
+  name: string;
+  email: string;
+  password: string;
+  deptName: string;
+  deptType: string;
+  hospitalName: string;
+  loginUrl: string;
+}) => {
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
+    to: opts.to,
+    subject: `Your Department Head Portal Credentials – ${opts.hospitalName}`,
+    html: `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#0E898F,#07595D);padding:32px 24px;text-align:center;">
+          <h1 style="color:#fff;font-size:22px;margin:0;">🏥 ${opts.hospitalName}</h1>
+          <p style="color:#B3E0E0;margin:8px 0 0;font-size:14px;">${opts.deptName} — Department Head Portal</p>
+        </div>
+        <div style="padding:32px 24px;">
+          <h2 style="color:#1e293b;font-size:18px;margin:0 0 8px;">Welcome, ${opts.name}!</h2>
+          <p style="color:#64748b;font-size:14px;line-height:1.6;">Your <strong>${opts.deptName}</strong> department head portal access has been created. Use the credentials below to log in and manage your department and all its sub-departments.</p>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin:24px 0;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;width:120px;">Email</td>
+                <td style="font-size:13px;color:#1e293b;padding:8px 0;">${opts.email}</td>
+              </tr>
+              <tr>
+                <td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Password</td>
+                <td style="font-size:13px;color:#1e293b;padding:8px 0;font-family:monospace;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;">${opts.password}</td>
+              </tr>
+              <tr>
+                <td style="font-size:13px;color:#64748b;padding:8px 0;font-weight:600;">Department</td>
+                <td style="font-size:13px;color:#1e293b;padding:8px 0;">${opts.deptName} (${opts.deptType})</td>
+              </tr>
+            </table>
+          </div>
+          <a href="${opts.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#0E898F,#07595D);color:#fff;text-decoration:none;padding:12px 28px;border-radius:9px;font-size:14px;font-weight:700;">Login to Department Portal →</a>
+          <p style="color:#94a3b8;font-size:12px;margin-top:24px;">For security, please change your password after your first login. If you didn't expect this email, contact your hospital administrator.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
 export const sendSubDeptCredentials = async (opts: {
   to: string;
   name: string;

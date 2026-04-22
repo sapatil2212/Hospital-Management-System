@@ -51,24 +51,46 @@ export const deleteSupplier = async (id: string, hospitalId: string) => {
 
 // --- Purchases ---
 export const createPurchaseOrder = async (hospitalId: string, data: any) => {
-  const { supplierId, items, purchaseNo, notes } = data;
+  const { supplierId, items, purchaseNo, notes, invoiceNumber, invoiceDate,
+    paymentType, paymentMethod, amountPaid, dueDate, transactionId, discount, taxPercent } = data;
   
-  const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const discountAmt = discount || 0;
+  const taxAmt = ((subtotal - discountAmt) * (taxPercent || 0)) / 100;
+  const grandTotal = subtotal - discountAmt + taxAmt;
 
-  const purchaseData = {
+  const isPaid = paymentType === "PAID";
+  const purchaseData: any = {
     hospitalId,
-    supplierId,
+    supplierId: supplierId || null,
     purchaseNo,
-    totalAmount,
-    status: "COMPLETED", // Assuming immediate completion for now
-    notes
+    totalAmount: subtotal,
+    discount: discountAmt,
+    taxPercent: taxPercent || 0,
+    taxAmount: taxAmt,
+    grandTotal,
+    status: "COMPLETED",
+    notes,
+    invoiceNumber: invoiceNumber || null,
+    invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
+    paymentType: paymentType || "CREDIT",
+    paymentStatus: isPaid ? "PAID" : "PENDING",
+    paymentMethod: paymentMethod || null,
+    amountPaid: isPaid ? (amountPaid || grandTotal) : (amountPaid || 0),
+    paidAt: isPaid ? new Date() : null,
+    transactionId: transactionId || null,
+    dueDate: !isPaid && dueDate ? new Date(dueDate) : null,
   };
 
   return repo.createPurchase(purchaseData, items);
 };
 
-export const getPurchases = async (hospitalId: string) => {
-  return repo.findAllPurchases(hospitalId);
+export const getPurchases = async (hospitalId: string, paymentStatus?: string) => {
+  return repo.findAllPurchases(hospitalId, paymentStatus);
+};
+
+export const getDueReminders = async (hospitalId: string) => {
+  return repo.findDueReminders(hospitalId);
 };
 
 export const getPurchaseById = async (id: string, hospitalId: string) => {

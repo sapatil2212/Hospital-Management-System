@@ -31,6 +31,7 @@ interface QueueItem {
     sgst: number;
     igst: number;
     billItems: Array<{ id: string; name: string; quantity: number; unitPrice: number; amount: number; type: string }>;
+    prescription?: { prescriptionNo?: string; diagnosis?: string; medications?: string; doctor?: { name: string } };
   };
   billingNote?: string;
 }
@@ -57,6 +58,30 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }
 };
 
 const fmtCur = (v: number) => `₹${Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Split billItems into non-pharmacy charges and enriched pharmacy medicine rows
+function splitBillItems(bill: any) {
+  const allItems = bill?.billItems || [];
+  const rx = bill?.prescription;
+  const pharmacyItems = allItems.filter((it: any) => it.type === "PHARMACY");
+  const nonPharmacyItems = allItems.filter((it: any) => it.type !== "PHARMACY");
+  // Parse medications JSON for dosage/frequency enrichment
+  let medsMap: Record<string, any> = {};
+  if (rx?.medications) {
+    try {
+      const meds = typeof rx.medications === "string" ? JSON.parse(rx.medications) : rx.medications;
+      if (Array.isArray(meds)) meds.forEach((m: any) => { medsMap[(m.name || "").toLowerCase().trim()] = m; });
+    } catch {}
+  }
+  // Enrich pharmacy items with dosage/frequency from medications JSON
+  const enrichedPharmacy = pharmacyItems.map((it: any) => {
+    const key = (it.name || "").toLowerCase().trim();
+    const med = medsMap[key] || {};
+    return { ...it, dosage: med.dosage || "—", frequency: med.frequency || "—" };
+  });
+  const pharmacyTotal = enrichedPharmacy.reduce((s: number, it: any) => s + (it.amount || 0), 0);
+  return { nonPharmacyItems, enrichedPharmacy, pharmacyTotal, rxNo: rx?.prescriptionNo, diagnosis: rx?.diagnosis, rxDoctor: rx?.doctor?.name };
+}
 const fmtDate = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); } catch { return "—"; } };
 const fmtTime = (t: string) => {
   try {
@@ -102,7 +127,9 @@ export default function BillingQueue() {
   const [paidBill, setPaidBill] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reverting, setReverting] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ show: boolean; item: QueueItem | null }>({ show: false, item: null });
   const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>({ name: "Hospital", address: "", phone: "", email: "", logo: "", gstNumber: "", registrationNo: "", letterhead: "", letterheadType: "IMAGE", letterheadSize: "A4" });
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -230,6 +257,44 @@ export default function BillingQueue() {
     setDeleting(null);
   };
 
+  const handleRegenerate = async (item: QueueItem) => {
+    if (!item?.bill?.id) return;
+    setConfirmModal({ show: true, item });
+  };
+
+  const confirmRegenerate = async () => {
+    const item = confirmModal.item;
+    if (!item?.bill?.id) return;
+    setConfirmModal({ show: false, item: null });
+    setReverting(item.bill.id);
+    const res = await api(`/api/billing/${item.bill.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ revert: true }),
+    });
+    if (res.success) {
+      const revertedBill = res.data || res;
+      const updatedItem = { ...item, bill: { ...item.bill, ...revertedBill, status: "PENDING", paidAmount: 0 } };
+      setSelectedItem(updatedItem);
+      setCollectForm({
+        ...EMPTY_COLLECT,
+        isGst: revertedBill.isGst || false,
+        cgst: revertedBill.cgst || 9,
+        sgst: revertedBill.sgst || 9,
+        igst: revertedBill.igst || 0,
+        discount: revertedBill.discount || 0,
+      });
+      setCollectStep("billing");
+      setPaidBill(null);
+      setViewMode("collect");
+      loadQueue();
+      showToast("success", "Bill Reverted", "Bill reverted to pending. You can now edit and re-collect.");
+    } else {
+      showToast("error", "Revert Failed", res.message || "Failed to revert bill");
+    }
+    setReverting(null);
+  };
+
   const handleAddCharge = () => {
     if (!collectForm.newChargeName.trim() || collectForm.newChargeRate <= 0) return;
     const qty = collectForm.newChargeQty || 1;
@@ -280,8 +345,10 @@ export default function BillingQueue() {
       doc.setDrawColor(14, 165, 233); doc.setLineWidth(0.8); doc.line(0, 52, pw, 52);
       const infoX = logoDataUrl ? mx + 28 : mx;
       if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {} }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(14, 165, 233);
-      doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      if (!logoDataUrl) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(14, 165, 233);
+        doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      }
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
       let hy = y + 12;
       if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy += 4; }
@@ -306,8 +373,8 @@ export default function BillingQueue() {
     const metaItems = [
       { label: 'Patient Name', value: item.patient.name },
       { label: 'Patient ID', value: item.patient.patientId },
-      { label: 'Date & Time', value: fmtDate(item.appointmentDate) + ' | ' + fmtTime(item.timeSlot) },
-      { label: 'Consultation By', value: 'Dr. ' + item.doctor.name + (item.doctor.specialization ? ' - ' + item.doctor.specialization : '') },
+      { label: 'Date & Time', value: fmtDate(item.appointmentDate) + ' | ' + (item.timeSlot ? fmtTime(item.timeSlot) : 'Walk-in') },
+      { label: 'Consultation By', value: item.doctor ? 'Dr. ' + item.doctor.name + (item.doctor.specialization ? ' - ' + item.doctor.specialization : '') : 'Walk-in Patient' },
       { label: 'Department', value: item.department?.name || item.subDepartment?.name || '-' },
     ];
     const metaCols = 3; const mColW = cw / metaCols;
@@ -321,20 +388,47 @@ export default function BillingQueue() {
     });
     y += 30;
 
-    // Items table
-    const items = (item.bill.billItems || []).map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
-    autoTable(doc, {
-      startY: y,
-      head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
-      body: items,
-      theme: 'striped',
-      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
-      bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
-      margin: { left: mx, right: mx },
-    });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    // Items table (split pharmacy items out)
+    const { nonPharmacyItems: npPdf1, enrichedPharmacy: epPdf1, pharmacyTotal: ptPdf1, rxNo: rnPdf1, diagnosis: dgPdf1 } = splitBillItems(item.bill);
+    const items = npPdf1.map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
+    if (items.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
+        body: items,
+        theme: 'striped',
+        headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
+
+    // Pharmacy Medicines Detail (PDF)
+    if (epPdf1.length > 0) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(190, 24, 93);
+      doc.text('Pharmacy — Medicine Details', mx, y + 2);
+      if (rnPdf1) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184); doc.text('Rx #' + rnPdf1, pw - mx, y + 2, { align: 'right' }); }
+      y += 5;
+      if (dgPdf1) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(100, 116, 139); doc.text('Diagnosis: ' + dgPdf1, mx, y + 2); y += 5; }
+      const medRows = epPdf1.map((m: any, i: number) => [String(i + 1), m.name, m.dosage, m.frequency, String(m.quantity), rs(m.unitPrice), rs(m.amount)]);
+      medRows.push(['', '', '', '', '', 'Medicine Total:', rs(ptPdf1)]);
+      autoTable(doc, {
+        startY: y,
+        head: [['#', 'Medicine Name', 'Dosage', 'Frequency', 'Qty', 'Unit Price', 'Amount']],
+        body: medRows,
+        theme: 'striped',
+        headStyles: { fillColor: [252, 231, 243], textColor: [190, 24, 93], fontSize: 7.5, fontStyle: 'bold', halign: 'left', cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 } },
+        bodyStyles: { fontSize: 8, textColor: [51, 65, 85], cellPadding: { top: 2, bottom: 2, left: 3, right: 3 } },
+        alternateRowStyles: { fillColor: [253, 242, 248] },
+        columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 22 }, 3: { cellWidth: 22 }, 4: { cellWidth: 12, halign: 'center' }, 5: { cellWidth: 24, halign: 'right' }, 6: { cellWidth: 26, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+        didParseCell: (data: any) => { if (data.section === 'body' && data.row.index === medRows.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.textColor = [190, 24, 93]; data.cell.styles.fillColor = [252, 231, 243]; } },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
 
     // Summary
     const sW = 78; const sX = pw - mx - sW;
@@ -517,36 +611,37 @@ export default function BillingQueue() {
       
       if (payRes.success) {
         const billRes = await api(`/api/billing/${billId}`);
-        setPaidBill(billRes.data || billRes);
+        const freshBill = billRes.data || billRes;
+        setPaidBill(freshBill);
         setCollectStep("receipt");
+        setProcessing(false);
         loadQueue();
         
-        // Auto-send email after successful payment (generate PDF client-side, then send)
+        // Auto-send email entirely in background — never blocks UI
         if (selectedItem?.patient?.email && selectedItem?.bill) {
-          // Re-fetch bill to get updated data after payment
-          const freshBillRes = await api(`/api/billing/${billId}`);
-          const freshBill = freshBillRes?.data || freshBillRes;
-          if (freshBill) {
-            const emailItem = { ...selectedItem, bill: { ...selectedItem.bill, ...freshBill, status: 'PAID', paidAmount: freshBill.total } };
-            generateBillPDFBase64(emailItem).then(pdfBase64 => {
+          (async () => {
+            try {
+              const emailItem = { ...selectedItem, bill: { ...selectedItem.bill, ...freshBill, status: 'PAID', paidAmount: freshBill.total } };
+              const pdfBase64 = await generateBillPDFBase64(emailItem);
               if (pdfBase64) {
-                api(`/api/billing/${billId}/send-email`, {
+                await api(`/api/billing/${billId}/send-email`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ pdfBase64 }),
-                }).catch(() => {});
+                });
               }
-            }).catch(() => {});
-          }
+            } catch {}
+          })();
         }
       } else {
+        setProcessing(false);
         showToast("error", "Payment Failed", payRes.message || "Payment failed");
       }
     } catch (err) {
       console.error('Billing error:', err);
       showToast("error", "Error", "Something went wrong. Please try again.");
+      setProcessing(false);
     }
-    setProcessing(false);
   };
 
   const handlePrint = () => {
@@ -665,10 +760,12 @@ export default function BillingQueue() {
 
       const infoX = logoDataUrl ? mx + 28 : mx;
       if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {} }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(14, 165, 233);
-      doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      if (!logoDataUrl) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(14, 165, 233);
+        doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      }
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
@@ -707,8 +804,8 @@ export default function BillingQueue() {
     const metaItems = [
       { label: 'Patient Name', value: item.patient.name },
       { label: 'Patient ID', value: item.patient.patientId },
-      { label: 'Date & Time', value: fmtDate(item.appointmentDate) + ' | ' + fmtTime(item.timeSlot) },
-      { label: 'Consultation By', value: 'Dr. ' + item.doctor.name + (item.doctor.specialization ? ' - ' + item.doctor.specialization : '') },
+      { label: 'Date & Time', value: fmtDate(item.appointmentDate) + ' | ' + (item.timeSlot ? fmtTime(item.timeSlot) : 'Walk-in') },
+      { label: 'Consultation By', value: item.doctor ? 'Dr. ' + item.doctor.name + (item.doctor.specialization ? ' - ' + item.doctor.specialization : '') : 'Walk-in Patient' },
       { label: 'Department', value: item.department?.name || item.subDepartment?.name || '-' },
     ];
     const metaCols = 3;
@@ -730,24 +827,40 @@ export default function BillingQueue() {
 
     y += 30;
 
-    // ── Items table ──
-    const items = (item.bill.billItems || []).map((it: any, i: number) => [
-      String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)
-    ]);
-
-    autoTable(doc, {
-      startY: y,
-      head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
-      body: items,
-      theme: 'striped',
-      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
-      bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
-      margin: { left: mx, right: mx },
-    });
-
-    y = (doc as any).lastAutoTable.finalY + 6;
+    // ── Items table (split pharmacy items out) ──
+    const { nonPharmacyItems: npPdf2, enrichedPharmacy: epPdf2, pharmacyTotal: ptPdf2, rxNo: rnPdf2, diagnosis: dgPdf2 } = splitBillItems(item.bill);
+    const items = npPdf2.map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
+    if (items.length > 0) {
+      autoTable(doc, {
+        startY: y, head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']], body: items, theme: 'striped',
+        headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
+    // ── Pharmacy Medicines Detail ──
+    if (epPdf2.length > 0) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(190, 24, 93);
+      doc.text('Pharmacy — Medicine Details', mx, y + 2);
+      if (rnPdf2) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184); doc.text('Rx #' + rnPdf2, pw - mx, y + 2, { align: 'right' }); }
+      y += 5;
+      if (dgPdf2) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(100, 116, 139); doc.text('Diagnosis: ' + dgPdf2, mx, y + 2); y += 5; }
+      const medR = epPdf2.map((m: any, i: number) => [String(i + 1), m.name, m.dosage, m.frequency, String(m.quantity), rs(m.unitPrice), rs(m.amount)]);
+      medR.push(['', '', '', '', '', 'Medicine Total:', rs(ptPdf2)]);
+      autoTable(doc, {
+        startY: y, head: [['#', 'Medicine Name', 'Dosage', 'Frequency', 'Qty', 'Unit Price', 'Amount']], body: medR, theme: 'striped',
+        headStyles: { fillColor: [252, 231, 243], textColor: [190, 24, 93], fontSize: 7.5, fontStyle: 'bold', halign: 'left', cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 } },
+        bodyStyles: { fontSize: 8, textColor: [51, 65, 85], cellPadding: { top: 2, bottom: 2, left: 3, right: 3 } },
+        alternateRowStyles: { fillColor: [253, 242, 248] },
+        columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 22 }, 3: { cellWidth: 22 }, 4: { cellWidth: 12, halign: 'center' }, 5: { cellWidth: 24, halign: 'right' }, 6: { cellWidth: 26, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+        didParseCell: (data: any) => { if (data.section === 'body' && data.row.index === medR.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.textColor = [190, 24, 93]; data.cell.styles.fillColor = [252, 231, 243]; } },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
 
     // ── Summary ──
     const sW = 78;
@@ -901,10 +1014,12 @@ export default function BillingQueue() {
 
       const infoX = logoDataUrl ? mx + 28 : mx;
       if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', mx, y, 22, 22); } catch {} }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(14, 165, 233);
-      doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      if (!logoDataUrl) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(14, 165, 233);
+        doc.text(hospitalInfo.name || 'Hospital', infoX, y + 6);
+      }
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
@@ -943,8 +1058,8 @@ export default function BillingQueue() {
     const metaItems = [
       { label: 'Patient Name', value: selectedItem.patient.name },
       { label: 'Patient ID', value: selectedItem.patient.patientId },
-      { label: 'Date & Time', value: fmtDate(selectedItem.appointmentDate) + ' | ' + fmtTime(selectedItem.timeSlot) },
-      { label: 'Consultation By', value: 'Dr. ' + selectedItem.doctor.name + (selectedItem.doctor.specialization ? ' - ' + selectedItem.doctor.specialization : '') },
+      { label: 'Date & Time', value: fmtDate(selectedItem.appointmentDate) + ' | ' + (selectedItem.timeSlot ? fmtTime(selectedItem.timeSlot) : 'Walk-in') },
+      { label: 'Consultation By', value: selectedItem.doctor ? 'Dr. ' + selectedItem.doctor.name + (selectedItem.doctor.specialization ? ' - ' + selectedItem.doctor.specialization : '') : 'Walk-in Patient' },
       { label: 'Department', value: selectedItem.department?.name || selectedItem.subDepartment?.name || '-' },
     ];
     const metaCols = 3;
@@ -966,24 +1081,41 @@ export default function BillingQueue() {
 
     y += 30;
 
-    // ── Itemised Table ──
-    const items = (paidBill?.billItems || selectedItem.bill?.billItems || []).map((it: any, i: number) => [
-      String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)
-    ]);
-
-    autoTable(doc, {
-      startY: y,
-      head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']],
-      body: items,
-      theme: 'striped',
-      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
-      bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
-      margin: { left: mx, right: mx },
-    });
-
-    y = (doc as any).lastAutoTable.finalY + 6;
+    // ── Itemised Table (split pharmacy items out) ──
+    const billForSplit3 = paidBill ? { ...selectedItem.bill, billItems: paidBill.billItems || selectedItem.bill?.billItems } : selectedItem.bill;
+    const { nonPharmacyItems: npPdf3, enrichedPharmacy: epPdf3, pharmacyTotal: ptPdf3, rxNo: rnPdf3, diagnosis: dgPdf3 } = splitBillItems(billForSplit3);
+    const items = npPdf3.map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
+    if (items.length > 0) {
+      autoTable(doc, {
+        startY: y, head: [['#', 'Description', 'Qty', 'Rate (Rs.)', 'Amount (Rs.)']], body: items, theme: 'striped',
+        headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'left', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        bodyStyles: { fontSize: 8.5, textColor: [51, 65, 85], cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 15, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
+    // ── Pharmacy Medicines Detail ──
+    if (epPdf3.length > 0) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(190, 24, 93);
+      doc.text('Pharmacy — Medicine Details', mx, y + 2);
+      if (rnPdf3) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184); doc.text('Rx #' + rnPdf3, pw - mx, y + 2, { align: 'right' }); }
+      y += 5;
+      if (dgPdf3) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(100, 116, 139); doc.text('Diagnosis: ' + dgPdf3, mx, y + 2); y += 5; }
+      const mR = epPdf3.map((m: any, i: number) => [String(i + 1), m.name, m.dosage, m.frequency, String(m.quantity), rs(m.unitPrice), rs(m.amount)]);
+      mR.push(['', '', '', '', '', 'Medicine Total:', rs(ptPdf3)]);
+      autoTable(doc, {
+        startY: y, head: [['#', 'Medicine Name', 'Dosage', 'Frequency', 'Qty', 'Unit Price', 'Amount']], body: mR, theme: 'striped',
+        headStyles: { fillColor: [252, 231, 243], textColor: [190, 24, 93], fontSize: 7.5, fontStyle: 'bold', halign: 'left', cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 } },
+        bodyStyles: { fontSize: 8, textColor: [51, 65, 85], cellPadding: { top: 2, bottom: 2, left: 3, right: 3 } },
+        alternateRowStyles: { fillColor: [253, 242, 248] },
+        columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 22 }, 3: { cellWidth: 22 }, 4: { cellWidth: 12, halign: 'center' }, 5: { cellWidth: 24, halign: 'right' }, 6: { cellWidth: 26, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+        didParseCell: (data: any) => { if (data.section === 'body' && data.row.index === mR.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.textColor = [190, 24, 93]; data.cell.styles.fillColor = [252, 231, 243]; } },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
 
     // ── Summary Section (right-aligned) ──
     const sW = 78;
@@ -1286,16 +1418,24 @@ export default function BillingQueue() {
                         </div>
                       </td>
                       <td>
-                        <div className="bq-doctor-name">{item.doctor.name}</div>
-                        <div className="bq-doctor-spec">{item.doctor.specialization || item.department?.name || "—"}</div>
+                        <div className="bq-doctor-name">{item.doctor?.name || ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" ? "Walk-in Patient" : "—")}</div>
+                        <div className="bq-doctor-spec">{item.doctor?.specialization || item.department?.name || ((item as any).source === "pharmacy_counter" ? `Bill: ${(item as any).prescriptionNo}` : (item as any).prescriptionNo ? `Rx: ${(item as any).prescriptionNo}` : "—")}</div>
                       </td>
                       <td>
                         <div className="bq-date">{fmtDate(item.appointmentDate)}</div>
-                        <div className="bq-time">{fmtTime(item.timeSlot)}</div>
+                        <div className="bq-time">{item.timeSlot ? fmtTime(item.timeSlot) : ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter") ? "Counter Sale" : "—"}</div>
                       </td>
-                      <td className="bq-fee">{fmtCur(item.consultationFee)}</td>
+                      <td className="bq-fee">{(item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" ? fmtCur(item.bill?.total || 0) : fmtCur(item.consultationFee)}</td>
                       <td>
-                        {item.subDepartment ? (
+                        {(item as any).source === "pharmacy_counter" ? (
+                          <span className="bq-badge" style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>
+                            💊 Pharmacy Sale
+                          </span>
+                        ) : (item as any).source === "pharmacy" ? (
+                          <span className="bq-badge" style={{ background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+                            🏥 Pharmacy Rx
+                          </span>
+                        ) : item.subDepartment ? (
                           <span className="bq-badge" style={{ background: "#f0f9ff", color: "#0369a1", border: "1px solid #bae6fd" }}>
                             {item.subDepartment.name}
                           </span>
@@ -1326,9 +1466,18 @@ export default function BillingQueue() {
                               >
                                 {sendingEmail === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Send size={14} />}
                               </button>
-                              {item.bill.status !== "PAID" && (
+                              {item.bill.status !== "PAID" ? (
                                 <button className="bq-action-btn bq-action-collect" onClick={() => handleCollect(item)} title="Collect & Generate Bill">
                                   <CreditCard size={14} />
+                                </button>
+                              ) : (
+                                <button
+                                  className="bq-action-btn bq-action-regenerate"
+                                  onClick={() => handleRegenerate(item)}
+                                  disabled={reverting === item.bill.id}
+                                  title="Regenerate Bill"
+                                >
+                                  {reverting === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <RefreshCw size={14} />}
                                 </button>
                               )}
                               <button 
@@ -1358,6 +1507,18 @@ export default function BillingQueue() {
               <div className="bq-modal-header">
                 <h3>Bill Details - {selectedItem.bill?.billNo}</h3>
                 <div style={{display: "flex", gap: 8}}>
+                  {selectedItem.bill?.status === "PAID" && (
+                    <button
+                      className="bq-btn-secondary"
+                      style={{padding:"6px 12px",fontSize:12}}
+                      onClick={() => handleRegenerate(selectedItem)}
+                      disabled={reverting === selectedItem.bill?.id}
+                      title="Regenerate Bill"
+                    >
+                      {reverting === selectedItem.bill?.id ? <Loader2 size={14} style={{animation:"spin .7s linear infinite"}}/> : <RefreshCw size={14}/>}
+                      <span style={{marginLeft:4}}>Regenerate</span>
+                    </button>
+                  )}
                   <button className="bq-btn-icon" onClick={() => handleDownloadBillPDF(selectedItem)} title="Download PDF">
                     <Download size={16} />
                   </button>
@@ -1383,17 +1544,13 @@ export default function BillingQueue() {
                   {!hospitalInfo.letterhead ? (
                   <>
                   <div className="bill-header">
-                    <div className="bill-logo">
-                      {hospitalInfo.logo ? (
+                    {hospitalInfo.logo && (
+                      <div className="bill-logo">
                         <img src={hospitalInfo.logo} alt={hospitalInfo.name} style={{maxHeight: 60}} />
-                      ) : (
-                        <div className="bill-logo-placeholder">
-                          <Building2 size={32} color="#0ea5e9" />
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="bill-hospital-info">
-                      <h2>{hospitalInfo.name}</h2>
+                      {!hospitalInfo.logo && <h2>{hospitalInfo.name}</h2>}
                       {hospitalInfo.address && <div className="bill-info-row"><MapPin size={14} />{hospitalInfo.address}</div>}
                       {hospitalInfo.phone && <div className="bill-info-row"><Phone size={14} />{hospitalInfo.phone}</div>}
                       {hospitalInfo.email && <div className="bill-info-row"><Mail size={14} />{hospitalInfo.email}</div>}
@@ -1427,31 +1584,70 @@ export default function BillingQueue() {
                     </div>
                     <div>
                       <div className="bill-label">Doctor:</div>
-                      <div className="bill-value">Dr. {selectedItem.doctor.name}</div>
+                      <div className="bill-value">{selectedItem.doctor ? `Dr. ${selectedItem.doctor.name}` : "Walk-in Patient"}</div>
                     </div>
                   </div>
 
-                  {/* Bill Items Table */}
-                  <table className="bill-table">
-                    <thead>
-                      <tr>
-                        <th>Description</th>
-                        <th className="text-center">Qty</th>
-                        <th className="text-right">Rate</th>
-                        <th className="text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedItem.bill?.billItems.map(item => (
-                        <tr key={item.id}>
-                          <td>{item.name}</td>
-                          <td className="text-center">{item.quantity}</td>
-                          <td className="text-right">{fmtCur(item.unitPrice)}</td>
-                          <td className="text-right">{fmtCur(item.amount)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {/* Bill Items + Pharmacy Detail */}
+                  {(() => {
+                    const { nonPharmacyItems, enrichedPharmacy, pharmacyTotal, rxNo, diagnosis, rxDoctor } = splitBillItems(selectedItem.bill);
+                    return (<>
+                      {/* Non-pharmacy charges */}
+                      {nonPharmacyItems.length > 0 && (
+                        <table className="bill-table">
+                          <thead><tr><th>Description</th><th className="text-center">Qty</th><th className="text-right">Rate</th><th className="text-right">Amount</th></tr></thead>
+                          <tbody>
+                            {nonPharmacyItems.map((item: any) => (
+                              <tr key={item.id}><td>{item.name}</td><td className="text-center">{item.quantity}</td><td className="text-right">{fmtCur(item.unitPrice)}</td><td className="text-right">{fmtCur(item.amount)}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                      {/* Pharmacy medicines detail */}
+                      {enrichedPharmacy.length > 0 && (
+                        <div style={{margin:"20px 0",padding:16,background:"#fdf2f8",borderRadius:12,border:"1px solid #fce7f3"}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                            <div style={{fontSize:13,fontWeight:700,color:"#be185d"}}>💊 Pharmacy — Medicine Details</div>
+                            {rxNo && <span style={{fontSize:11,fontWeight:600,color:"#be185d",background:"#fff",padding:"3px 10px",borderRadius:6,border:"1px solid #fce7f3"}}>Rx #{rxNo}</span>}
+                          </div>
+                          {diagnosis && (<div style={{fontSize:12,color:"#64748b",marginBottom:8,padding:"6px 10px",background:"#fff",borderRadius:6,border:"1px solid #fce7f3"}}><b style={{color:"#be185d"}}>Diagnosis:</b> {diagnosis}</div>)}
+                          {rxDoctor && (<div style={{fontSize:12,color:"#64748b",marginBottom:10}}><b>Prescribed by:</b> Dr. {rxDoctor}</div>)}
+                          <table className="bill-table" style={{margin:0,background:"#fff",borderRadius:8,overflow:"hidden"}}>
+                            <thead>
+                              <tr style={{background:"#fce7f3"}}>
+                                <th style={{color:"#be185d",width:32}}>#</th>
+                                <th style={{color:"#be185d"}}>Medicine Name</th>
+                                <th style={{color:"#be185d"}}>Dosage</th>
+                                <th style={{color:"#be185d"}}>Frequency</th>
+                                <th style={{color:"#be185d"}} className="text-center">Qty</th>
+                                <th style={{color:"#be185d"}} className="text-right">Unit Price</th>
+                                <th style={{color:"#be185d"}} className="text-right">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {enrichedPharmacy.map((m: any, idx: number) => (
+                                <tr key={m.id || idx}>
+                                  <td style={{color:"#94a3b8",textAlign:"center"}}>{idx + 1}</td>
+                                  <td style={{fontWeight:600,color:"#1e293b"}}>{m.name}</td>
+                                  <td style={{color:"#475569",fontSize:12}}>{m.dosage}</td>
+                                  <td style={{color:"#475569",fontSize:12}}>{m.frequency}</td>
+                                  <td className="text-center">{m.quantity}</td>
+                                  <td className="text-right">{fmtCur(m.unitPrice)}</td>
+                                  <td className="text-right" style={{fontWeight:700}}>{fmtCur(m.amount)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr style={{borderTop:"2px solid #fce7f3"}}>
+                                <td colSpan={6} style={{textAlign:"right",fontWeight:700,fontSize:13,color:"#be185d",paddingRight:12}}>Medicine Total</td>
+                                <td className="text-right" style={{fontWeight:800,fontSize:14,color:"#be185d"}}>{fmtCur(pharmacyTotal)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      )}
+                    </>);
+                  })()}
 
                   {/* Bill Summary */}
                   <div className="bill-summary">
@@ -1537,6 +1733,14 @@ export default function BillingQueue() {
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8}}>
+                      <button className="bq-btn-secondary" style={{padding:"8px 14px",fontSize:12}}
+                        onClick={() => handleRegenerate(selectedItem)}
+                        disabled={reverting === selectedItem.bill?.id}
+                        title="Regenerate Bill"
+                      >
+                        {reverting === selectedItem.bill?.id ? <Loader2 size={14} style={{animation:"spin .7s linear infinite"}}/> : <RefreshCw size={14}/>}
+                        <span style={{marginLeft:4}}>Regenerate</span>
+                      </button>
                       <button className="bq-btn-secondary" style={{padding:"8px 14px",fontSize:12}} onClick={handleDownloadPDF}>
                         <Download size={14}/>Download PDF
                       </button>
@@ -1560,49 +1764,91 @@ export default function BillingQueue() {
                       <div className="cm-patient-meta">{selectedItem.patient.patientId}{selectedItem.patient.phone ? ` · ${selectedItem.patient.phone}` : ""}</div>
                     </div>
                     <div style={{textAlign:"right"}}>
-                      <div className="cm-patient-meta"><Stethoscope size={12} style={{display:"inline",marginRight:4}}/>Dr. {selectedItem.doctor.name}</div>
-                      <div className="cm-patient-meta">{selectedItem.doctor.specialization || selectedItem.department?.name || ""}</div>
+                      <div className="cm-patient-meta"><Stethoscope size={12} style={{display:"inline",marginRight:4}}/>{selectedItem.doctor ? `Dr. ${selectedItem.doctor.name}` : "Walk-in"}</div>
+                      <div className="cm-patient-meta">{selectedItem.doctor?.specialization || selectedItem.department?.name || ""}</div>
                     </div>
                   </div>
 
                   <div className="cm-layout">
                     {/* ── Left Column: Charges ── */}
                     <div className="cm-left">
-                      <div className="cm-section-title"><Receipt size={14}/>Charges Summary</div>
-                      <table className="cm-charges-table">
-                        <thead>
-                          <tr><th>#</th><th>Description</th><th className="text-center">Qty</th><th className="text-right">Rate</th><th className="text-right">Amount</th></tr>
-                        </thead>
-                        <tbody>
-                          {(selectedItem.bill?.billItems || []).map((it, i) => (
-                            <tr key={it.id}>
-                              <td className="text-center" style={{color:"#94a3b8"}}>{i+1}</td>
-                              <td>
-                                <div style={{fontWeight:600,color:"#1e293b",fontSize:13}}>{it.name}</div>
-                                <div style={{fontSize:10,color:"#94a3b8",textTransform:"uppercase"}}>{it.type}</div>
-                              </td>
-                              <td className="text-center">{it.quantity}</td>
-                              <td className="text-right">{fmtCur(it.unitPrice)}</td>
-                              <td className="text-right" style={{fontWeight:700}}>{fmtCur(it.amount)}</td>
-                            </tr>
-                          ))}
-                          {collectForm.addedCharges.map((ch, i) => (
-                            <tr key={`added-${i}`} className="cm-added-row">
-                              <td className="text-center" style={{color:"#94a3b8"}}>{Number(selectedItem.bill?.billItems?.length ?? 0) + i + 1}</td>
-                              <td>
-                                <div style={{fontWeight:600,color:"#0369a1",fontSize:13}}>{ch.name}</div>
-                                <div style={{fontSize:10,color:"#94a3b8"}}>ADDED CHARGE</div>
-                              </td>
-                              <td className="text-center">{ch.quantity}</td>
-                              <td className="text-right">{fmtCur(ch.unitPrice)}</td>
-                              <td className="text-right" style={{fontWeight:700,color:"#0369a1"}}>{fmtCur(ch.amount)}</td>
-                              <td>
-                                <button className="cm-remove-btn" onClick={() => handleRemoveCharge(i)} title="Remove"><X size={12}/></button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      {/* Charges + Pharmacy Detail (Collect modal) */}
+                      {(() => {
+                        const { nonPharmacyItems: npItems, enrichedPharmacy: epItems, pharmacyTotal: pTotal, rxNo: rNo, diagnosis: diag } = splitBillItems(selectedItem.bill);
+                        return (<>
+                          <div className="cm-section-title"><Receipt size={14}/>Charges Summary</div>
+                          <table className="cm-charges-table">
+                            <thead>
+                              <tr><th>#</th><th>Description</th><th className="text-center">Qty</th><th className="text-right">Rate</th><th className="text-right">Amount</th></tr>
+                            </thead>
+                            <tbody>
+                              {npItems.map((it: any, i: number) => (
+                                <tr key={it.id}>
+                                  <td className="text-center" style={{color:"#94a3b8"}}>{i+1}</td>
+                                  <td>
+                                    <div style={{fontWeight:600,color:"#1e293b",fontSize:13}}>{it.name}</div>
+                                    <div style={{fontSize:10,color:"#94a3b8",textTransform:"uppercase"}}>{it.type}</div>
+                                  </td>
+                                  <td className="text-center">{it.quantity}</td>
+                                  <td className="text-right">{fmtCur(it.unitPrice)}</td>
+                                  <td className="text-right" style={{fontWeight:700}}>{fmtCur(it.amount)}</td>
+                                </tr>
+                              ))}
+                              {collectForm.addedCharges.map((ch, i) => (
+                                <tr key={`added-${i}`} className="cm-added-row">
+                                  <td className="text-center" style={{color:"#94a3b8"}}>{npItems.length + i + 1}</td>
+                                  <td>
+                                    <div style={{fontWeight:600,color:"#0369a1",fontSize:13}}>{ch.name}</div>
+                                    <div style={{fontSize:10,color:"#94a3b8"}}>ADDED CHARGE</div>
+                                  </td>
+                                  <td className="text-center">{ch.quantity}</td>
+                                  <td className="text-right">{fmtCur(ch.unitPrice)}</td>
+                                  <td className="text-right" style={{fontWeight:700,color:"#0369a1"}}>{fmtCur(ch.amount)}</td>
+                                  <td>
+                                    <button className="cm-remove-btn" onClick={() => handleRemoveCharge(i)} title="Remove"><X size={12}/></button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {epItems.length > 0 && (
+                            <div style={{margin:"14px 0",padding:14,background:"#fdf2f8",borderRadius:10,border:"1px solid #fce7f3"}}>
+                              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                                <div style={{fontSize:12,fontWeight:700,color:"#be185d"}}>💊 Medicine Details</div>
+                                {rNo && <span style={{fontSize:10,fontWeight:600,color:"#be185d",background:"#fff",padding:"2px 8px",borderRadius:5,border:"1px solid #fce7f3"}}>Rx #{rNo}</span>}
+                              </div>
+                              {diag && (<div style={{fontSize:11,color:"#64748b",marginBottom:8,padding:"5px 8px",background:"#fff",borderRadius:5,border:"1px solid #fce7f3"}}><b style={{color:"#be185d"}}>Diagnosis:</b> {diag}</div>)}
+                              <table className="cm-charges-table" style={{background:"#fff",borderRadius:6,overflow:"hidden"}}>
+                                <thead>
+                                  <tr style={{background:"#fce7f3"}}>
+                                    <th style={{color:"#be185d"}}>#</th><th style={{color:"#be185d"}}>Medicine</th><th style={{color:"#be185d"}}>Dosage</th><th style={{color:"#be185d"}}>Freq</th>
+                                    <th style={{color:"#be185d"}} className="text-center">Qty</th><th style={{color:"#be185d"}} className="text-right">Price</th><th style={{color:"#be185d"}} className="text-right">Amount</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {epItems.map((m: any, idx: number) => (
+                                    <tr key={m.id || idx}>
+                                      <td style={{color:"#94a3b8",textAlign:"center"}}>{idx + 1}</td>
+                                      <td style={{fontWeight:600,color:"#1e293b",fontSize:12}}>{m.name}</td>
+                                      <td style={{color:"#475569",fontSize:11}}>{m.dosage}</td>
+                                      <td style={{color:"#475569",fontSize:11}}>{m.frequency}</td>
+                                      <td className="text-center">{m.quantity}</td>
+                                      <td className="text-right">{fmtCur(m.unitPrice)}</td>
+                                      <td className="text-right" style={{fontWeight:700}}>{fmtCur(m.amount)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot>
+                                  <tr style={{borderTop:"2px solid #fce7f3"}}>
+                                    <td colSpan={6} style={{textAlign:"right",fontWeight:700,fontSize:12,color:"#be185d",paddingRight:10}}>Medicine Total</td>
+                                    <td className="text-right" style={{fontWeight:800,fontSize:13,color:"#be185d"}}>{fmtCur(pTotal)}</td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
+                        </>);
+                      })()}
 
                       {/* Add extra charge form */}
                       <div className="cm-add-charge">
@@ -1749,10 +1995,8 @@ export default function BillingQueue() {
                     {!hospitalInfo.letterhead ? (
                     <div className="bill-ph">
                       <div className="bill-ph-left">
-                        {hospitalInfo.logo
-                          ? <img src={hospitalInfo.logo} alt={hospitalInfo.name} style={{maxHeight:56,maxWidth:120,objectFit:"contain",marginBottom:8}}/>
-                          : <div className="bill-logo-sq"><Building2 size={28} color="#0ea5e9"/></div>}
-                        <h1>{hospitalInfo.name}</h1>
+                        {hospitalInfo.logo && <img src={hospitalInfo.logo} alt={hospitalInfo.name} style={{maxHeight:56,maxWidth:120,objectFit:"contain",marginBottom:8}}/>}
+                        {!hospitalInfo.logo && <h1>{hospitalInfo.name}</h1>}
                         {hospitalInfo.address && <p><MapPin size={11} style={{display:"inline",marginRight:3}}/>{hospitalInfo.address}</p>}
                       </div>
                       <div className="bill-ph-right">
@@ -1788,11 +2032,11 @@ export default function BillingQueue() {
                       </div>
                       <div className="bill-meta-item">
                         <label>Time</label>
-                        <span>{fmtTime(selectedItem.timeSlot)}</span>
+                        <span>{selectedItem.timeSlot ? fmtTime(selectedItem.timeSlot) : "Walk-in"}</span>
                       </div>
                       <div className="bill-meta-item">
                         <label>Consultation By</label>
-                        <span>Dr. {selectedItem.doctor.name}{selectedItem.doctor.specialization ? ` · ${selectedItem.doctor.specialization}` : ""}</span>
+                        <span>{selectedItem.doctor ? `Dr. ${selectedItem.doctor.name}${selectedItem.doctor.specialization ? ` · ${selectedItem.doctor.specialization}` : ""}` : "Walk-in Patient"}</span>
                       </div>
                       <div className="bill-meta-item">
                         <label>Department</label>
@@ -1800,32 +2044,66 @@ export default function BillingQueue() {
                       </div>
                     </div>
 
-                    {/* Items Table */}
-                    <table className="bill-items-table">
-                      <thead>
-                        <tr>
-                          <th style={{width:36}}>#</th>
-                          <th>Description</th>
-                          <th className="text-center">Qty</th>
-                          <th className="text-right">Rate</th>
-                          <th className="text-right">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(paidBill?.billItems || selectedItem.bill?.billItems).map((it: any, i: number) => (
-                          <tr key={it.id || i}>
-                            <td className="text-center" style={{color:"#94a3b8",fontSize:12}}>{i+1}</td>
-                            <td>
-                              <span style={{fontWeight:600}}>{it.name}</span>
-                              {it.type && it.type !== "CONSULTATION" && <span style={{fontSize:10,color:"#94a3b8",marginLeft:6,textTransform:"uppercase"}}>{it.type}</span>}
-                            </td>
-                            <td className="text-center">{it.quantity}</td>
-                            <td className="text-right">{fmtCur(it.unitPrice)}</td>
-                            <td className="text-right" style={{fontWeight:700}}>{fmtCur(it.amount)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    {/* Items + Pharmacy Detail (Receipt HTML) */}
+                    {(() => {
+                      const rcptBill = paidBill ? { ...selectedItem.bill, billItems: paidBill.billItems || selectedItem.bill?.billItems } : selectedItem.bill;
+                      const { nonPharmacyItems: npR, enrichedPharmacy: epR, pharmacyTotal: ptR, rxNo: rnR, diagnosis: dgR } = splitBillItems(rcptBill);
+                      return (<>
+                        {npR.length > 0 && (
+                          <table className="bill-items-table">
+                            <thead><tr><th style={{width:36}}>#</th><th>Description</th><th className="text-center">Qty</th><th className="text-right">Rate</th><th className="text-right">Amount</th></tr></thead>
+                            <tbody>
+                              {npR.map((it: any, i: number) => (
+                                <tr key={it.id || i}>
+                                  <td className="text-center" style={{color:"#94a3b8",fontSize:12}}>{i+1}</td>
+                                  <td><span style={{fontWeight:600}}>{it.name}</span>{it.type && it.type !== "CONSULTATION" && <span style={{fontSize:10,color:"#94a3b8",marginLeft:6,textTransform:"uppercase"}}>{it.type}</span>}</td>
+                                  <td className="text-center">{it.quantity}</td>
+                                  <td className="text-right">{fmtCur(it.unitPrice)}</td>
+                                  <td className="text-right" style={{fontWeight:700}}>{fmtCur(it.amount)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                        {epR.length > 0 && (
+                          <div style={{margin:"20px 0",padding:16,background:"#fdf2f8",borderRadius:10,border:"1px solid #fce7f3"}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                              <div style={{fontSize:13,fontWeight:700,color:"#be185d"}}>💊 Pharmacy — Medicine Details</div>
+                              {rnR && <span style={{fontSize:11,fontWeight:600,color:"#be185d",background:"#fff",padding:"3px 10px",borderRadius:6,border:"1px solid #fce7f3"}}>Rx #{rnR}</span>}
+                            </div>
+                            {dgR && (<div style={{fontSize:12,color:"#64748b",marginBottom:8,padding:"6px 10px",background:"#fff",borderRadius:6,border:"1px solid #fce7f3"}}><b style={{color:"#be185d"}}>Diagnosis:</b> {dgR}</div>)}
+                            <table className="bill-items-table" style={{margin:0}}>
+                              <thead>
+                                <tr style={{background:"#fce7f3"}}>
+                                  <th style={{width:32,color:"#be185d"}}>#</th><th style={{color:"#be185d"}}>Medicine Name</th><th style={{color:"#be185d"}}>Dosage</th>
+                                  <th style={{color:"#be185d"}}>Frequency</th><th style={{color:"#be185d"}} className="text-center">Qty</th>
+                                  <th style={{color:"#be185d"}} className="text-right">Unit Price</th><th style={{color:"#be185d"}} className="text-right">Amount</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {epR.map((m: any, idx: number) => (
+                                  <tr key={m.id || idx}>
+                                    <td style={{color:"#94a3b8",textAlign:"center"}}>{idx + 1}</td>
+                                    <td style={{fontWeight:600,color:"#1e293b"}}>{m.name}</td>
+                                    <td style={{color:"#475569",fontSize:12}}>{m.dosage}</td>
+                                    <td style={{color:"#475569",fontSize:12}}>{m.frequency}</td>
+                                    <td className="text-center">{m.quantity}</td>
+                                    <td className="text-right">{fmtCur(m.unitPrice)}</td>
+                                    <td className="text-right" style={{fontWeight:700}}>{fmtCur(m.amount)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr style={{borderTop:"2px solid #fce7f3"}}>
+                                  <td colSpan={6} style={{textAlign:"right",fontWeight:700,fontSize:13,color:"#be185d",paddingRight:12}}>Medicine Total</td>
+                                  <td className="text-right" style={{fontWeight:800,fontSize:14,color:"#be185d"}}>{fmtCur(ptR)}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        )}
+                      </>);
+                    })()}
 
                     {/* Summary */}
                     <div className="bill-summary-wrap">
@@ -1880,6 +2158,31 @@ export default function BillingQueue() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal.show && (
+        <div className="bq-modal-overlay" onClick={() => setConfirmModal({ show: false, item: null })}>
+          <div className="bq-modal bq-confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="bq-modal-body">
+              <div className="bq-confirm-icon">
+                <AlertTriangle size={28} color="#a16207" />
+              </div>
+              <div className="bq-confirm-title">Regenerate Bill?</div>
+              <div className="bq-confirm-message">
+                This will revert the bill to PENDING status, remove all existing payments, and allow you to edit charges and re-collect payment. This action cannot be undone.
+              </div>
+              <div className="bq-confirm-actions">
+                <button className="bq-confirm-cancel" onClick={() => setConfirmModal({ show: false, item: null })}>
+                  Cancel
+                </button>
+                <button className="bq-confirm-proceed" onClick={confirmRegenerate}>
+                  Yes, Regenerate
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Animated Toast Notification */}
       {toast && (
@@ -1948,9 +2251,9 @@ const BQ_CSS = `
 .bq-btn-secondary{background:#fff;color:#64748b;border:1px solid #e2e8f0}.bq-btn-secondary:hover{background:#f8fafc}.bq-btn-secondary:disabled{opacity:.6;cursor:not-allowed}
 .bq-btn-icon{background:none;border:none;cursor:pointer;color:#64748b;padding:6px;border-radius:6px;transition:all .2s;display:flex;align-items:center;justify-content:center}
 .bq-btn-icon:hover{background:#f1f5f9;color:#334155}
-.bq-btn-collect-main{padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.35);transition:all .2s}
-.bq-btn-collect-main:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.45)}
-.bq-btn-collect-main:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.bq-btn-collect-main{padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;border:none;background:#10b981;color:#fff;transition:all .2s}
+.bq-btn-collect-main:hover{background:#059669}
+.bq-btn-collect-main:disabled{opacity:.6;cursor:not-allowed}
 
 /* ── Table Card ── */
 .bq-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:none}
@@ -1977,10 +2280,12 @@ const BQ_CSS = `
 .bq-actions{display:flex;gap:6px;align-items:center}
 .bq-action-btn{padding:6px;border-radius:6px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .bq-action-btn:disabled{opacity:.5;cursor:not-allowed}
-.bq-action-view{background:#f0f9ff;color:#0369a1}.bq-action-view:hover:not(:disabled){background:#e0f2fe}
-.bq-action-download{background:#fef3c7;color:#b45309}.bq-action-download:hover:not(:disabled){background:#fde68a}
-.bq-action-collect{background:#dcfce7;color:#166534}.bq-action-collect:hover:not(:disabled){background:#bbf7d0}
-.bq-action-delete{background:#fee2e2;color:#dc2626}.bq-action-delete:hover:not(:disabled){background:#fecaca}
+.bq-action-view{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.bq-action-view:hover:not(:disabled){background:#e2e8f0}
+.bq-action-download{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.bq-action-download:hover:not(:disabled){background:#e2e8f0}
+.bq-action-email{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.bq-action-email:hover:not(:disabled){background:#e2e8f0}
+.bq-action-collect{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.bq-action-collect:hover:not(:disabled){background:#e2e8f0}
+.bq-action-regenerate{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.bq-action-regenerate:hover:not(:disabled){background:#e2e8f0}
+.bq-action-delete{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}.bq-action-delete:hover:not(:disabled){background:#fecaca}
 .text-center{text-align:center}.text-right{text-align:right}
 
 /* ── Modal Overlay & Shell ── */
@@ -2162,4 +2467,15 @@ const BQ_CSS = `
 .bq-toast-success .bq-toast-timer{background:linear-gradient(90deg,#10b981,#34d399)}
 .bq-toast-error .bq-toast-timer{background:linear-gradient(90deg,#ef4444,#f87171)}
 .bq-toast-warning .bq-toast-timer{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+
+/* ── Confirmation Modal ── */
+.bq-confirm-modal{max-width:480px}
+.bq-confirm-icon{width:56px;height:56px;border-radius:14px;background:#fef3c7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;flex-shrink:0}
+.bq-confirm-title{font-size:18px;font-weight:700;color:#1e293b;text-align:center;margin-bottom:8px}
+.bq-confirm-message{font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px}
+.bq-confirm-actions{display:flex;gap:10px;justify-content:center}
+.bq-confirm-cancel{padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#fff;color:#64748b;border:1px solid #e2e8f0;transition:all .2s}
+.bq-confirm-cancel:hover{background:#f8fafc}
+.bq-confirm-proceed{padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#a16207;color:#fff;border:none;transition:all .2s}
+.bq-confirm-proceed:hover{background:#92570a}
 `;

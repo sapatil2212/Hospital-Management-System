@@ -6,6 +6,7 @@ import {
   updateDepartment,
   deleteDepartment,
   toggleStatus,
+  handleDeptCredentialsOnSave,
   DepartmentServiceError,
 } from "../../../../../../backend/services/department.service";
 import { updateDepartmentSchema, toggleStatusSchema } from "../../../../../../backend/validations/department.validation";
@@ -54,7 +55,24 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     // Update department
     const department = await updateDepartment(id, auth.hospitalId, result.data);
-    return successResponse(department, "Department updated");
+
+    // Auto-create/update DEPT_HEAD User if loginEmail + loginPassword provided
+    const loginEmail = (result.data as any).loginEmail;
+    const loginPassword = (result.data as any).loginPassword;
+    let credentialWarning: string | null = null;
+    if (loginEmail && loginPassword) {
+      try {
+        await handleDeptCredentialsOnSave(id, auth.hospitalId, loginEmail, loginPassword, department.name);
+      } catch (credErr: any) {
+        console.error("[DeptCredentials] Auto-save failed:", credErr.message, credErr.code);
+        credentialWarning = `Department saved but login setup failed: ${credErr.message}`;
+      }
+    }
+
+    return successResponse(
+      { ...department, credentialWarning },
+      credentialWarning ? `Department updated (Warning: ${credentialWarning})` : "Department updated"
+    );
   } catch (e: any) {
     if (e instanceof DepartmentServiceError) {
       return errorResponse(e.message, e.status, { code: e.code });

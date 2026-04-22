@@ -39,70 +39,80 @@ const features = [
 ];
 
 export default function MissionSection() {
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
     <section className={styles.missionSection} ref={ref}>
-      <div className={`container ${styles.missionContainer}`}>
-        {/* Left Side - Image */}
+      <div className="container">
         <motion.div
-          className={styles.imageSection}
-          initial={{ opacity: 0, x: -40 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          className={styles.sectionHeader}
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          style={{ textAlign: "center", marginBottom: "var(--space-12)" }}
         >
-          <div className={styles.imageWrapper}>
-            <Image
-              src="/about/about.png"
-              alt="Healthcare Professional"
-              width={520}
-              height={600}
-              className={styles.doctorImage}
-              priority
-            />
-          </div>
-        </motion.div>
-
-        {/* Right Side - Content */}
-        <motion.div
-          className={styles.contentSection}
-          initial={{ opacity: 0, x: 40 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <h2 className={styles.mainHeading}>
-            Healthcare Designed <br />
-            Around <span className={styles.headingAccent}>You</span>
+          <h2 className="section-title">
+            Healthcare Designed Around <span className={styles.headingAccent}>You</span>
           </h2>
-
-          <p className={styles.description}>
+          <p className="section-subtitle">
             We combine state-of-the-art medical technology with a compassionate, 
-            human-centered approach. MediFlow isn't just a clinic; it's your partner 
-            in lifelong wellness.
+            human-centered approach.
           </p>
-
-          {/* Features Grid */}
-          <div className={styles.featuresGrid}>
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                className={styles.featureCard}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
-              >
-                <div className={`${styles.featureIcon} ${styles[feature.variant]}`}>
-                  {feature.icon}
-                </div>
-                <div className={styles.featureContent}>
-                  <h3 className={styles.featureTitle}>{feature.title}</h3>
-                  <p className={styles.featureDesc}>{feature.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
+
+        <div className={styles.missionContainer}>
+          {/* Left Side - Image */}
+          <motion.div
+            className={styles.imageSection}
+            initial={{ opacity: 0, x: -40 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6 }}
+          >
+            <div className={styles.imageWrapper}>
+              <Image
+                src="/about/about.png"
+                alt="Healthcare Professional"
+                width={520}
+                height={600}
+                className={styles.doctorImage}
+                priority
+              />
+            </div>
+          </motion.div>
+
+          {/* Right Side - Content */}
+          <motion.div
+            className={styles.contentSection}
+            initial={{ opacity: 0, x: 40 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <p className={styles.description} style={{ fontSize: "var(--font-size-lg)", color: "var(--gray-600)", lineHeight: "1.6" }}>
+              MediFlow isn't just a clinic; it's your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
+            </p>
+
+            {/* Features Grid */}
+            <div className={styles.featuresGrid}>
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  className={styles.featureCard}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+                >
+                  <div className={`${styles.featureIcon} ${styles[feature.variant]}`}>
+                    {feature.icon}
+                  </div>
+                  <div className={styles.featureContent}>
+                    <h3 className={styles.featureTitle}>{feature.title}</h3>
+                    <p className={styles.featureDesc}>{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

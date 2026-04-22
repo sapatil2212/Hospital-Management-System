@@ -693,7 +693,7 @@ export default function HospitalAdminFinancePage() {
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Category</label>
                   <select value={expForm.category} onChange={e => setExpForm({ ...expForm, category: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", background: "#fff" }}>
-                    {["SALARY","EQUIPMENT","MAINTENANCE","UTILITY","MEDICINE","HOUSEKEEPING","MARKETING","INSURANCE_EXPENSE","OTHER"].map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                    {["SALARY","EQUIPMENT","MAINTENANCE","UTILITY","MEDICINE","INVENTORY","HOUSEKEEPING","MARKETING","INSURANCE_EXPENSE","OTHER"].map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
                   </select>
                 </div>
                 <div>

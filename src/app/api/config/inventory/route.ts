@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import * as service from "../../../../../backend/services/inventory.service";
+import prisma from "../../../../../backend/config/db";
 import { z } from "zod";
 
 const itemSchema = z.object({
@@ -97,13 +98,34 @@ export async function POST(req: NextRequest) {
     const result = itemSchema.safeParse(body);
     if (!result.success) return errorResponse("Validation failed", 400, result.error.issues);
     
-    // Check for opening stock to create initial movement/batch if needed
     const { openingStock, ...itemData } = result.data;
     const data = await service.addItem(auth.hospitalId, itemData);
 
-    // Handle opening stock logic in service if needed
+    // Create initial StockBatch + StockMovement for opening stock
     if (openingStock && openingStock > 0) {
-      // Create a manual stock entry movement
+      const batch = await (prisma as any).stockBatch.create({
+        data: {
+          hospitalId: auth.hospitalId,
+          itemId: data.id,
+          batchNumber: "OPENING",
+          quantity: openingStock,
+          remainingQty: openingStock,
+          purchasePrice: data.purchasePrice || 0,
+          sellingPrice: data.sellingPrice || 0,
+        },
+      });
+      await (prisma as any).stockMovement.create({
+        data: {
+          hospitalId: auth.hospitalId,
+          itemId: data.id,
+          batchId: batch.id,
+          type: "IN",
+          quantity: openingStock,
+          source: "OpeningStock",
+          notes: `Opening stock for ${data.name}`,
+          performedBy: auth.user.userId,
+        },
+      });
     }
 
     return successResponse(data, "Item created", 201);

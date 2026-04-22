@@ -263,6 +263,31 @@ export const countDepartments = async (hospitalId: string, isActive?: boolean) =
   });
 };
 
+// Set department login credentials (hodUserId + credentialsSent)
+export const setDepartmentCredentials = async (id: string, userId: string, credentialsSent = true) => {
+  return (prisma as any).department.update({ where: { id }, data: { hodUserId: userId, credentialsSent } });
+};
+
+// Find department by hodUserId (for DEPT_HEAD login)
+export const findDepartmentByUserId = async (userId: string) => {
+  return (prisma as any).department.findFirst({
+    where: { hodUserId: userId },
+    include: {
+      hodDoctor: { select: { id: true, name: true, specialization: true } },
+      hodUser: { select: { id: true, name: true, role: true } },
+      subDepartments: {
+        select: {
+          id: true, name: true, type: true, isActive: true, code: true, color: true,
+          hodName: true, hodEmail: true, hodPhone: true, credentialsSent: true,
+          _count: { select: { procedures: true, appointments: true, procedureRecords: true } },
+        },
+        orderBy: { name: "asc" },
+      },
+      _count: { select: { doctors: true, staff: true, subDepartments: true, appointments: true } },
+    },
+  });
+};
+
 // Sub-departments
 export const createSubDepartment = async (data: Prisma.SubDepartmentUncheckedCreateInput) => {
   return prisma.subDepartment.create({ data });

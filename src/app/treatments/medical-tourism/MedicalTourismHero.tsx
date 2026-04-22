@@ -72,7 +72,7 @@ export default function MedicalTourismHero() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <Image
-                  src="/images/medical-tourism/hero.png"
+                  src="/images/medical-tourism/medical-tourism-hero.png"
                   alt="Medical & Dental Tourism"
                   width={580}
                   height={640}

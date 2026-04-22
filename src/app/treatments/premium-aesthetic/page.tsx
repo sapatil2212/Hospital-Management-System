@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Zap, 
   Target,
   Users,
@@ -14,10 +13,10 @@ import {
   Star,
   Gem
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import PremiumAestheticHero from "./PremiumAestheticHero";
 
@@ -456,33 +455,13 @@ export default function PremiumAestheticPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Book Your Aesthetic Consultation Today
-              </h2>
-              <p className={styles.ctaDescription}>
-                Enhance your natural beauty with luxury aesthetic treatments at Celeb Aesthetica. Experience the perfect blend of science and art.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/premium-aesthetic/hero.png"
-                alt="Expert Aesthetic Care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Book Your Aesthetic Consultation <br /> Today"
+          description="Enhance your natural beauty with luxury aesthetic treatments at Celeb Aesthetica. Experience the perfect blend of science and art."
+          imageSrc="/images/premium-aesthetic/hero.png"
+          imageAlt="Expert Aesthetic Care"
+        />
       </main>
       <Footer />
     </>

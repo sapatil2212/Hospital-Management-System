@@ -8,6 +8,14 @@ const nextConfig = {
       { protocol: "https", hostname: "**.cloudinary.com" },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/subdept/:slug/dashboard",
+        destination: "/subdept/dashboard",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

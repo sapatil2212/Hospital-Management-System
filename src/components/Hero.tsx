@@ -71,6 +71,18 @@ export default function Hero() {
 
   return (
     <section id="home" className={styles.hero}>
+      {/* Hospital Blur Background */}
+      <div className={styles.heroBg}>
+        <Image
+          src="/images/hero-bg.jpg"
+          alt="Hospital Background"
+          fill
+          className={styles.heroBgImage}
+          priority
+        />
+        <div className={styles.heroBgOverlay} />
+      </div>
+
       {/* Background decorations */}
       <div className={styles.bgDecor1} />
       <div className={styles.bgDecor2} />

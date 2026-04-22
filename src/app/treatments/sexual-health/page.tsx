@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Zap, 
   Target,
   Users,
@@ -16,10 +15,10 @@ import {
   Clock,
   MessageCircle
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import SexualHealthHero from "./SexualHealthHero";
 
@@ -458,33 +457,13 @@ export default function SexualHealthPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Book a Confidential Consultation
-              </h2>
-              <p className={styles.ctaDescription}>
-                Take the first step toward better health, confidence, and relationships with expert care in a safe and supportive environment.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/sexual-health/hero.png"
-                alt="Expert Sexual Health Care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Book a Confidential <br /> Consultation"
+          description="Take the first step toward better health, confidence, and relationships with expert care in a safe and supportive environment."
+          imageSrc="/images/sexual-health/hero.png"
+          imageAlt="Expert Sexual Health Care"
+        />
       </main>
       <Footer />
     </>

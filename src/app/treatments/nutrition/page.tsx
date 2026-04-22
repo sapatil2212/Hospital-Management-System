@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Apple, 
   Activity, 
   HeartPulse, 
@@ -15,10 +14,10 @@ import {
   Zap,
   Stethoscope
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import NutritionHero from "./NutritionHero";
 
@@ -408,33 +407,13 @@ export default function NutritionPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Start Your Wellness Journey Today
-              </h2>
-              <p className={styles.ctaDescription}>
-                Take control of your health, weight, and lifestyle with expert guidance. Book your consultation and begin your journey toward a healthier, more balanced life.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/Quick-Treatments/Nutrition.png"
-                alt="Start Wellness Journey"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Start Your Wellness Journey <br /> Today"
+          description="Take control of your health, weight, and lifestyle with expert guidance. Book your consultation and begin your journey toward a healthier, more balanced life."
+          imageSrc="/images/Quick-Treatments/Nutrition.png"
+          imageAlt="Start Wellness Journey"
+        />
       </main>
       <Footer />
     </>

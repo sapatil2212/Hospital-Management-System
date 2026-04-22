@@ -3,7 +3,6 @@ import {
   Sparkles, 
   CheckCircle, 
   ArrowRight, 
-  Calendar, 
   Microscope, 
   Shield, 
   Zap, 
@@ -15,10 +14,10 @@ import {
   Users,
   Scissors
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CTASection from "../CTASection";
 import styles from "../treatments.module.css";
 import HairHero from "./HairHero";
 
@@ -462,33 +461,13 @@ export default function HairTreatmentsPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Book Your Hair Consultation Today
-              </h2>
-              <p className={styles.ctaDescription}>
-                Take the first step toward stronger, healthier, and fuller hair with expert care at Celeb Aesthetica. Start your hair restoration journey with confidence.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/Quick-Treatments/Hair.png"
-                alt="Expert hair care"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Book Your Hair Consultation <br /> Today"
+          description="Take the first step toward stronger, healthier, and fuller hair with expert care at Celeb Aesthetica. Start your hair restoration journey with confidence."
+          imageSrc="/images/Quick-Treatments/Hair.png"
+          imageAlt="Expert hair care"
+        />
       </main>
       <Footer />
     </>

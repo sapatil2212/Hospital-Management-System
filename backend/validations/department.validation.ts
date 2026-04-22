@@ -19,6 +19,8 @@ export const createDepartmentSchema = z.object({
   location: z.string().max(200).optional().nullable(),
   billingCode: z.string().max(20).optional().nullable(),
   isActive: z.boolean().default(true),
+  loginEmail: z.string().email("Invalid login email").optional().nullable(),
+  loginPassword: z.string().min(4, "Password must be at least 4 characters").optional().nullable(),
 });
 
 export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>;

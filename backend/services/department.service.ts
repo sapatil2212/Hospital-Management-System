@@ -1,3 +1,5 @@
+import prisma from "../config/db";
+import { hashPassword } from "../utils/hash";
 import {
   createDepartment as createDepartmentRepo,
   findAllDepartments,
@@ -10,6 +12,8 @@ import {
   toggleDepartmentStatus,
   createManyDepartments,
   countDepartments,
+  setDepartmentCredentials,
+  findDepartmentByUserId,
   DepartmentQueryOptions,
 } from "../repositories/department.repo";
 import {
@@ -73,7 +77,7 @@ export const createDepartment = async (
     location: input.location || null,
     billingCode: input.billingCode || null,
     isActive: input.isActive ?? true,
-  });
+  } as any);
 };
 
 /**
@@ -292,4 +296,136 @@ export const getDepartmentStats = async (hospitalId: string) => {
     inactive,
     activePercentage: total > 0 ? Math.round((active / total) * 100) : 0,
   };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEPARTMENT CREDENTIALS (DEPT_HEAD login)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Auto-create or update DEPT_HEAD User when department is saved with loginEmail + loginPassword.
+ * Called from POST/PUT department API routes. Uses upsert-safe logic to handle duplicates.
+ */
+export const handleDeptCredentialsOnSave = async (
+  deptId: string,
+  hospitalId: string,
+  loginEmail: string,
+  loginPassword: string,
+  deptName: string
+) => {
+  const hashed = await hashPassword(loginPassword);
+
+  // Check if a User with this email already exists (handles duplicate gracefully)
+  const existingByEmail = await prisma.user.findUnique({ where: { email: loginEmail } });
+
+  let userId: string;
+
+  if (existingByEmail) {
+    // Update existing user's password + ensure role is DEPT_HEAD
+    await prisma.user.update({
+      where: { id: existingByEmail.id },
+      data: { password: hashed, role: "DEPT_HEAD" as any, name: deptName },
+    });
+    userId = existingByEmail.id;
+    console.log(`[DeptCredentials] Updated existing User: email=${loginEmail}, id=${userId}`);
+  } else {
+    // Create a fresh User
+    const newUser = await prisma.user.create({
+      data: {
+        hospitalId,
+        name: deptName,
+        email: loginEmail,
+        password: hashed,
+        role: "DEPT_HEAD" as any,
+      },
+    });
+    userId = newUser.id;
+    console.log(`[DeptCredentials] Created new User: email=${loginEmail}, id=${userId}`);
+  }
+
+  // Link user to department + save loginEmail
+  await setDepartmentCredentials(deptId, userId, true);
+  await (prisma as any).department.update({ where: { id: deptId }, data: { loginEmail } });
+  console.log(`[DeptCredentials] Linked userId=${userId} to deptId=${deptId}`);
+
+  return { email: loginEmail, password: loginPassword };
+};
+
+/**
+ * Create login credentials for a department head
+ */
+export const createDeptCredentials = async (id: string, hospitalId: string, customPassword?: string) => {
+  const dept = await findDepartmentById(id, hospitalId);
+  if (!dept) throw new DepartmentServiceError("Department not found", "NOT_FOUND", 404);
+
+  if ((dept as any).credentialsSent && (dept as any).userId) {
+    throw new DepartmentServiceError("Credentials already sent. Use resend instead.", "ALREADY_SENT", 409);
+  }
+
+  const loginEmail = (dept as any).loginEmail;
+  if (!loginEmail) throw new DepartmentServiceError("Login email not set for this department", "NO_EMAIL", 400);
+
+  const year = new Date().getFullYear();
+  const prefix = dept.name.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "");
+  const rawPassword = customPassword || `${prefix}@${year}`;
+  const hashed = await hashPassword(rawPassword);
+
+  const user = await prisma.user.create({
+    data: {
+      hospitalId,
+      name: dept.name,
+      email: loginEmail,
+      password: hashed,
+      role: "DEPT_HEAD" as any,
+    },
+  });
+
+  await setDepartmentCredentials(id, user.id, true);
+
+  return { email: loginEmail, password: rawPassword };
+};
+
+/**
+ * Resend credentials for a department head (reset password)
+ */
+export const resendDeptCredentials = async (id: string, hospitalId: string, customPassword?: string) => {
+  const dept = await findDepartmentById(id, hospitalId);
+  if (!dept) throw new DepartmentServiceError("Department not found", "NOT_FOUND", 404);
+
+  const loginEmail = (dept as any).loginEmail;
+  if (!loginEmail) throw new DepartmentServiceError("Login email not set for this department", "NO_EMAIL", 400);
+
+  const year = new Date().getFullYear();
+  const prefix = dept.name.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "");
+  const rawPassword = customPassword || `${prefix}@${year}`;
+  const hashed = await hashPassword(rawPassword);
+
+  if ((dept as any).userId) {
+    await prisma.user.update({
+      where: { id: (dept as any).userId },
+      data: { password: hashed },
+    });
+  } else {
+    const user = await prisma.user.create({
+      data: {
+        hospitalId,
+        name: dept.name,
+        email: loginEmail,
+        password: hashed,
+        role: "DEPT_HEAD" as any,
+      },
+    });
+    await setDepartmentCredentials(id, user.id, true);
+  }
+
+  return { email: loginEmail, password: rawPassword };
+};
+
+/**
+ * Get department profile for DEPT_HEAD by userId
+ */
+export const getDeptProfile = async (userId: string) => {
+  const dept = await findDepartmentByUserId(userId);
+  if (!dept) throw new DepartmentServiceError("Department not found for this user", "NOT_FOUND", 404);
+  return dept;
 };

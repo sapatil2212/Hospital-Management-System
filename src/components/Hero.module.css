@@ -1,11 +1,40 @@
 .hero {
   position: relative;
-  background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-blue) 50%, var(--white) 100%);
+  background: var(--bg-light);
   padding: var(--space-12) 0 0;
-  overflow: hidden;
-  min-height: 90vh;
+  overflow: visible;
+  min-height: 580px; /* Reduced from 700px */
   display: flex;
-  align-items: center;
+  align-items: stretch;
+}
+
+.heroBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.heroBgImage {
+  object-fit: cover;
+  filter: brightness(0.95);
+}
+
+.heroBgOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.6) 100%
+  );
 }
 
 /* Background Decorations */
@@ -48,9 +77,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-12);
-  align-items: center;
-  position: relative;
+  align-items: stretch;
+  position: relative; /* Already relative, good */
   z-index: 2;
+  width: 100%;
 }
 
 /* Content */
@@ -58,6 +88,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  justify-content: center;
+  padding-bottom: 0;
 }
 
 .badge {
@@ -166,24 +198,23 @@
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  min-height: 400px;
+  height: auto;
+  align-self: flex-end;
+  z-index: 10;
 }
 
 .imageWrapper {
   position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 500px;
-  display: grid;
-  aspect-ratio: 580 / 640;
+  max-width: 520px; /* Slightly reduced from 580px to match lower height */
+  display: flex;
+  align-items: flex-end;
 }
-
 .imageSlide {
-  grid-area: 1 / 1;
   width: 100%;
-}
-
-.textSlideWrap {
+  display: flex;
+  align-items: flex-end;
+}.textSlideWrap {
   min-height: 130px;
 }
 
@@ -202,10 +233,12 @@
 .heroImage {
   width: 100%;
   height: auto;
+  max-height: 100%;
   object-fit: contain;
+  object-position: bottom;
   position: relative;
   z-index: 2;
-  border-radius: var(--radius-2xl);
+  display: block;
 }
 
 /* Floating Cards */
@@ -319,6 +352,9 @@
     max-width: 400px;
     margin: 0 auto;
     min-height: 360px;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    align-self: flex-end;
   }
 
   .textSlideWrap {
@@ -327,7 +363,7 @@
 
   .hero {
     min-height: auto;
-    padding: var(--space-10) 0 var(--space-12);
+    padding: var(--space-10) 0 0; /* Changed from var(--space-12) at the end */
   }
 }
 
@@ -372,6 +408,10 @@
     height: 13px;
   }
 
+  .ratingRow {
+    display: none;
+  }
+
   .imageBg {
     width: 280px;
     height: 280px;
@@ -387,10 +427,12 @@
 
   .heroVisual {
     min-height: 300px;
+    align-self: flex-end;
   }
 
   .imageWrapper {
     max-width: 320px;
+    margin-bottom: 0;
   }
 }
 
@@ -399,9 +441,10 @@
     min-height: 90px;
   }
   .hero {
-    padding: var(--space-6) 0 var(--space-10);
+    padding: var(--space-6) 0 0;
   }
   .heroVisual {
     min-height: 260px;
+    align-self: flex-end;
   }
 }

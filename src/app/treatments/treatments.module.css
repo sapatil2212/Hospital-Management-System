@@ -1,21 +1,38 @@
+.page {
+  background: var(--white);
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   TREATMENTS LISTING PAGE STYLES
+   ========================================================================== */
+
 .pageHero {
   background: linear-gradient(135deg, var(--bg-blue), var(--primary-50), var(--bg-light));
   padding: var(--space-20) 0 var(--space-16);
   text-align: center;
 }
 
-.heroContent {
+.listingHeroContent {
   max-width: 720px;
   margin: 0 auto;
 }
 
-.heroTitle {
+.listingHeroTitle {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 900;
   color: var(--gray-900);
   line-height: 1.15;
   margin-bottom: var(--space-4);
   letter-spacing: -0.02em;
+}
+
+.listingHeroSubtext {
+  font-size: var(--font-size-lg);
+  color: var(--gray-500);
+  line-height: 1.7;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .accent {
@@ -25,149 +42,157 @@
   background-clip: text;
 }
 
-.heroSubtext {
-  font-size: var(--font-size-lg);
-  color: var(--gray-500);
-  line-height: 1.7;
-  max-width: 600px;
+.section {
+  padding: var(--space-16) 0 var(--space-24);
+  background: var(--bg-light);
+}
+
+.treatmentsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+  max-width: 1280px;
   margin: 0 auto;
 }
 
-.section {
-  padding: var(--space-16) 0 var(--space-24);
-}
-
-/* Treatment Row */
-.treatmentRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-12);
-  align-items: center;
-  margin-bottom: var(--space-20);
-}
-
-.treatmentRow:last-child {
-  margin-bottom: 0;
-}
-
-.reversed {
-  direction: rtl;
-}
-
-.reversed > * {
-  direction: ltr;
-}
-
-/* Image Column */
-.imageCol {
-  position: relative;
-}
-
-.imageFrame {
-  position: relative;
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-xl);
-}
-
-.treatmentImage {
-  width: 100%;
-  height: 380px;
-  object-fit: cover;
-  display: block;
-}
-
-.imageBadge {
-  position: absolute;
-  bottom: var(--space-4);
-  right: var(--space-4);
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-lg);
-}
-
-/* Content Column */
-.contentCol {
+.treatmentCard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: none;
+  transition: all var(--transition-base);
+  border: 1px solid var(--gray-200);
+  height: 100%;
 }
 
-.iconPill {
+.treatmentCard:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary-200);
+}
+
+.cardImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 160px;
+}
+
+.cardImage {
+  object-fit: cover;
+}
+
+.cardContent {
+  flex: 1;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.cardTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+  line-height: 1.2;
+}
+
+.cardDesc {
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
+  line-height: 1.6;
+  margin-bottom: var(--space-2);
+}
+
+.benefitsSection {
+  margin-bottom: var(--space-2);
+}
+
+.benefitsLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--gray-400);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.benefitsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.benefitBadge {
+  background: var(--primary-50);
+  color: var(--primary-700);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1px solid var(--primary-100);
+}
+
+.cardActions {
+  margin-top: auto;
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--gray-50);
+}
+
+.viewMoreBtn, .bookNowBtn {
+  flex: 1;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
   font-weight: 600;
-  width: fit-content;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  height: 38px;
 }
 
-.treatmentTitle {
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
-  color: var(--gray-900);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+.viewMoreBtn {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  text-decoration: none;
 }
 
-.treatmentDesc {
-  font-size: var(--font-size-base);
-  color: var(--gray-500);
-  line-height: 1.7;
+.viewMoreBtn:hover {
+  background: var(--primary-50);
 }
 
-.featureList {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2) var(--space-4);
-  margin: var(--space-2) 0;
+.bookNowBtn {
+  background: var(--primary);
+  color: var(--white);
+  border: 1px solid var(--primary);
+  cursor: pointer;
 }
 
-.featureItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-size-sm);
-  color: var(--gray-600);
+.bookNowBtn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
-.featureDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+/* ==========================================================================
+   TREATMENT DETAIL PAGE STYLES (HERO & ABOUT SECTIONS)
+   ========================================================================== */
 
-.learnMoreBtn {
-  width: fit-content;
-  box-shadow: none !important;
-}
-
-.page {
-  min-height: 100vh;
-}
-
-/* Hero Section - Enhanced */
 .hero {
   position: relative;
-  background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-blue) 50%, var(--white) 100%);
-  margin: calc(var(--space-4) + 20px) var(--space-20) var(--space-8);
-  padding: var(--space-12) 0;
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
-  min-height: 60vh;
+  background: var(--bg-light);
+  padding: var(--space-12) 0 0;
+  overflow: visible;
+  min-height: 580px;
   display: flex;
-  align-items: center;
-  border: 1px solid rgba(14, 137, 143, 0.1);
+  align-items: stretch;
 }
 
-/* Background Decorations */
 .bgDecor1 {
   position: absolute;
   top: -200px;
@@ -206,20 +231,34 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-12);
-  align-items: center;
+  align-items: stretch;
   position: relative;
   z-index: 2;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 var(--space-12);
+  width: 100%;
 }
 
 .heroContent {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  position: relative;
-  z-index: 1;
+  gap: var(--space-6);
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+.heroTitle {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--gray-900);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+}
+
+.heroDescription {
+  font-size: var(--font-size-base);
+  color: var(--gray-500);
+  line-height: 1.7;
+  max-width: 520px;
 }
 
 .heroBadge {
@@ -235,89 +274,76 @@
   width: fit-content;
   border: 1px solid rgba(14, 137, 143, 0.3);
   margin-bottom: var(--space-4);
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.heroTitle {
-  font-size: clamp(1.6rem, 3.2vw, 2.25rem);
-  font-weight: 700;
-  line-height: 1.15;
-  color: var(--gray-900);
-  letter-spacing: -0.02em;
-  margin-bottom: var(--space-2);
-  animation: fadeInUp 0.6s ease-out 0.1s both;
-}
-
-.heroDescription {
-  font-size: var(--font-size-sm);
-  color: var(--gray-500);
-  line-height: 1.7;
-  max-width: 520px;
-  animation: fadeInUp 0.6s ease-out 0.2s both;
-}
-
-.heroSubtext {
-  font-size: var(--font-size-sm);
-  color: var(--gray-400);
-  line-height: 1.6;
-  margin-bottom: var(--space-4);
-  animation: fadeInUp 0.6s ease-out 0.3s both;
 }
 
 .ctaGroup {
   display: flex;
   gap: var(--space-3);
   flex-wrap: wrap;
-  animation: fadeInUp 0.6s ease-out 0.4s both;
+  margin-top: var(--space-4);
 }
 
-.ctaPrimary,
-.ctaSecondary {
-  position: relative;
+.ctaPrimary, .ctaSecondary {
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* Visual Side */
 .heroVisual {
   position: relative;
   display: flex;
   justify-content: center;
-  align-items: center;
-  z-index: 1;
+  align-items: flex-end;
+  height: auto;
+  align-self: flex-end;
+  z-index: 10;
 }
 
 .imageWrapper {
   position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
+  display: flex;
+  align-items: flex-end;
 }
 
 .heroImage {
   width: 100%;
   height: auto;
+  max-height: 100%;
   object-fit: contain;
+  object-position: bottom;
   position: relative;
   z-index: 2;
-  border-radius: var(--radius-2xl);
-  animation: fadeInUp 0.8s ease-out 0.2s both;
+  display: block;
 }
 
-/* Floating Cards */
+/* Floating Cards for Hero */
 .floatingCard {
   position: absolute;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-xl);
   padding: var(--space-3) var(--space-4);
-  box-shadow: var(--shadow-xl);
-  z-index: 10;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  z-index: 5;
+}
+
+.satisfiedCard {
+  bottom: 80px;
+  left: -20px;
 }
 
 .doctorsCard {
-  top: 30%;
-  left: -20px;
+  top: 60px;
+  right: -10px;
 }
 
 .doctorInfo {
@@ -327,109 +353,38 @@
 
 .doctorCount {
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--gray-800);
-}
-
-.satisfiedCard {
-  bottom: 15%;
-  right: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  font-weight: 700;
+  color: var(--primary-700);
 }
 
 .satisfiedIcon {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #0E898F, #0A6B70);
-  border-radius: var(--radius-md);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #0E898F;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
 }
 
 .satisfiedCount {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-base);
   font-weight: 800;
-  color: var(--gray-900);
+  color: #1e293b;
+  line-height: 1;
 }
 
 .satisfiedLabel {
-  font-size: var(--font-size-xs);
-  color: var(--gray-500);
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
 }
 
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-}
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Mobile responsive for treatment hero */
-@media (max-width: 768px) {
-  .heroTitle {
-    font-size: 1.25rem;
-  }
-
-  .heroDescription {
-    font-size: var(--font-size-xs);
-  }
-
-  .ctaGroup {
-    flex-direction: row;
-    justify-content: center;
-    gap: var(--space-2);
-  }
-
-  .ctaGroup .btn {
-    flex: 1;
-    max-width: 140px;
-    padding: 6px 10px;
-    font-size: 11px;
-    height: 34px;
-  }
-
-  .ctaGroup .btn svg {
-    width: 13px;
-    height: 13px;
-  }
-}
-
-/* Rating Row */
-.ratingRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  animation: fadeInUp 0.6s ease-out 0.5s both;
-}
-
-.stars {
-  display: flex;
-  gap: 2px;
-}
-
-.ratingText {
-  font-size: var(--font-size-sm);
-  color: var(--gray-500);
-}
-
-.ratingText strong {
-  color: var(--gray-800);
-}
-
-/* ========================================
-   General Dentistry Section Styles
-   ======================================== */
+/* ── About Section Styles (used in details) ── */
 
 .about {
-  padding: var(--space-12) 0;
+  padding: var(--space-16) 0;
   background: var(--white);
   position: relative;
   overflow: hidden;
@@ -437,44 +392,35 @@
 
 .aboutInner {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--space-12);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
   align-items: center;
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 var(--space-12);
 }
 
 .reversedLayout .aboutInner {
-  grid-template-columns: auto 1fr;
+  direction: rtl;
 }
 
-.reversedLayout .aboutContent {
-  order: 2;
-}
-
+.reversedLayout .aboutContent, 
 .reversedLayout .aboutVisual {
-  order: 1;
-  justify-content: flex-start;
-}
-
-.sectionSeparator {
-  border-top: 1px solid rgba(14, 137, 143, 0.08);
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
+  direction: ltr;
 }
 
 .aboutContent {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-5);
 }
 
-.aboutContent .sectionTitle {
-  text-align: left;
+.sectionTitle {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1.2;
 }
 
 .titleAccent {
@@ -492,27 +438,15 @@
 }
 
 .aboutFeatures {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  margin-top: var(--space-1);
 }
 
 .aboutFeatureItem {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   align-items: center;
-  padding: var(--space-2) var(--space-3);
-  background: var(--bg-light);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--gray-100);
-  transition: all 0.3s ease;
-}
-
-.aboutFeatureItem:hover {
-  transform: translateY(-2px);
-  border-color: rgba(14, 137, 143, 0.2);
-  box-shadow: var(--shadow-md);
 }
 
 .aboutFeatureIcon {
@@ -521,23 +455,25 @@
 }
 
 .aboutFeatureText {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--gray-800);
-  line-height: 1.2;
+  font-size: var(--font-size-sm);
+  color: var(--gray-700);
+  font-weight: 500;
 }
 
-.aboutCtaRow {
+.aboutIdeal {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  margin-top: var(--space-2);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-blue);
+  border-radius: var(--radius-lg);
+  color: var(--primary-700);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
 }
 
 .aboutVisual {
   position: relative;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .aboutImageWrapper {
@@ -547,241 +483,47 @@
 }
 
 .aboutImage {
-  max-width: 100%;
+  width: 100%;
   height: auto;
+  object-fit: cover;
   display: block;
 }
 
-.aboutIdeal {
-  margin-top: var(--space-3);
-  padding: var(--space-3);
-  background: rgba(14, 137, 143, 0.05);
-  border-left: 4px solid var(--primary);
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  font-size: var(--font-size-sm);
-  color: var(--gray-700);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+.sectionSeparator {
+  height: 1px;
+  background: var(--gray-100);
+  margin: 0;
 }
 
-.ctaButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-8);
-  background: linear-gradient(135deg, #0E898F, #0A6B70);
-  color: var(--white);
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  border-radius: var(--radius-full);
-  text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(14, 137, 143, 0.35);
-  animation: fadeInUp 0.6s ease-out 0.4s both;
-  position: relative;
-  overflow: hidden;
-}
-
-.ctaButton::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
-}
-
-.ctaButton:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(14, 137, 143, 0.45);
-}
-
-.ctaButton:hover::before {
-  left: 100%;
-}
-
-/* Treatments/Services Section - Enhanced */
-.treatmentsSection {
-  padding: var(--space-12) 0;
-  background: var(--white);
-}
-
-.sectionTitle {
-  font-size: var(--font-size-3xl);
-  font-weight: 800;
-  color: var(--gray-900);
-  text-align: center;
-  margin-bottom: var(--space-8);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  position: relative;
-}
-
-.treatmentsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: var(--space-6);
-}
-
-.treatmentCard {
-  background: var(--bg-light);
-  border-radius: var(--radius-xl);
-  padding: var(--space-6);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--gray-100);
-  position: relative;
-  overflow: hidden;
-}
-
-.treatmentCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(135deg, #0E898F, #14A3A8);
-  transform: scaleX(0);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.treatmentCard:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(14, 137, 143, 0.15);
-  border-color: rgba(14, 137, 143, 0.2);
-}
-
-.treatmentCard:hover::before {
-  transform: scaleX(1);
-}
-
-.treatmentIcon {
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, rgba(14, 137, 143, 0.1), rgba(14, 137, 143, 0.05));
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-4);
-  color: #0E898F;
-  transition: all 0.3s ease;
-}
-
-.treatmentCard:hover .treatmentIcon {
-  background: linear-gradient(135deg, #0E898F, #14A3A8);
-  color: var(--white);
-  transform: scale(1.1);
-}
-
-.treatmentTitle {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--gray-900);
-  margin-bottom: var(--space-3);
-}
-
-.treatmentDescription {
-  font-size: var(--font-size-base);
-  color: var(--gray-500);
-  line-height: 1.6;
-}
-
-/* Why Choose Us Section - Enhanced */
+/* Why Choose Section */
 .whyChooseSection {
-  padding: var(--space-12) 0;
-  background: linear-gradient(135deg, var(--bg-light), var(--primary-50));
-}
-
-.featuresGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-4);
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.featuresGrid .featureItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-5) var(--space-6);
-  background: var(--white);
-  border-radius: var(--radius-xl);
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--gray-800);
-  box-shadow: none;
-  border: 1px solid var(--gray-200);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.featuresGrid .featureItem:hover {
-  transform: translateY(-4px);
-  box-shadow: none;
-  border-color: rgba(14, 137, 143, 0.3);
-}
-
-.featureIcon {
-  color: #0E898F;
-  flex-shrink: 0;
-  transition: transform 0.3s ease;
-}
-
-.featureItem:hover .featureIcon {
-  transform: scale(1.2);
-}
-
-/* Stats Section */
-.statsSection {
   padding: var(--space-16) 0;
   background: var(--white);
 }
 
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-8);
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.statCard {
+.whyChooseSection .sectionTitle {
   text-align: center;
-  padding: var(--space-6);
-  background: linear-gradient(135deg, var(--bg-light), var(--white));
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--gray-100);
-  transition: all 0.3s ease;
+  margin-bottom: var(--space-8);
 }
 
-.statCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-light);
+  border-radius: var(--radius-lg);
 }
 
-.statNumber {
-  font-size: var(--font-size-4xl);
-  font-weight: 900;
-  background: linear-gradient(135deg, #0E898F, #14A3A8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1;
-  margin-bottom: var(--space-2);
+.featureIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--primary);
 }
 
-.statLabel {
-  font-size: var(--font-size-base);
-  color: var(--gray-600);
-  font-weight: 500;
-}
-
-/* CTA Section — Newsletter Style */
+/* CTA Section - Home Page Style */
 .ctaSection {
   padding: var(--space-16) var(--space-6);
   background-color: var(--bg-light);
@@ -812,17 +554,15 @@
 .ctaTitle {
   font-size: var(--font-size-3xl);
   font-weight: 700;
-  color: var(--white);
   margin-bottom: var(--space-3);
   line-height: 1.2;
 }
 
 .ctaDescription {
   font-size: var(--font-size-base);
-  color: var(--white);
+  margin-bottom: var(--space-6);
   opacity: 0.9;
   line-height: 1.6;
-  margin-bottom: var(--space-6);
 }
 
 .ctaBtnRow {
@@ -832,52 +572,34 @@
 }
 
 .ctaButtonWhite {
+  background-color: var(--white);
+  color: var(--primary);
+  padding: var(--space-3) var(--space-8);
+  border-radius: var(--radius-full);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-size: var(--font-size-base);
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-8);
-  background: var(--white);
-  color: var(--primary);
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  border-radius: var(--radius-full);
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.ctaButtonWhite::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    transparent 0%,
-    transparent 30%,
-    rgba(14, 137, 143, 0.15) 50%,
-    transparent 70%,
-    transparent 100%
-  );
-  animation: ctaShimmer 3s ease-in-out infinite;
-}
-
-@keyframes ctaShimmer {
-  0% { left: -100%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
 }
 
 .ctaButtonWhite:hover {
-  background: var(--gray-50);
+  background-color: var(--white);
   transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.ctaButtonIcon {
+  transition: transform 0.3s ease;
+}
+
+.ctaButtonWhite:hover .ctaButtonIcon {
+  transform: translateX(4px);
 }
 
 .ctaImageWrapper {
@@ -897,251 +619,93 @@
   object-fit: contain;
 }
 
-/* Process Section */
-.processSection {
-  padding: var(--space-12) 0;
-  background: var(--white);
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+  .treatmentsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0 var(--space-4);
+  }
 }
 
-.processGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-6);
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.processCard {
-  text-align: center;
-  padding: var(--space-6);
-  position: relative;
-}
-
-.processNumber {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #0E898F, #14A3A8);
-  color: var(--white);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-2xl);
-  font-weight: 800;
-  margin: 0 auto var(--space-4);
-  box-shadow: 0 8px 20px rgba(14, 137, 143, 0.3);
-}
-
-.processTitle {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--gray-900);
-  margin-bottom: var(--space-2);
-}
-
-.processDescription {
-  font-size: var(--font-size-base);
-  color: var(--gray-500);
-  line-height: 1.6;
-}
-
-/* Responsive - Desktop Tablet (1024px) */
 @media (max-width: 1024px) {
-  .heroGrid {
-    grid-template-columns: 1fr !important;
+  .heroGrid, .aboutInner {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
     text-align: center;
-    gap: var(--space-8);
-    padding: 0 var(--space-6);
   }
 
-  .heroContent {
+  .heroContent, .aboutContent {
     align-items: center;
+    text-align: center;
+  }
+
+  .heroDescription, .aboutDescription {
     max-width: 100%;
+  }
+
+  .heroVisual, .aboutVisual {
+    max-width: 500px;
     margin: 0 auto;
-    text-align: center;
-  }
-
-  .heroTitle {
-    font-size: 2rem;
-  }
-
-  .heroDescription, .heroSubtext {
-    max-width: 100%;
-    text-align: center;
+    align-self: center;
   }
 
   .ctaGroup {
     justify-content: center;
   }
 
-  .ratingRow {
-    justify-content: center;
-  }
-
-  .heroVisual {
-    max-width: 450px;
-    margin: var(--space-8) auto 0;
-    order: 2;
-  }
-
-  .hero {
-    min-height: auto;
-    padding: var(--space-12) 0 var(--space-16);
-  }
-
-  .aboutInner {
-    grid-template-columns: 1fr !important;
-    gap: var(--space-8);
-    text-align: left;
-    padding: 0 var(--space-6);
-  }
-
-  .aboutContent {
-    order: 1 !important;
-    align-items: flex-start !important;
-    text-align: left !important;
-    margin: 0;
-    width: 100%;
-  }
-
-  .aboutContent .sectionTitle {
-    display: block !important;
-    text-align: left !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    font-size: 1.5rem;
-    margin: 0 0 var(--space-3) 0 !important;
-    padding: 0 !important;
-  }
-
-  .aboutDescription {
-    display: block !important;
-    max-width: 100%;
-    margin: 0 0 var(--space-4) 0 !important;
-    text-align: left !important;
-    font-size: 0.8rem;
-    line-height: 1.6;
-    padding: 0;
-  }
-
-  .aboutContent .heroBadge {
-    display: inline-flex !important;
-    font-size: 11px;
-    padding: var(--space-1) var(--space-3);
-    margin-bottom: var(--space-3) !important;
-    margin-left: 0 !important;
-    margin-right: auto !important;
-  }
-
-  .aboutContent .heroBadge svg {
-    width: 13px !important;
-    height: 13px !important;
-  }
-
-  .aboutFeatures {
-    grid-template-columns: repeat(2, 1fr);
-    width: 100%;
-    max-width: 600px;
-    margin: var(--space-2) 0 0 0;
-    gap: var(--space-2);
-  }
-
-  .aboutFeatureItem {
-    justify-content: flex-start;
-    padding: var(--space-2);
-    gap: var(--space-2);
-    min-height: 40px;
-  }
-
-  .aboutFeatureIcon {
-    width: 12px !important;
-    height: 12px !important;
-  }
-
-  .aboutFeatureText {
-    font-size: 10px;
-  }
-
-  .aboutIdeal {
-    margin: var(--space-4) 0 0 0;
-    justify-content: flex-start;
-    text-align: left;
-    border-left: 4px solid var(--primary);
-    border-top: none;
-    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-    font-size: 12px;
-    padding: var(--space-2);
-  }
-
-  .aboutVisual {
-    order: 2 !important;
-    max-width: 420px;
-    margin: var(--space-8) auto 0;
-    justify-content: center !important;
-  }
-
-  .treatmentRow {
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-  }
-
-  .reversed {
-    direction: ltr;
-  }
-
-  .treatmentImage {
-    height: 280px;
+  .satisfiedCard {
+    left: 0;
   }
 
   .ctaContainer {
+    flex-direction: column;
+    text-align: center;
     padding: var(--space-10) var(--space-8);
   }
 
+  .ctaContent {
+    max-width: 100%;
+  }
+
   .ctaTitle {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-2xl);
+  }
+
+  .ctaBtnRow {
+    justify-content: center;
   }
 
   .ctaImageWrapper {
+    position: relative;
+    right: 0;
     width: 40%;
+    height: auto;
+    margin-top: var(--space-4);
   }
 }
 
-/* Responsive - Mobile (768px) */
 @media (max-width: 768px) {
-  .hero {
-    margin: var(--space-3) var(--space-4) var(--space-6);
-    padding: var(--space-10) 0;
-    min-height: auto;
+  .about {
+    padding: var(--space-12) 0;
   }
 
-  .floatingCard {
-    display: none;
+  .whyChooseSection {
+    padding: var(--space-12) 0;
   }
 
-  .featuresGrid .featureItem {
-    font-size: var(--font-size-sm);
-    padding: var(--space-4) var(--space-5);
-  }
-
-  .treatmentsGrid {
-    grid-template-columns: 1fr;
+  .whyChooseSection .sectionTitle {
+    margin-bottom: var(--space-6);
   }
 
   .featuresGrid {
     grid-template-columns: 1fr;
   }
 
-  .treatmentCard {
-    padding: var(--space-6);
-  }
-
-  .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
-  }
-
-  .processGrid {
-    grid-template-columns: 1fr;
+  .ctaSection {
+    padding: var(--space-12) var(--space-6);
   }
 
   .ctaContainer {
@@ -1162,7 +726,7 @@
   }
 
   .ctaDescription {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     margin-bottom: var(--space-4);
     line-height: 1.5;
   }
@@ -1176,12 +740,9 @@
 
   .ctaButtonWhite {
     padding: var(--space-2) var(--space-5);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
+    width: auto;
     white-space: nowrap;
-  }
-
-  .sectionTitle {
-    font-size: var(--font-size-xl);
   }
 
   .ctaImageWrapper {
@@ -1194,22 +755,12 @@
   }
 }
 
-/* Responsive - Mobile Small (640px) */
 @media (max-width: 640px) {
-  .featureList {
+  .treatmentsGrid {
     grid-template-columns: 1fr;
   }
-
-  .treatmentImage {
-    height: 220px;
-  }
-
-  .aboutFeatures {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-2);
-  }
-
-  .aboutFeatureText {
-    font-size: 10px;
+  
+  .cardImageWrapper {
+    height: 200px;
   }
 }

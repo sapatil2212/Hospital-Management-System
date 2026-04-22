@@ -100,8 +100,8 @@ export const softDeleteSupplier = async (id: string, hospitalId: string) => {
 };
 
 // --- Purchases ---
-export const createPurchase = async (data: Prisma.PurchaseUncheckedCreateInput, items: any[]) => {
-  return prisma.$transaction(async (tx) => {
+export const createPurchase = async (data: any, items: any[]) => {
+  return (prisma as any).$transaction(async (tx: any) => {
     // 1. Create Purchase
     const purchase = await tx.purchase.create({ data });
 
@@ -151,26 +151,51 @@ export const createPurchase = async (data: Prisma.PurchaseUncheckedCreateInput, 
   });
 };
 
-export const findAllPurchases = async (hospitalId: string) => {
-  return prisma.purchase.findMany({
-    where: { hospitalId },
-    include: { supplier: { select: { name: true } }, _count: { select: { items: true } } },
+export const findAllPurchases = async (hospitalId: string, paymentStatus?: string) => {
+  const where: any = { hospitalId };
+  if (paymentStatus) where.paymentStatus = paymentStatus;
+  return (prisma as any).purchase.findMany({
+    where,
+    include: {
+      supplier: { select: { name: true, phone: true, email: true, gstNumber: true, address1: true, city: true, state: true } },
+      subDepartment: { select: { id: true, name: true, type: true } },
+      items: { include: { item: { select: { id: true, name: true, unit: true, category: true } } } },
+      _count: { select: { items: true } },
+    },
     orderBy: { createdAt: "desc" }
   });
 };
 
+export const findDueReminders = async (hospitalId: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return (prisma as any).purchase.findMany({
+    where: {
+      hospitalId,
+      paymentStatus: { in: ["PENDING", "PARTIAL"] },
+      dueDate: { lte: tomorrow },
+    },
+    include: { supplier: { select: { name: true, phone: true, email: true } }, _count: { select: { items: true } } },
+    orderBy: { dueDate: "asc" }
+  });
+};
+
 export const findPurchaseById = async (id: string, hospitalId: string) => {
-  return prisma.purchase.findFirst({
+  return (prisma as any).purchase.findFirst({
     where: { id, hospitalId },
     include: {
-      supplier: { select: { id: true, name: true } },
-      items: { include: { item: { select: { id: true, name: true } } } },
+      supplier: { select: { id: true, name: true, phone: true, email: true, gstNumber: true, address1: true, city: true, state: true, pincode: true, contactPerson: true } },
+      subDepartment: { select: { id: true, name: true, type: true } },
+      items: { include: { item: { select: { id: true, name: true, unit: true, category: true, hsnCode: true } } } },
+      hospital: { select: { name: true, mobile: true, email: true } },
     },
   });
 };
 
-export const updatePurchase = async (id: string, hospitalId: string, data: Prisma.PurchaseUncheckedUpdateInput) => {
-  return prisma.purchase.update({ where: { id, hospitalId }, data });
+export const updatePurchase = async (id: string, hospitalId: string, data: any) => {
+  return (prisma as any).purchase.update({ where: { id, hospitalId }, data });
 };
 
 // --- Stock Movements & FIFO Logic ---

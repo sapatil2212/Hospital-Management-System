@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import {
   CheckCircle,
   ArrowRight,
-  Calendar,
   Zap,
   Target,
   Users,
@@ -10,14 +9,13 @@ import {
   Sparkles,
   Shield,
   Microscope,
-  Stethoscope
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "../treatments.module.css";
 import BodyShapingHero from "./BodyShapingHero";
+import CTASection from "../CTASection";
 
 export const metadata: Metadata = {
   title: "Body Shaping & Contouring Center | Celeb Aesthetica",
@@ -405,33 +403,13 @@ export default function BodyShapingPage() {
           </div>
         </section>
 
-        {/* CTA Section — Newsletter Style */}
-        <section className={styles.ctaSection}>
-          <div className={styles.ctaContainer}>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>
-                Book Your Body Transformation Consultation
-              </h2>
-              <p className={styles.ctaDescription}>
-                Start your journey toward a more sculpted, confident, and healthier body with expert care at Celeb Aesthetica.
-              </p>
-              <div className={styles.ctaBtnRow}>
-                <Link href="/contact" className={styles.ctaButtonWhite}>
-                  <Calendar size={18} /> Schedule Your Consultation
-                </Link>
-              </div>
-            </div>
-            <div className={styles.ctaImageWrapper}>
-              <Image
-                src="/images/Quick-Treatments/BodyShaping.png"
-                alt="Expert Body Contouring"
-                width={500}
-                height={600}
-                className={styles.ctaImage}
-              />
-            </div>
-          </div>
-        </section>
+        {/* CTA Section — Home Page Style */}
+        <CTASection
+          title="Start Your Body Transformation <br /> with Expert Care"
+          description="Book your consultation today and experience advanced, ethical, and personalized body contouring treatment designed for your health, confidence, and long-term results."
+          imageSrc="/images/home-cta.webp"
+          imageAlt="Body contouring specialist"
+        />
       </main>
       <Footer />
     </>
