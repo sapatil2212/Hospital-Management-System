@@ -102,7 +102,7 @@ function MiniCalendar() {
   );
 }
 
-type NavTab = "overview" | "appointments" | "staff" | "doctors" | "patients" | "inventory" | "billing" | "ipd" | "departments" | "enquiries" | "blogs" | "reports" | "finance" | "settings" | "profile";
+type NavTab = "overview" | "appointments" | "staff" | "doctors" | "patients" | "inventory" | "billing" | "ipd" | "departments" | "enquiries" | "tourism" | "blogs" | "reports" | "finance" | "settings" | "profile";
 
 // Dead InventoryPanel removed — replaced by AdminInventoryPanel component
 
@@ -149,7 +149,7 @@ function DashboardContent() {
   useEffect(() => {
     const t = searchParams.get("tab") as NavTab;
     if (t === "finance") { router.push("/hospitaladmin/finance"); return; }
-    if (t && ["overview", "appointments", "staff", "doctors", "patients", "inventory", "billing", "ipd", "departments", "enquiries", "blogs", "settings", "profile"].includes(t)) {
+    if (t && ["overview", "appointments", "staff", "doctors", "patients", "inventory", "billing", "ipd", "departments", "enquiries", "tourism", "blogs", "settings", "profile"].includes(t)) {
       setTab(t);
     }
   }, [searchParams, router]);
@@ -277,7 +277,7 @@ function DashboardContent() {
         </div>
       )}
 
-      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "departments" || tab === "reports" || tab === "enquiries" || tab === "blogs" || tab === "patients") ? { gridTemplateColumns: "1fr" } : undefined}>
+      <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "departments" || tab === "reports" || tab === "enquiries" || tab === "tourism" || tab === "blogs" || tab === "patients") ? { gridTemplateColumns: "1fr" } : undefined}>
     <div className="hd-center">
       {tab === "overview" && (<>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
@@ -566,7 +566,7 @@ function DashboardContent() {
               { label: "Patient Registry", desc: "View full patient history and profiles", color: "#7c3aed", bg: "#f5f3ff", path: "/hospitaladmin/appointments", icon: <Users size={18} /> },
             ].map((card) => (
               <button key={card.label} onClick={() => router.push(card.path)}
-                style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "18px 20px", cursor: "pointer", textAlign: "left", transition: "all .15s", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "18px 20px", cursor: "pointer", textAlign: "left", transition: "all .15s" }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11, background: card.bg, display: "flex", alignItems: "center", justifyContent: "center", color: card.color, marginBottom: 12 }}>{card.icon}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>{card.label}</div>
                 <div style={{ fontSize: 12, color: "#94a3b8" }}>{card.desc}</div>
@@ -674,6 +674,10 @@ function DashboardContent() {
         <EnquiryPanel />
       )}
 
+      {tab === "tourism" && (
+        <EnquiryPanel typeFilter="MEDICAL_TOURISM" title="Medical Tourism Enquiries" />
+      )}
+
       {tab === "blogs" && (
         <BlogPanel />
       )}
@@ -695,7 +699,7 @@ function DashboardContent() {
       )}
     </div>
 
-    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && tab !== "enquiries" && tab !== "blogs" && tab !== "patients" && tab !== "departments" && (
+    {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && tab !== "enquiries" && tab !== "tourism" && tab !== "blogs" && tab !== "patients" && tab !== "departments" && (
       <div className="hd-right">
         <div className="hd-right-sec">
           <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>

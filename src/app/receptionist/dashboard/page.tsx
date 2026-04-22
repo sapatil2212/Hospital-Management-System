@@ -6,6 +6,7 @@ import {
   MessageSquare, HelpCircle, Plus, Check, X, Play, ChevronRight,
   Clock, TrendingUp, Users, BarChart2, Pencil, Trash2
 } from "lucide-react";
+import AppointmentAlertModal from "@/components/AppointmentAlertModal";
 
 const todayQueue = [
   { token:"T001", name:"Rajesh Verma", doctor:"Dr. Priya Sharma", dept:"Cardiology", time:"09:00 AM", status:"in-progress", mobile:"+91 98765 43210" },
@@ -390,5 +391,6 @@ export default function ReceptionistDashboard() {
         </div>
       </main>
     </div>
+      <AppointmentAlertModal />
   </>);
 }

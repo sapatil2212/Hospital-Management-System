@@ -5,23 +5,25 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, CalendarDays, Users, UserRound, Settings, HelpCircle,
   LogOut, Search, MessageSquare, Building2, Stethoscope, ClipboardList,
-  IndianRupee, CreditCard, ChevronDown, User, LogIn, BedDouble, BarChart2, FileQuestion, BookOpen
+  IndianRupee, CreditCard, ChevronDown, User, LogIn, BedDouble, BarChart2, FileQuestion, BookOpen, Globe
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import AppointmentAlertModal from "@/components/AppointmentAlertModal";
 
 const initials = (n: string) => n.split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase();
 
 const NAV_ITEMS = [
   { id: "overview",     label: "Dashboard",        Icon: LayoutDashboard, section: "General", route: "/hospitaladmin/dashboard" },
   { id: "appointments", label: "Appointments",      Icon: CalendarDays,    section: "General", route: "/hospitaladmin/appointments" },
+  { id: "billing",      label: "Billing",           Icon: CreditCard,      section: "General", route: "/hospitaladmin/dashboard?tab=billing" },
+  { id: "inventory",    label: "Inventory",         Icon: ClipboardList,   section: "General", route: "/hospitaladmin/dashboard?tab=inventory" },
+  { id: "ipd",          label: "IPD / Wards",       Icon: BedDouble,       section: "General", route: "/hospitaladmin/dashboard?tab=ipd" },
   { id: "staff",        label: "Staff",             Icon: Users,           section: "General", route: "/hospitaladmin/staff" },
   { id: "doctors",      label: "Doctors",           Icon: Stethoscope,     section: "General", route: "/hospitaladmin/doctors" },
   { id: "patients",     label: "Patients",          Icon: UserRound,       section: "General", route: "/hospitaladmin/dashboard?tab=patients" },
-  { id: "inventory",    label: "Inventory",         Icon: ClipboardList,   section: "General", route: "/hospitaladmin/dashboard?tab=inventory" },
-  { id: "billing",      label: "Billing",           Icon: CreditCard,      section: "General", route: "/hospitaladmin/dashboard?tab=billing" },
-  { id: "ipd",          label: "IPD / Wards",       Icon: BedDouble,       section: "General", route: "/hospitaladmin/dashboard?tab=ipd" },
   { id: "departments", label: "Departments",       Icon: Building2,       section: "General", route: "/hospitaladmin/dashboard?tab=departments" },
   { id: "enquiries",    label: "Enquiries",         Icon: FileQuestion,    section: "General", route: "/hospitaladmin/dashboard?tab=enquiries" },
+  { id: "tourism",      label: "Medical Tourism",    Icon: Globe,           section: "General", route: "/hospitaladmin/dashboard?tab=tourism" },
   { id: "blogs",        label: "Blogs",              Icon: BookOpen,        section: "General", route: "/hospitaladmin/dashboard?tab=blogs" },
   { id: "reports",      label: "Reports",           Icon: BarChart2,       section: "System",  route: "/hospitaladmin/dashboard?tab=reports" },
   { id: "finance",      label: "Finance",           Icon: IndianRupee,     section: "System",  route: "/hospitaladmin/finance" },
@@ -40,6 +42,7 @@ function getActiveId(pathname: string, tab: string | null): string {
     if (tab === "ipd")          return "ipd";
     if (tab === "departments")  return "departments";
     if (tab === "enquiries")    return "enquiries";
+    if (tab === "tourism")      return "tourism";
     if (tab === "blogs")        return "blogs";
     if (tab === "reports")      return "reports";
     if (tab === "finance")      return "finance";
@@ -151,7 +154,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .hd-logout:hover{background:#fee2e2}
         .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-        .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+        .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40}
         .hd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
         .hd-search-wrap:focus-within{border-color:#80CCCC}
         .hd-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
@@ -170,14 +173,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-pg-title{font-size:18px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
         .hd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
         @media(max-width:1100px){.hd-stats{grid-template-columns:repeat(2,1fr)}}
-        .hd-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .2s,box-shadow .2s;cursor:default}
-        .hd-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+        .hd-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:14px;transition:transform .2s,border-color .2s;cursor:default}
+        .hd-sc:hover{transform:translateY(-1px);border-color:#b3d9da}
         .hd-sc-icon{width:40px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
         .hd-sc-lbl{font-size:10px;font-weight:500;color:#94a3b8;margin-bottom:2px}
         .hd-sc-val{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
         .hd-sc-sub{font-size:9px;color:#94a3b8;margin-top:3px}
         .hd-mid{display:grid;grid-template-columns:1fr 220px;gap:14px;margin-bottom:18px}
-        .hd-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow:hidden}
+        .hd-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden}
         .hd-card-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
         .hd-card-title{font-size:13px;font-weight:700;color:#1e293b}
         .hd-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}
@@ -387,6 +390,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      <AppointmentAlertModal />
     </>
   );
 }
