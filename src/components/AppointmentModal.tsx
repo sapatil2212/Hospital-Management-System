@@ -289,13 +289,14 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
       {isOpen && (
         <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
           <motion.div className={styles.modal}
+            style={{ maxWidth: isSuccess ? 420 : 600, transition: "max-width 0.3s ease" }}
             initial={{ opacity: 0, scale: 0.92, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 40 }} transition={{ type: "spring", damping: 26, stiffness: 280 }}
             onClick={(e) => e.stopPropagation()}>
             <button className={styles.closeBtn} onClick={onClose}><X size={20} /></button>
 
             {/* ── Step Indicator ── */}
-            <StepIndicator current={isSuccess ? 3 : step} />
+            {!isSuccess && <StepIndicator current={step} />}
 
             {/* ── Saving Overlay ── */}
             <AnimatePresence>
@@ -317,35 +318,28 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 style={{ flex: 1, position: "relative", background: "#fff",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  padding: "36px 28px 28px", textAlign: "center", overflow: "hidden" }}>
-
-                {/* Sparkle decorations */}
-                <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.18, scale: 1 }} transition={{ delay: 0.6, duration: 0.4 }}
-                  style={{ position: "absolute", top: 24, right: 32 }}><Sparkles size={24} style={{ color: "var(--primary)" }} /></motion.div>
-                <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.12, scale: 1 }} transition={{ delay: 0.8, duration: 0.4 }}
-                  style={{ position: "absolute", bottom: 32, left: 28 }}><Sparkles size={18} style={{ color: "#10b981" }} /></motion.div>
-                <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.1, scale: 1 }} transition={{ delay: 1, duration: 0.4 }}
-                  style={{ position: "absolute", top: 50, left: 36 }}><Heart size={14} style={{ color: "#f59e0b" }} /></motion.div>
+                  padding: "24px 20px 20px", textAlign: "center", overflow: "hidden" }}>
 
                 {/* Animated check circle */}
-                <div style={{ position: "relative", width: 80, height: 80, marginBottom: 20 }}>
+                <div style={{ position: "relative", width: 64, height: 64, marginBottom: 16 }}>
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
-                    style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #10b981, #059669)",
+                    style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg, #10b981, #059669)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       boxShadow: "0 8px 32px rgba(16,185,129,.35)" }}>
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.3 }}>
-                      <Check size={36} strokeWidth={3} style={{ color: "#fff" }} />
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.3 }}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
+                        <Check size={28} strokeWidth={3} style={{ color: "#fff" }} />
                     </motion.div>
                   </motion.div>
                   <motion.div animate={{ scale: [1, 1.12, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ position: "absolute", inset: -6, borderRadius: "50%", border: "3px solid rgba(16,185,129,.15)" }} />
+                    style={{ position: "absolute", inset: -5, borderRadius: "50%", border: "3px solid rgba(16,185,129,.15)" }} />
                 </div>
 
                 {/* Title */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                  <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--gray-900)", margin: "0 0 6px", letterSpacing: "-0.02em" }}>Appointment Confirmed!</h3>
-                  <p style={{ fontSize: 13, color: "var(--gray-500)", margin: "0 0 20px", lineHeight: 1.5 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--gray-900)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>Appointment Confirmed!</h3>
+                  <p style={{ fontSize: 12, color: "var(--gray-500)", margin: "0 0 16px", lineHeight: 1.5 }}>
                     Your booking has been confirmed successfully.
                   </p>
                 </motion.div>
@@ -353,61 +347,61 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                 {/* Summary card */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
                   style={{ width: "100%", background: "var(--gray-50)", border: "1px solid var(--gray-200)",
-                    borderRadius: 14, overflow: "hidden", marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "stretch", padding: "16px 18px" }}>
+                    borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "stretch", padding: "12px 14px" }}>
                     {/* Doctor */}
-                    <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left" }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 8, background: "#fff", border: "1px solid var(--gray-200)",
+                    <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 6, textAlign: "left" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: 6, background: "#fff", border: "1px solid var(--gray-200)",
                         display: "flex", alignItems: "center", justifyContent: "center", color: "var(--primary)", flexShrink: 0 }}>
-                        <Stethoscope size={14} />
+                        <Stethoscope size={12} />
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Doctor</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gray-900)" }}>{bookedInfo.doctor}</div>
-                        {bookedInfo.department && <div style={{ fontSize: 11, color: "var(--gray-500)" }}>{bookedInfo.department}</div>}
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Doctor</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--gray-900)" }}>{bookedInfo.doctor}</div>
+                        {bookedInfo.department && <div style={{ fontSize: 10, color: "var(--gray-500)" }}>{bookedInfo.department}</div>}
                       </div>
                     </div>
                     {/* Divider */}
-                    <div style={{ width: 1, background: "var(--gray-200)", margin: "0 12px", flexShrink: 0 }} />
+                    <div style={{ width: 1, background: "var(--gray-200)", margin: "0 8px", flexShrink: 0 }} />
                     {/* Date */}
-                    <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left" }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 8, background: "#fff", border: "1px solid var(--gray-200)",
+                    <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 6, textAlign: "left" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: 6, background: "#fff", border: "1px solid var(--gray-200)",
                         display: "flex", alignItems: "center", justifyContent: "center", color: "var(--primary)", flexShrink: 0 }}>
-                        <CalendarCheck size={14} />
+                        <CalendarCheck size={12} />
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date & Time</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gray-900)" }}>{fmtDate(bookedInfo.date)}</div>
-                        <div style={{ fontSize: 11, color: "var(--gray-500)" }}>{fmt12(bookedInfo.time)}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "var(--gray-400)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date & Time</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--gray-900)" }}>{fmtDate(bookedInfo.date)}</div>
+                        <div style={{ fontSize: 10, color: "var(--gray-500)" }}>{fmt12(bookedInfo.time)}</div>
                       </div>
                     </div>
                   </div>
                   {bookedInfo.token && (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "10px 18px", borderTop: "1px solid var(--gray-200)",
+                      padding: "8px 14px", borderTop: "1px solid var(--gray-200)",
                       background: "linear-gradient(135deg, rgba(14,137,143,.04), rgba(16,185,129,.04))" }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--gray-500)" }}>Token Number</span>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: "var(--primary)",
-                        background: "rgba(14,137,143,.1)", padding: "3px 12px", borderRadius: 7 }}>#{bookedInfo.token}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--gray-500)" }}>Token Number</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--primary)",
+                        background: "rgba(14,137,143,.1)", padding: "2px 10px", borderRadius: 6 }}>#{bookedInfo.token}</span>
                     </div>
                   )}
                 </motion.div>
 
                 {/* Email notice */}
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: "var(--gray-500)",
-                    background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 9, padding: "8px 14px", marginBottom: 20 }}>
-                  <Mail size={13} />
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--gray-500)",
+                    background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "6px 12px", marginBottom: 16 }}>
+                  <Mail size={12} />
                   <span>Confirmation sent to <strong style={{ color: "#166534" }}>{bookedInfo.email}</strong></span>
                 </motion.div>
 
                 {/* Actions */}
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
-                  style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button type="button" onClick={onClose}
-                    style={{ padding: "10px 22px", borderRadius: 10, border: "none",
+                    style={{ padding: "8px 18px", borderRadius: 8, border: "none",
                       background: "linear-gradient(135deg,#0E898F,#0d7a7f)", color: "#fff",
-                      fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                      fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
                       boxShadow: "0 4px 14px rgba(14,137,143,.3)", transition: "all .2s" }}>
                     Done
                   </button>
@@ -415,10 +409,10 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                     setIsSuccess(false); setBookedInfo(null); setStep(1);
                     setForm({ name: "", phone: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
                   }}
-                    style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid var(--gray-200)",
-                      background: "#fff", color: "var(--gray-600)", fontSize: 13, fontWeight: 600,
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid var(--gray-200)",
+                      background: "#fff", color: "var(--gray-600)", fontSize: 12, fontWeight: 600,
                       cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all .2s" }}>
-                    <CalendarPlus size={14} /> Book Another
+                    <CalendarPlus size={13} /> Book Another
                   </button>
                 </motion.div>
               </motion.div>
@@ -535,8 +529,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                       <label className={styles.label}>Appointment Type</label>
                       <SearchableSelect icon={FileText} placeholder="OPD" value={form.type}
                         options={[
-                          { id: "OPD", label: "OPD", sub: "Outpatient" },
-                          { id: "ONLINE", label: "Online", sub: "Video Consult" },
+                          { id: "OPD", label: "First time visit", sub: "Outpatient" },
                           { id: "FOLLOW_UP", label: "Follow-up", sub: "Revisit" },
                           { id: "EMERGENCY", label: "Emergency", sub: "Urgent" },
                         ]} onChange={v => set("type", v)} />

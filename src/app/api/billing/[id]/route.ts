@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "../../../../../backend/utils/res
 import { getBillById, updateBill, recordPayment, deleteBill, revertBillToPending, BillingServiceError } from "../../../../../backend/services/billing.service";
 import { notifyPaymentReceived } from "../../../../../backend/services/notification.service";
 
-const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST"];
+const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "SUB_DEPT_HEAD"];
 export const dynamic = "force-dynamic";
 
 // GET /api/billing/[id]

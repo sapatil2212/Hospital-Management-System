@@ -161,7 +161,12 @@ export default function AboutPage() {
                     <p className={styles.doctorSpecialty} style={{ color: doctor.color }}>{doctor.specialty}</p>
                     
                     <div className={styles.doctorMeta}>
-                      <span className={styles.experienceBadge}>{doctor.experience}</span>
+                      <span
+                        className={styles.experienceBadge}
+                        style={{ background: doctor.bgColor, color: doctor.color }}
+                      >
+                        {doctor.experience} Experience
+                      </span>
                       {doctor.qualifications && <span className={styles.qualificationBadge}>{doctor.qualifications}</span>}
                     </div>
 

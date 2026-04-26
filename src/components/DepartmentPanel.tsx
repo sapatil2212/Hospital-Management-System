@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Plus, Pencil, Trash2, Search, X, Loader2, Check, AlertTriangle,
   ChevronLeft, ChevronRight, Building2, DollarSign, MapPin, User,
   Settings2, ToggleLeft, ToggleRight, Filter, Eye, Download,
   ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, FileType,
   ShieldAlert, Users, Layers, Info, Mail, Send, KeyRound,
-  EyeOff, Copy, RefreshCw, Lock, ShieldCheck
+  EyeOff, Copy, RefreshCw, Lock, ShieldCheck, ChevronDown
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -52,7 +52,7 @@ interface FormData {
   name: string;
   code: string;
   description: string;
-  type: "CLINICAL" | "DIAGNOSTIC" | "PROCEDURE" | "SUPPORT" | "ADMINISTRATIVE" | "CUSTOM";
+  type: "CLINICAL" | "DIAGNOSTIC" | "SUPPORT" | "ADMINISTRATIVE";
   customTypeName: string;
   consultationFee: string;
   allowAppointments: boolean;
@@ -97,21 +97,43 @@ const api = async (url: string, method = "GET", body?: any) => {
 };
 
 const DEPT_TYPES = [
-  { value: "CLINICAL", label: "Clinical Departments (Patient Care)", desc: "Direct patient care and treatment" },
-  { value: "DIAGNOSTIC", label: "Diagnostic Departments", desc: "Diagnostic and testing services" },
-  { value: "PROCEDURE", label: "Procedure / Treatment Departments", desc: "Specialized procedures and treatments" },
-  { value: "SUPPORT", label: "Support / Service Departments", desc: "Support and auxiliary services" },
-  { value: "ADMINISTRATIVE", label: "Administrative Departments", desc: "Administrative and management" },
-  { value: "CUSTOM", label: "Custom", desc: "Define your own type" },
+  { value: "CLINICAL",       label: "Clinical",              desc: "OPD, IPD, ICU, Nursing, Clinical Procedures" },
+  { value: "ADMINISTRATIVE", label: "Admin",                 desc: "Reception, Billing, HR" },
+  { value: "SUPPORT",        label: "Support / Service",     desc: "Pharmacy, Ambulance, Housekeeping" },
+  { value: "DIAGNOSTIC",     label: "Diagnosis / Pathology", desc: "Lab, Radiology, Blood Bank, ECG" },
 ];
 
+const SUBDEPT_OPTIONS_BY_DEPT_TYPE: Record<string, Array<{ value: string; label: string }>> = {
+  CLINICAL: [
+    { value: "OPD",                label: "OPD (Outpatient Department)" },
+    { value: "IPD",                label: "IPD (Inpatient Department)" },
+    { value: "CLINICAL_PROCEDURE", label: "Clinical Procedures" },
+    { value: "ICU",                label: "ICU / NICU" },
+    { value: "NURSING",            label: "Nursing" },
+  ],
+  ADMINISTRATIVE: [
+    { value: "RECEPTION", label: "Reception" },
+    { value: "BILLING",   label: "Billing" },
+    { value: "HR",        label: "HR" },
+  ],
+  SUPPORT: [
+    { value: "PHARMACY",     label: "Pharmacy" },
+    { value: "AMBULANCE",    label: "Ambulance" },
+    { value: "HOUSEKEEPING", label: "Housekeeping" },
+  ],
+  DIAGNOSTIC: [
+    { value: "PATHOLOGY",  label: "Pathology Lab" },
+    { value: "RADIOLOGY",  label: "Radiology" },
+    { value: "BLOOD_BANK", label: "Blood Bank" },
+    { value: "ECG",        label: "ECG" },
+  ],
+};
+
 const TYPE_COLORS: Record<string, string> = {
-  CLINICAL: "blue",
-  DIAGNOSTIC: "orange",
-  PROCEDURE: "purple",
-  SUPPORT: "gray",
+  CLINICAL:       "blue",
+  DIAGNOSTIC:     "orange",
+  SUPPORT:        "gray",
   ADMINISTRATIVE: "teal",
-  CUSTOM: "teal",
 };
 
 const emptyForm: FormData = {
@@ -369,6 +391,83 @@ function Toggle({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SEARCHABLE SELECT
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SearchableSelect({
+  value, onChange, options, placeholder = "Select...",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; desc?: string }[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = options.filter(o =>
+    o.label.toLowerCase().includes(search.toLowerCase()) ||
+    (o.desc || "").toLowerCase().includes(search.toLowerCase())
+  );
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={() => { setOpen(o => !o); setSearch(""); }}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", border: `1.5px solid ${open ? "#80CCCC" : "#e2e8f0"}`, borderRadius: 9, padding: "9px 12px", cursor: "pointer", fontSize: 12, color: selected ? "#1e293b" : "#94a3b8", fontWeight: selected ? 600 : 400, userSelect: "none", boxShadow: open ? "0 0 0 3px rgba(147,197,253,.2)" : "none" }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span>{selected?.label || placeholder}</span>
+          {selected?.desc && <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 6 }}>— {selected.desc}</span>}
+        </div>
+        <ChevronDown size={13} style={{ color: "#94a3b8", flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+      </div>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 200 }}>
+          <div style={{ padding: "8px 10px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 6 }}>
+            <Search size={12} color="#94a3b8" />
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search..."
+              style={{ border: "none", outline: "none", fontSize: 12, color: "#334155", background: "transparent", width: "100%" }}
+            />
+            {search && <button type="button" onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, lineHeight: 1 }}><X size={11} /></button>}
+          </div>
+          <div style={{ maxHeight: 200, overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: "12px 14px", fontSize: 12, color: "#94a3b8" }}>No results</div>
+            ) : filtered.map(o => (
+              <div
+                key={o.value}
+                onClick={() => { onChange(o.value); setOpen(false); setSearch(""); }}
+                style={{ padding: "9px 14px", cursor: "pointer", background: o.value === value ? "#E6F4F4" : "#fff", borderBottom: "1px solid #f8fafc", transition: "background .1s" }}
+                onMouseEnter={e => { if (o.value !== value) (e.currentTarget as HTMLElement).style.background = "#f8fafc"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = o.value === value ? "#E6F4F4" : "#fff"; }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, color: o.value === value ? "#0E898F" : "#1e293b" }}>{o.label}</div>
+                {o.desc && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{o.desc}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -411,6 +510,10 @@ export default function DepartmentPanel() {
 
   // Send credentials
   const [sendingCredId, setSendingCredId] = useState<string | null>(null);
+
+  // Sub-department creation alongside dept
+  const [createSubDept, setCreateSubDept] = useState(false);
+  const [subDeptForm, setSubDeptForm] = useState<any>({ name: "", type: "", loginEmail: "", loginPassword: "" });
 
   // Password helpers
   const [showPassword, setShowPassword] = useState(false);
@@ -483,8 +586,11 @@ export default function DepartmentPanel() {
   // Open add modal
   const openAdd = () => {
     setEditItem(null);
-    setForm({ ...emptyForm, loginPassword: generatePassword("Dept") });
+    const pw = generatePassword("Dept");
+    setForm({ ...emptyForm, loginPassword: pw });
     setErrors({});
+    setCreateSubDept(false);
+    setSubDeptForm({ name: "", type: SUBDEPT_OPTIONS_BY_DEPT_TYPE["CLINICAL"]?.[0]?.value || "", loginEmail: "", loginPassword: pw });
     setModal(true);
   };
 
@@ -495,7 +601,7 @@ export default function DepartmentPanel() {
       name: item.name,
       code: item.code,
       description: item.description || "",
-      type: item.type,
+      type: (item.type as FormData["type"]) || "CLINICAL",
       customTypeName: item.customTypeName || "",
       consultationFee: item.consultationFee?.toString() || "",
       allowAppointments: item.allowAppointments,
@@ -521,9 +627,6 @@ export default function DepartmentPanel() {
     if (!form.name || form.name.length < 2) errs.name = "Name must be at least 2 characters";
     if (!form.code || form.code.length < 1) errs.code = "Code is required";
     if (form.code.length > 10) errs.code = "Code must be 10 characters or less";
-    if (form.type === "CUSTOM" && !form.customTypeName?.trim()) {
-      errs.customTypeName = "Please enter a name for the custom type";
-    }
     if (form.showFinancialOptions && form.consultationFee && isNaN(parseFloat(form.consultationFee))) {
       errs.consultationFee = "Must be a valid number";
     }
@@ -542,7 +645,6 @@ export default function DepartmentPanel() {
       code: form.code.toUpperCase(),
       description: form.description || null,
       type: form.type,
-      customTypeName: form.type === "CUSTOM" ? (form.customTypeName || null) : null,
       consultationFee: form.showFinancialOptions && form.consultationFee ? parseFloat(form.consultationFee) : null,
       allowAppointments: form.showAppointmentOptions ? form.allowAppointments : false,
       isIPD: form.showIPDOptions ? form.isIPD : false,
@@ -575,6 +677,20 @@ export default function DepartmentPanel() {
 
     setSaving(false);
     if (res.success) {
+      if (!editItem && createSubDept && subDeptForm.name && subDeptForm.type) {
+        const deptId = res.data?.id || res.data?.data?.id;
+        if (deptId) {
+          await api("/api/config/subdepartments", "POST", {
+            name: subDeptForm.name,
+            type: subDeptForm.type,
+            departmentId: deptId,
+            loginEmail: subDeptForm.loginEmail || null,
+            ...(subDeptForm.loginPassword ? { loginPassword: subDeptForm.loginPassword } : {}),
+            accessFeatures: JSON.stringify([]),
+            isActive: true,
+          });
+        }
+      }
       const warn = res.data?.credentialWarning;
       if (warn) {
         addToast("error", `Saved but login setup failed: ${warn}`);
@@ -1249,43 +1365,30 @@ export default function DepartmentPanel() {
               </div>
             </div>
 
-            {/* Section 2: Type & Settings */}
+            {/* Section 2: Department Type */}
             <div className="dept-section">
               <div className="dept-section-title">
                 <span className="dept-section-icon purple">
-                  <Settings2 size={16} />
+                  <Settings2 size={15} />
                 </span>
-                Type & Settings
+                Department Type
               </div>
               <div className="dept-form-grid">
                 <div className="dept-field full">
-                  <label className="dept-lbl">Department Type *</label>
-                  <select
-                    className="dept-select"
+                  <label className="dept-lbl">Type *</label>
+                  <SearchableSelect
                     value={form.type}
-                    onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as any, customTypeName: "" }))}
-                  >
-                    {DEPT_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label} — {t.desc}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => {
+                      setForm((f) => ({ ...f, type: v as FormData["type"] }));
+                      if (createSubDept) {
+                        const opts = SUBDEPT_OPTIONS_BY_DEPT_TYPE[v] || [];
+                        setSubDeptForm((f: any) => ({ ...f, type: opts[0]?.value || "" }));
+                      }
+                    }}
+                    options={DEPT_TYPES}
+                    placeholder="Select department type..."
+                  />
                 </div>
-                {form.type === "CUSTOM" && (
-                  <div className="dept-field full">
-                    <label className="dept-lbl">Custom Type Name *</label>
-                    <input
-                      className={`dept-input ${errors.customTypeName ? "error" : ""}`}
-                      placeholder="e.g., HR, Administrative, Legal..."
-                      value={form.customTypeName}
-                      onChange={(e) => setForm((f) => ({ ...f, customTypeName: e.target.value }))}
-                      maxLength={100}
-                    />
-                    {errors.customTypeName && <span className="dept-error">{errors.customTypeName}</span>}
-                    <span style={{fontSize:11,color:"#94a3b8",marginTop:3}}>This label will be displayed as the department type.</span>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1425,13 +1528,84 @@ export default function DepartmentPanel() {
             </div>
           </div>
 
+          {/* Sub-department creation (add only) */}
+          {!editItem && (
+            <div className="dept-section" style={{ borderTop: "2px dashed #e2e8f0", paddingTop: 18, marginTop: 0, paddingLeft: 24, paddingRight: 24, paddingBottom: 0 }}>
+              <div className="dept-section-title" style={{ marginBottom: createSubDept ? 14 : 0 }}>
+                <span className="dept-section-icon teal"><Layers size={15} /></span>
+                Also Create a Sub-Department?
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, color: createSubDept ? "#0E898F" : "#94a3b8", fontWeight: 600 }}>{createSubDept ? "Yes" : "No"}</span>
+                  <Toggle checked={createSubDept} onChange={(v) => {
+                    setCreateSubDept(v);
+                    if (v) {
+                      const opts = SUBDEPT_OPTIONS_BY_DEPT_TYPE[form.type] || [];
+                      setSubDeptForm((f: any) => ({ ...f, type: opts[0]?.value || "", loginPassword: generatePassword(form.name || "Dept") }));
+                    }
+                  }} />
+                </div>
+              </div>
+              {createSubDept && (
+                <div className="dept-form-grid" style={{ marginBottom: 18 }}>
+                  <div className="dept-field">
+                    <label className="dept-lbl">Sub-Dept Name *</label>
+                    <input
+                      className="dept-input"
+                      style={{ fontSize: 12, padding: "8px 11px" }}
+                      placeholder="e.g., General OPD"
+                      value={subDeptForm.name}
+                      onChange={e => setSubDeptForm((f: any) => ({ ...f, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="dept-field">
+                    <label className="dept-lbl">Sub-Dept Type *</label>
+                    <SearchableSelect
+                      value={subDeptForm.type}
+                      onChange={v => setSubDeptForm((f: any) => ({ ...f, type: v }))}
+                      options={SUBDEPT_OPTIONS_BY_DEPT_TYPE[form.type] || []}
+                      placeholder="Select type..."
+                    />
+                  </div>
+                  <div className="dept-field">
+                    <label className="dept-lbl">Sub-Dept Login Email</label>
+                    <input
+                      className="dept-input"
+                      style={{ fontSize: 12, padding: "8px 11px" }}
+                      type="email"
+                      placeholder="e.g., opd@hospital.com"
+                      value={subDeptForm.loginEmail}
+                      onChange={e => setSubDeptForm((f: any) => ({ ...f, loginEmail: e.target.value }))}
+                    />
+                  </div>
+                  <div className="dept-field">
+                    <label className="dept-lbl">Sub-Dept Password</label>
+                    <input
+                      className="dept-input"
+                      style={{ fontSize: 12, padding: "8px 11px" }}
+                      type="text"
+                      placeholder="Auto-generated"
+                      value={subDeptForm.loginPassword}
+                      onChange={e => setSubDeptForm((f: any) => ({ ...f, loginPassword: e.target.value }))}
+                    />
+                  </div>
+                  <div className="dept-field full" style={{ marginTop: -4 }}>
+                    <div style={{ fontSize: 11, color: "#0A6B70", display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "#E6F4F4", borderRadius: 8, border: "1px solid #B3E0E0" }}>
+                      <Check size={11} />
+                      Sub-department will be created under <strong style={{ marginLeft: 2 }}>{DEPT_TYPES.find(t => t.value === form.type)?.label || form.type}</strong> automatically.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="dept-modal-footer">
             <button type="button" className="dept-btn-ghost" onClick={() => setModal(false)}>
               Cancel
             </button>
             <button type="submit" className="dept-btn-primary" disabled={saving}>
               {saving && <Loader2 size={14} className="dept-spin" />}
-              {editItem ? "Update Department" : "Create Department"}
+              {editItem ? "Update Department" : (createSubDept ? "Create Department + Sub-Dept" : "Create Department")}
             </button>
           </div>
         </form>

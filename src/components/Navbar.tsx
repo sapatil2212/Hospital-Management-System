@@ -215,12 +215,13 @@ export default function Navbar() {
                             transition={{ delay: 0.15 }}
                           >
                             <Image
-                              src="/images/treatment-dropdown.png"
-                              alt="Medical consultation"
-                              width={320}
-                              height={150}
+                              src="/images/treatment-dropdown-new.png"
+                              alt="Aesthetic clinic consultation"
+                              width={260}
+                              height={260}
                               className={styles.dropdownImg}
                             />
+
 
                           </motion.div>
                         </div>

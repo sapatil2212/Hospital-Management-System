@@ -345,20 +345,20 @@ export function PatientsManagementPanel() {
             {/* Hero card */}
             <input type="file" ref={photoInputRef} accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
             <input type="file" ref={docInputRef} accept="image/*,.pdf" multiple style={{ display: "none" }} onChange={handleDocUpload} />
-            <div style={{ background: "linear-gradient(135deg,#07595D 0%,#7c3aed 100%)", borderRadius: 16, padding: "28px 32px", marginBottom: 20, color: "#fff" }}>
+            <div style={{ background: "linear-gradient(135deg, #E6F4F4 0%, #f0fdfa 100%)", border: "1px solid #B3E0E0", borderRadius: 16, padding: "28px 32px", marginBottom: 20, color: "#1e293b" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   <div
                     onClick={() => photoInputRef.current?.click()}
-                    style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", border: "2.5px solid rgba(255,255,255,0.35)", cursor: "pointer", overflow: "hidden" }}
+                    style={{ width: 72, height: 72, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "2.5px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", cursor: "pointer", overflow: "hidden" }}
                     title="Click to upload photo"
                   >
                     {uploadingPhoto ? (
-                      <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
+                      <Loader2 size={28} color="#0E898F" style={{ animation: "spin 1s linear infinite" }} />
                     ) : patientDetails.profilePhoto ? (
                       <img src={patientDetails.profilePhoto} alt={patientDetails.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
-                      <UserCircle size={42} />
+                      <UserCircle size={42} color="#94a3b8" />
                     )}
                   </div>
                   <div
@@ -371,7 +371,7 @@ export function PatientsManagementPanel() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>{patientDetails.name}</div>
-                  <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 14 }}>ID: {patientDetails.patientId}</div>
+                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>ID: {patientDetails.patientId}</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
                     {[
                       { icon: <Phone size={13} />, val: patientDetails.phone },
@@ -380,8 +380,8 @@ export function PatientsManagementPanel() {
                       patientDetails.dateOfBirth && { icon: <Calendar size={13} />, val: `${age(patientDetails.dateOfBirth)} yrs` },
                       patientDetails.bloodGroup && { icon: <Droplet size={13} />, val: patientDetails.bloodGroup },
                     ].filter(Boolean).map((item: any, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, opacity: 0.92 }}>
-                        {item.icon} {item.val}
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569" }}>
+                        <span style={{ color: "#0E898F" }}>{item.icon}</span> {item.val}
                       </div>
                     ))}
                   </div>
@@ -392,9 +392,9 @@ export function PatientsManagementPanel() {
                     { label: "Total Paid", val: `₹${totalPaid.toLocaleString()}` },
                     { label: "Pending", val: `₹${totalPending.toLocaleString()}` },
                   ].map((s, i) => (
-                    <div key={i} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "12px 18px", textAlign: "center" }}>
-                      <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ fontSize: 20, fontWeight: 700 }}>{s.val}</div>
+                    <div key={i} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "12px 18px", textAlign: "center", boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
+                      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>{s.label}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: "#0E898F" }}>{s.val}</div>
                     </div>
                   ))}
                 </div>

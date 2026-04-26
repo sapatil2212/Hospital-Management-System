@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       dateTo:       url.searchParams.get("dateTo")     || undefined,
       patientId:    url.searchParams.get("patientId")  || undefined,
       pharmacyOnly: url.searchParams.get("pharmacyOnly") === "true",
+      labOnly:      url.searchParams.get("labOnly") === "true",
     });
     return successResponse(result, "Bills fetched");
   } catch (e: any) {

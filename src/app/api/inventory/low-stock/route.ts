@@ -1,12 +1,14 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireHospitalAdmin, requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { notify } from "../../../../../backend/services/notification.service";
 import prisma from "../../../../../backend/config/db";
 
+const INV_READ_ROLES = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "SUB_DEPT_HEAD"];
+
 // GET /api/inventory/low-stock — list items at or below minStock/reorderLevel
 export async function GET(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, INV_READ_ROLES);
   if (auth.error) return auth.error;
 
   const items = await prisma.inventoryItem.findMany({

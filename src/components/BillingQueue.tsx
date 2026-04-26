@@ -50,8 +50,8 @@ interface HospitalInfo {
 }
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  PENDING: { bg: "#fff7ed", color: "#c2410c", label: "Pending" },
-  PARTIALLY_PAID: { bg: "#fef3c7", color: "#b45309", label: "Partial" },
+  PENDING: { bg: "#E6F4F4", color: "#0E898F", label: "Pending" },
+  PARTIALLY_PAID: { bg: "#E6F4F4", color: "#0b7075", label: "Partial" },
   PAID: { bg: "#f0fdf4", color: "#166534", label: "Paid" },
   CANCELLED: { bg: "#fef2f2", color: "#dc2626", label: "Cancelled" },
   DRAFT: { bg: "#f1f5f9", color: "#475569", label: "Draft" },
@@ -115,7 +115,7 @@ const EMPTY_COLLECT = {
   method: "CASH", amount: "", transactionId: "", notes: ""
 };
 
-export default function BillingQueue() {
+export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } = {}) {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -176,10 +176,15 @@ export default function BillingQueue() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (dateFilter) params.set("date", dateFilter);
+    if (scope === "lab") params.set("labOnly", "true");
+    if (scope === "pharmacy") params.set("pharmacyOnly", "true");
     const d = await api(`/api/billing/queue?${params}`);
-    if (d.success) setQueue(d.data || []);
+    let items = d.data || [];
+    if (scope === "lab") items = items.filter((q: any) => q.source === "lab_order" || q.bill?.billItems?.some((bi: any) => bi.type === "LAB_TEST") || q.bill?.notes?.includes("Lab Order") || q.bill?.billNo?.startsWith("LAB-"));
+    if (scope === "pharmacy") items = items.filter((q: any) => q.source === "pharmacy" || q.source === "pharmacy_counter" || q.bill?.billItems?.some((bi: any) => bi.type === "PHARMACY"));
+    if (d.success) setQueue(items);
     setLoading(false);
-  }, [search, dateFilter]);
+  }, [search, dateFilter, scope]);
 
   useEffect(() => { loadQueue(); }, [loadQueue]);
 
@@ -1418,17 +1423,21 @@ export default function BillingQueue() {
                         </div>
                       </td>
                       <td>
-                        <div className="bq-doctor-name">{item.doctor?.name || ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" ? "Walk-in Patient" : "—")}</div>
-                        <div className="bq-doctor-spec">{item.doctor?.specialization || item.department?.name || ((item as any).source === "pharmacy_counter" ? `Bill: ${(item as any).prescriptionNo}` : (item as any).prescriptionNo ? `Rx: ${(item as any).prescriptionNo}` : "—")}</div>
+                        <div className="bq-doctor-name">{item.doctor?.name || ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" ? "Walk-in Patient" : (item as any).source === "lab_order" ? "Lab Order" : "—")}</div>
+                        <div className="bq-doctor-spec">{item.doctor?.specialization || item.department?.name || ((item as any).source === "pharmacy_counter" ? `Bill: ${(item as any).prescriptionNo}` : (item as any).source === "lab_order" ? `Bill: ${item.bill?.billNo || "—"}` : (item as any).prescriptionNo ? `Rx: ${(item as any).prescriptionNo}` : "—")}</div>
                       </td>
                       <td>
                         <div className="bq-date">{fmtDate(item.appointmentDate)}</div>
-                        <div className="bq-time">{item.timeSlot ? fmtTime(item.timeSlot) : ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter") ? "Counter Sale" : "—"}</div>
+                        <div className="bq-time">{item.timeSlot ? fmtTime(item.timeSlot) : ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter") ? "Counter Sale" : (item as any).source === "lab_order" ? "Lab Test" : "—"}</div>
                       </td>
-                      <td className="bq-fee">{(item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" ? fmtCur(item.bill?.total || 0) : fmtCur(item.consultationFee)}</td>
+                      <td className="bq-fee">{(item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" || (item as any).source === "lab_order" ? fmtCur(item.bill?.total || 0) : fmtCur(item.consultationFee)}</td>
                       <td>
-                        {(item as any).source === "pharmacy_counter" ? (
-                          <span className="bq-badge" style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>
+                        {(item as any).source === "lab_order" ? (
+                          <span className="bq-badge" style={{ background: "#f0fdf4", color: "#047857", border: "1px solid #a7f3d0" }}>
+                            🧪 Lab Order
+                          </span>
+                        ) : (item as any).source === "pharmacy_counter" ? (
+                          <span className="bq-badge" style={{ background: "#E6F4F4", color: "#0b7075", border: "1px solid #b2d8da" }}>
                             💊 Pharmacy Sale
                           </span>
                         ) : (item as any).source === "pharmacy" ? (
@@ -2219,7 +2228,7 @@ const BQ_CSS = `
 .bq-stat-card{padding:18px 20px;border-radius:12px;display:flex;align-items:center;gap:14px;border:1px solid;transition:all .2s}
 .bq-stat-card:hover{transform:translateY(-1px)}
 .bq-stat-blue{background:#f0f9ff;border-color:#bae6fd}.bq-stat-blue .bq-stat-icon{background:#dbeafe;color:#0284c7}.bq-stat-blue .bq-stat-value{color:#0369a1}.bq-stat-blue .bq-stat-label{color:#0284c7}
-.bq-stat-amber{background:#fffbeb;border-color:#fde68a}.bq-stat-amber .bq-stat-icon{background:#fef3c7;color:#d97706}.bq-stat-amber .bq-stat-value{color:#b45309}.bq-stat-amber .bq-stat-label{color:#d97706}
+.bq-stat-amber{background:#E6F4F4;border-color:#b2d8da}.bq-stat-amber .bq-stat-icon{background:#cce8ea;color:#0E898F}.bq-stat-amber .bq-stat-value{color:#0b7075}.bq-stat-amber .bq-stat-label{color:#0E898F}
 .bq-stat-green{background:#f0fdf4;border-color:#bbf7d0}.bq-stat-green .bq-stat-icon{background:#dcfce7;color:#059669}.bq-stat-green .bq-stat-value{color:#166534}.bq-stat-green .bq-stat-label{color:#059669}
 .bq-stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .bq-stat-value{font-size:22px;font-weight:800;line-height:1}
@@ -2470,7 +2479,7 @@ const BQ_CSS = `
 
 /* ── Confirmation Modal ── */
 .bq-confirm-modal{max-width:480px}
-.bq-confirm-icon{width:56px;height:56px;border-radius:14px;background:#fef3c7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;flex-shrink:0}
+.bq-confirm-icon{width:56px;height:56px;border-radius:14px;background:#E6F4F4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;flex-shrink:0}
 .bq-confirm-title{font-size:18px;font-weight:700;color:#1e293b;text-align:center;margin-bottom:8px}
 .bq-confirm-message{font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px}
 .bq-confirm-actions{display:flex;gap:10px;justify-content:center}

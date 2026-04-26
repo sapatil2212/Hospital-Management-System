@@ -90,7 +90,7 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
         const [listRes, deptRes, dashRes] = await Promise.all([
           api("/api/config/doctors?limit=200"),
           api("/api/config/departments?simple=true"),
-          api("/api/hospitaladmin/dashboard").catch(() => ({ success: false })),
+          api("/api/dashboard/overview").catch(() => ({ success: false })),
         ]);
 
         let members: any[] = [];
@@ -145,25 +145,28 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
   const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Gradient Banner */}
-      <div style={{ background: "linear-gradient(135deg,#6d28d9,#7c3aed)", borderRadius: 16, padding: "24px 28px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: "flex", alignItems: "center", gap: 10 }}>
-            <Stethoscope size={22} /> Doctors Overview
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Light professional header — consistent with inventory tab */}
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Stethoscope size={22} color="#0E898F" />
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)" }}>
-            {stats.total} registered · {stats.active} active · {stats.available} available for booking
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", marginBottom: 2 }}>Doctors Overview</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              {stats.total} registered · {stats.active} active · {stats.available} available for booking
+            </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 8 }}>
           <button onClick={onManageDoctors}
-            style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.2)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            <Stethoscope size={14} /> Manage Doctors
+            style={{ padding: "8px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#334155", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            <Stethoscope size={13} /> Manage Doctors
           </button>
           <button onClick={() => router.push("/hospitaladmin/appointments")}
-            style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            <Calendar size={14} /> Appointments
+            style={{ padding: "8px 16px", borderRadius: 9, border: "1.5px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            <Calendar size={13} /> Appointments
           </button>
         </div>
       </div>
@@ -172,7 +175,7 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
         {summaryCards.map((c, i) => (
           <div key={i} style={{ background: c.bg, borderRadius: 14, padding: "18px 20px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: c.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 4px 12px ${c.iconBg}44` }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: c.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               {c.icon}
             </div>
             <div>
@@ -183,9 +186,9 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         {/* Department Breakdown */}
-        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Doctors by Department</div>
@@ -224,7 +227,7 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
         </div>
 
         {/* Recently Added */}
-        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Recently Added</div>
@@ -266,7 +269,7 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
       </div>
 
       {/* Doctors on Duty Today */}
-      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Doctors on Duty Today</div>
@@ -327,7 +330,7 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
       </div>
 
       {/* Fee Insights */}
-      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "20px 24px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Fee Structure Overview</div>
@@ -385,7 +388,7 @@ function DoctorsOverviewPanel({ onManageDoctors }: { onManageDoctors: () => void
             label: "Appointments",
           },
         ].map((card, i) => (
-          <div key={i} style={{ borderRadius: 14, overflow: "hidden", background: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+          <div key={i} style={{ borderRadius: 14, overflow: "hidden", background: "#fff", border: "1px solid #e2e8f0" }}>
             <div style={{ background: card.bg, padding: "20px 22px", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {card.icon}

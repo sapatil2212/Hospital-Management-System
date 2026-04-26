@@ -11,13 +11,9 @@ export default function SexualHealthHero() {
   const { openAppointment } = useAppointment();
   return (
     <section className={styles.hero}>
-      {/* Background decorations */}
-      <div className={styles.bgDecor1} />
-      <div className={styles.bgDecor2} />
-      <div className={styles.bgDecor3} />
-
       <div className="container">
-        <div className={styles.heroGrid}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroGrid}>
           {/* Left Content */}
           <div className={styles.heroContent}>
             <motion.div
@@ -25,10 +21,6 @@ export default function SexualHealthHero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <div className={styles.heroBadge}>
-                <ShieldCheck size={16} />
-                <span>Sexual Health & Wellness (Men & Women)</span>
-              </div>
               <h1 className={styles.heroTitle}>
                 Confidential, Compassionate & <span className={styles.accent}>Result-Oriented Care</span> for Intimate Health
               </h1>
@@ -77,6 +69,7 @@ export default function SexualHealthHero() {
                   width={580}
                   height={640}
                   className={styles.heroImage}
+                  style={{ borderRadius: '24px', objectFit: 'cover' }}
                   priority
                 />
               </motion.div>
@@ -114,6 +107,7 @@ export default function SexualHealthHero() {
                 <div className={styles.satisfiedLabel}>Confidential Care</div>
               </div>
             </motion.div>
+          </div>
           </div>
         </div>
       </div>

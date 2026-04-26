@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../../backend/middlewares/role.middleware";
+
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
 import { successResponse, errorResponse } from "../../../../../../backend/utils/response";
 import { createStaffCredentials } from "../../../../../../backend/services/staff.service";
 import { sendStaffCredentials } from "../../../../../../backend/utils/mailer";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 // POST /api/config/staff/send-credentials-bulk
 // Sends credentials to all staff where credentialsSent=false
 export async function POST(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

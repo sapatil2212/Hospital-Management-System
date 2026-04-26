@@ -333,8 +333,8 @@ export default function HospitalAdminFinancePage() {
         .fin-sub{font-size:12px;color:#94a3b8;margin-top:4px}
         .fin-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .fin-btn{display:flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-        .fin-btn.primary{background:linear-gradient(135deg,#0A6B70,#07595D);color:#fff;box-shadow:0 6px 18px rgba(37,99,235,.25)}
-        .fin-btn.primary:hover{transform:translateY(-1px)}
+        .fin-btn.primary{background:#0A6B70;color:#fff;border:1.5px solid #0A6B70}
+        .fin-btn.primary:hover{background:#0E898F}
         .fin-btn.ghost{background:#fff;border:1px solid #e2e8f0;color:#334155}
         .fin-btn.ghost:hover{background:#f8fafc}
 
@@ -557,7 +557,7 @@ export default function HospitalAdminFinancePage() {
                               </button>
                             </td>
                             <td>{fmtDate(r.date)}</td>
-                            <td><span style={{ padding: "3px 8px", borderRadius: 100, background: "#eef2ff", color: "#4338ca", fontSize: 11, fontWeight: 700 }}>{(r.category || "OTHER").replace(/_/g, " ")}</span></td>
+                            <td><span style={{ padding: "3px 8px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700 }}>{(r.category || "OTHER").replace(/_/g, " ")}</span></td>
                             <td>{r.title || r.description || "—"}</td>
                             <td className="fin-amt">{fmtINR(r.amount)}</td>
                             <td>
@@ -677,12 +677,12 @@ export default function HospitalAdminFinancePage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setShowExpForm(false); setExpMsg(""); }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 520, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
-            <div style={{ background: "linear-gradient(135deg,#6366f1,#4338ca)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>New Entry</div>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>Add Expense</div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>New Entry</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>Add Expense</div>
               </div>
-              <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+              <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
@@ -712,7 +712,7 @@ export default function HospitalAdminFinancePage() {
               {expMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{expMsg}</div>}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
                 <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button type="button" onClick={saveExpense} disabled={expSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6366f1,#4338ca)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: expSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                <button type="button" onClick={saveExpense} disabled={expSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#0A6B70", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: expSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
                   {expSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{expSaving ? "Saving…" : "Add Expense"}
                 </button>
               </div>
@@ -726,12 +726,12 @@ export default function HospitalAdminFinancePage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setShowRevForm(false); setRevMsg(""); }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
-            <div style={{ background: "linear-gradient(135deg,#16a34a,#15803d)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>New Entry</div>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>Add Revenue</div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>New Entry</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>Add Revenue</div>
               </div>
-              <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+              <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -753,7 +753,7 @@ export default function HospitalAdminFinancePage() {
               {revMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{revMsg}</div>}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
                 <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button type="button" onClick={saveRevenue} disabled={revSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#16a34a,#15803d)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: revSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                <button type="button" onClick={saveRevenue} disabled={revSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#0A6B70", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: revSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
                   {revSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{revSaving ? "Saving…" : "Add Revenue"}
                 </button>
               </div>
@@ -768,13 +768,13 @@ export default function HospitalAdminFinancePage() {
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} onClick={() => setViewBill(null)} />
           <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 560, maxHeight: "90vh", overflow: "auto", boxShadow: "0 24px 80px rgba(0,0,0,.2)", padding: "0" }}>
             {/* Header */}
-            <div style={{ background: "linear-gradient(135deg,#0A6B70,#07595D)", padding: "22px 24px 18px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "22px 24px 18px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 4 }}>Transaction Details</div>
-                <div style={{ fontSize: 22, fontWeight: 800 }}>{viewBill.billNo}</div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 4 }}>Transaction Details</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b" }}>{viewBill.billNo}</div>
               </div>
-              <button type="button" onClick={() => setViewBill(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <X size={16} color="#fff" />
+              <button type="button" onClick={() => setViewBill(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <X size={16} color="#0A6B70" />
               </button>
             </div>
 
@@ -798,7 +798,7 @@ export default function HospitalAdminFinancePage() {
                 </div>
                 <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
                   <div style={{ fontSize: 10, color: "#0A6B70", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Subtotal</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#1e40af" }}>{fmtINR(viewBill.subtotal)}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewBill.subtotal)}</div>
                 </div>
                 <div style={{ background: "#fefce8", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
                   <div style={{ fontSize: 10, color: "#a16207", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Paid At</div>
@@ -893,12 +893,12 @@ export default function HospitalAdminFinancePage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setViewExpense(null)}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
-            <div style={{ background: "linear-gradient(135deg,#6366f1,#4338ca)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>Expense Details</div>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>{viewExpense.title || "Expense"}</div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>Expense Details</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{viewExpense.title || "Expense"}</div>
               </div>
-              <button type="button" onClick={() => setViewExpense(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+              <button type="button" onClick={() => setViewExpense(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -908,12 +908,12 @@ export default function HospitalAdminFinancePage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#4338ca" }}>{fmtINR(viewExpense.amount)}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewExpense.amount)}</div>
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Category</div>
-                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#eef2ff", color: "#4338ca", fontSize: 12, fontWeight: 700 }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</span>
+                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 12, fontWeight: 700 }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</span>
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Type</div>
@@ -935,12 +935,12 @@ export default function HospitalAdminFinancePage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setViewManualRev(null)}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
-            <div style={{ background: "linear-gradient(135deg,#16a34a,#15803d)", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", opacity: .7, marginBottom: 2 }}>Revenue Details</div>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>Manual Entry</div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>Revenue Details</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>Manual Entry</div>
               </div>
-              <button type="button" onClick={() => setViewManualRev(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#fff" /></button>
+              <button type="button" onClick={() => setViewManualRev(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -950,12 +950,12 @@ export default function HospitalAdminFinancePage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#16a34a" }}>{fmtINR(viewManualRev.amount)}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewManualRev.amount)}</div>
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Source Type</div>
-                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 700 }}>{viewManualRev.source}</span>
+                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 12, fontWeight: 700 }}>{viewManualRev.source}</span>
               </div>
               {viewManualRev.description && viewManualRev.description !== "—" && (
                 <div>

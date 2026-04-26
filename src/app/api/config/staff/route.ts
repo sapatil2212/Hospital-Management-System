@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../backend/middlewares/role.middleware";
+
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import {
   createStaff,
@@ -13,7 +15,7 @@ import {
 } from "../../../../../backend/validations/staff.validation";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -55,7 +57,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

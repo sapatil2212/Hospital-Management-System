@@ -34,24 +34,24 @@ const api = async (url: string, method = "GET", body?: any) => {
   return r.json();
 };
 
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAYS_H = ["M","T","W","T","F","S","S"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS_H = ["M", "T", "W", "T", "F", "S", "S"];
 
 const TYPE_LABEL: Record<string, string> = {
   OPD: "OPD", ONLINE: "Online", FOLLOW_UP: "Follow-up", EMERGENCY: "Emergency",
 };
 const STATUS_CFG: Record<string, { label: string; dot: string; badge: [string, string, string] }> = {
-  SCHEDULED:   { label: "Scheduled",   dot: "#94a3b8", badge: ["#f8fafc",   "#475569",  "#e2e8f0"] },
-  CONFIRMED:   { label: "Confirmed",   dot: "#10b981", badge: ["#f0fdf4",   "#16a34a",  "#bbf7d0"] },
-  IN_PROGRESS: { label: "In Progress", dot: "#0E898F", badge: ["#E6F4F4",   "#0A6B70",  "#B3E0E0"] },
-  COMPLETED:   { label: "Completed",   dot: "#059669", badge: ["#f0fdf4",   "#059669",  "#a7f3d0"] },
-  CANCELLED:   { label: "Cancelled",   dot: "#ef4444", badge: ["#fff5f5",   "#ef4444",  "#fecaca"] },
-  NO_SHOW:     { label: "No Show",     dot: "#f97316", badge: ["#fff7ed",   "#c2410c",  "#fed7aa"] },
-  RESCHEDULED: { label: "Rescheduled", dot: "#a855f7", badge: ["#faf5ff",   "#7c3aed",  "#e9d5ff"] },
+  SCHEDULED: { label: "Scheduled", dot: "#94a3b8", badge: ["#f8fafc", "#475569", "#e2e8f0"] },
+  CONFIRMED: { label: "Confirmed", dot: "#10b981", badge: ["#f0fdf4", "#16a34a", "#bbf7d0"] },
+  IN_PROGRESS: { label: "In Progress", dot: "#0E898F", badge: ["#E6F4F4", "#0A6B70", "#B3E0E0"] },
+  COMPLETED: { label: "Completed", dot: "#059669", badge: ["#f0fdf4", "#059669", "#a7f3d0"] },
+  CANCELLED: { label: "Cancelled", dot: "#ef4444", badge: ["#fff5f5", "#ef4444", "#fecaca"] },
+  NO_SHOW: { label: "No Show", dot: "#f97316", badge: ["#fff7ed", "#c2410c", "#fed7aa"] },
+  RESCHEDULED: { label: "Rescheduled", dot: "#a855f7", badge: ["#faf5ff", "#7c3aed", "#e9d5ff"] },
 };
 
 function RescheduleModal({ appt, onClose, onConfirm }: { appt: any; onClose: () => void; onConfirm: (date: string, time: string) => void }) {
-  const fmtD = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const fmtD = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
 
   const [newDate, setNewDate] = useState(fmtD(tomorrow));
@@ -261,7 +261,7 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
     if (showReferral && !subDeptsLoaded) {
       api("/api/config/subdepartments?limit=50").then(r => {
         if (r.success) setSubDepts(r.data?.data || r.data || []);
-      }).catch(() => {}).finally(() => setSubDeptsLoaded(true));
+      }).catch(() => { }).finally(() => setSubDeptsLoaded(true));
     }
   }, [showReferral, subDeptsLoaded]);
 
@@ -269,7 +269,7 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
     if (showServicePlan && !servicesLoaded) {
       api("/api/config/services?isActive=true&limit=100").then(r => {
         if (r.success) setServices(r.data?.services || r.data?.data || []);
-      }).catch(() => {}).finally(() => setServicesLoaded(true));
+      }).catch(() => { }).finally(() => setServicesLoaded(true));
     }
   }, [showServicePlan, servicesLoaded]);
 
@@ -322,13 +322,13 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
       body.subDepartmentId = null;
       body.subDeptNote = null;
     }
-    
+
     // Transfer to billing if selected
     if (transferToBilling) {
       const ok = await doBillingTransfer();
       if (!ok) { setSaving(false); return; }
     }
-    
+
     const d = await api(`/api/appointments/${appt.id}`, "PUT", body);
     if (d.success) {
       if (status === "COMPLETED" && showServicePlan && selectedServiceId && appt.patient?.id && !planCreated) {
@@ -341,7 +341,7 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
           planName: svc?.name || "Treatment Plan",
           totalSessions: svc?.sessionCount || 1,
           totalCost: svc?.price || 0,
-        }).then(() => setPlanCreated(true)).catch(() => {});
+        }).then(() => setPlanCreated(true)).catch(() => { });
       }
       onDone(); onClose();
     }
@@ -526,7 +526,7 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
         </div>
 
         {appt.patient?.id && (
-          <button 
+          <button
             onClick={() => { setSelectedPatientId(appt.patient.id); onClose(); }}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12, fontSize: 12, color: "#0E898F", fontWeight: 600, background: "none", border: "none", cursor: "pointer", width: "100%" }}
           >
@@ -541,34 +541,34 @@ function ConsultModal({ appt, onClose, onDone, onStartPrescription, setSelectedP
 function MiniCalendar({ accent = "#10b981", selectedDate, onDateSelect }: { accent?: string; selectedDate?: Date; onDateSelect?: (d: Date) => void }) {
   const today = new Date();
   const [cur, setCur] = useState({ y: selectedDate?.getFullYear() || today.getFullYear(), m: selectedDate?.getMonth() ?? today.getMonth() });
-  const firstDay = new Date(cur.y,cur.m,1).getDay();
-  const offset = firstDay===0?6:firstDay-1;
-  const days = new Date(cur.y,cur.m+1,0).getDate();
-  const cells:(number|null)[] = [...Array(offset).fill(null),...Array.from({length:days},(_,i)=>i+1)];
-  while(cells.length%7!==0) cells.push(null);
-  const isTodayCell = (d:number|null) => d===today.getDate()&&cur.m===today.getMonth()&&cur.y===today.getFullYear();
-  const isSelected = (d:number|null) => selectedDate && d===selectedDate.getDate()&&cur.m===selectedDate.getMonth()&&cur.y===selectedDate.getFullYear();
-  const handleClick = (d:number|null) => { if(d && onDateSelect) onDateSelect(new Date(cur.y, cur.m, d)); };
+  const firstDay = new Date(cur.y, cur.m, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const days = new Date(cur.y, cur.m + 1, 0).getDate();
+  const cells: (number | null)[] = [...Array(offset).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const isTodayCell = (d: number | null) => d === today.getDate() && cur.m === today.getMonth() && cur.y === today.getFullYear();
+  const isSelected = (d: number | null) => selectedDate && d === selectedDate.getDate() && cur.m === selectedDate.getMonth() && cur.y === selectedDate.getFullYear();
+  const handleClick = (d: number | null) => { if (d && onDateSelect) onDateSelect(new Date(cur.y, cur.m, d)); };
   return (
     <div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <span style={{fontSize:15,fontWeight:700,color:"#1e293b"}}>{MONTHS[cur.m]} {cur.y}</span>
-        <div style={{display:"flex",gap:4}}>
-          {["‹","›"].map((a,i)=>(
-            <button key={i} onClick={()=>setCur(c=>{const nm=c.m+(i?1:-1);return nm<0?{y:c.y-1,m:11}:nm>11?{y:c.y+1,m:0}:{...c,m:nm};})}
-              style={{width:26,height:26,borderRadius:8,border:"none",background:i?accent:"#e2e8f0",color:i?"#fff":"#64748b",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{a}</button>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>{MONTHS[cur.m]} {cur.y}</span>
+        <div style={{ display: "flex", gap: 4 }}>
+          {["‹", "›"].map((a, i) => (
+            <button key={i} onClick={() => setCur(c => { const nm = c.m + (i ? 1 : -1); return nm < 0 ? { y: c.y - 1, m: 11 } : nm > 11 ? { y: c.y + 1, m: 0 } : { ...c, m: nm }; })}
+              style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: i ? accent : "#e2e8f0", color: i ? "#fff" : "#64748b", cursor: "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{a}</button>
           ))}
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:6}}>
-        {DAYS_H.map((d,i)=><div key={i} style={{textAlign:"center",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"2px 0"}}>{d}</div>)}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 6 }}>
+        {DAYS_H.map((d, i) => <div key={i} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: "#94a3b8", padding: "2px 0" }}>{d}</div>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-        {cells.map((d,i)=>{
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+        {cells.map((d, i) => {
           const sel = isSelected(d);
           const tod = isTodayCell(d);
           return (
-            <div key={i} onClick={()=>handleClick(d)} style={{textAlign:"center",fontSize:12,fontWeight:(sel||tod)?700:400,padding:"5px 0",borderRadius:8,cursor:d?"pointer":"default",background:sel?accent:tod?accent+"33":"transparent",color:sel?"#fff":tod?accent:d?"#334155":"transparent",border:tod&&!sel?`1px solid ${accent}`:'1px solid transparent'}}>{d||""}</div>
+            <div key={i} onClick={() => handleClick(d)} style={{ textAlign: "center", fontSize: 12, fontWeight: (sel || tod) ? 700 : 400, padding: "5px 0", borderRadius: 8, cursor: d ? "pointer" : "default", background: sel ? accent : tod ? accent + "33" : "transparent", color: sel ? "#fff" : tod ? accent : d ? "#334155" : "transparent", border: tod && !sel ? `1px solid ${accent}` : '1px solid transparent' }}>{d || ""}</div>
           );
         })}
       </div>
@@ -576,32 +576,32 @@ function MiniCalendar({ accent = "#10b981", selectedDate, onDateSelect }: { acce
   );
 }
 
-const SCHED_DURATIONS = [10,15,20,30,45,60];
-const SCHED_DAY_LABELS: Record<string,string> = { MONDAY:"Mon",TUESDAY:"Tue",WEDNESDAY:"Wed",THURSDAY:"Thu",FRIDAY:"Fri",SATURDAY:"Sat",SUNDAY:"Sun" };
-const ALL_SCHED_DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+const SCHED_DURATIONS = [10, 15, 20, 30, 45, 60];
+const SCHED_DAY_LABELS: Record<string, string> = { MONDAY: "Mon", TUESDAY: "Tue", WEDNESDAY: "Wed", THURSDAY: "Thu", FRIDAY: "Fri", SATURDAY: "Sat", SUNDAY: "Sun" };
+const ALL_SCHED_DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
 function ScheduleMgmtTab({ accent, localSchedule, setLocalSchedule, scheduleLoading, scheduleSaving, setScheduleSaving, scheduleMsg, setScheduleMsg, fetchWeeklySchedule }: {
   accent: string;
-  localSchedule: Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>;
-  setLocalSchedule: React.Dispatch<React.SetStateAction<Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>>>;
+  localSchedule: Record<string, { startTime: string; endTime: string; slotDuration: number; isActive: boolean }>;
+  setLocalSchedule: React.Dispatch<React.SetStateAction<Record<string, { startTime: string; endTime: string; slotDuration: number; isActive: boolean }>>>;
   scheduleLoading: boolean;
   scheduleSaving: boolean;
   setScheduleSaving: (v: boolean) => void;
-  scheduleMsg: {type:"success"|"error";text:string}|null;
-  setScheduleMsg: (v: {type:"success"|"error";text:string}|null) => void;
+  scheduleMsg: { type: "success" | "error"; text: string } | null;
+  setScheduleMsg: (v: { type: "success" | "error"; text: string } | null) => void;
   fetchWeeklySchedule: () => void;
 }) {
   const setDay = (day: string, field: string, val: any) =>
     setLocalSchedule(p => ({ ...p, [day]: { ...p[day], [field]: val } }));
 
   const applyTemplate = (activeDays: string[]) =>
-    setLocalSchedule(p => { const n={...p}; ALL_SCHED_DAYS.forEach(d => { n[d]={...n[d], isActive: activeDays.includes(d)}; }); return n; });
+    setLocalSchedule(p => { const n = { ...p }; ALL_SCHED_DAYS.forEach(d => { n[d] = { ...n[d], isActive: activeDays.includes(d) }; }); return n; });
 
   const slotsFor = (start: string, end: string, dur: number) => {
-    const [sh,sm] = start.split(":").map(Number);
-    const [eh,em] = end.split(":").map(Number);
-    const mins = (eh*60+em) - (sh*60+sm);
-    return mins > 0 ? Math.floor(mins/dur) : 0;
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const mins = (eh * 60 + em) - (sh * 60 + sm);
+    return mins > 0 ? Math.floor(mins / dur) : 0;
   };
 
   const saveAll = async () => {
@@ -611,94 +611,94 @@ function ScheduleMgmtTab({ accent, localSchedule, setLocalSchedule, scheduleLoad
       day: d, startTime: localSchedule[d].startTime, endTime: localSchedule[d].endTime,
       slotDuration: localSchedule[d].slotDuration, isActive: true,
     }));
-    const res = await fetch("/api/doctor/availability", { method:"POST", credentials:"include", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ schedules }) }).then(r=>r.json());
+    const res = await fetch("/api/doctor/availability", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ schedules }) }).then(r => r.json());
     setScheduleSaving(false);
-    if (res.success) { setScheduleMsg({ type:"success", text:`Schedule saved — ${schedules.length} working day(s) configured` }); fetchWeeklySchedule(); }
-    else setScheduleMsg({ type:"error", text: res.message || "Failed to save schedule" });
+    if (res.success) { setScheduleMsg({ type: "success", text: `Schedule saved — ${schedules.length} working day(s) configured` }); fetchWeeklySchedule(); }
+    else setScheduleMsg({ type: "error", text: res.message || "Failed to save schedule" });
   };
 
   return (
     <div className="doc-card">
-      <div className="doc-card-head" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div className="doc-card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div className="doc-card-title">Schedule Setup</div>
           <div className="doc-card-sub">Configure weekly availability and appointment slot durations</div>
         </div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={fetchWeeklySchedule} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-            <RefreshCw size={11}/>Reload
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={fetchWeeklySchedule} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+            <RefreshCw size={11} />Reload
           </button>
           <button onClick={saveAll} disabled={scheduleSaving}
-            style={{display:"flex",alignItems:"center",gap:6,padding:"8px 18px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:12,fontWeight:700,cursor:scheduleSaving?"not-allowed":"pointer",opacity:scheduleSaving?.7:1}}>
-            {scheduleSaving ? <><Loader2 size={12} style={{animation:"spin .7s linear infinite"}}/>Saving...</> : <>Save Schedule</>}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 9, border: "none", background: `linear-gradient(135deg,${accent},#059669)`, color: "#fff", fontSize: 12, fontWeight: 700, cursor: scheduleSaving ? "not-allowed" : "pointer", opacity: scheduleSaving ? .7 : 1 }}>
+            {scheduleSaving ? <><Loader2 size={12} style={{ animation: "spin .7s linear infinite" }} />Saving...</> : <>Save Schedule</>}
           </button>
         </div>
       </div>
 
       {scheduleMsg && (
-        <div style={{margin:"14px 18px 0",padding:"10px 14px",borderRadius:9,background:scheduleMsg.type==="success"?"#f0fdf4":"#fff5f5",color:scheduleMsg.type==="success"?"#16a34a":"#dc2626",fontSize:13,fontWeight:600,border:`1px solid ${scheduleMsg.type==="success"?"#bbf7d0":"#fecaca"}`}}>
+        <div style={{ margin: "14px 18px 0", padding: "10px 14px", borderRadius: 9, background: scheduleMsg.type === "success" ? "#f0fdf4" : "#fff5f5", color: scheduleMsg.type === "success" ? "#16a34a" : "#dc2626", fontSize: 13, fontWeight: 600, border: `1px solid ${scheduleMsg.type === "success" ? "#bbf7d0" : "#fecaca"}` }}>
           {scheduleMsg.text}
         </div>
       )}
 
       {scheduleLoading ? (
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
-          <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading schedule...
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "40px 0", color: "#94a3b8" }}>
+          <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} />Loading schedule...
         </div>
       ) : (
-        <div style={{padding:"16px 18px",display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{display:"flex",gap:8,marginBottom:4,flexWrap:"wrap",alignItems:"center"}}>
-            <span style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>Quick set:</span>
+        <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Quick set:</span>
             {[
-              {label:"Mon–Fri", days:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"]},
-              {label:"Mon–Sat", days:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"]},
-              {label:"All Week", days:ALL_SCHED_DAYS},
-            ].map(tmpl=>(
-              <button key={tmpl.label} onClick={()=>applyTemplate(tmpl.days)}
-                style={{padding:"4px 11px",borderRadius:7,border:`1px solid ${accent}44`,background:`${accent}11`,color:accent,fontSize:11,fontWeight:600,cursor:"pointer"}}>
+              { label: "Mon–Fri", days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"] },
+              { label: "Mon–Sat", days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"] },
+              { label: "All Week", days: ALL_SCHED_DAYS },
+            ].map(tmpl => (
+              <button key={tmpl.label} onClick={() => applyTemplate(tmpl.days)}
+                style={{ padding: "4px 11px", borderRadius: 7, border: `1px solid ${accent}44`, background: `${accent}11`, color: accent, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                 {tmpl.label}
               </button>
             ))}
-            <button onClick={()=>applyTemplate([])}
-              style={{padding:"4px 11px",borderRadius:7,border:"1px solid #fecaca",background:"#fff5f5",color:"#dc2626",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+            <button onClick={() => applyTemplate([])}
+              style={{ padding: "4px 11px", borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
               Clear All
             </button>
           </div>
 
           {ALL_SCHED_DAYS.map(day => {
-            const s = localSchedule[day] || {startTime:"09:00",endTime:"17:00",slotDuration:30,isActive:false};
+            const s = localSchedule[day] || { startTime: "09:00", endTime: "17:00", slotDuration: 30, isActive: false };
             const slots = slotsFor(s.startTime, s.endTime, s.slotDuration);
             return (
-              <div key={day} style={{display:"grid",gridTemplateColumns:"80px 1fr",background:s.isActive?`${accent}08`:"#f8fafc",borderRadius:12,border:`1.5px solid ${s.isActive?accent+"33":"#e2e8f0"}`,overflow:"hidden",transition:"all .2s"}}>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"14px 10px",borderRight:`1px solid ${s.isActive?accent+"22":"#e2e8f0"}`,background:s.isActive?`${accent}15`:"#f1f5f9",cursor:"pointer",userSelect:"none"}}
-                  onClick={()=>setDay(day,"isActive",!s.isActive)}>
-                  <div style={{width:36,height:20,borderRadius:100,background:s.isActive?accent:"#cbd5e1",position:"relative",transition:"background .2s",marginBottom:6}}>
-                    <div style={{position:"absolute",top:2,left:s.isActive?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+              <div key={day} style={{ display: "grid", gridTemplateColumns: "80px 1fr", background: s.isActive ? `${accent}08` : "#f8fafc", borderRadius: 12, border: `1.5px solid ${s.isActive ? accent + "33" : "#e2e8f0"}`, overflow: "hidden", transition: "all .2s" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "14px 10px", borderRight: `1px solid ${s.isActive ? accent + "22" : "#e2e8f0"}`, background: s.isActive ? `${accent}15` : "#f1f5f9", cursor: "pointer", userSelect: "none" }}
+                  onClick={() => setDay(day, "isActive", !s.isActive)}>
+                  <div style={{ width: 36, height: 20, borderRadius: 100, background: s.isActive ? accent : "#cbd5e1", position: "relative", transition: "background .2s", marginBottom: 6 }}>
+                    <div style={{ position: "absolute", top: 2, left: s.isActive ? 18 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.2)", transition: "left .2s" }} />
                   </div>
-                  <span style={{fontSize:11,fontWeight:700,color:s.isActive?accent:"#94a3b8"}}>{SCHED_DAY_LABELS[day]}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: s.isActive ? accent : "#94a3b8" }}>{SCHED_DAY_LABELS[day]}</span>
                 </div>
-                <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:14,opacity:s.isActive?1:.45,transition:"opacity .2s",flexWrap:"wrap"}}>
+                <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 14, opacity: s.isActive ? 1 : .45, transition: "opacity .2s", flexWrap: "wrap" }}>
                   {[
-                    {label:"Start", field:"startTime", value:s.startTime, type:"time"},
-                    {label:"End",   field:"endTime",   value:s.endTime,   type:"time"},
-                  ].map(inp=>(
-                    <div key={inp.field} style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:11,color:"#64748b",fontWeight:600}}>{inp.label}</span>
+                    { label: "Start", field: "startTime", value: s.startTime, type: "time" },
+                    { label: "End", field: "endTime", value: s.endTime, type: "time" },
+                  ].map(inp => (
+                    <div key={inp.field} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{inp.label}</span>
                       <input type={inp.type} value={inp.value} disabled={!s.isActive}
-                        onChange={e=>setDay(day,inp.field,e.target.value)}
-                        style={{padding:"5px 8px",borderRadius:7,border:"1px solid #d1fae5",fontSize:12,color:"#334155",background:"#fff",outline:"none",fontFamily:"inherit"}}/>
+                        onChange={e => setDay(day, inp.field, e.target.value)}
+                        style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #d1fae5", fontSize: 12, color: "#334155", background: "#fff", outline: "none", fontFamily: "inherit" }} />
                     </div>
                   ))}
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <span style={{fontSize:11,color:"#64748b",fontWeight:600}}>Slot</span>
-                    <select value={s.slotDuration} disabled={!s.isActive} onChange={e=>setDay(day,"slotDuration",Number(e.target.value))}
-                      style={{padding:"5px 8px",borderRadius:7,border:"1px solid #d1fae5",fontSize:12,color:"#334155",background:"#fff",outline:"none",fontFamily:"inherit",cursor:"pointer"}}>
-                      {SCHED_DURATIONS.map(d=><option key={d} value={d}>{d} min</option>)}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Slot</span>
+                    <select value={s.slotDuration} disabled={!s.isActive} onChange={e => setDay(day, "slotDuration", Number(e.target.value))}
+                      style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #d1fae5", fontSize: 12, color: "#334155", background: "#fff", outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+                      {SCHED_DURATIONS.map(d => <option key={d} value={d}>{d} min</option>)}
                     </select>
                   </div>
                   {s.isActive && (slots > 0
-                    ? <span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:100,background:`${accent}15`,color:accent}}>{slots} slots/day</span>
-                    : <span style={{fontSize:11,color:"#ef4444",fontWeight:600}}>⚠ Invalid range</span>
+                    ? <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: `${accent}15`, color: accent }}>{slots} slots/day</span>
+                    : <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 600 }}>⚠ Invalid range</span>
                   )}
                 </div>
               </div>
@@ -710,16 +710,16 @@ function ScheduleMgmtTab({ accent, localSchedule, setLocalSchedule, scheduleLoad
   );
 }
 
-type Tab = "schedule"|"patients"|"prescription-settings"|"treatment-plans"|"attendance"|"schedule-mgmt"|"reports";
+type Tab = "schedule" | "patients" | "prescription-settings" | "treatment-plans" | "attendance" | "schedule-mgmt" | "reports";
 
-const fmtDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-const isSameDay = (a: Date, b: Date) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+const fmtDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const isSameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 function DoctorDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { doctor, accent, doctorName } = useDoctorDashboard();
-  
+
   const [tab, setTab] = useState<Tab>("schedule");
 
   useEffect(() => {
@@ -743,29 +743,29 @@ function DoctorDashboardContent() {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceMonth, setAttendanceMonth] = useState(() => {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [weeklySchedule, setWeeklySchedule] = useState<Record<string,any>>({});
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, any>>({});
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleSaving, setScheduleSaving] = useState(false);
-  const [scheduleMsg, setScheduleMsg] = useState<{type:"success"|"error";text:string}|null>(null);
-  const SCHED_DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+  const [scheduleMsg, setScheduleMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const SCHED_DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
   const initLocalSchedule = () => {
-    const init: Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}> = {};
-    SCHED_DAYS.forEach(d => { init[d] = { startTime:"09:00", endTime:"17:00", slotDuration:30, isActive:false }; });
+    const init: Record<string, { startTime: string; endTime: string; slotDuration: number; isActive: boolean }> = {};
+    SCHED_DAYS.forEach(d => { init[d] = { startTime: "09:00", endTime: "17:00", slotDuration: 30, isActive: false }; });
     return init;
   };
-  const [localSchedule, setLocalSchedule] = useState<Record<string,{startTime:string;endTime:string;slotDuration:number;isActive:boolean}>>(initLocalSchedule);
+  const [localSchedule, setLocalSchedule] = useState<Record<string, { startTime: string; endTime: string; slotDuration: number; isActive: boolean }>>(initLocalSchedule);
 
   const [showAddPlan, setShowAddPlan] = useState(false);
-  const [addPlanForm, setAddPlanForm] = useState({ planName:"", totalSessions:1, totalCost:0, startDate:"", endDate:"", notes:"" });
+  const [addPlanForm, setAddPlanForm] = useState({ planName: "", totalSessions: 1, totalCost: 0, startDate: "", endDate: "", notes: "" });
   const [addPlanSaving, setAddPlanSaving] = useState(false);
   const [addPlanErr, setAddPlanErr] = useState("");
   const [editPlan, setEditPlan] = useState<any>(null);
-  const [editPlanForm, setEditPlanForm] = useState({ planName:"", status:"ACTIVE", totalSessions:1, completedSessions:0, totalCost:0, paidAmount:0, startDate:"", endDate:"", notes:"" });
+  const [editPlanForm, setEditPlanForm] = useState({ planName: "", status: "ACTIVE", totalSessions: 1, completedSessions: 0, totalCost: 0, paidAmount: 0, startDate: "", endDate: "", notes: "" });
   const [editPlanSaving, setEditPlanSaving] = useState(false);
   const [editPlanErr, setEditPlanErr] = useState("");
-  const [deletingPlanId, setDeletingPlanId] = useState<string|null>(null);
+  const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
 
   // Reports
   const [reportData, setReportData] = useState<any>(null);
@@ -774,27 +774,27 @@ function DoctorDashboardContent() {
   // Search / Sort / Export state for all tables
   const [apptSearch, setApptSearch] = useState("");
   const [apptSortField, setApptSortField] = useState("tokenNumber");
-  const [apptSortDir, setApptSortDir] = useState<"asc"|"desc">("asc");
+  const [apptSortDir, setApptSortDir] = useState<"asc" | "desc">("asc");
   const [apptExportOpen, setApptExportOpen] = useState(false);
 
   const [patientSearch, setPatientSearch] = useState("");
   const [patientSortField, setPatientSortField] = useState("name");
-  const [patientSortDir, setPatientSortDir] = useState<"asc"|"desc">("asc");
+  const [patientSortDir, setPatientSortDir] = useState<"asc" | "desc">("asc");
   const [patientExportOpen, setPatientExportOpen] = useState(false);
 
   const [planSearch, setPlanSearch] = useState("");
   const [planSortField, setPlanSortField] = useState("planName");
-  const [planSortDir, setPlanSortDir] = useState<"asc"|"desc">("asc");
+  const [planSortDir, setPlanSortDir] = useState<"asc" | "desc">("asc");
   const [planExportOpen, setPlanExportOpen] = useState(false);
 
   const [attendSearch, setAttendSearch] = useState("");
   const [attendSortField, setAttendSortField] = useState("date");
-  const [attendSortDir, setAttendSortDir] = useState<"asc"|"desc">("desc");
+  const [attendSortDir, setAttendSortDir] = useState<"asc" | "desc">("desc");
   const [attendExportOpen, setAttendExportOpen] = useState(false);
 
   const [recentSearch, setRecentSearch] = useState("");
   const [recentSortField, setRecentSortField] = useState("date");
-  const [recentSortDir, setRecentSortDir] = useState<"asc"|"desc">("desc");
+  const [recentSortDir, setRecentSortDir] = useState<"asc" | "desc">("desc");
   const [recentExportOpen, setRecentExportOpen] = useState(false);
 
   const isToday = isSameDay(selectedDate, new Date());
@@ -828,7 +828,7 @@ function DoctorDashboardContent() {
 
   useEffect(() => {
     if (doctor) {
-      fetch("/api/doctor/attendance", { method: "POST", credentials: "include" }).catch(() => {});
+      fetch("/api/doctor/attendance", { method: "POST", credentials: "include" }).catch(() => { });
       if (tab === "schedule") {
         fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
       }
@@ -838,7 +838,7 @@ function DoctorDashboardContent() {
       if (tab === "schedule" || tab === "treatment-plans") {
         api(`/api/treatment-plans?doctorId=${doctor.id}&status=ACTIVE&limit=1`).then(r => {
           if (r.success) setActivePlansCount(r.data?.total ?? r.data?.plans?.length ?? 0);
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   }, [doctor, tab, fetchAppointments, fetchAllPatients]);
@@ -875,14 +875,14 @@ function DoctorDashboardContent() {
     const d = await api("/api/doctor/availability");
     if (d.success) {
       setWeeklySchedule(d.data || {});
-      const sdays = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+      const sdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
       setLocalSchedule(prev => {
         const next = { ...prev };
         sdays.forEach(day => {
           const ex = (d.data || {})[day];
           next[day] = ex
-            ? { startTime: ex.startTime||"09:00", endTime: ex.endTime||"17:00", slotDuration: ex.slotDuration||30, isActive: ex.isActive!==false }
-            : { startTime:"09:00", endTime:"17:00", slotDuration:30, isActive:false };
+            ? { startTime: ex.startTime || "09:00", endTime: ex.endTime || "17:00", slotDuration: ex.slotDuration || 30, isActive: ex.isActive !== false }
+            : { startTime: "09:00", endTime: "17:00", slotDuration: 30, isActive: false };
         });
         return next;
       });
@@ -915,7 +915,7 @@ function DoctorDashboardContent() {
   }, [selectedDate, doctor, tab, fetchAppointments]);
 
   // ── Generic sort handler ──
-  const mkSort = (setField: (f:string)=>void, setDir: (d:"asc"|"desc")=>void, curField: string, curDir: "asc"|"desc") =>
+  const mkSort = (setField: (f: string) => void, setDir: (d: "asc" | "desc") => void, curField: string, curDir: "asc" | "desc") =>
     (field: string) => { if (curField === field) setDir(curDir === "asc" ? "desc" : "asc"); else { setField(field); setDir("desc"); } };
   const handleApptSort = mkSort(setApptSortField, setApptSortDir, apptSortField, apptSortDir);
   const handlePatientSort = mkSort(setPatientSortField, setPatientSortDir, patientSortField, patientSortDir);
@@ -924,72 +924,72 @@ function DoctorDashboardContent() {
   const handleRecentSort = mkSort(setRecentSortField, setRecentSortDir, recentSortField, recentSortDir);
 
   // ── Sort icon ──
-  const sortIcon = (field: string, curField: string, curDir: "asc"|"desc") =>
-    curField === field ? (curDir === "asc" ? <ChevronUp size={12}/> : <ChevronDown size={12}/>) : <ArrowUpDown size={10} style={{opacity:.35}}/>;
+  const sortIcon = (field: string, curField: string, curDir: "asc" | "desc") =>
+    curField === field ? (curDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={10} style={{ opacity: .35 }} />;
 
   // ── Filtered + sorted appointments ──
-  const filteredAppts = appointments.filter((a:any) => {
+  const filteredAppts = appointments.filter((a: any) => {
     if (!apptSearch) return true;
     const q = apptSearch.toLowerCase();
-    return (a.patient?.name||"").toLowerCase().includes(q) || (a.patient?.patientId||"").toLowerCase().includes(q) || (a.timeSlot||"").includes(q) || (a.type||"").toLowerCase().includes(q) || (STATUS_CFG[a.status]?.label||"").toLowerCase().includes(q);
+    return (a.patient?.name || "").toLowerCase().includes(q) || (a.patient?.patientId || "").toLowerCase().includes(q) || (a.timeSlot || "").includes(q) || (a.type || "").toLowerCase().includes(q) || (STATUS_CFG[a.status]?.label || "").toLowerCase().includes(q);
   });
-  const sortedAppts = [...filteredAppts].sort((a:any,b:any) => {
+  const sortedAppts = [...filteredAppts].sort((a: any, b: any) => {
     const d = apptSortDir === "asc" ? 1 : -1;
-    if (apptSortField === "tokenNumber") return d * ((a.tokenNumber||0) - (b.tokenNumber||0));
-    if (apptSortField === "timeSlot") return d * ((a.timeSlot||"").localeCompare(b.timeSlot||""));
-    if (apptSortField === "patient") return d * ((a.patient?.name||"").localeCompare(b.patient?.name||""));
-    if (apptSortField === "type") return d * ((a.type||"").localeCompare(b.type||""));
-    if (apptSortField === "status") return d * ((a.status||"").localeCompare(b.status||""));
+    if (apptSortField === "tokenNumber") return d * ((a.tokenNumber || 0) - (b.tokenNumber || 0));
+    if (apptSortField === "timeSlot") return d * ((a.timeSlot || "").localeCompare(b.timeSlot || ""));
+    if (apptSortField === "patient") return d * ((a.patient?.name || "").localeCompare(b.patient?.name || ""));
+    if (apptSortField === "type") return d * ((a.type || "").localeCompare(b.type || ""));
+    if (apptSortField === "status") return d * ((a.status || "").localeCompare(b.status || ""));
     return 0;
   });
 
   // ── Filtered + sorted patients ──
-  const filteredPatients = allPatients.filter((p:any) => {
+  const filteredPatients = allPatients.filter((p: any) => {
     if (!patientSearch) return true;
     const q = patientSearch.toLowerCase();
-    return (p.name||"").toLowerCase().includes(q) || (p.patientId||"").toLowerCase().includes(q) || (p.phone||"").includes(q) || (p.gender||"").toLowerCase().includes(q);
+    return (p.name || "").toLowerCase().includes(q) || (p.patientId || "").toLowerCase().includes(q) || (p.phone || "").includes(q) || (p.gender || "").toLowerCase().includes(q);
   });
-  const sortedPatients = [...filteredPatients].sort((a:any,b:any) => {
+  const sortedPatients = [...filteredPatients].sort((a: any, b: any) => {
     const d = patientSortDir === "asc" ? 1 : -1;
-    if (patientSortField === "patientId") return d * ((a.patientId||"").localeCompare(b.patientId||""));
-    if (patientSortField === "name") return d * ((a.name||"").localeCompare(b.name||""));
-    if (patientSortField === "phone") return d * ((a.phone||"").localeCompare(b.phone||""));
-    if (patientSortField === "gender") return d * ((a.gender||"").localeCompare(b.gender||""));
-    if (patientSortField === "lastVisit") return d * (new Date(a.lastVisit||0).getTime() - new Date(b.lastVisit||0).getTime());
-    if (patientSortField === "lastType") return d * ((a.lastType||"").localeCompare(b.lastType||""));
+    if (patientSortField === "patientId") return d * ((a.patientId || "").localeCompare(b.patientId || ""));
+    if (patientSortField === "name") return d * ((a.name || "").localeCompare(b.name || ""));
+    if (patientSortField === "phone") return d * ((a.phone || "").localeCompare(b.phone || ""));
+    if (patientSortField === "gender") return d * ((a.gender || "").localeCompare(b.gender || ""));
+    if (patientSortField === "lastVisit") return d * (new Date(a.lastVisit || 0).getTime() - new Date(b.lastVisit || 0).getTime());
+    if (patientSortField === "lastType") return d * ((a.lastType || "").localeCompare(b.lastType || ""));
     return 0;
   });
 
   // ── Filtered + sorted plans ──
-  const filteredPlans = myPlans.filter((p:any) => {
+  const filteredPlans = myPlans.filter((p: any) => {
     if (!planSearch) return true;
     const q = planSearch.toLowerCase();
-    return (p.planName||"").toLowerCase().includes(q) || (p.patient?.name||"").toLowerCase().includes(q) || (p.service?.name||"").toLowerCase().includes(q) || (p.status||"").toLowerCase().includes(q);
+    return (p.planName || "").toLowerCase().includes(q) || (p.patient?.name || "").toLowerCase().includes(q) || (p.service?.name || "").toLowerCase().includes(q) || (p.status || "").toLowerCase().includes(q);
   });
-  const sortedPlans = [...filteredPlans].sort((a:any,b:any) => {
+  const sortedPlans = [...filteredPlans].sort((a: any, b: any) => {
     const d = planSortDir === "asc" ? 1 : -1;
-    if (planSortField === "planName") return d * ((a.planName||"").localeCompare(b.planName||""));
-    if (planSortField === "patient") return d * ((a.patient?.name||"").localeCompare(b.patient?.name||""));
-    if (planSortField === "status") return d * ((a.status||"").localeCompare(b.status||""));
-    if (planSortField === "sessions") return d * ((a.completedSessions||0) - (b.completedSessions||0));
-    if (planSortField === "cost") return d * ((a.totalCost||0) - (b.totalCost||0));
+    if (planSortField === "planName") return d * ((a.planName || "").localeCompare(b.planName || ""));
+    if (planSortField === "patient") return d * ((a.patient?.name || "").localeCompare(b.patient?.name || ""));
+    if (planSortField === "status") return d * ((a.status || "").localeCompare(b.status || ""));
+    if (planSortField === "sessions") return d * ((a.completedSessions || 0) - (b.completedSessions || 0));
+    if (planSortField === "cost") return d * ((a.totalCost || 0) - (b.totalCost || 0));
     return 0;
   });
 
   // ── Filtered + sorted attendance ──
-  const filteredAttendance = attendance.filter((r:any) => {
+  const filteredAttendance = attendance.filter((r: any) => {
     if (!attendSearch) return true;
     const q = attendSearch.toLowerCase();
     const d = new Date(r.date);
-    return d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}).toLowerCase().includes(q)
-      || d.toLocaleDateString("en-IN",{weekday:"short"}).toLowerCase().includes(q)
-      || (r.status||"").toLowerCase().includes(q) || (r.notes||"").toLowerCase().includes(q);
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }).toLowerCase().includes(q)
+      || d.toLocaleDateString("en-IN", { weekday: "short" }).toLowerCase().includes(q)
+      || (r.status || "").toLowerCase().includes(q) || (r.notes || "").toLowerCase().includes(q);
   });
-  const sortedAttendance = [...filteredAttendance].sort((a:any,b:any) => {
+  const sortedAttendance = [...filteredAttendance].sort((a: any, b: any) => {
     const d = attendSortDir === "asc" ? 1 : -1;
     if (attendSortField === "date") return d * (new Date(a.date).getTime() - new Date(b.date).getTime());
-    if (attendSortField === "status") return d * ((a.status||"").localeCompare(b.status||""));
-    if (attendSortField === "loginTime") return d * (new Date(a.loginTime||0).getTime() - new Date(b.loginTime||0).getTime());
+    if (attendSortField === "status") return d * ((a.status || "").localeCompare(b.status || ""));
+    if (attendSortField === "loginTime") return d * (new Date(a.loginTime || 0).getTime() - new Date(b.loginTime || 0).getTime());
     return 0;
   });
 
@@ -1015,88 +1015,92 @@ function DoctorDashboardContent() {
   const doExportWord = async (title: string, headers: string[], rows: any[][], count: number, filename: string) => {
     const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, TextRun, AlignmentType, BorderStyle } = await import("docx");
     const { saveAs } = await import("file-saver");
-    const tb = { top:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"},bottom:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"},left:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"},right:{style:BorderStyle.SINGLE,size:1,color:"E2E8F0"} };
-    const hRow = new TableRow({ children: headers.map(h => new TableCell({ borders:tb, shading:{fill:"0E898F"}, children:[new Paragraph({children:[new TextRun({text:h,bold:true,color:"FFFFFF",size:18,font:"Calibri"})],alignment:AlignmentType.CENTER})], width:{size:100/headers.length,type:WidthType.PERCENTAGE} })) });
-    const dRows = rows.map((row:any[]) => new TableRow({ children: row.map((c:any) => new TableCell({ borders:tb, children:[new Paragraph({children:[new TextRun({text:String(c),size:18,font:"Calibri"})],alignment:AlignmentType.LEFT})] })) }));
-    const doc = new Document({ sections:[{ children:[
-      new Paragraph({children:[new TextRun({text:title,bold:true,size:32,font:"Calibri"})],spacing:{after:100}}),
-      new Paragraph({children:[new TextRun({text:`Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} record(s)`,size:20,color:"64748B",font:"Calibri"})],spacing:{after:300}}),
-      new Table({rows:[hRow,...dRows],width:{size:100,type:WidthType.PERCENTAGE}}),
-    ]}] });
+    const tb = { top: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, bottom: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, left: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" }, right: { style: BorderStyle.SINGLE, size: 1, color: "E2E8F0" } };
+    const hRow = new TableRow({ children: headers.map(h => new TableCell({ borders: tb, shading: { fill: "0E898F" }, children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 18, font: "Calibri" })], alignment: AlignmentType.CENTER })], width: { size: 100 / headers.length, type: WidthType.PERCENTAGE } })) });
+    const dRows = rows.map((row: any[]) => new TableRow({ children: row.map((c: any) => new TableCell({ borders: tb, children: [new Paragraph({ children: [new TextRun({ text: String(c), size: 18, font: "Calibri" })], alignment: AlignmentType.LEFT })] })) }));
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 32, font: "Calibri" })], spacing: { after: 100 } }),
+          new Paragraph({ children: [new TextRun({ text: `Exported: ${new Date().toLocaleString("en-IN")}  |  ${count} record(s)`, size: 20, color: "64748B", font: "Calibri" })], spacing: { after: 300 } }),
+          new Table({ rows: [hRow, ...dRows], width: { size: 100, type: WidthType.PERCENTAGE } }),
+        ]
+      }]
+    });
     const blob = await Packer.toBlob(doc);
     saveAs(blob, filename);
   };
 
   // Table-specific export functions
-  const exportAppts = (fmt: "pdf"|"excel"|"word") => {
-    const h = ["Token","Time","Patient","Patient ID","Type","Status","Fee"];
-    const r = sortedAppts.map((a:any) => [a.tokenNumber||"—",a.timeSlot||"",a.patient?.name||"",a.patient?.patientId||"",TYPE_LABEL[a.type]||a.type,STATUS_CFG[a.status]?.label||a.status,a.consultationFee||0]);
+  const exportAppts = (fmt: "pdf" | "excel" | "word") => {
+    const h = ["Token", "Time", "Patient", "Patient ID", "Type", "Status", "Fee"];
+    const r = sortedAppts.map((a: any) => [a.tokenNumber || "—", a.timeSlot || "", a.patient?.name || "", a.patient?.patientId || "", TYPE_LABEL[a.type] || a.type, STATUS_CFG[a.status]?.label || a.status, a.consultationFee || 0]);
     const t = `Dr. ${doctorName} — Appointments (${selectedDate.toLocaleDateString("en-IN")})`;
     const fn = `appointments-${fmtDate(selectedDate)}`;
-    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
-    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
-    else doExportWord(t,h,r,r.length,fn+".docx");
+    if (fmt === "pdf") doExportPDF(t, h, r, r.length, fn + ".pdf");
+    else if (fmt === "excel") doExportExcel(h, r, fn + ".xlsx");
+    else doExportWord(t, h, r, r.length, fn + ".docx");
     setApptExportOpen(false);
   };
-  const exportPatients = (fmt: "pdf"|"excel"|"word") => {
-    const h = ["Patient ID","Name","Phone","Gender","Last Visit","Last Type"];
-    const r = sortedPatients.map((p:any) => [p.patientId||"",p.name||"",p.phone||"",p.gender||"",p.lastVisit?new Date(p.lastVisit).toLocaleDateString("en-IN"):"",TYPE_LABEL[p.lastType]||p.lastType||""]);
+  const exportPatients = (fmt: "pdf" | "excel" | "word") => {
+    const h = ["Patient ID", "Name", "Phone", "Gender", "Last Visit", "Last Type"];
+    const r = sortedPatients.map((p: any) => [p.patientId || "", p.name || "", p.phone || "", p.gender || "", p.lastVisit ? new Date(p.lastVisit).toLocaleDateString("en-IN") : "", TYPE_LABEL[p.lastType] || p.lastType || ""]);
     const t = `Dr. ${doctorName} — My Patients`;
-    const fn = `patients-${new Date().toISOString().slice(0,10)}`;
-    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
-    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
-    else doExportWord(t,h,r,r.length,fn+".docx");
+    const fn = `patients-${new Date().toISOString().slice(0, 10)}`;
+    if (fmt === "pdf") doExportPDF(t, h, r, r.length, fn + ".pdf");
+    else if (fmt === "excel") doExportExcel(h, r, fn + ".xlsx");
+    else doExportWord(t, h, r, r.length, fn + ".docx");
     setPatientExportOpen(false);
   };
-  const exportPlans = (fmt: "pdf"|"excel"|"word") => {
-    const h = ["Plan Name","Patient","Status","Sessions","Cost (₹)","Paid (₹)"];
-    const r = sortedPlans.map((p:any) => [p.planName||"",p.patient?.name||"",p.status||"",`${p.completedSessions||0}/${p.totalSessions||0}`,p.totalCost||0,p.paidAmount||0]);
+  const exportPlans = (fmt: "pdf" | "excel" | "word") => {
+    const h = ["Plan Name", "Patient", "Status", "Sessions", "Cost (₹)", "Paid (₹)"];
+    const r = sortedPlans.map((p: any) => [p.planName || "", p.patient?.name || "", p.status || "", `${p.completedSessions || 0}/${p.totalSessions || 0}`, p.totalCost || 0, p.paidAmount || 0]);
     const t = `Dr. ${doctorName} — Treatment Plans`;
-    const fn = `treatment-plans-${new Date().toISOString().slice(0,10)}`;
-    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
-    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
-    else doExportWord(t,h,r,r.length,fn+".docx");
+    const fn = `treatment-plans-${new Date().toISOString().slice(0, 10)}`;
+    if (fmt === "pdf") doExportPDF(t, h, r, r.length, fn + ".pdf");
+    else if (fmt === "excel") doExportExcel(h, r, fn + ".xlsx");
+    else doExportWord(t, h, r, r.length, fn + ".docx");
     setPlanExportOpen(false);
   };
-  const exportAttendance = (fmt: "pdf"|"excel"|"word") => {
-    const h = ["Date","Day","Status","Login Time","Notes"];
-    const r = sortedAttendance.map((rec:any) => { const d=new Date(rec.date); return [d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}),d.toLocaleDateString("en-IN",{weekday:"short"}),rec.status||"",rec.loginTime?new Date(rec.loginTime).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}):"—",rec.notes||""]; });
+  const exportAttendance = (fmt: "pdf" | "excel" | "word") => {
+    const h = ["Date", "Day", "Status", "Login Time", "Notes"];
+    const r = sortedAttendance.map((rec: any) => { const d = new Date(rec.date); return [d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), d.toLocaleDateString("en-IN", { weekday: "short" }), rec.status || "", rec.loginTime ? new Date(rec.loginTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—", rec.notes || ""]; });
     const t = `Dr. ${doctorName} — Attendance (${attendanceMonth})`;
     const fn = `attendance-${attendanceMonth}`;
-    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
-    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
-    else doExportWord(t,h,r,r.length,fn+".docx");
+    if (fmt === "pdf") doExportPDF(t, h, r, r.length, fn + ".pdf");
+    else if (fmt === "excel") doExportExcel(h, r, fn + ".xlsx");
+    else doExportWord(t, h, r, r.length, fn + ".docx");
     setAttendExportOpen(false);
   };
-  const exportRecent = (fmt: "pdf"|"excel"|"word") => {
-    const src = (reportData?.recentCompleted||[]).filter((r:any) => { if (!recentSearch) return true; const q=recentSearch.toLowerCase(); return (r.patientName||"").toLowerCase().includes(q)||(r.patientId||"").toLowerCase().includes(q)||(r.type||"").toLowerCase().includes(q); });
-    const h = ["Patient","Patient ID","Type","Date","Time","Fee (₹)"];
-    const r = src.map((x:any) => [x.patientName||"",x.patientId||"",TYPE_LABEL[x.type]||x.type||"",x.date?new Date(x.date).toLocaleDateString("en-IN"):"",x.timeSlot||"",x.fee||0]);
+  const exportRecent = (fmt: "pdf" | "excel" | "word") => {
+    const src = (reportData?.recentCompleted || []).filter((r: any) => { if (!recentSearch) return true; const q = recentSearch.toLowerCase(); return (r.patientName || "").toLowerCase().includes(q) || (r.patientId || "").toLowerCase().includes(q) || (r.type || "").toLowerCase().includes(q); });
+    const h = ["Patient", "Patient ID", "Type", "Date", "Time", "Fee (₹)"];
+    const r = src.map((x: any) => [x.patientName || "", x.patientId || "", TYPE_LABEL[x.type] || x.type || "", x.date ? new Date(x.date).toLocaleDateString("en-IN") : "", x.timeSlot || "", x.fee || 0]);
     const t = `Dr. ${doctorName} — Recent Consultations`;
-    const fn = `recent-consultations-${new Date().toISOString().slice(0,10)}`;
-    if (fmt==="pdf") doExportPDF(t,h,r,r.length,fn+".pdf");
-    else if (fmt==="excel") doExportExcel(h,r,fn+".xlsx");
-    else doExportWord(t,h,r,r.length,fn+".docx");
+    const fn = `recent-consultations-${new Date().toISOString().slice(0, 10)}`;
+    if (fmt === "pdf") doExportPDF(t, h, r, r.length, fn + ".pdf");
+    else if (fmt === "excel") doExportExcel(h, r, fn + ".xlsx");
+    else doExportWord(t, h, r, r.length, fn + ".docx");
     setRecentExportOpen(false);
   };
 
   // ── Reusable export dropdown component ──
-  const ExportDropdown = ({open, onClose, onExport}: {open:boolean; onClose:()=>void; onExport:(fmt:"pdf"|"excel"|"word")=>void}) => {
+  const ExportDropdown = ({ open, onClose, onExport }: { open: boolean; onClose: () => void; onExport: (fmt: "pdf" | "excel" | "word") => void }) => {
     if (!open) return null;
     return (<>
-      <div style={{position:"fixed",inset:0,zIndex:60}} onClick={onClose}/>
-      <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,zIndex:70,minWidth:180,padding:6,boxShadow:"0 8px 24px rgba(0,0,0,.1)"}}>
-        <button onClick={()=>onExport("pdf")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
-          onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-          <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#fff5f5",color:"#ef4444"}}><FileText size={13}/></span>Export as PDF
+      <div style={{ position: "fixed", inset: 0, zIndex: 60 }} onClick={onClose} />
+      <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, zIndex: 70, minWidth: 180, padding: 6, boxShadow: "0 8px 24px rgba(0,0,0,.1)" }}>
+        <button onClick={() => onExport("pdf")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+          onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+          <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff5f5", color: "#ef4444" }}><FileText size={13} /></span>Export as PDF
         </button>
-        <button onClick={()=>onExport("excel")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
-          onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-          <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#f0fdf4",color:"#16a34a"}}><FileSpreadsheet size={13}/></span>Export as Excel
+        <button onClick={() => onExport("excel")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+          onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+          <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0fdf4", color: "#16a34a" }}><FileSpreadsheet size={13} /></span>Export as Excel
         </button>
-        <button onClick={()=>onExport("word")} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderRadius:8,border:"none",background:"none",width:"100%",cursor:"pointer",fontSize:13,color:"#334155",fontWeight:500}}
-          onMouseEnter={e=>e.currentTarget.style.background="#f1f5f9"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
-          <span style={{width:20,height:20,borderRadius:5,display:"flex",alignItems:"center",justifyContent:"center",background:"#eff6ff",color:"#2563eb"}}><FileType size={13}/></span>Export as Word
+        <button onClick={() => onExport("word")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+          onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+          <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: "#eff6ff", color: "#2563eb" }}><FileType size={13} /></span>Export as Word
         </button>
       </div>
     </>);
@@ -1195,151 +1199,151 @@ function DoctorDashboardContent() {
       <div style={{ display: "grid", gridTemplateColumns: tab === "schedule" ? "1fr 260px" : "1fr", gap: 0 }}>
         <div>
           {selectedPatientId ? (
-            <PatientProfilePanel 
-              patientId={selectedPatientId} 
-              onBack={() => setSelectedPatientId(null)} 
+            <PatientProfilePanel
+              patientId={selectedPatientId}
+              onBack={() => setSelectedPatientId(null)}
             />
           ) : (
             <>
               {tab === "schedule" && (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
-                <div className="doc-pg-title" style={{marginBottom:0}}>Good morning, Dr. {doctorName.split(" ").slice(-1)[0]} 👋</div>
-                <span style={{fontSize:12,color:"#64748b",background:"#f0fdf4",border:"1px solid #d1fae5",padding:"5px 12px",borderRadius:8,fontWeight:500}}>{new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long"})}</span>
-              </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                  <div className="doc-pg-title" style={{ marginBottom: 0 }}>Good morning, Dr. {doctorName.split(" ").slice(-1)[0]} 👋</div>
+                  <span style={{ fontSize: 12, color: "#64748b", background: "#f0fdf4", border: "1px solid #d1fae5", padding: "5px 12px", borderRadius: 8, fontWeight: 500 }}>{new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long" })}</span>
+                </div>
               )}
 
               {tab === "schedule" && (
-              <div className="doc-stats">
-                {[
-                  {icon:<CalendarDays size={20} color="#fff"/>, label:isToday?"Today's Appointments":"Appointments", val:todayTotal, sub:`${todayRemaining} remaining`, bg:"#E6F4F4", iconBg:"#0E898F"},
-                  {icon:<CheckCircle2 size={20} color="#fff"/>, label:"Completed", val:todayDone, sub:isToday?"today so far":"on this day", bg:"#f0fdf4", iconBg:"#10b981"},
-                  {icon:<Clock size={20} color="#fff"/>, label:"Remaining", val:todayRemaining, sub:"scheduled / confirmed", bg:"#fff7ed", iconBg:"#f59e0b"},
-                  {icon:<UserRound size={20} color="#fff"/>, label:"Total Patients", val:allPatients.length, sub:"all time", bg:"#fdf4ff", iconBg:"#a855f7"},
-                  {icon:<Activity size={20} color="#fff"/>, label:"Active Plans", val:activePlansCount??"—", sub:"treatment plans", bg:"#f0fdf4", iconBg:"#059669"},
-                ].map((s,i)=>(
-                  <div key={i} className="doc-sc" style={{background:s.bg}}>
-                    <div className="doc-sc-icon" style={{background:s.iconBg}}>{s.icon}</div>
-                    <div><div className="doc-sc-lbl">{s.label}</div><div className="doc-sc-val">{s.val}</div><div className="doc-sc-sub">{s.sub}</div></div>
-                  </div>
-                ))}
-              </div>
+                <div className="doc-stats">
+                  {[
+                    { icon: <CalendarDays size={20} color="#fff" />, label: isToday ? "Today's Appointments" : "Appointments", val: todayTotal, sub: `${todayRemaining} remaining`, bg: "#E6F4F4", iconBg: "#0E898F" },
+                    { icon: <CheckCircle2 size={20} color="#fff" />, label: "Completed", val: todayDone, sub: isToday ? "today so far" : "on this day", bg: "#f0fdf4", iconBg: "#10b981" },
+                    { icon: <Clock size={20} color="#fff" />, label: "Remaining", val: todayRemaining, sub: "scheduled / confirmed", bg: "#fff7ed", iconBg: "#f59e0b" },
+                    { icon: <UserRound size={20} color="#fff" />, label: "Total Patients", val: allPatients.length, sub: "all time", bg: "#fdf4ff", iconBg: "#a855f7" },
+                    { icon: <Activity size={20} color="#fff" />, label: "Active Plans", val: activePlansCount ?? "—", sub: "treatment plans", bg: "#f0fdf4", iconBg: "#059669" },
+                  ].map((s, i) => (
+                    <div key={i} className="doc-sc" style={{ background: s.bg }}>
+                      <div className="doc-sc-icon" style={{ background: s.iconBg }}>{s.icon}</div>
+                      <div><div className="doc-sc-lbl">{s.label}</div><div className="doc-sc-val">{s.val}</div><div className="doc-sc-sub">{s.sub}</div></div>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {inProgress && (
-                <div style={{background:"linear-gradient(135deg,#0E898F,#07595D)",borderRadius:14,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{width:8,height:8,borderRadius:"50%",background:"#fff",animation:"pulse 1.5s ease-in-out infinite"}}/>
+                <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s ease-in-out infinite" }} />
                     <div>
-                      <div style={{fontSize:13,fontWeight:700}}>Consultation in progress — {inProgress.patient?.name}</div>
-                      <div style={{fontSize:11,color:"rgba(255,255,255,.75)"}}>Token #{inProgress.tokenNumber} · {inProgress.timeSlot} · {TYPE_LABEL[inProgress.type]}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>Consultation in progress — {inProgress.patient?.name}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,.75)" }}>Token #{inProgress.tokenNumber} · {inProgress.timeSlot} · {TYPE_LABEL[inProgress.type]}</div>
                     </div>
                   </div>
-                  <button onClick={()=>handleStartPrescription(inProgress.id)}
-                    style={{padding:"8px 16px",borderRadius:9,border:"none",background:"rgba(255,255,255,.2)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                  <button onClick={() => handleStartPrescription(inProgress.id)}
+                    style={{ padding: "8px 16px", borderRadius: 9, border: "none", background: "rgba(255,255,255,.2)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                     Continue →
                   </button>
                 </div>
               )}
 
-              {tab==="schedule" && (
+              {tab === "schedule" && (
                 <div className="doc-card">
                   <div className="doc-card-head">
-                    <div style={{display:"flex",alignItems:"center",gap:14}}>
-                      <button onClick={()=>goDate(-1)} style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748b"}}><ChevronLeft size={14}/></button>
-                      <div style={{textAlign:"center",minWidth:140}}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <button onClick={() => goDate(-1)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}><ChevronLeft size={14} /></button>
+                      <div style={{ textAlign: "center", minWidth: 140 }}>
                         <div className="doc-card-title">{isToday ? "Today's Appointments" : "Appointments"}</div>
-                        <div className="doc-card-sub">{selectedDate.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
+                        <div className="doc-card-sub">{selectedDate.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
                       </div>
-                      <button onClick={()=>goDate(1)} style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748b"}}><ChevronRight size={14}/></button>
-                      {!isToday && <button onClick={()=>setSelectedDate(new Date())} style={{padding:"5px 10px",borderRadius:7,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>Today</button>}
-                      <input type="date" value={fmtDate(selectedDate)} onChange={e=>{if(e.target.value) setSelectedDate(new Date(e.target.value+"T00:00:00"))}} style={{padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",fontSize:12,color:"#334155",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}/>
+                      <button onClick={() => goDate(1)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}><ChevronRight size={14} /></button>
+                      {!isToday && <button onClick={() => setSelectedDate(new Date())} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Today</button>}
+                      <input type="date" value={fmtDate(selectedDate)} onChange={e => { if (e.target.value) setSelectedDate(new Date(e.target.value + "T00:00:00")) }} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 12, color: "#334155", cursor: "pointer", fontFamily: "'Inter',sans-serif" }} />
                     </div>
-                    <button onClick={()=>doctor && fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate))}
-                      style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:"pointer"}}>
-                      <RefreshCw size={12}/>Refresh
+                    <button onClick={() => doctor && fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate))}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      <RefreshCw size={12} />Refresh
                     </button>
                   </div>
                   {/* Search / Export toolbar */}
-                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
-                      <Search size={13} color="#94a3b8"/>
-                      <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search patient, time, type..." value={apptSearch} onChange={e=>setApptSearch(e.target.value)}/>
-                      {apptSearch && <button onClick={()=>setApptSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
+                      <Search size={13} color="#94a3b8" />
+                      <input style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search patient, time, type..." value={apptSearch} onChange={e => setApptSearch(e.target.value)} />
+                      {apptSearch && <button onClick={() => setApptSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
                     </div>
-                    {loadingAppts && <Loader2 size={14} color={accent} style={{animation:"spin .7s linear infinite"}}/>}
-                    <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedAppts.length} of {appointments.length}</div>
-                    <div style={{position:"relative",marginLeft:"auto"}}>
-                      <button onClick={()=>setApptExportOpen(!apptExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
-                      <ExportDropdown open={apptExportOpen} onClose={()=>setApptExportOpen(false)} onExport={exportAppts}/>
+                    {loadingAppts && <Loader2 size={14} color={accent} style={{ animation: "spin .7s linear infinite" }} />}
+                    <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{sortedAppts.length} of {appointments.length}</div>
+                    <div style={{ position: "relative", marginLeft: "auto" }}>
+                      <button onClick={() => setApptExportOpen(!apptExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
+                      <ExportDropdown open={apptExportOpen} onClose={() => setApptExportOpen(false)} onExport={exportAppts} />
                     </div>
                   </div>
                   {loadingAppts ? (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
-                      <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading appointments...
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "40px 0", color: "#94a3b8" }}>
+                      <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} />Loading appointments...
                     </div>
                   ) : sortedAppts.length === 0 ? (
-                    <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
-                      <CalendarDays size={32} style={{marginBottom:10,opacity:.4}}/>
-                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{apptSearch ? "No matching appointments" : `No appointments ${isToday?"today":"on this day"}`}</div>
-                      <div style={{fontSize:12,marginTop:4}}>{apptSearch ? "Try a different search term" : `Your schedule is clear ${isToday?"for today":"for "+selectedDate.toLocaleDateString("en-IN",{day:"numeric",month:"short"})}`}</div>
+                    <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
+                      <CalendarDays size={32} style={{ marginBottom: 10, opacity: .4 }} />
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>{apptSearch ? "No matching appointments" : `No appointments ${isToday ? "today" : "on this day"}`}</div>
+                      <div style={{ fontSize: 12, marginTop: 4 }}>{apptSearch ? "Try a different search term" : `Your schedule is clear ${isToday ? "for today" : "for " + selectedDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}</div>
                     </div>
                   ) : (
                     <table className="doc-tbl">
                       <thead><tr>
-                        {[{k:"tokenNumber",l:"Token"},{k:"timeSlot",l:"Time"},{k:"patient",l:"Patient"},{k:"type",l:"Type"},{k:"status",l:"Status"}].map(c=>(
-                          <th key={c.k} onClick={()=>handleApptSort(c.k)} style={{cursor:"pointer",userSelect:"none"}}><span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,apptSortField,apptSortDir)}</span></th>
+                        {[{ k: "tokenNumber", l: "Token" }, { k: "timeSlot", l: "Time" }, { k: "patient", l: "Patient" }, { k: "type", l: "Type" }, { k: "status", l: "Status" }].map(c => (
+                          <th key={c.k} onClick={() => handleApptSort(c.k)} style={{ cursor: "pointer", userSelect: "none" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{c.l} {sortIcon(c.k, apptSortField, apptSortDir)}</span></th>
                         ))}
                         <th>Action</th>
                       </tr></thead>
                       <tbody>
-                        {sortedAppts.map((a:any)=>{
+                        {sortedAppts.map((a: any) => {
                           const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
-                          const canConsult = ["SCHEDULED","CONFIRMED","IN_PROGRESS"].includes(a.status);
+                          const canConsult = ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status);
                           return (
                             <tr key={a.id}>
-                              <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:12}}>#{a.tokenNumber||"—"}</span></td>
-                              <td style={{fontWeight:600,color:"#334155"}}>{a.timeSlot}</td>
+                              <td><span style={{ fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6, fontSize: 12 }}>#{a.tokenNumber || "—"}</span></td>
+                              <td style={{ fontWeight: 600, color: "#334155" }}>{a.timeSlot}</td>
                               <td>
-                                <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={() => a.patient?.id && setSelectedPatientId(a.patient.id)}>
-                                  <div style={{width:28,height:28,borderRadius:8,background:`linear-gradient(135deg,${accent},#0ea5e9)`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0}}>
-                                    {(a.patient?.name||"?").charAt(0).toUpperCase()}
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={() => a.patient?.id && setSelectedPatientId(a.patient.id)}>
+                                  <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${accent},#0ea5e9)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                                    {(a.patient?.name || "?").charAt(0).toUpperCase()}
                                   </div>
                                   <div>
-                                    <div style={{fontWeight:600,color:"#1e293b",fontSize:13}}>{a.patient?.name||"—"}</div>
-                                    <div style={{fontSize:10,color:"#94a3b8"}}>{a.patient?.patientId}</div>
+                                    <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{a.patient?.name || "—"}</div>
+                                    <div style={{ fontSize: 10, color: "#94a3b8" }}>{a.patient?.patientId}</div>
                                   </div>
                                 </div>
                               </td>
-                              <td><span style={{fontSize:11,background:"#f1f5f9",color:"#475569",padding:"3px 8px",borderRadius:6,fontWeight:600}}>{TYPE_LABEL[a.type]||a.type}</span></td>
-                              <td><span className="doc-badge" style={{background:sc.badge[0],color:sc.badge[1],border:`1px solid ${sc.badge[2]}`}}>{sc.label}</span></td>
+                              <td><span style={{ fontSize: 11, background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>{TYPE_LABEL[a.type] || a.type}</span></td>
+                              <td><span className="doc-badge" style={{ background: sc.badge[0], color: sc.badge[1], border: `1px solid ${sc.badge[2]}` }}>{sc.label}</span></td>
                               <td>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                   {canConsult && (
-                                    <button onClick={()=>handleStartPrescription(a.id)}
-                                      style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"none",background:a.status==="IN_PROGRESS"?"linear-gradient(135deg,#0E898F,#0A6B70)":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:a.status==="IN_PROGRESS"?"0 3px 10px rgba(59,130,246,.3)":"0 3px 10px rgba(16,185,129,.3)"}}>
-                                      <PlayCircle size={12}/>{a.status==="IN_PROGRESS"?"Continue":"Consult"}
+                                    <button onClick={() => handleStartPrescription(a.id)}
+                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: a.status === "IN_PROGRESS" ? "linear-gradient(135deg,#0E898F,#0A6B70)" : "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", boxShadow: a.status === "IN_PROGRESS" ? "0 3px 10px rgba(59,130,246,.3)" : "0 3px 10px rgba(16,185,129,.3)" }}>
+                                      <PlayCircle size={12} />{a.status === "IN_PROGRESS" ? "Continue" : "Consult"}
                                     </button>
                                   )}
                                   {a.status === "COMPLETED" && (
                                     <>
-                                      <button onClick={()=>handleViewPrescription(a.id)}
-                                        style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#334155",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                                        <FileText size={12}/>View Rx
+                                      <button onClick={() => handleViewPrescription(a.id)}
+                                        style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#334155", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                        <FileText size={12} />View Rx
                                       </button>
-                                      <button onClick={()=>handleEditPrescription(a.id)}
-                                        style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:8,border:"1px solid #B3E0E0",background:"#E6F4F4",color:"#0A6B70",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                                        <Pencil size={12}/>Edit Rx
+                                      <button onClick={() => handleEditPrescription(a.id)}
+                                        style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: "1px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                        <Pencil size={12} />Edit Rx
                                       </button>
                                     </>
                                   )}
-                                  {!canConsult && a.status !== "COMPLETED" && <span style={{fontSize:11,color:"#94a3b8"}}>—</span>}
+                                  {!canConsult && a.status !== "COMPLETED" && <span style={{ fontSize: 11, color: "#94a3b8" }}>—</span>}
                                   <select
                                     value={a.status}
                                     disabled={updatingStatusId === a.id}
                                     onChange={(e) => handleStatusChange(a, e.target.value)}
                                     style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 11, color: "#334155", cursor: updatingStatusId === a.id ? "not-allowed" : "pointer" }}
                                   >
-                                    {["SCHEDULED","CONFIRMED","IN_PROGRESS","COMPLETED","NO_SHOW","CANCELLED","RESCHEDULED"].map(s => (
+                                    {["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "NO_SHOW", "CANCELLED", "RESCHEDULED"].map(s => (
                                       <option key={s} value={s}>{STATUS_CFG[s]?.label || s}</option>
                                     ))}
                                   </select>
@@ -1352,59 +1356,59 @@ function DoctorDashboardContent() {
                     </table>
                   )}
                   {sortedAppts.length > 0 && (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
-                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedAppts.length} of {appointments.length}</div>
-                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {apptSortField==="tokenNumber"?"Token":apptSortField==="timeSlot"?"Time":apptSortField.charAt(0).toUpperCase()+apptSortField.slice(1)} · {apptSortDir==="asc"?"Ascending":"Descending"}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
+                      <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {sortedAppts.length} of {appointments.length}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>Sorted by {apptSortField === "tokenNumber" ? "Token" : apptSortField === "timeSlot" ? "Time" : apptSortField.charAt(0).toUpperCase() + apptSortField.slice(1)} · {apptSortDir === "asc" ? "Ascending" : "Descending"}</div>
                     </div>
                   )}
                 </div>
               )}
 
-              {tab==="patients" && (
+              {tab === "patients" && (
                 <div className="doc-card">
                   <div className="doc-card-head">
                     <div><div className="doc-card-title">My Patients</div><div className="doc-card-sub">{allPatients.length} unique patients</div></div>
                   </div>
                   {/* Search / Export toolbar */}
-                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
-                      <Search size={13} color="#94a3b8"/>
-                      <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search name, ID, phone..." value={patientSearch} onChange={e=>setPatientSearch(e.target.value)}/>
-                      {patientSearch && <button onClick={()=>setPatientSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
+                      <Search size={13} color="#94a3b8" />
+                      <input style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search name, ID, phone..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} />
+                      {patientSearch && <button onClick={() => setPatientSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
                     </div>
-                    <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedPatients.length} of {allPatients.length}</div>
-                    <div style={{position:"relative",marginLeft:"auto"}}>
-                      <button onClick={()=>setPatientExportOpen(!patientExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
-                      <ExportDropdown open={patientExportOpen} onClose={()=>setPatientExportOpen(false)} onExport={exportPatients}/>
+                    <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{sortedPatients.length} of {allPatients.length}</div>
+                    <div style={{ position: "relative", marginLeft: "auto" }}>
+                      <button onClick={() => setPatientExportOpen(!patientExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
+                      <ExportDropdown open={patientExportOpen} onClose={() => setPatientExportOpen(false)} onExport={exportPatients} />
                     </div>
                   </div>
                   {sortedPatients.length === 0 ? (
-                    <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
-                      <UserRound size={32} style={{marginBottom:10,opacity:.4}}/>
-                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{patientSearch ? "No matching patients" : "No patients yet"}</div>
+                    <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
+                      <UserRound size={32} style={{ marginBottom: 10, opacity: .4 }} />
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>{patientSearch ? "No matching patients" : "No patients yet"}</div>
                     </div>
                   ) : (
                     <table className="doc-tbl">
                       <thead><tr>
-                        {[{k:"patientId",l:"Patient ID"},{k:"name",l:"Name"},{k:"phone",l:"Phone"},{k:"gender",l:"Gender"},{k:"lastVisit",l:"Last Visit"},{k:"lastType",l:"Last Type"}].map(c=>(
-                          <th key={c.k} onClick={()=>handlePatientSort(c.k)} style={{cursor:"pointer",userSelect:"none"}}><span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,patientSortField,patientSortDir)}</span></th>
+                        {[{ k: "patientId", l: "Patient ID" }, { k: "name", l: "Name" }, { k: "phone", l: "Phone" }, { k: "gender", l: "Gender" }, { k: "lastVisit", l: "Last Visit" }, { k: "lastType", l: "Last Type" }].map(c => (
+                          <th key={c.k} onClick={() => handlePatientSort(c.k)} style={{ cursor: "pointer", userSelect: "none" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{c.l} {sortIcon(c.k, patientSortField, patientSortDir)}</span></th>
                         ))}
                         <th></th>
                       </tr></thead>
                       <tbody>
-                        {sortedPatients.map((p:any)=>(
-                          <tr key={p.id} onClick={() => setSelectedPatientId(p.id)} style={{cursor:"pointer"}}>
-                            <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:11}}>{p.patientId}</span></td>
-                            <td style={{fontWeight:600,color:"#1e293b"}}>{p.name}</td>
-                            <td style={{color:"#64748b"}}>{p.phone||"—"}</td>
-                            <td>{p.gender ? <span style={{fontSize:10,background:"#f1f5f9",color:"#475569",padding:"3px 7px",borderRadius:100,fontWeight:600}}>{p.gender}</span> : "—"}</td>
-                            <td style={{fontSize:12,color:"#64748b"}}>{p.lastVisit ? new Date(p.lastVisit).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}</td>
-                            <td>{p.lastType ? <span style={{fontSize:10,background:"#f1f5f9",color:"#475569",padding:"3px 7px",borderRadius:6,fontWeight:600}}>{TYPE_LABEL[p.lastType]||p.lastType}</span> : "—"}</td>
+                        {sortedPatients.map((p: any) => (
+                          <tr key={p.id} onClick={() => setSelectedPatientId(p.id)} style={{ cursor: "pointer" }}>
+                            <td><span style={{ fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6, fontSize: 11 }}>{p.patientId}</span></td>
+                            <td style={{ fontWeight: 600, color: "#1e293b" }}>{p.name}</td>
+                            <td style={{ color: "#64748b" }}>{p.phone || "—"}</td>
+                            <td>{p.gender ? <span style={{ fontSize: 10, background: "#f1f5f9", color: "#475569", padding: "3px 7px", borderRadius: 100, fontWeight: 600 }}>{p.gender}</span> : "—"}</td>
+                            <td style={{ fontSize: 12, color: "#64748b" }}>{p.lastVisit ? new Date(p.lastVisit).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}</td>
+                            <td>{p.lastType ? <span style={{ fontSize: 10, background: "#f1f5f9", color: "#475569", padding: "3px 7px", borderRadius: 6, fontWeight: 600 }}>{TYPE_LABEL[p.lastType] || p.lastType}</span> : "—"}</td>
                             <td>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setSelectedPatientId(p.id); }}
-                                style={{fontSize:11,color:"#0E898F",fontWeight:600,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
-                                Profile <ChevronRight size={11}/>
+                                style={{ fontSize: 11, color: "#0E898F", fontWeight: 600, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+                                Profile <ChevronRight size={11} />
                               </button>
                             </td>
                           </tr>
@@ -1413,309 +1417,311 @@ function DoctorDashboardContent() {
                     </table>
                   )}
                   {sortedPatients.length > 0 && (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
-                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedPatients.length} of {allPatients.length}</div>
-                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {patientSortField==="patientId"?"ID":patientSortField==="lastVisit"?"Last Visit":patientSortField==="lastType"?"Last Type":patientSortField.charAt(0).toUpperCase()+patientSortField.slice(1)} · {patientSortDir==="asc"?"A→Z":"Z→A"}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
+                      <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {sortedPatients.length} of {allPatients.length}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>Sorted by {patientSortField === "patientId" ? "ID" : patientSortField === "lastVisit" ? "Last Visit" : patientSortField === "lastType" ? "Last Type" : patientSortField.charAt(0).toUpperCase() + patientSortField.slice(1)} · {patientSortDir === "asc" ? "A→Z" : "Z→A"}</div>
                     </div>
                   )}
                 </div>
               )}
 
-              {tab==="prescription-settings" && <PrescriptionSettingsPanel />}
+              {tab === "prescription-settings" && <PrescriptionSettingsPanel />}
 
-              {tab==="treatment-plans" && (
+              {tab === "treatment-plans" && (
                 <>
-                {/* Add Plan Modal */}
-                {showAddPlan && (
-                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px"}}>
-                    <div style={{background:"#fff",borderRadius:18,width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.18)",border:"1px solid #d1fae5"}}>
-                      <div style={{padding:"20px 24px",borderBottom:"1px solid #ecfdf5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div>
-                          <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>New Treatment Plan</div>
-                          <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Create a reusable plan template — assign to patients later</div>
+                  {/* Add Plan Modal */}
+                  {showAddPlan && (
+                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+                      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.18)", border: "1px solid #d1fae5" }}>
+                        <div style={{ padding: "20px 24px", borderBottom: "1px solid #ecfdf5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>New Treatment Plan</div>
+                            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Create a reusable plan template — assign to patients later</div>
+                          </div>
+                          <button onClick={() => { setShowAddPlan(false); setAddPlanErr(""); }} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={15} color="#64748b" /></button>
                         </div>
-                        <button onClick={()=>{setShowAddPlan(false);setAddPlanErr("");}} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={15} color="#64748b"/></button>
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!addPlanForm.planName.trim()) { setAddPlanErr("Plan name is required"); return; }
+                          if (!doctor) { return; }
+                          setAddPlanSaving(true); setAddPlanErr("");
+                          const body: any = { planName: addPlanForm.planName.trim(), doctorId: doctor.id, departmentId: doctor.department?.id, totalSessions: addPlanForm.totalSessions, totalCost: addPlanForm.totalCost };
+                          if (addPlanForm.startDate) body.startDate = addPlanForm.startDate;
+                          if (addPlanForm.endDate) body.endDate = addPlanForm.endDate;
+                          if (addPlanForm.notes.trim()) body.notes = addPlanForm.notes.trim();
+                          const r = await api("/api/treatment-plans", "POST", body);
+                          setAddPlanSaving(false);
+                          if (r.success) {
+                            setShowAddPlan(false);
+                            setAddPlanForm({ planName: "", totalSessions: 1, totalCost: 0, startDate: "", endDate: "", notes: "" });
+                            fetchMyPlans(doctor.id, plansFilter);
+                            api(`/api/treatment-plans?doctorId=${doctor.id}&status=ACTIVE&limit=1`).then(res => { if (res.success) setActivePlansCount(res.data?.total ?? res.data?.plans?.length ?? 0); }).catch(() => { });
+                          } else {
+                            setAddPlanErr(r.message || "Failed to create plan");
+                          }
+                        }} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+                          {/* Plan Name */}
+                          <div>
+                            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Plan Name <span style={{ color: "#ef4444" }}>*</span></label>
+                            <input value={addPlanForm.planName} onChange={e => setAddPlanForm(p => ({ ...p, planName: e.target.value }))} placeholder="e.g. 6-Week Physiotherapy Program"
+                              style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                          </div>
+
+                          {/* Sessions + Cost */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Total Sessions</label>
+                              <input type="number" min={1} value={addPlanForm.totalSessions} onChange={e => setAddPlanForm(p => ({ ...p, totalSessions: Math.max(1, parseInt(e.target.value) || 1) }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                            </div>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Total Cost (₹)</label>
+                              <input type="number" min={0} step={0.01} value={addPlanForm.totalCost} onChange={e => setAddPlanForm(p => ({ ...p, totalCost: parseFloat(e.target.value) || 0 }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                            </div>
+                          </div>
+
+                          {/* Start + End Date */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Start Date</label>
+                              <input type="date" value={addPlanForm.startDate} onChange={e => setAddPlanForm(p => ({ ...p, startDate: e.target.value }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif", cursor: "pointer" }} />
+                            </div>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>End Date</label>
+                              <input type="date" value={addPlanForm.endDate} onChange={e => setAddPlanForm(p => ({ ...p, endDate: e.target.value }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif", cursor: "pointer" }} />
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          <div>
+                            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Clinical Notes</label>
+                            <textarea value={addPlanForm.notes} onChange={e => setAddPlanForm(p => ({ ...p, notes: e.target.value }))} rows={3} placeholder="Diagnosis, treatment protocol, goals…"
+                              style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", resize: "vertical", fontFamily: "'Inter',sans-serif" }} />
+                          </div>
+
+                          {addPlanErr && <div style={{ padding: "9px 13px", borderRadius: 9, background: "#fff5f5", color: "#dc2626", fontSize: 13, fontWeight: 600, border: "1px solid #fecaca" }}>{addPlanErr}</div>}
+
+                          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                            <button type="button" onClick={() => { setShowAddPlan(false); setAddPlanErr(""); }} style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                            <button type="submit" disabled={addPlanSaving} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 24px", borderRadius: 9, border: "none", background: `linear-gradient(135deg,${accent},#059669)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: addPlanSaving ? "not-allowed" : "pointer", opacity: addPlanSaving ? .7 : 1 }}>
+                              {addPlanSaving ? <><Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />Creating…</> : <>+ Create Plan</>}
+                            </button>
+                          </div>
+                        </form>
                       </div>
-                      <form onSubmit={async(e)=>{
-                        e.preventDefault();
-                        if(!addPlanForm.planName.trim()){setAddPlanErr("Plan name is required");return;}
-                        if(!doctor){return;}
-                        setAddPlanSaving(true);setAddPlanErr("");
-                        const body:any={planName:addPlanForm.planName.trim(),doctorId:doctor.id,departmentId:doctor.department?.id,totalSessions:addPlanForm.totalSessions,totalCost:addPlanForm.totalCost};
-                        if(addPlanForm.startDate) body.startDate=addPlanForm.startDate;
-                        if(addPlanForm.endDate) body.endDate=addPlanForm.endDate;
-                        if(addPlanForm.notes.trim()) body.notes=addPlanForm.notes.trim();
-                        const r=await api("/api/treatment-plans","POST",body);
-                        setAddPlanSaving(false);
-                        if(r.success){
-                          setShowAddPlan(false);
-                          setAddPlanForm({planName:"",totalSessions:1,totalCost:0,startDate:"",endDate:"",notes:""});
-                          fetchMyPlans(doctor.id,plansFilter);
-                          api(`/api/treatment-plans?doctorId=${doctor.id}&status=ACTIVE&limit=1`).then(res=>{if(res.success)setActivePlansCount(res.data?.total??res.data?.plans?.length??0);}).catch(()=>{});
-                        } else {
-                          setAddPlanErr(r.message||"Failed to create plan");
-                        }
-                      }} style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
-
-                        {/* Plan Name */}
-                        <div>
-                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Plan Name <span style={{color:"#ef4444"}}>*</span></label>
-                          <input value={addPlanForm.planName} onChange={e=>setAddPlanForm(p=>({...p,planName:e.target.value}))} placeholder="e.g. 6-Week Physiotherapy Program"
-                            style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                        </div>
-
-                        {/* Sessions + Cost */}
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Sessions</label>
-                            <input type="number" min={1} value={addPlanForm.totalSessions} onChange={e=>setAddPlanForm(p=>({...p,totalSessions:Math.max(1,parseInt(e.target.value)||1)}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                          </div>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Cost (₹)</label>
-                            <input type="number" min={0} step={0.01} value={addPlanForm.totalCost} onChange={e=>setAddPlanForm(p=>({...p,totalCost:parseFloat(e.target.value)||0}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                          </div>
-                        </div>
-
-                        {/* Start + End Date */}
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Start Date</label>
-                            <input type="date" value={addPlanForm.startDate} onChange={e=>setAddPlanForm(p=>({...p,startDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
-                          </div>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>End Date</label>
-                            <input type="date" value={addPlanForm.endDate} onChange={e=>setAddPlanForm(p=>({...p,endDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
-                          </div>
-                        </div>
-
-                        {/* Notes */}
-                        <div>
-                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Clinical Notes</label>
-                          <textarea value={addPlanForm.notes} onChange={e=>setAddPlanForm(p=>({...p,notes:e.target.value}))} rows={3} placeholder="Diagnosis, treatment protocol, goals…"
-                            style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",resize:"vertical",fontFamily:"'Inter',sans-serif"}}/>
-                        </div>
-
-                        {addPlanErr&&<div style={{padding:"9px 13px",borderRadius:9,background:"#fff5f5",color:"#dc2626",fontSize:13,fontWeight:600,border:"1px solid #fecaca"}}>{addPlanErr}</div>}
-
-                        <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:4}}>
-                          <button type="button" onClick={()=>{setShowAddPlan(false);setAddPlanErr("");}} style={{padding:"10px 20px",borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-                          <button type="submit" disabled={addPlanSaving} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 24px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:13,fontWeight:700,cursor:addPlanSaving?"not-allowed":"pointer",opacity:addPlanSaving?.7:1}}>
-                            {addPlanSaving?<><Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>Creating…</>:<>+ Create Plan</>}
+                    </div>
+                  )}
+                  <div className="doc-card">
+                    <div className="doc-card-head">
+                      <div>
+                        <div className="doc-card-title">My Treatment Plans</div>
+                        <div className="doc-card-sub">{activePlansCount ?? "—"} active · {myPlans.length} shown</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {["", ("ACTIVE"), ("COMPLETED"), ("ON_HOLD"), ("CANCELLED")].map(f => (
+                          <button key={f} onClick={() => setPlansFilter(f)}
+                            style={{
+                              padding: "5px 12px", borderRadius: 8, border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                              background: plansFilter === f ? accent + "22" : "#f8fafc", color: plansFilter === f ? accent : "#64748b"
+                            }}>
+                            {f || "All"}
                           </button>
-                        </div>
-                      </form>
+                        ))}
+                        <button onClick={() => doctor && fetchMyPlans(doctor.id, plansFilter)}
+                          style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                          <RefreshCw size={11} />Refresh
+                        </button>
+                        <button onClick={() => setShowAddPlan(true)}
+                          style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, border: "none", background: `linear-gradient(135deg,${accent},#059669)`, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 2px 8px rgba(16,185,129,0.25)" }}>
+                          + Add Plan
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-                <div className="doc-card">
-                  <div className="doc-card-head">
-                    <div>
-                      <div className="doc-card-title">My Treatment Plans</div>
-                      <div className="doc-card-sub">{activePlansCount ?? "—"} active · {myPlans.length} shown</div>
-                    </div>
-                    <div style={{display:"flex",gap:8}}>
-                      {["",("ACTIVE"),("COMPLETED"),("ON_HOLD"),("CANCELLED")].map(f=>(
-                        <button key={f} onClick={()=>setPlansFilter(f)}
-                          style={{padding:"5px 12px",borderRadius:8,border:"none",fontSize:11,fontWeight:700,cursor:"pointer",
-                            background:plansFilter===f?accent+"22":"#f8fafc",color:plansFilter===f?accent:"#64748b"}}>
-                          {f||"All"}
+                    {/* Search / Sort / Export toolbar */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
+                        <Search size={13} color="#94a3b8" />
+                        <input style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search plan, patient, status..." value={planSearch} onChange={e => setPlanSearch(e.target.value)} />
+                        {planSearch && <button onClick={() => setPlanSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
+                      </div>
+                      {plansLoading && <Loader2 size={14} color={accent} style={{ animation: "spin .7s linear infinite" }} />}
+                      <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{sortedPlans.length} plans</div>
+                      {/* Sort buttons */}
+                      {[{ k: "planName", l: "Name" }, { k: "status", l: "Status" }, { k: "sessions", l: "Sessions" }, { k: "cost", l: "Cost" }].map(c => (
+                        <button key={c.k} onClick={() => handlePlanSort(c.k)} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "5px 10px", borderRadius: 7, border: "1px solid #e2e8f0", background: planSortField === c.k ? "#f0fdf4" : "#fff", color: planSortField === c.k ? accent : "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                          {c.l} {sortIcon(c.k, planSortField, planSortDir)}
                         </button>
                       ))}
-                      <button onClick={()=>doctor&&fetchMyPlans(doctor.id,plansFilter)}
-                        style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                        <RefreshCw size={11}/>Refresh
-                      </button>
-                      <button onClick={()=>setShowAddPlan(true)}
-                        style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(16,185,129,0.25)"}}>
-                        + Add Plan
-                      </button>
+                      <div style={{ position: "relative", marginLeft: "auto" }}>
+                        <button onClick={() => setPlanExportOpen(!planExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
+                        <ExportDropdown open={planExportOpen} onClose={() => setPlanExportOpen(false)} onExport={exportPlans} />
+                      </div>
                     </div>
-                  </div>
-                  {/* Search / Sort / Export toolbar */}
-                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
-                      <Search size={13} color="#94a3b8"/>
-                      <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search plan, patient, status..." value={planSearch} onChange={e=>setPlanSearch(e.target.value)}/>
-                      {planSearch && <button onClick={()=>setPlanSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
-                    </div>
-                    {plansLoading && <Loader2 size={14} color={accent} style={{animation:"spin .7s linear infinite"}}/>}
-                    <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedPlans.length} plans</div>
-                    {/* Sort buttons */}
-                    {[{k:"planName",l:"Name"},{k:"status",l:"Status"},{k:"sessions",l:"Sessions"},{k:"cost",l:"Cost"}].map(c=>(
-                      <button key={c.k} onClick={()=>handlePlanSort(c.k)} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"5px 10px",borderRadius:7,border:"1px solid #e2e8f0",background:planSortField===c.k?"#f0fdf4":"#fff",color:planSortField===c.k?accent:"#64748b",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                        {c.l} {sortIcon(c.k,planSortField,planSortDir)}
-                      </button>
-                    ))}
-                    <div style={{position:"relative",marginLeft:"auto"}}>
-                      <button onClick={()=>setPlanExportOpen(!planExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
-                      <ExportDropdown open={planExportOpen} onClose={()=>setPlanExportOpen(false)} onExport={exportPlans}/>
-                    </div>
-                  </div>
-                  {plansLoading ? (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
-                      <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading treatment plans...
-                    </div>
-                  ) : sortedPlans.length === 0 ? (
-                    <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
-                      <Activity size={32} style={{marginBottom:10,opacity:.4}}/>
-                      <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{planSearch ? "No matching plans" : "No treatment plans found"}</div>
-                    </div>
-                  ) : (
-                    <div style={{padding:"0 0 4px"}}>
-                      {sortedPlans.map((plan:any)=>{
-                        const pct = plan.totalSessions>0?Math.round((plan.completedSessions/plan.totalSessions)*100):0;
-                        const STATUS_SC:any={ACTIVE:{bg:"#E6F4F4",c:"#0A6B70"},COMPLETED:{bg:"#f0fdf4",c:"#16a34a"},CANCELLED:{bg:"#fff5f5",c:"#ef4444"},ON_HOLD:{bg:"#fefce8",c:"#ca8a04"}};
-                        const sc=STATUS_SC[plan.status]||{bg:"#f8fafc",c:"#64748b"};
-                        const bal=(plan.totalCost||0)-(plan.paidAmount||0);
-                        return (
-                          <div key={plan.id} style={{padding:"14px 18px",borderBottom:"1px solid #f0fdf4"}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                              <div>
-                                <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{plan.planName}</div>
-                                <div style={{fontSize:12,color:"#64748b",marginTop:2}}>
-                                  {plan.patient?.name ? plan.patient.name : "No patient assigned"}{plan.service?.name ? " · "+plan.service.name : ""}
+                    {plansLoading ? (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "40px 0", color: "#94a3b8" }}>
+                        <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} />Loading treatment plans...
+                      </div>
+                    ) : sortedPlans.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
+                        <Activity size={32} style={{ marginBottom: 10, opacity: .4 }} />
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>{planSearch ? "No matching plans" : "No treatment plans found"}</div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: "0 0 4px" }}>
+                        {sortedPlans.map((plan: any) => {
+                          const pct = plan.totalSessions > 0 ? Math.round((plan.completedSessions / plan.totalSessions) * 100) : 0;
+                          const STATUS_SC: any = { ACTIVE: { bg: "#E6F4F4", c: "#0A6B70" }, COMPLETED: { bg: "#f0fdf4", c: "#16a34a" }, CANCELLED: { bg: "#fff5f5", c: "#ef4444" }, ON_HOLD: { bg: "#fefce8", c: "#ca8a04" } };
+                          const sc = STATUS_SC[plan.status] || { bg: "#f8fafc", c: "#64748b" };
+                          const bal = (plan.totalCost || 0) - (plan.paidAmount || 0);
+                          return (
+                            <div key={plan.id} style={{ padding: "14px 18px", borderBottom: "1px solid #f0fdf4" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                                <div>
+                                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{plan.planName}</div>
+                                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                                    {plan.patient?.name ? plan.patient.name : "No patient assigned"}{plan.service?.name ? " · " + plan.service.name : ""}
+                                  </div>
+                                </div>
+                                <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+                                  <span style={{ ...sc, padding: "3px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700, border: `1px solid ${sc.c}33` }}>{plan.status}</span>
+                                  {bal > 0 && <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 600 }}>₹{bal.toLocaleString()} due</span>}
+                                  <button
+                                    onClick={() => {
+                                      setEditPlan(plan);
+                                      const toDate = (v: any) => v ? new Date(v).toISOString().slice(0, 10) : "";
+                                      setEditPlanForm({ planName: plan.planName || "...", status: plan.status || "ACTIVE", totalSessions: plan.totalSessions || 1, completedSessions: plan.completedSessions || 0, totalCost: plan.totalCost || 0, paidAmount: plan.paidAmount || 0, startDate: toDate(plan.startDate), endDate: toDate(plan.endDate), notes: plan.notes || "", });
+                                      setEditPlanErr("");
+                                    }}
+                                    style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 7, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                    <Pencil size={11} />Edit
+                                  </button>
+                                  <button
+                                    disabled={deletingPlanId === plan.id}
+                                    onClick={async () => {
+                                      if (!confirm(`Delete "${plan.planName}"? This cannot be undone.`)) return;
+                                      setDeletingPlanId(plan.id);
+                                      await api(`/api/treatment-plans/${plan.id}`, "DELETE");
+                                      setDeletingPlanId(null);
+                                      if (doctor) fetchMyPlans(doctor.id, plansFilter);
+                                      api(`/api/treatment-plans?doctorId=${doctor?.id}&status=ACTIVE&limit=1`).then(res => { if (res.success) setActivePlansCount(res.data?.total ?? res.data?.plans?.length ?? 0); }).catch(() => { });
+                                    }}
+                                    style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", color: "#ef4444", fontSize: 11, fontWeight: 600, cursor: deletingPlanId === plan.id ? "not-allowed" : "pointer", opacity: deletingPlanId === plan.id ? .6 : 1 }}>
+                                    {deletingPlanId === plan.id ? <Loader2 size={11} style={{ animation: "spin .7s linear infinite" }} /> : <X size={11} />}Delete
+                                  </button>
                                 </div>
                               </div>
-                              <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
-                                <span style={{...sc,padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,border:`1px solid ${sc.c}33`}}>{plan.status}</span>
-                                {bal>0&&<span style={{fontSize:11,color:"#ef4444",fontWeight:600}}>₹{bal.toLocaleString()} due</span>}
-                                <button
-                                  onClick={()=>{
-                                    setEditPlan(plan);
-                                    const toDate=(v:any)=>v?new Date(v).toISOString().slice(0,10):"";
-                                    setEditPlanForm({planName:plan.planName||"...",status:plan.status||"ACTIVE",totalSessions:plan.totalSessions||1,completedSessions:plan.completedSessions||0,totalCost:plan.totalCost||0,paidAmount:plan.paidAmount||0,startDate:toDate(plan.startDate),endDate:toDate(plan.endDate),notes:plan.notes||"",});
-                                    setEditPlanErr("");
-                                  }}
-                                  style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:7,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                                  <Pencil size={11}/>Edit
-                                </button>
-                                <button
-                                  disabled={deletingPlanId===plan.id}
-                                  onClick={async()=>{
-                                    if(!confirm(`Delete "${plan.planName}"? This cannot be undone.`)) return;
-                                    setDeletingPlanId(plan.id);
-                                    await api(`/api/treatment-plans/${plan.id}`,"DELETE");
-                                    setDeletingPlanId(null);
-                                    if(doctor) fetchMyPlans(doctor.id,plansFilter);
-                                    api(`/api/treatment-plans?doctorId=${doctor?.id}&status=ACTIVE&limit=1`).then(res=>{if(res.success)setActivePlansCount(res.data?.total??res.data?.plans?.length??0);}).catch(()=>{});
-                                  }}
-                                  style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:7,border:"1px solid #fecaca",background:"#fff5f5",color:"#ef4444",fontSize:11,fontWeight:600,cursor:deletingPlanId===plan.id?"not-allowed":"pointer",opacity:deletingPlanId===plan.id?.6:1}}>
-                                  {deletingPlanId===plan.id?<Loader2 size={11} style={{animation:"spin .7s linear infinite"}}/>:<X size={11}/>}Delete
-                                </button>
+                              <div style={{ height: 5, background: "#e2e8f0", borderRadius: 100, overflow: "hidden", marginBottom: 6 }}>
+                                <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg,${accent},#10b981)`, borderRadius: 100 }} />
+                              </div>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94a3b8" }}>
+                                <span>{plan.completedSessions}/{plan.totalSessions} sessions ({pct}%)</span>
+                                <span>₹{(plan.paidAmount || 0).toLocaleString()} paid of ₹{(plan.totalCost || 0).toLocaleString()}</span>
                               </div>
                             </div>
-                            <div style={{height:5,background:"#e2e8f0",borderRadius:100,overflow:"hidden",marginBottom:6}}>
-                              <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${accent},#10b981)`,borderRadius:100}}/>
-                            </div>
-                            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#94a3b8"}}>
-                              <span>{plan.completedSessions}/{plan.totalSessions} sessions ({pct}%)</span>
-                              <span>₹{(plan.paidAmount||0).toLocaleString()} paid of ₹{(plan.totalCost||0).toLocaleString()}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {sortedPlans.length > 0 && (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
-                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedPlans.length} of {myPlans.length} plans</div>
-                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {planSortField==="planName"?"Name":planSortField==="sessions"?"Sessions":planSortField==="cost"?"Cost":planSortField.charAt(0).toUpperCase()+planSortField.slice(1)} · {planSortDir==="asc"?"Ascending":"Descending"}</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Edit Plan Modal */}
-                {editPlan && (
-                  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px"}}>
-                    <div style={{background:"#fff",borderRadius:18,width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 80px rgba(0,0,0,0.18)",border:"1px solid #d1fae5"}}>
-                      <div style={{padding:"20px 24px",borderBottom:"1px solid #ecfdf5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div>
-                          <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>Edit Treatment Plan</div>
-                          <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{editPlan.planName}</div>
-                        </div>
-                        <button onClick={()=>{setEditPlan(null);setEditPlanErr("");}} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={15} color="#64748b"/></button>
+                          );
+                        })}
                       </div>
-                      <form onSubmit={async(e)=>{
-                        e.preventDefault();
-                        if(!editPlanForm.planName.trim()){setEditPlanErr("Plan name is required");return;}
-                        setEditPlanSaving(true);setEditPlanErr("");
-                        const body:any={planName:editPlanForm.planName.trim(),status:editPlanForm.status,totalSessions:editPlanForm.totalSessions,completedSessions:editPlanForm.completedSessions,totalCost:editPlanForm.totalCost,paidAmount:editPlanForm.paidAmount};
-                        if(editPlanForm.startDate) body.startDate=editPlanForm.startDate;
-                        if(editPlanForm.endDate) body.endDate=editPlanForm.endDate;
-                        if(editPlanForm.notes.trim()) body.notes=editPlanForm.notes.trim();
-                        const r=await api(`/api/treatment-plans/${editPlan.id}`,"PUT",body);
-                        setEditPlanSaving(false);
-                        if(r.success){
-                          setEditPlan(null);
-                          if(doctor) fetchMyPlans(doctor.id,plansFilter);
-                          api(`/api/treatment-plans?doctorId=${doctor?.id}&status=ACTIVE&limit=1`).then(res=>{if(res.success)setActivePlansCount(res.data?.total??res.data?.plans?.length??0);}).catch(()=>{});
-                        } else {
-                          setEditPlanErr(r.message||"Failed to update plan");
-                        }
-                      }} style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
-
-                        <div>
-                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Plan Name <span style={{color:"#ef4444"}}>*</span></label>
-                          <input value={editPlanForm.planName} onChange={e=>setEditPlanForm(p=>({...p,planName:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                        </div>
-
-                        <div>
-                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Status</label>
-                          <select value={editPlanForm.status} onChange={e=>setEditPlanForm(p=>({...p,status:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",background:"#fff",cursor:"pointer"}}>
-                            {["ACTIVE","ON_HOLD","COMPLETED","CANCELLED"].map(s=><option key={s} value={s}>{s.replace("_"," ")}</option>)}
-                          </select>
-                        </div>
-
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Sessions</label>
-                            <input type="number" min={1} value={editPlanForm.totalSessions} onChange={e=>setEditPlanForm(p=>({...p,totalSessions:Math.max(1,parseInt(e.target.value)||1)}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                          </div>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Completed Sessions</label>
-                            <input type="number" min={0} value={editPlanForm.completedSessions} onChange={e=>setEditPlanForm(p=>({...p,completedSessions:Math.max(0,parseInt(e.target.value)||0)}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                          </div>
-                        </div>
-
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Total Cost (₹)</label>
-                            <input type="number" min={0} step={0.01} value={editPlanForm.totalCost} onChange={e=>setEditPlanForm(p=>({...p,totalCost:parseFloat(e.target.value)||0}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                          </div>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Paid Amount (₹)</label>
-                            <input type="number" min={0} step={0.01} value={editPlanForm.paidAmount} onChange={e=>setEditPlanForm(p=>({...p,paidAmount:parseFloat(e.target.value)||0}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                          </div>
-                        </div>
-
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Start Date</label>
-                            <input type="date" value={editPlanForm.startDate} onChange={e=>setEditPlanForm(p=>({...p,startDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
-                          </div>
-                          <div>
-                            <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>End Date</label>
-                            <input type="date" value={editPlanForm.endDate} onChange={e=>setEditPlanForm(p=>({...p,endDate:e.target.value}))} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",fontFamily:"'Inter',sans-serif",cursor:"pointer"}}/>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label style={{display:"block",fontSize:12,fontWeight:600,color:"#475569",marginBottom:5}}>Clinical Notes</label>
-                          <textarea value={editPlanForm.notes} onChange={e=>setEditPlanForm(p=>({...p,notes:e.target.value}))} rows={3} style={{width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid #d1fae5",fontSize:13,color:"#1e293b",outline:"none",resize:"vertical",fontFamily:"'Inter',sans-serif"}}/>
-                        </div>
-
-                        {editPlanErr&&<div style={{padding:"9px 13px",borderRadius:9,background:"#fff5f5",color:"#dc2626",fontSize:13,fontWeight:600,border:"1px solid #fecaca"}}>{editPlanErr}</div>}
-
-                        <div style={{display:"flex",gap:10,justifyContent:"flex-end",marginTop:4}}>
-                          <button type="button" onClick={()=>{setEditPlan(null);setEditPlanErr("");}} style={{padding:"10px 20px",borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-                          <button type="submit" disabled={editPlanSaving} style={{display:"flex",alignItems:"center",gap:7,padding:"10px 24px",borderRadius:9,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:13,fontWeight:700,cursor:editPlanSaving?"not-allowed":"pointer",opacity:editPlanSaving?.7:1}}>
-                            {editPlanSaving?<><Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>Saving…</>:<>Save Changes</>}
-                          </button>
-                        </div>
-                      </form>
-                    </div>
+                    )}
+                    {sortedPlans.length > 0 && (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
+                        <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {sortedPlans.length} of {myPlans.length} plans</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8" }}>Sorted by {planSortField === "planName" ? "Name" : planSortField === "sessions" ? "Sessions" : planSortField === "cost" ? "Cost" : planSortField.charAt(0).toUpperCase() + planSortField.slice(1)} · {planSortDir === "asc" ? "Ascending" : "Descending"}</div>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {/* Edit Plan Modal */}
+                  {editPlan && (
+                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+                      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.18)", border: "1px solid #d1fae5" }}>
+                        <div style={{ padding: "20px 24px", borderBottom: "1px solid #ecfdf5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>Edit Treatment Plan</div>
+                            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{editPlan.planName}</div>
+                          </div>
+                          <button onClick={() => { setEditPlan(null); setEditPlanErr(""); }} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={15} color="#64748b" /></button>
+                        </div>
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!editPlanForm.planName.trim()) { setEditPlanErr("Plan name is required"); return; }
+                          setEditPlanSaving(true); setEditPlanErr("");
+                          const body: any = { planName: editPlanForm.planName.trim(), status: editPlanForm.status, totalSessions: editPlanForm.totalSessions, completedSessions: editPlanForm.completedSessions, totalCost: editPlanForm.totalCost, paidAmount: editPlanForm.paidAmount };
+                          if (editPlanForm.startDate) body.startDate = editPlanForm.startDate;
+                          if (editPlanForm.endDate) body.endDate = editPlanForm.endDate;
+                          if (editPlanForm.notes.trim()) body.notes = editPlanForm.notes.trim();
+                          const r = await api(`/api/treatment-plans/${editPlan.id}`, "PUT", body);
+                          setEditPlanSaving(false);
+                          if (r.success) {
+                            setEditPlan(null);
+                            if (doctor) fetchMyPlans(doctor.id, plansFilter);
+                            api(`/api/treatment-plans?doctorId=${doctor?.id}&status=ACTIVE&limit=1`).then(res => { if (res.success) setActivePlansCount(res.data?.total ?? res.data?.plans?.length ?? 0); }).catch(() => { });
+                          } else {
+                            setEditPlanErr(r.message || "Failed to update plan");
+                          }
+                        }} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+                          <div>
+                            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Plan Name <span style={{ color: "#ef4444" }}>*</span></label>
+                            <input value={editPlanForm.planName} onChange={e => setEditPlanForm(p => ({ ...p, planName: e.target.value }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                          </div>
+
+                          <div>
+                            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Status</label>
+                            <select value={editPlanForm.status} onChange={e => setEditPlanForm(p => ({ ...p, status: e.target.value }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif", background: "#fff", cursor: "pointer" }}>
+                              {["ACTIVE", "ON_HOLD", "COMPLETED", "CANCELLED"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                            </select>
+                          </div>
+
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Total Sessions</label>
+                              <input type="number" min={1} value={editPlanForm.totalSessions} onChange={e => setEditPlanForm(p => ({ ...p, totalSessions: Math.max(1, parseInt(e.target.value) || 1) }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                            </div>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Completed Sessions</label>
+                              <input type="number" min={0} value={editPlanForm.completedSessions} onChange={e => setEditPlanForm(p => ({ ...p, completedSessions: Math.max(0, parseInt(e.target.value) || 0) }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                            </div>
+                          </div>
+
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Total Cost (₹)</label>
+                              <input type="number" min={0} step={0.01} value={editPlanForm.totalCost} onChange={e => setEditPlanForm(p => ({ ...p, totalCost: parseFloat(e.target.value) || 0 }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                            </div>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Paid Amount (₹)</label>
+                              <input type="number" min={0} step={0.01} value={editPlanForm.paidAmount} onChange={e => setEditPlanForm(p => ({ ...p, paidAmount: parseFloat(e.target.value) || 0 }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif" }} />
+                            </div>
+                          </div>
+
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Start Date</label>
+                              <input type="date" value={editPlanForm.startDate} onChange={e => setEditPlanForm(p => ({ ...p, startDate: e.target.value }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif", cursor: "pointer" }} />
+                            </div>
+                            <div>
+                              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>End Date</label>
+                              <input type="date" value={editPlanForm.endDate} onChange={e => setEditPlanForm(p => ({ ...p, endDate: e.target.value }))} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "'Inter',sans-serif", cursor: "pointer" }} />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>Clinical Notes</label>
+                            <textarea value={editPlanForm.notes} onChange={e => setEditPlanForm(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 13px", borderRadius: 9, border: "1px solid #d1fae5", fontSize: 13, color: "#1e293b", outline: "none", resize: "vertical", fontFamily: "'Inter',sans-serif" }} />
+                          </div>
+
+                          {editPlanErr && <div style={{ padding: "9px 13px", borderRadius: 9, background: "#fff5f5", color: "#dc2626", fontSize: 13, fontWeight: 600, border: "1px solid #fecaca" }}>{editPlanErr}</div>}
+
+                          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                            <button type="button" onClick={() => { setEditPlan(null); setEditPlanErr(""); }} style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                            <button type="submit" disabled={editPlanSaving} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 24px", borderRadius: 9, border: "none", background: `linear-gradient(135deg,${accent},#059669)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: editPlanSaving ? "not-allowed" : "pointer", opacity: editPlanSaving ? .7 : 1 }}>
+                              {editPlanSaving ? <><Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />Saving…</> : <>Save Changes</>}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </>
@@ -1723,101 +1729,101 @@ function DoctorDashboardContent() {
 
           {tab === "attendance" && (
             <div className="doc-card">
-              <div className="doc-card-head" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div className="doc-card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div className="doc-card-title">My Attendance</div>
                   <div className="doc-card-sub">Monthly login &amp; punctuality records</div>
                 </div>
-                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input
                     type="month"
                     value={attendanceMonth}
-                    onChange={e=>setAttendanceMonth(e.target.value)}
-                    style={{padding:"6px 10px",borderRadius:8,border:"1px solid #d1fae5",fontSize:12,color:"#334155",outline:"none",background:"#f0fdf4",fontFamily:"inherit"}}
+                    onChange={e => setAttendanceMonth(e.target.value)}
+                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #d1fae5", fontSize: 12, color: "#334155", outline: "none", background: "#f0fdf4", fontFamily: "inherit" }}
                   />
-                  <button onClick={()=>fetchAttendance(attendanceMonth)}
-                    style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                    <RefreshCw size={11}/>Refresh
+                  <button onClick={() => fetchAttendance(attendanceMonth)}
+                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                    <RefreshCw size={11} />Refresh
                   </button>
                 </div>
               </div>
 
               {(() => {
-                const statusCfg: Record<string,{bg:string;c:string;label:string}> = {
-                  PRESENT:  {bg:"#f0fdf4",c:"#16a34a",label:"Present"},
-                  LATE:     {bg:"#fefce8",c:"#ca8a04",label:"Late"},
-                  HALF_DAY: {bg:"#fff7ed",c:"#ea580c",label:"Half Day"},
-                  ABSENT:   {bg:"#fff5f5",c:"#dc2626",label:"Absent"},
+                const statusCfg: Record<string, { bg: string; c: string; label: string }> = {
+                  PRESENT: { bg: "#f0fdf4", c: "#16a34a", label: "Present" },
+                  LATE: { bg: "#fefce8", c: "#ca8a04", label: "Late" },
+                  HALF_DAY: { bg: "#fff7ed", c: "#ea580c", label: "Half Day" },
+                  ABSENT: { bg: "#fff5f5", c: "#dc2626", label: "Absent" },
                 };
-                const presentCount = attendance.filter(a=>a.status==="PRESENT").length;
-                const lateCount    = attendance.filter(a=>a.status==="LATE").length;
-                const halfCount    = attendance.filter(a=>a.status==="HALF_DAY").length;
+                const presentCount = attendance.filter(a => a.status === "PRESENT").length;
+                const lateCount = attendance.filter(a => a.status === "LATE").length;
+                const halfCount = attendance.filter(a => a.status === "HALF_DAY").length;
                 return (
                   <>
                     {/* Summary chips */}
-                    <div style={{display:"flex",gap:10,padding:"14px 18px",borderBottom:"1px solid #f0fdf4"}}>
-                      {[{label:"Present",val:presentCount,bg:"#f0fdf4",c:"#16a34a"},{label:"Late",val:lateCount,bg:"#fefce8",c:"#ca8a04"},{label:"Half Day",val:halfCount,bg:"#fff7ed",c:"#ea580c"},{label:"Total",val:attendance.length,bg:"#f8fafc",c:"#475569"}].map((s,i)=>(
-                        <div key={i} style={{flex:1,background:s.bg,borderRadius:10,padding:"10px 14px",textAlign:"center",border:`1px solid ${s.c}22`}}>
-                          <div style={{fontSize:10,fontWeight:600,color:s.c,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>{s.label}</div>
-                          <div style={{fontSize:22,fontWeight:800,color:s.c}}>{s.val}</div>
+                    <div style={{ display: "flex", gap: 10, padding: "14px 18px", borderBottom: "1px solid #f0fdf4" }}>
+                      {[{ label: "Present", val: presentCount, bg: "#f0fdf4", c: "#16a34a" }, { label: "Late", val: lateCount, bg: "#fefce8", c: "#ca8a04" }, { label: "Half Day", val: halfCount, bg: "#fff7ed", c: "#ea580c" }, { label: "Total", val: attendance.length, bg: "#f8fafc", c: "#475569" }].map((s, i) => (
+                        <div key={i} style={{ flex: 1, background: s.bg, borderRadius: 10, padding: "10px 14px", textAlign: "center", border: `1px solid ${s.c}22` }}>
+                          <div style={{ fontSize: 10, fontWeight: 600, color: s.c, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{s.label}</div>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: s.c }}>{s.val}</div>
                         </div>
                       ))}
                     </div>
 
                     {/* Search / Export toolbar */}
-                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"7px 12px",flex:1,minWidth:180}}>
-                        <Search size={13} color="#94a3b8"/>
-                        <input style={{background:"none",border:"none",outline:"none",fontSize:13,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search date, status..." value={attendSearch} onChange={e=>setAttendSearch(e.target.value)}/>
-                        {attendSearch && <button onClick={()=>setAttendSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
+                        <Search size={13} color="#94a3b8" />
+                        <input style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search date, status..." value={attendSearch} onChange={e => setAttendSearch(e.target.value)} />
+                        {attendSearch && <button onClick={() => setAttendSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
                       </div>
-                      {attendanceLoading && <Loader2 size={14} color={accent} style={{animation:"spin .7s linear infinite"}}/>}
-                      <div style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{sortedAttendance.length} of {attendance.length}</div>
-                      <div style={{position:"relative",marginLeft:"auto"}}>
-                        <button onClick={()=>setAttendExportOpen(!attendExportOpen)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:13,fontWeight:500,cursor:"pointer"}}><Download size={14}/>Export</button>
-                        <ExportDropdown open={attendExportOpen} onClose={()=>setAttendExportOpen(false)} onExport={exportAttendance}/>
+                      {attendanceLoading && <Loader2 size={14} color={accent} style={{ animation: "spin .7s linear infinite" }} />}
+                      <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{sortedAttendance.length} of {attendance.length}</div>
+                      <div style={{ position: "relative", marginLeft: "auto" }}>
+                        <button onClick={() => setAttendExportOpen(!attendExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
+                        <ExportDropdown open={attendExportOpen} onClose={() => setAttendExportOpen(false)} onExport={exportAttendance} />
                       </div>
                     </div>
 
                     {attendanceLoading ? (
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"40px 0",color:"#94a3b8"}}>
-                        <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Loading attendance...
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "40px 0", color: "#94a3b8" }}>
+                        <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} />Loading attendance...
                       </div>
                     ) : sortedAttendance.length === 0 ? (
-                      <div style={{textAlign:"center",padding:"48px 20px",color:"#94a3b8"}}>
-                        <ClipboardCheck size={32} style={{marginBottom:10,opacity:.3,display:"block",margin:"0 auto 10px"}}/>
-                        <div style={{fontSize:14,fontWeight:600,color:"#64748b"}}>{attendSearch ? "No matching records" : "No attendance records for this month"}</div>
-                        <div style={{fontSize:12,marginTop:4}}>{attendSearch ? "Try a different search" : "Records appear automatically on login"}</div>
+                      <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
+                        <ClipboardCheck size={32} style={{ marginBottom: 10, opacity: .3, display: "block", margin: "0 auto 10px" }} />
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>{attendSearch ? "No matching records" : "No attendance records for this month"}</div>
+                        <div style={{ fontSize: 12, marginTop: 4 }}>{attendSearch ? "Try a different search" : "Records appear automatically on login"}</div>
                       </div>
                     ) : (
-                      <div style={{overflowX:"auto"}}>
-                        <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
                           <thead>
-                            <tr style={{background:"#f8fafc",borderBottom:"2px solid #e2e8f0"}}>
-                              {[{k:"date",l:"Date"},{k:"date",l:"Day"},{k:"status",l:"Status"},{k:"loginTime",l:"Login Time"}].map((col,ci)=>(
-                                <th key={ci} onClick={()=>handleAttendSort(col.k)} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",whiteSpace:"nowrap",cursor:"pointer",userSelect:"none"}}>
-                                  <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{col.l} {sortIcon(col.k,attendSortField,attendSortDir)}</span>
+                            <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                              {[{ k: "date", l: "Date" }, { k: "date", l: "Day" }, { k: "status", l: "Status" }, { k: "loginTime", l: "Login Time" }].map((col, ci) => (
+                                <th key={ci} onClick={() => handleAttendSort(col.k)} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{col.l} {sortIcon(col.k, attendSortField, attendSortDir)}</span>
                                 </th>
                               ))}
-                              <th style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em"}}>Notes</th>
+                              <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em" }}>Notes</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {sortedAttendance.map((rec:any)=>{
+                            {sortedAttendance.map((rec: any) => {
                               const sc = statusCfg[rec.status] || statusCfg.PRESENT;
                               const d = new Date(rec.date);
-                              const dayName = d.toLocaleDateString("en-IN",{weekday:"short"});
-                              const dateStr = d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
-                              const loginTime = rec.loginTime ? new Date(rec.loginTime).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}) : "—";
+                              const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
+                              const dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                              const loginTime = rec.loginTime ? new Date(rec.loginTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
                               return (
-                                <tr key={rec.id} style={{borderBottom:"1px solid #f1f5f9"}}>
-                                  <td style={{padding:"12px 14px",fontSize:13,fontWeight:600,color:"#1e293b"}}>{dateStr}</td>
-                                  <td style={{padding:"12px 14px",fontSize:12,color:"#64748b"}}>{dayName}</td>
-                                  <td style={{padding:"12px 14px"}}>
-                                    <span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:sc.bg,color:sc.c,border:`1px solid ${sc.c}33`}}>{sc.label}</span>
+                                <tr key={rec.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                  <td style={{ padding: "12px 14px", fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{dateStr}</td>
+                                  <td style={{ padding: "12px 14px", fontSize: 12, color: "#64748b" }}>{dayName}</td>
+                                  <td style={{ padding: "12px 14px" }}>
+                                    <span style={{ padding: "3px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: sc.bg, color: sc.c, border: `1px solid ${sc.c}33` }}>{sc.label}</span>
                                   </td>
-                                  <td style={{padding:"12px 14px",fontSize:12,color:"#64748b"}}>{loginTime}</td>
-                                  <td style={{padding:"12px 14px",fontSize:11,color:"#94a3b8"}}>{rec.notes||"—"}</td>
+                                  <td style={{ padding: "12px 14px", fontSize: 12, color: "#64748b" }}>{loginTime}</td>
+                                  <td style={{ padding: "12px 14px", fontSize: 11, color: "#94a3b8" }}>{rec.notes || "—"}</td>
                                 </tr>
                               );
                             })}
@@ -1826,9 +1832,9 @@ function DoctorDashboardContent() {
                       </div>
                     )}
                     {sortedAttendance.length > 0 && (
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
-                        <div style={{fontSize:12,color:"#94a3b8"}}>Showing {sortedAttendance.length} of {attendance.length}</div>
-                        <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {attendSortField==="loginTime"?"Login Time":attendSortField.charAt(0).toUpperCase()+attendSortField.slice(1)} · {attendSortDir==="desc"?"Newest first":"Oldest first"}</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
+                        <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {sortedAttendance.length} of {attendance.length}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8" }}>Sorted by {attendSortField === "loginTime" ? "Login Time" : attendSortField.charAt(0).toUpperCase() + attendSortField.slice(1)} · {attendSortDir === "desc" ? "Newest first" : "Oldest first"}</div>
                       </div>
                     )}
                   </>
@@ -1849,108 +1855,108 @@ function DoctorDashboardContent() {
           {/* ═══════════════════ REPORTS ═══════════════════ */}
           {tab === "reports" && (<>
             {reportLoading || !reportData ? (
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"80px 0",color:"#94a3b8"}}>
-                <Loader2 size={22} style={{animation:"spin .7s linear infinite"}}/>Loading reports...
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "80px 0", color: "#94a3b8" }}>
+                <Loader2 size={22} style={{ animation: "spin .7s linear infinite" }} />Loading reports...
               </div>
-            ) : (()=>{
+            ) : (() => {
               const s = reportData.summary || {};
-              const STATUS_COLORS: Record<string,string> = {SCHEDULED:"#94a3b8",CONFIRMED:"#10b981",IN_PROGRESS:"#0E898F",COMPLETED:"#059669",CANCELLED:"#ef4444",NO_SHOW:"#f97316",RESCHEDULED:"#a855f7"};
-              const TYPE_COLORS: Record<string,string> = {OPD:"#0E898F",ONLINE:"#6366f1",FOLLOW_UP:"#f59e0b",EMERGENCY:"#ef4444"};
-              const GENDER_COLORS: Record<string,string> = {MALE:"#3b82f6",FEMALE:"#ec4899",OTHER:"#8b5cf6",Unknown:"#94a3b8"};
-              const CHART_COLORS = [accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"];
+              const STATUS_COLORS: Record<string, string> = { SCHEDULED: "#94a3b8", CONFIRMED: "#10b981", IN_PROGRESS: "#0E898F", COMPLETED: "#059669", CANCELLED: "#ef4444", NO_SHOW: "#f97316", RESCHEDULED: "#a855f7" };
+              const TYPE_COLORS: Record<string, string> = { OPD: "#0E898F", ONLINE: "#6366f1", FOLLOW_UP: "#f59e0b", EMERGENCY: "#ef4444" };
+              const GENDER_COLORS: Record<string, string> = { MALE: "#3b82f6", FEMALE: "#ec4899", OTHER: "#8b5cf6", Unknown: "#94a3b8" };
+              const CHART_COLORS = [accent, "#6366f1", "#f59e0b", "#ef4444", "#10b981", "#ec4899", "#8b5cf6", "#06b6d4"];
 
               return (<>
                 {/* Header + Refresh */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                   <div>
-                    <div style={{fontSize:18,fontWeight:800,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><BarChart2 size={20} color={accent}/>Reports & Analytics</div>
-                    <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Comprehensive overview of appointments, patients, and revenue</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}><BarChart2 size={20} color={accent} />Reports & Analytics</div>
+                    <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Comprehensive overview of appointments, patients, and revenue</div>
                   </div>
-                  <button onClick={loadReports} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 18px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${accent},#059669)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 3px 12px ${accent}44`}}>
-                    <RefreshCw size={14}/>Refresh
+                  <button onClick={loadReports} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: `linear-gradient(135deg,${accent},#059669)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: `0 3px 12px ${accent}44` }}>
+                    <RefreshCw size={14} />Refresh
                   </button>
                 </div>
 
                 {/* Summary Cards Row 1 */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
                   {[
-                    {label:"Total Appointments",value:s.totalAppointments,icon:<CalendarDays size={18}/>,color:accent,bg:"#E6F4F4",border:"#B3E0E0"},
-                    {label:"Total Revenue",value:`₹${(s.totalRevenue||0).toLocaleString("en-IN")}`,icon:<IndianRupee size={18}/>,color:"#10b981",bg:"#f0fdf4",border:"#bbf7d0"},
-                    {label:"Today's Appointments",value:s.todayAppointments,icon:<Activity size={18}/>,color:"#6366f1",bg:"#eef2ff",border:"#c7d2fe"},
-                    {label:"Today's Revenue",value:`₹${(s.todayRevenue||0).toLocaleString("en-IN")}`,icon:<TrendingUp size={18}/>,color:"#f59e0b",bg:"#fffbeb",border:"#fde68a"},
-                  ].map((c,i)=>(
-                    <div key={i} style={{background:"#fff",borderRadius:14,padding:"18px 20px",border:`1px solid ${c.border}`,boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                        <div style={{width:38,height:38,borderRadius:10,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",color:c.color}}>{c.icon}</div>
+                    { label: "Total Appointments", value: s.totalAppointments, icon: <CalendarDays size={18} />, color: accent, bg: "#E6F4F4", border: "#B3E0E0" },
+                    { label: "Total Revenue", value: `₹${(s.totalRevenue || 0).toLocaleString("en-IN")}`, icon: <IndianRupee size={18} />, color: "#10b981", bg: "#f0fdf4", border: "#bbf7d0" },
+                    { label: "Today's Appointments", value: s.todayAppointments, icon: <Activity size={18} />, color: "#6366f1", bg: "#eef2ff", border: "#c7d2fe" },
+                    { label: "Today's Revenue", value: `₹${(s.todayRevenue || 0).toLocaleString("en-IN")}`, icon: <TrendingUp size={18} />, color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" },
+                  ].map((c, i) => (
+                    <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: `1px solid ${c.border}`, boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                        <div style={{ width: 38, height: 38, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", color: c.color }}>{c.icon}</div>
                       </div>
-                      <div style={{fontSize:24,fontWeight:800,color:c.color}}>{c.value}</div>
-                      <div style={{fontSize:11,color:"#94a3b8",fontWeight:600,marginTop:2}}>{c.label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: c.color }}>{c.value}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginTop: 2 }}>{c.label}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Summary Cards Row 2 */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
                   {[
-                    {label:"Total Patients",value:s.totalPatients,color:accent},
-                    {label:"Completion Rate",value:`${s.completionRate}%`,color:"#10b981"},
-                    {label:"Avg Revenue / Visit",value:`₹${(s.avgRevenuePerVisit||0).toLocaleString("en-IN")}`,color:"#6366f1"},
-                    {label:"Active Treatment Plans",value:s.activePlans,color:"#f59e0b"},
-                  ].map((c,i)=>(
-                    <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 18px",border:"1px solid #d1fae5",display:"flex",alignItems:"center",gap:12}}>
-                      <div style={{width:8,height:32,borderRadius:4,background:c.color,flexShrink:0}}/>
+                    { label: "Total Patients", value: s.totalPatients, color: accent },
+                    { label: "Completion Rate", value: `${s.completionRate}%`, color: "#10b981" },
+                    { label: "Avg Revenue / Visit", value: `₹${(s.avgRevenuePerVisit || 0).toLocaleString("en-IN")}`, color: "#6366f1" },
+                    { label: "Active Treatment Plans", value: s.activePlans, color: "#f59e0b" },
+                  ].map((c, i) => (
+                    <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", border: "1px solid #d1fae5", display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 8, height: 32, borderRadius: 4, background: c.color, flexShrink: 0 }} />
                       <div>
-                        <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>{c.value}</div>
-                        <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{c.label}</div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>{c.value}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{c.label}</div>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Charts Row 1: Daily Trend + Appointment Types */}
-                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 18, marginBottom: 24 }}>
                   {/* Daily Trend */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Daily Appointments & Revenue (Last 30 Days)</div>
-                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Hover for details</div>
-                    <div style={{width:"100%",height:260}}>
+                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", padding: "20px 20px 14px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Daily Appointments & Revenue (Last 30 Days)</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14 }}>Hover for details</div>
+                    <div style={{ width: "100%", height: 260 }}>
                       <RechartsResponsiveContainer width="100%" height="100%">
-                        <RechartsAreaChart data={reportData.dailyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                        <RechartsAreaChart data={reportData.dailyTrend || []} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                           <defs>
-                            <linearGradient id="docGradCount" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={accent} stopOpacity={.3}/><stop offset="100%" stopColor={accent} stopOpacity={0}/></linearGradient>
-                            <linearGradient id="docGradRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={.25}/><stop offset="100%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                            <linearGradient id="docGradCount" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={accent} stopOpacity={.3} /><stop offset="100%" stopColor={accent} stopOpacity={0} /></linearGradient>
+                            <linearGradient id="docGradRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={.25} /><stop offset="100%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
                           </defs>
-                          <RechartsXAxis dataKey="label" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}} interval={4}/>
-                          <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
-                          <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
-                          <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #d1fae5",fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
-                          <RechartsArea yAxisId="left" type="monotone" dataKey="count" stroke={accent} fill="url(#docGradCount)" strokeWidth={2} name="Appointments" dot={false}/>
-                          <RechartsArea yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#docGradRev)" strokeWidth={2} name="Revenue (₹)" dot={false}/>
+                          <RechartsXAxis dataKey="label" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "#f1f5f9" }} interval={4} />
+                          <RechartsYAxis yAxisId="left" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                          <RechartsYAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                          <RechartsTooltip contentStyle={{ borderRadius: 10, border: "1px solid #d1fae5", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,.08)" }} />
+                          <RechartsArea yAxisId="left" type="monotone" dataKey="count" stroke={accent} fill="url(#docGradCount)" strokeWidth={2} name="Appointments" dot={false} />
+                          <RechartsArea yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#docGradRev)" strokeWidth={2} name="Revenue (₹)" dot={false} />
                         </RechartsAreaChart>
                       </RechartsResponsiveContainer>
                     </div>
                   </div>
 
                   {/* Appointment Types Pie */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>By Appointment Type</div>
-                    <div style={{width:"100%",height:180}}>
+                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", padding: "20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>By Appointment Type</div>
+                    <div style={{ width: "100%", height: 180 }}>
                       <RechartsResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
-                          <RechartsPie data={(reportData.byType||[])} dataKey="count" nameKey="type" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} strokeWidth={0}>
-                            {(reportData.byType||[]).map((t:any,i:number)=>(
-                              <RechartsCell key={i} fill={TYPE_COLORS[t.type]||CHART_COLORS[i%CHART_COLORS.length]}/>
+                          <RechartsPie data={(reportData.byType || [])} dataKey="count" nameKey="type" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} strokeWidth={0}>
+                            {(reportData.byType || []).map((t: any, i: number) => (
+                              <RechartsCell key={i} fill={TYPE_COLORS[t.type] || CHART_COLORS[i % CHART_COLORS.length]} />
                             ))}
                           </RechartsPie>
-                          <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #d1fae5",fontSize:11}}/>
+                          <RechartsTooltip contentStyle={{ borderRadius: 8, border: "1px solid #d1fae5", fontSize: 11 }} />
                         </RechartsPieChart>
                       </RechartsResponsiveContainer>
                     </div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
-                      {(reportData.byType||[]).map((t:any,i:number)=>(
-                        <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:600,color:"#64748b"}}>
-                          <span style={{width:8,height:8,borderRadius:2,background:TYPE_COLORS[t.type]||CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}/>
-                          {TYPE_LABEL[t.type]||t.type} ({t.count})
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                      {(reportData.byType || []).map((t: any, i: number) => (
+                        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: "#64748b" }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 2, background: TYPE_COLORS[t.type] || CHART_COLORS[i % CHART_COLORS.length], flexShrink: 0 }} />
+                          {TYPE_LABEL[t.type] || t.type} ({t.count})
                         </span>
                       ))}
                     </div>
@@ -1958,85 +1964,85 @@ function DoctorDashboardContent() {
                 </div>
 
                 {/* Charts Row 2: Monthly Revenue + Status Distribution */}
-                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 18, marginBottom: 24 }}>
                   {/* Monthly Revenue Bar */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Monthly Revenue & Appointments (Last 6 Months)</div>
-                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Bar = Revenue, Line = Appointments</div>
-                    <div style={{width:"100%",height:240}}>
+                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", padding: "20px 20px 14px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Monthly Revenue & Appointments (Last 6 Months)</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14 }}>Bar = Revenue, Line = Appointments</div>
+                    <div style={{ width: "100%", height: 240 }}>
                       <RechartsResponsiveContainer width="100%" height="100%">
-                        <RechartsComposedChart data={reportData.monthlyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
-                          <RechartsXAxis dataKey="label" tick={{fontSize:11,fill:"#64748b"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
-                          <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
-                          <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
-                          <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #d1fae5",fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
-                          <RechartsBar yAxisId="left" dataKey="revenue" fill={accent} radius={[6,6,0,0]} name="Revenue (₹)" opacity={0.85} barSize={32}/>
-                          <RechartsLine yAxisId="right" type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2.5} dot={{r:4,fill:"#f59e0b"}} name="Appointments"/>
+                        <RechartsComposedChart data={reportData.monthlyTrend || []} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                          <RechartsXAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} tickLine={false} axisLine={{ stroke: "#f1f5f9" }} />
+                          <RechartsYAxis yAxisId="left" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                          <RechartsYAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                          <RechartsTooltip contentStyle={{ borderRadius: 10, border: "1px solid #d1fae5", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,.08)" }} />
+                          <RechartsBar yAxisId="left" dataKey="revenue" fill={accent} radius={[6, 6, 0, 0]} name="Revenue (₹)" opacity={0.85} barSize={32} />
+                          <RechartsLine yAxisId="right" type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4, fill: "#f59e0b" }} name="Appointments" />
                         </RechartsComposedChart>
                       </RechartsResponsiveContainer>
                     </div>
                   </div>
 
                   {/* Status Distribution */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>Appointment Status</div>
-                    {(reportData.byStatus||[]).map((st:any,i:number)=>{
-                      const total = (reportData.byStatus||[]).reduce((sum:number,x:any)=>sum+x.count,0);
-                      const pct = total ? Math.round((st.count/total)*100) : 0;
-                      const clr = STATUS_COLORS[st.status]||"#94a3b8";
+                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", padding: "20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Appointment Status</div>
+                    {(reportData.byStatus || []).map((st: any, i: number) => {
+                      const total = (reportData.byStatus || []).reduce((sum: number, x: any) => sum + x.count, 0);
+                      const pct = total ? Math.round((st.count / total) * 100) : 0;
+                      const clr = STATUS_COLORS[st.status] || "#94a3b8";
                       return (
-                        <div key={i} style={{marginBottom:12}}>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:12,fontWeight:600,color:"#334155"}}>{STATUS_CFG[st.status]?.label||st.status}</span>
-                            <span style={{fontSize:12,fontWeight:700,color:clr}}>{st.count} ({pct}%)</span>
+                        <div key={i} style={{ marginBottom: 12 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{STATUS_CFG[st.status]?.label || st.status}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: clr }}>{st.count} ({pct}%)</span>
                           </div>
-                          <div style={{height:8,borderRadius:4,background:"#f1f5f9",overflow:"hidden"}}>
-                            <div style={{height:"100%",borderRadius:4,background:clr,width:`${pct}%`,transition:"width .5s ease"}}/>
+                          <div style={{ height: 8, borderRadius: 4, background: "#f1f5f9", overflow: "hidden" }}>
+                            <div style={{ height: "100%", borderRadius: 4, background: clr, width: `${pct}%`, transition: "width .5s ease" }} />
                           </div>
                         </div>
                       );
                     })}
-                    {(reportData.byStatus||[]).length===0 && <div style={{color:"#94a3b8",fontSize:12}}>No data</div>}
+                    {(reportData.byStatus || []).length === 0 && <div style={{ color: "#94a3b8", fontSize: 12 }}>No data</div>}
                   </div>
                 </div>
 
                 {/* Charts Row 3: Hourly Distribution + Gender Distribution */}
-                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 18, marginBottom: 24 }}>
                   {/* Hourly Distribution Bar */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Peak Hours Distribution</div>
-                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>When patients visit most</div>
-                    <div style={{width:"100%",height:200}}>
+                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", padding: "20px 20px 14px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Peak Hours Distribution</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14 }}>When patients visit most</div>
+                    <div style={{ width: "100%", height: 200 }}>
                       <RechartsResponsiveContainer width="100%" height="100%">
-                        <RechartsBarChart data={reportData.hourlyDistribution||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
-                          <RechartsXAxis dataKey="hour" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
-                          <RechartsYAxis tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
-                          <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #d1fae5",fontSize:11}}/>
-                          <RechartsBar dataKey="count" fill={accent} radius={[4,4,0,0]} name="Appointments" opacity={0.85} barSize={24}/>
+                        <RechartsBarChart data={reportData.hourlyDistribution || []} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                          <RechartsXAxis dataKey="hour" tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "#f1f5f9" }} />
+                          <RechartsYAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                          <RechartsTooltip contentStyle={{ borderRadius: 8, border: "1px solid #d1fae5", fontSize: 11 }} />
+                          <RechartsBar dataKey="count" fill={accent} radius={[4, 4, 0, 0]} name="Appointments" opacity={0.85} barSize={24} />
                         </RechartsBarChart>
                       </RechartsResponsiveContainer>
                     </div>
                   </div>
 
                   {/* Gender Distribution */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:14}}>Patient Demographics</div>
-                    <div style={{width:"100%",height:160}}>
+                  <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", padding: "20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Patient Demographics</div>
+                    <div style={{ width: "100%", height: 160 }}>
                       <RechartsResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
-                          <RechartsPie data={(reportData.genderDistribution||[])} dataKey="count" nameKey="gender" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3} strokeWidth={0}>
-                            {(reportData.genderDistribution||[]).map((g:any,i:number)=>(
-                              <RechartsCell key={i} fill={GENDER_COLORS[g.gender]||CHART_COLORS[i%CHART_COLORS.length]}/>
+                          <RechartsPie data={(reportData.genderDistribution || [])} dataKey="count" nameKey="gender" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3} strokeWidth={0}>
+                            {(reportData.genderDistribution || []).map((g: any, i: number) => (
+                              <RechartsCell key={i} fill={GENDER_COLORS[g.gender] || CHART_COLORS[i % CHART_COLORS.length]} />
                             ))}
                           </RechartsPie>
-                          <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #d1fae5",fontSize:11}}/>
+                          <RechartsTooltip contentStyle={{ borderRadius: 8, border: "1px solid #d1fae5", fontSize: 11 }} />
                         </RechartsPieChart>
                       </RechartsResponsiveContainer>
                     </div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:6,justifyContent:"center"}}>
-                      {(reportData.genderDistribution||[]).map((g:any,i:number)=>(
-                        <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontWeight:600,color:"#64748b"}}>
-                          <span style={{width:8,height:8,borderRadius:2,background:GENDER_COLORS[g.gender]||CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}/>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6, justifyContent: "center" }}>
+                      {(reportData.genderDistribution || []).map((g: any, i: number) => (
+                        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#64748b" }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 2, background: GENDER_COLORS[g.gender] || CHART_COLORS[i % CHART_COLORS.length], flexShrink: 0 }} />
                           {g.gender} ({g.count})
                         </span>
                       ))}
@@ -2045,73 +2051,73 @@ function DoctorDashboardContent() {
                 </div>
 
                 {/* Recent Completed Appointments Table */}
-                {(()=>{
-                  const recentFiltered = (reportData.recentCompleted||[]).filter((r:any) => {
+                {(() => {
+                  const recentFiltered = (reportData.recentCompleted || []).filter((r: any) => {
                     if (!recentSearch) return true;
                     const q = recentSearch.toLowerCase();
-                    return (r.patientName||"").toLowerCase().includes(q) || (r.patientId||"").toLowerCase().includes(q) || (r.type||"").toLowerCase().includes(q) || (r.timeSlot||"").includes(q);
+                    return (r.patientName || "").toLowerCase().includes(q) || (r.patientId || "").toLowerCase().includes(q) || (r.type || "").toLowerCase().includes(q) || (r.timeSlot || "").includes(q);
                   });
-                  const recentSorted = [...recentFiltered].sort((a:any,b:any)=>{
+                  const recentSorted = [...recentFiltered].sort((a: any, b: any) => {
                     const d = recentSortDir === "asc" ? 1 : -1;
-                    if (recentSortField==="patient") return d*((a.patientName||"").localeCompare(b.patientName||""));
-                    if (recentSortField==="patientId") return d*((a.patientId||"").localeCompare(b.patientId||""));
-                    if (recentSortField==="type") return d*((a.type||"").localeCompare(b.type||""));
-                    if (recentSortField==="date") return d*(new Date(a.date||0).getTime()-new Date(b.date||0).getTime());
-                    if (recentSortField==="timeSlot") return d*((a.timeSlot||"").localeCompare(b.timeSlot||""));
-                    if (recentSortField==="fee") return d*((a.fee||0)-(b.fee||0));
+                    if (recentSortField === "patient") return d * ((a.patientName || "").localeCompare(b.patientName || ""));
+                    if (recentSortField === "patientId") return d * ((a.patientId || "").localeCompare(b.patientId || ""));
+                    if (recentSortField === "type") return d * ((a.type || "").localeCompare(b.type || ""));
+                    if (recentSortField === "date") return d * (new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
+                    if (recentSortField === "timeSlot") return d * ((a.timeSlot || "").localeCompare(b.timeSlot || ""));
+                    if (recentSortField === "fee") return d * ((a.fee || 0) - (b.fee || 0));
                     return 0;
                   });
                   return (
-                <div style={{background:"#fff",borderRadius:14,border:"1px solid #d1fae5",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                  <div style={{padding:"16px 18px",borderBottom:"1px solid #ecfdf5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Clock size={15} color="#f59e0b"/>Recent Completed Consultations</div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{position:"relative"}}>
-                        <button onClick={()=>setRecentExportOpen(!recentExportOpen)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:12,fontWeight:500,cursor:"pointer"}}><Download size={13}/>Export</button>
-                        <ExportDropdown open={recentExportOpen} onClose={()=>setRecentExportOpen(false)} onExport={exportRecent}/>
+                    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #d1fae5", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                      <div style={{ padding: "16px 18px", borderBottom: "1px solid #ecfdf5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}><Clock size={15} color="#f59e0b" />Recent Completed Consultations</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ position: "relative" }}>
+                            <button onClick={() => setRecentExportOpen(!recentExportOpen)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 500, cursor: "pointer" }}><Download size={13} />Export</button>
+                            <ExportDropdown open={recentExportOpen} onClose={() => setRecentExportOpen(false)} onExport={exportRecent} />
+                          </div>
+                        </div>
                       </div>
+                      {/* Search toolbar */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "6px 12px", flex: 1, minWidth: 160 }}>
+                          <Search size={12} color="#94a3b8" />
+                          <input style={{ background: "none", border: "none", outline: "none", fontSize: 12, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search patient, ID, type..." value={recentSearch} onChange={e => setRecentSearch(e.target.value)} />
+                          {recentSearch && <button onClick={() => setRecentSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={11} color="#94a3b8" /></button>}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{recentSorted.length} records</div>
+                      </div>
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="doc-tbl">
+                          <thead>
+                            <tr>
+                              {[{ k: "patient", l: "Patient" }, { k: "patientId", l: "Patient ID" }, { k: "type", l: "Type" }, { k: "date", l: "Date" }, { k: "timeSlot", l: "Time" }, { k: "fee", l: "Fee" }].map(c => (
+                                <th key={c.k} onClick={() => handleRecentSort(c.k)} style={{ cursor: "pointer", userSelect: "none" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{c.l} {sortIcon(c.k, recentSortField, recentSortDir)}</span></th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {recentSorted.map((r: any, i: number) => (
+                              <tr key={i}>
+                                <td style={{ fontWeight: 600, color: "#1e293b" }}>{r.patientName}</td>
+                                <td><span style={{ fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6, fontSize: 11 }}>{r.patientId}</span></td>
+                                <td><span style={{ fontSize: 11, background: TYPE_COLORS[r.type] ? TYPE_COLORS[r.type] + "18" : "#f1f5f9", color: TYPE_COLORS[r.type] || "#475569", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>{TYPE_LABEL[r.type] || r.type}</span></td>
+                                <td style={{ fontSize: 12, color: "#64748b" }}>{r.date ? new Date(r.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}</td>
+                                <td style={{ fontWeight: 600, color: "#334155" }}>{r.timeSlot || "—"}</td>
+                                <td style={{ fontWeight: 700, color: "#059669" }}>₹{(r.fee || 0).toLocaleString("en-IN")}</td>
+                              </tr>
+                            ))}
+                            {recentSorted.length === 0 && <tr><td colSpan={6} style={{ padding: 30, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>{recentSearch ? "No matching consultations" : "No completed consultations yet"}</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
+                      {recentSorted.length > 0 && (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
+                          <div style={{ fontSize: 12, color: "#94a3b8" }}>Showing {recentSorted.length} of {(reportData.recentCompleted || []).length}</div>
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>Sorted by {recentSortField === "patient" ? "Patient" : recentSortField === "patientId" ? "ID" : recentSortField === "timeSlot" ? "Time" : recentSortField.charAt(0).toUpperCase() + recentSortField.slice(1)} · {recentSortDir === "desc" ? "Newest" : "Oldest"}</div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {/* Search toolbar */}
-                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderBottom:"1px solid #ecfdf5",flexWrap:"wrap"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"6px 12px",flex:1,minWidth:160}}>
-                      <Search size={12} color="#94a3b8"/>
-                      <input style={{background:"none",border:"none",outline:"none",fontSize:12,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search patient, ID, type..." value={recentSearch} onChange={e=>setRecentSearch(e.target.value)}/>
-                      {recentSearch && <button onClick={()=>setRecentSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={11} color="#94a3b8"/></button>}
-                    </div>
-                    <div style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{recentSorted.length} records</div>
-                  </div>
-                  <div style={{overflowX:"auto"}}>
-                    <table className="doc-tbl">
-                      <thead>
-                        <tr>
-                          {[{k:"patient",l:"Patient"},{k:"patientId",l:"Patient ID"},{k:"type",l:"Type"},{k:"date",l:"Date"},{k:"timeSlot",l:"Time"},{k:"fee",l:"Fee"}].map(c=>(
-                            <th key={c.k} onClick={()=>handleRecentSort(c.k)} style={{cursor:"pointer",userSelect:"none"}}><span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,recentSortField,recentSortDir)}</span></th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentSorted.map((r:any,i:number)=>(
-                          <tr key={i}>
-                            <td style={{fontWeight:600,color:"#1e293b"}}>{r.patientName}</td>
-                            <td><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:11}}>{r.patientId}</span></td>
-                            <td><span style={{fontSize:11,background:TYPE_COLORS[r.type]?TYPE_COLORS[r.type]+"18":"#f1f5f9",color:TYPE_COLORS[r.type]||"#475569",padding:"3px 8px",borderRadius:6,fontWeight:600}}>{TYPE_LABEL[r.type]||r.type}</span></td>
-                            <td style={{fontSize:12,color:"#64748b"}}>{r.date ? new Date(r.date).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}</td>
-                            <td style={{fontWeight:600,color:"#334155"}}>{r.timeSlot||"—"}</td>
-                            <td style={{fontWeight:700,color:"#059669"}}>₹{(r.fee||0).toLocaleString("en-IN")}</td>
-                          </tr>
-                        ))}
-                        {recentSorted.length===0 && <tr><td colSpan={6} style={{padding:30,textAlign:"center",color:"#94a3b8",fontSize:12}}>{recentSearch ? "No matching consultations" : "No completed consultations yet"}</td></tr>}
-                      </tbody>
-                    </table>
-                  </div>
-                  {recentSorted.length > 0 && (
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #ecfdf5"}}>
-                      <div style={{fontSize:12,color:"#94a3b8"}}>Showing {recentSorted.length} of {(reportData.recentCompleted||[]).length}</div>
-                      <div style={{fontSize:11,color:"#94a3b8"}}>Sorted by {recentSortField==="patient"?"Patient":recentSortField==="patientId"?"ID":recentSortField==="timeSlot"?"Time":recentSortField.charAt(0).toUpperCase()+recentSortField.slice(1)} · {recentSortDir==="desc"?"Newest":"Oldest"}</div>
-                    </div>
-                  )}
-                </div>
                   );
                 })()}
               </>);
@@ -2122,46 +2128,46 @@ function DoctorDashboardContent() {
         {/* Right Sidebar */}
         {tab === "schedule" && (
           <div className="doc-right">
-          <div style={{marginBottom:22}}>
-            <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>
-            <MiniCalendar accent={accent} selectedDate={selectedDate} onDateSelect={setSelectedDate}/>
-          </div>
-          <div>
-            <div className="doc-right-title" style={{marginBottom:10}}>{isToday?"Today's Queue":"Queue · "+selectedDate.toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</div>
-            {appointments.length === 0 ? (
-              <div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"16px 0"}}>No appointments {isToday?"today":"on this day"}</div>
-            ) : appointments.slice(0,6).map((a:any)=>{
-              const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
-              return (
-                <div key={a.id} className="doc-critical-card" style={{background:a.status==="IN_PROGRESS"?"#E6F4F4":a.status==="COMPLETED"?"#f0fdf4":"#f8fafc",border:`1px solid ${a.status==="IN_PROGRESS"?"#B3E0E0":a.status==="COMPLETED"?"#bbf7d0":"#e2e8f0"}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{a.patient?.name||"—"}</div>
-                    <span className="doc-badge" style={{background:sc.badge[0],color:sc.badge[1],border:`1px solid ${sc.badge[2]}`}}>{sc.label}</span>
-                  </div>
-                  <div style={{fontSize:11,color:"#64748b"}}>{a.timeSlot} · Token #{a.tokenNumber||"—"}</div>
-                  {["SCHEDULED","CONFIRMED","IN_PROGRESS"].includes(a.status) && (
-                    <button onClick={()=>setConsultAppt(a)}
-                      style={{marginTop:7,width:"100%",padding:"5px 0",borderRadius:7,border:"none",background:a.status==="IN_PROGRESS"?"#0E898F":accent,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                      {a.status==="IN_PROGRESS"?"Continue":"Consult"}
-                    </button>
-                  )}
-                  {a.status === "COMPLETED" && (
-                    <div style={{ display: "flex", gap: 6, marginTop: 7 }}>
-                      <button onClick={()=>handleViewPrescription(a.id)}
-                        style={{flex:1,padding:"5px 0",borderRadius:7,border:"1px solid #e2e8f0",background:"#fff",color:"#334155",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                        View Rx
-                      </button>
-                      <button onClick={()=>handleEditPrescription(a.id)}
-                        style={{flex:1,padding:"5px 0",borderRadius:7,border:"1px solid #B3E0E0",background:"#E6F4F4",color:"#0A6B70",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                        Edit
-                      </button>
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>
+              <MiniCalendar accent={accent} selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+            </div>
+            <div>
+              <div className="doc-right-title" style={{ marginBottom: 10 }}>{isToday ? "Today's Queue" : "Queue · " + selectedDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</div>
+              {appointments.length === 0 ? (
+                <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", padding: "16px 0" }}>No appointments {isToday ? "today" : "on this day"}</div>
+              ) : appointments.slice(0, 6).map((a: any) => {
+                const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
+                return (
+                  <div key={a.id} className="doc-critical-card" style={{ background: a.status === "IN_PROGRESS" ? "#E6F4F4" : a.status === "COMPLETED" ? "#f0fdf4" : "#f8fafc", border: `1px solid ${a.status === "IN_PROGRESS" ? "#B3E0E0" : a.status === "COMPLETED" ? "#bbf7d0" : "#e2e8f0"}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>{a.patient?.name || "—"}</div>
+                      <span className="doc-badge" style={{ background: sc.badge[0], color: sc.badge[1], border: `1px solid ${sc.badge[2]}` }}>{sc.label}</span>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    <div style={{ fontSize: 11, color: "#64748b" }}>{a.timeSlot} · Token #{a.tokenNumber || "—"}</div>
+                    {["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status) && (
+                      <button onClick={() => setConsultAppt(a)}
+                        style={{ marginTop: 7, width: "100%", padding: "5px 0", borderRadius: 7, border: "none", background: a.status === "IN_PROGRESS" ? "#0E898F" : accent, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        {a.status === "IN_PROGRESS" ? "Continue" : "Consult"}
+                      </button>
+                    )}
+                    {a.status === "COMPLETED" && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 7 }}>
+                        <button onClick={() => handleViewPrescription(a.id)}
+                          style={{ flex: 1, padding: "5px 0", borderRadius: 7, border: "1px solid #e2e8f0", background: "#fff", color: "#334155", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          View Rx
+                        </button>
+                        <button onClick={() => handleEditPrescription(a.id)}
+                          style={{ flex: 1, padding: "5px 0", borderRadius: 7, border: "1px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          Edit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
         )}
       </div>
     </>

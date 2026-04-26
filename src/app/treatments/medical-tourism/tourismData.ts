@@ -31,7 +31,7 @@ export const medicalTourismData: Zone[] = [
     id: "north",
     name: "North India: The Imperial & Royal Circuit",
     icon: "Mountain",
-    image: "/images/medical-tourism/north-india.jpg",
+    image: "/images/medical-tourism/north-india.png",
     shortDescription: "Discover India’s grand heritage, iconic landmarks, and peaceful Himalayan retreats.",
     highlights: [
       "Visit the Taj Mahal",
@@ -45,7 +45,7 @@ export const medicalTourismData: Zone[] = [
       {
         id: "delhi",
         name: "Delhi",
-        image: "/images/tourism/delhi.jpg",
+        image: "/images/medical-tourism/delhi_tourism_1776836076971.png",
         tagline: "The Heart of India",
         vibe: ["Metropolitan", "Historic", "Dynamic"],
         experience: "Experience a blend of ancient history and modern luxury in the capital city.",
@@ -59,7 +59,7 @@ export const medicalTourismData: Zone[] = [
       {
         id: "rajasthan",
         name: "Rajasthan",
-        image: "/images/tourism/rajasthan.jpg",
+        image: "/images/medical-tourism/rajasthan_tourism_1776836092109.png",
         tagline: "The Land of Kings",
         vibe: ["Royal", "Vibrant", "Majestic"],
         experience: "Heal amidst the grandeur of palaces and the tranquility of desert landscapes.",
@@ -76,7 +76,7 @@ export const medicalTourismData: Zone[] = [
     id: "south",
     name: "South India: The Tropical & Heritage Circuit",
     icon: "Palmtree",
-    image: "/images/tourism/south-hero.jpg",
+    image: "/images/medical-tourism/south-india.jpeg",
     shortDescription: "Experience lush landscapes, ancient temples, and world-class healthcare hubs.",
     highlights: [
       "Cruise Kerala backwaters",
@@ -90,7 +90,7 @@ export const medicalTourismData: Zone[] = [
       {
         id: "kerala",
         name: "Kerala",
-        image: "/images/tourism/kerala.jpg",
+        image: "/images/medical-tourism/kerala_tourism_1776836106973.png",
         tagline: "God's Own Country",
         vibe: ["Tropical", "Ayurvedic", "Serene"],
         experience: "Rejuvenate with traditional Ayurveda and modern medicine in tropical bliss.",
@@ -107,7 +107,7 @@ export const medicalTourismData: Zone[] = [
     id: "west",
     name: "West India: The Coastal & Glamour Circuit",
     icon: "Waves",
-    image: "/images/tourism/west-hero.jpg",
+    image: "/images/medical-tourism/west-india.jpg",
     shortDescription: "A vibrant mix of beaches, modern cities, and cultural experiences.",
     highlights: [
       "Relax in Goa beaches",
@@ -121,7 +121,7 @@ export const medicalTourismData: Zone[] = [
       {
         id: "goa",
         name: "Goa",
-        image: "/images/tourism/goa.jpg",
+        image: "/images/medical-tourism/goa_tourism_1776836133822.png",
         tagline: "Beaches & Bliss",
         vibe: ["Coastal", "Relaxed", "Vibrant"],
         experience: "Combine top-tier dental and aesthetic treatments with a beachside recovery.",
@@ -138,7 +138,7 @@ export const medicalTourismData: Zone[] = [
     id: "east",
     name: "East & Central India: The Cultural & Wild Heartland",
     icon: "Trees",
-    image: "/images/tourism/east-hero.jpg",
+    image: "/images/medical-tourism/east-india.jpg",
     shortDescription: "Immerse yourself in culture, spirituality, and wildlife adventures.",
     highlights: [
       "Tiger safaris",
@@ -152,7 +152,7 @@ export const medicalTourismData: Zone[] = [
       {
         id: "west-bengal",
         name: "West Bengal",
-        image: "/images/tourism/west-bengal.jpg",
+        image: "/images/medical-tourism/west_bengal_tourism_1776836148394.png",
         tagline: "The Cultural Capital",
         vibe: ["Artistic", "Colonial", "Spiritual"],
         experience: "Explore the legacy of the British Raj while receiving expert medical care.",
@@ -169,7 +169,7 @@ export const medicalTourismData: Zone[] = [
     id: "northeast",
     name: "North East India: The Seven Sisters & Sikkim Circuit",
     icon: "Compass",
-    image: "/images/tourism/northeast-hero.jpg",
+    image: "/images/medical-tourism/north-east.png",
     shortDescription: "Explore untouched nature, spiritual retreats, and scenic mountain escapes.",
     highlights: [
       "Monasteries & meditation",
@@ -183,7 +183,7 @@ export const medicalTourismData: Zone[] = [
       {
         id: "sikkim",
         name: "Sikkim",
-        image: "/images/tourism/sikkim.jpg",
+        image: "/images/medical-tourism/sikkim_tourism_1776836164044.png",
         tagline: "The Himalayan Paradise",
         vibe: ["Zen", "Mystical", "Pristine"],
         experience: "Heal in the lap of the Himalayas with mountain air and spiritual energy.",

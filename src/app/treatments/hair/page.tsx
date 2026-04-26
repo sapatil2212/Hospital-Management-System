@@ -453,8 +453,8 @@ export default function HairTreatmentsPage() {
                 { icon: <Sparkles size={24} />, text: "Natural, long-lasting, and visible results" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>
@@ -463,9 +463,9 @@ export default function HairTreatmentsPage() {
 
         {/* CTA Section — Home Page Style */}
         <CTASection
-          title="Book Your Hair Consultation <br /> Today"
+          title="Transform Your Hair with Expert Care"
           description="Take the first step toward stronger, healthier, and fuller hair with expert care at Celeb Aesthetica. Start your hair restoration journey with confidence."
-          imageSrc="/images/Quick-Treatments/Hair.png"
+          imageSrc="/treatments/hair/hair-cta.png"
           imageAlt="Expert hair care"
         />
       </main>

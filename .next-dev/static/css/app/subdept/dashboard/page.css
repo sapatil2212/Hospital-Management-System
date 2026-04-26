@@ -31,7 +31,8 @@
 }
 
 .Preloader_logo__mWOw6 {
-  object-fit: contain;
+  -o-object-fit: contain;
+     object-fit: contain;
 }
 
 .Preloader_loaderLine__JecIe {

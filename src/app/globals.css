@@ -175,6 +175,7 @@ input, textarea {
 
 .section-label {
   display: inline-flex;
+  width: fit-content;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);

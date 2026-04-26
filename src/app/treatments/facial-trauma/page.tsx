@@ -75,7 +75,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Trauma.png" 
+                    src="/treatments/facial-trauma/rta.png" 
                     alt="RTA Facial Injury Care" 
                     width={500} 
                     height={600} 
@@ -124,7 +124,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dropdown.png" 
+                    src="/treatments/facial-trauma/jaw.png" 
                     alt="Jaw Fracture Fixation" 
                     width={500} 
                     height={600} 
@@ -173,7 +173,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-opd-2.png" 
+                    src="/treatments/facial-trauma/reconstruction.png" 
                     alt="Facial Bone Reconstruction" 
                     width={500} 
                     height={600} 
@@ -222,7 +222,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dropdown.png" 
+                    src="/treatments/facial-trauma/softtissue.png" 
                     alt="Soft Tissue Repair" 
                     width={500} 
                     height={600} 
@@ -271,7 +271,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Trauma.png" 
+                    src="/treatments/oncology/screening.png" 
                     alt="Orbital & Nasal Fracture Treatment" 
                     width={500} 
                     height={600} 
@@ -320,7 +320,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dropdown.png" 
+                    src="/treatments/oncology/reconstruction.png" 
                     alt="Post-Trauma Cosmetic Rehabilitation" 
                     width={500} 
                     height={600} 
@@ -369,7 +369,7 @@ export default function FacialTraumaPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Trauma.png" 
+                    src="/treatments/oncology/surgery.png" 
                     alt="Modular OT" 
                     width={500} 
                     height={600} 
@@ -397,8 +397,8 @@ export default function FacialTraumaPage() {
                 { icon: <HeartPulse size={24} />, text: "Comprehensive post-trauma rehabilitation support" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>
@@ -407,9 +407,9 @@ export default function FacialTraumaPage() {
 
         {/* CTA Section — Home Page Style */}
         <CTASection
-          title="Get Immediate Help for <br /> Facial Injuries"
+          title="Seek Immediate Care for Facial Injuries"
           description="In case of facial trauma or emergency, timely care is crucial. Trust the experts at Celeb Aesthetica for rapid, safe, and effective treatment."
-          imageSrc="/images/Quick-Treatments/Trauma.png"
+          imageSrc="/treatments/facial-trauma/facialtrauma-cta.png"
           imageAlt="Emergency facial care"
         />
       </main>

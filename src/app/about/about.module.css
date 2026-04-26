@@ -4,6 +4,10 @@
   text-align: center;
   position: relative;
   overflow: hidden;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pageHero::before {
@@ -135,31 +139,35 @@
 .doctorsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-8);
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: var(--space-10);
 }
 
 .doctorCard {
-  background: transparent;
+  background: var(--white);
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-200);
   display: flex;
   flex-direction: row;
-  min-height: 320px;
+  min-height: 380px;
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.doctorCard:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-4px);
 }
 
 /* Left Side - Image */
 .doctorImageWrapper {
   position: relative;
-  width: 250px;
-  min-width: 250px;
+  width: 320px;
+  min-width: 320px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: var(--space-6) var(--space-4) 0;
+  padding: var(--space-6) var(--space-6) 0;
   overflow: hidden;
 }
 
@@ -175,7 +183,7 @@
 .doctorImage {
   width: 100%;
   height: auto;
-  max-height: 320px;
+  max-height: 380px;
   object-fit: contain;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
@@ -205,7 +213,7 @@
 }
 
 .doctorName {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: 800;
   color: var(--gray-900);
   margin-bottom: var(--space-1);
@@ -213,7 +221,7 @@
 }
 
 .doctorSpecialty {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   margin-bottom: var(--space-4);
 }
@@ -229,11 +237,10 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  background: var(--gray-100);
-  color: var(--gray-700);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   border-radius: var(--radius-md);
+  letter-spacing: 0.02em;
 }
 
 .qualificationBadge {
@@ -253,16 +260,23 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .expertiseItem {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
-  font-size: 13px;
+  gap: 6px;
+  font-size: 11.5px;
   color: var(--gray-600);
   line-height: 1.4;
+}
+
+.expertiseItem svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* Why Stand Apart / Values */
@@ -389,13 +403,14 @@
 @media (max-width: 1024px) {
   .missionGrid { grid-template-columns: 1fr; gap: var(--space-10); }
   .valuesGrid { grid-template-columns: repeat(2, 1fr); }
-  .doctorsGrid { grid-template-columns: 1fr; max-width: 600px; }
+  .doctorsGrid { grid-template-columns: 1fr; }
   .doctorCard {
     flex-direction: row;
+    min-height: 340px;
   }
   .doctorImageWrapper {
-    width: 210px;
-    min-width: 210px;
+    width: 260px;
+    min-width: 260px;
   }
   .infraGrid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -406,14 +421,14 @@
   .infraGrid { grid-template-columns: 1fr; }
   .section { padding: var(--space-16) 0; }
   .doctorCard {
-    flex-direction: row;
+    flex-direction: column;
     min-height: auto;
   }
   .doctorImageWrapper {
-    width: 140px;
-    min-width: 140px;
-    height: auto;
-    padding: var(--space-3) var(--space-2) 0;
+    width: 100%;
+    min-width: unset;
+    height: 240px;
+    padding: var(--space-4) var(--space-4) 0;
   }
   .doctorImage {
     max-height: 160px;
@@ -442,11 +457,7 @@
     padding: 2px 6px;
   }
   .expertiseItem {
-    font-size: 10px;
+    font-size: 10.5px;
     gap: 4px;
-  }
-  .expertiseItem svg {
-    width: 12px;
-    height: 12px;
   }
 }

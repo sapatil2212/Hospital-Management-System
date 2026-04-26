@@ -45,21 +45,6 @@ export default function MissionSection() {
   return (
     <section className={styles.missionSection} ref={ref}>
       <div className="container">
-        <motion.div
-          className={styles.sectionHeader}
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          style={{ textAlign: "center", marginBottom: "var(--space-12)" }}
-        >
-          <h2 className="section-title">
-            Healthcare Designed Around <span className={styles.headingAccent}>You</span>
-          </h2>
-          <p className="section-subtitle">
-            We combine state-of-the-art medical technology with a compassionate, 
-            human-centered approach.
-          </p>
-        </motion.div>
-
         <div className={styles.missionContainer}>
           {/* Left Side - Image */}
           <motion.div
@@ -87,7 +72,14 @@ export default function MissionSection() {
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <p className={styles.description} style={{ fontSize: "var(--font-size-lg)", color: "var(--gray-600)", lineHeight: "1.6" }}>
+            <h2 className="section-title">
+              Healthcare Designed Around <span className={styles.headingAccent}>You</span>
+            </h2>
+            <p className="section-subtitle" style={{ textAlign: "left", margin: 0, marginBottom: "var(--space-4)" }}>
+              We combine state-of-the-art medical technology with a compassionate,
+              human-centered approach.
+            </p>
+            <p className={styles.description} style={{ color: "var(--gray-600)" }}>
               MediFlow isn't just a clinic; it's your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
             </p>
 

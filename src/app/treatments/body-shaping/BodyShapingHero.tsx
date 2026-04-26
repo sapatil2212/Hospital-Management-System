@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, Calendar, Phone, Users } from "lucide-react";
+import { Calendar, Phone } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "../treatments.module.css";
@@ -11,13 +11,9 @@ export default function BodyShapingHero() {
   const { openAppointment } = useAppointment();
   return (
     <section className={styles.hero}>
-      {/* Background decorations */}
-      <div className={styles.bgDecor1} />
-      <div className={styles.bgDecor2} />
-      <div className={styles.bgDecor3} />
-
       <div className="container">
-        <div className={styles.heroGrid}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroGrid}>
           {/* Left Content */}
           <div className={styles.heroContent}>
             <motion.div
@@ -25,10 +21,6 @@ export default function BodyShapingHero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <div className={styles.heroBadge}>
-                <Activity size={16} />
-                <span>Body Shaping & Contouring Center</span>
-              </div>
               <h1 className={styles.heroTitle}>
                 Sculpt Your Body with Advanced <span className={styles.accent}>Non-Surgical Precision</span>
               </h1>
@@ -81,39 +73,7 @@ export default function BodyShapingHero() {
                 />
               </motion.div>
             </div>
-
-            {/* Floating Card: Specialists */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.doctorsCard}`}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className={styles.doctorInfo}>
-                <span className={styles.doctorCount}>
-                  Expert Aesthetic Specialists
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Floating Card: Satisfied Clients */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.satisfiedCard}`}
-              animate={{ y: [0, -10, 0] }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            >
-              <div className={styles.satisfiedIcon}>
-                <Users size={20} />
-              </div>
-              <div>
-                <div className={styles.satisfiedCount}>7K+</div>
-                <div className={styles.satisfiedLabel}>Happy Patients</div>
-              </div>
-            </motion.div>
+          </div>
           </div>
         </div>
       </div>

@@ -77,7 +77,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/healthy_indian_thali.png" 
                     alt="Personalized Diet Planning" 
                     width={500} 
                     height={600} 
@@ -126,7 +126,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/indian_wellness_lifestyle.png" 
                     alt="Weight Management" 
                     width={500} 
                     height={600} 
@@ -175,7 +175,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/indian_pcos_wellness.png" 
                     alt="Hormonal Diet Management" 
                     width={500} 
                     height={600} 
@@ -224,7 +224,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/indian_diet_planning.png" 
                     alt="Medical Nutrition" 
                     width={500} 
                     height={600} 
@@ -273,7 +273,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/indian_beauty_nutrition.png" 
                     alt="Beauty Nutrition" 
                     width={500} 
                     height={600} 
@@ -322,7 +322,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/indian_detox_drinks.png" 
                     alt="Detox Programs" 
                     width={500} 
                     height={600} 
@@ -371,7 +371,7 @@ export default function NutritionPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Nutrition.png" 
+                    src="/images/nutrition/indian_disease_reversal.png" 
                     alt="Disease Reversal" 
                     width={500} 
                     height={600} 
@@ -399,8 +399,8 @@ export default function NutritionPage() {
                 { icon: <Shield size={24} />, text: "Patient-first, ethical, and result-oriented care" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>
@@ -411,7 +411,7 @@ export default function NutritionPage() {
         <CTASection
           title="Start Your Wellness Journey <br /> Today"
           description="Take control of your health, weight, and lifestyle with expert guidance. Book your consultation and begin your journey toward a healthier, more balanced life."
-          imageSrc="/images/Quick-Treatments/Nutrition.png"
+          imageSrc="/images/nutrition/indian_wellness_cta.png"
           imageAlt="Start Wellness Journey"
         />
       </main>

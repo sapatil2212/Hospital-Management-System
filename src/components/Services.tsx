@@ -129,9 +129,9 @@ export default function Services() {
           </p>
         </motion.div>
 
-        {/* Cards Grid - Show only 4 */}
+        {/* Cards Grid - Show 8 */}
         <div className={styles.grid}>
-          {servicesList.slice(0, 4).map((service, i) => (
+          {servicesList.slice(0, 8).map((service, i) => (
             <motion.div
               key={service.label}
               className={styles.card}

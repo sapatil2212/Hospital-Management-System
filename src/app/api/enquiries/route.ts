@@ -191,12 +191,14 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || undefined;
     const search = searchParams.get("search") || undefined;
     const department = searchParams.get("department") || undefined;
+    const enquiryType = searchParams.get("type") || undefined;
 
     let whereClause = `WHERE hospitalId = ?`;
     const params: (string | number | boolean | undefined | null)[] = [auth.hospitalId];
 
     if (status) { whereClause += ` AND status = ?`; params.push(status); }
     if (department) { whereClause += ` AND department = ?`; params.push(department); }
+    if (enquiryType) { whereClause += ` AND enquiryType = ?`; params.push(enquiryType); }
     if (search) {
       whereClause += ` AND (fullName LIKE ? OR mobile LIKE ? OR email LIKE ? OR city LIKE ?)`;
       const like = `%${search}%`;
@@ -215,12 +217,15 @@ export async function GET(req: NextRequest) {
     );
     const total = Number(countResult[0]?.cnt || 0);
 
+    const statsBaseWhere = enquiryType ? `hospitalId = ? AND enquiryType = ?` : `hospitalId = ?`;
+    const statsBaseParams: (string | undefined)[] = enquiryType ? [auth.hospitalId, enquiryType] : [auth.hospitalId];
+
     const statsResult = await prisma.$queryRawUnsafe<{ status: string, cnt: bigint }[]>(
-      `SELECT status, COUNT(*) as cnt FROM Enquiry WHERE hospitalId = ? GROUP BY status`,
-      auth.hospitalId
+      `SELECT status, COUNT(*) as cnt FROM Enquiry WHERE ${statsBaseWhere} GROUP BY status`,
+      ...statsBaseParams
     );
     const totalAllResult = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
-      `SELECT COUNT(*) as cnt FROM Enquiry WHERE hospitalId = ?`, auth.hospitalId
+      `SELECT COUNT(*) as cnt FROM Enquiry WHERE ${statsBaseWhere}`, ...statsBaseParams
     );
     const totalAll = Number(totalAllResult[0]?.cnt || 0);
 

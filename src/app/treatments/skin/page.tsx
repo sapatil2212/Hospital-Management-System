@@ -77,7 +77,7 @@ export default function SkinTreatmentsPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-dermatology.png" 
+                    src="/treatments/skin/ai-skin-diagnosis-indian.png" 
                     alt="AI Skin Diagnosis" 
                     width={500} 
                     height={600} 
@@ -498,8 +498,8 @@ export default function SkinTreatmentsPage() {
                 { icon: <Sparkles size={24} />, text: "Premium, hygienic, and patient-friendly environment" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>

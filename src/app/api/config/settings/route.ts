@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { authMiddleware } from "../../../../../backend/middlewares/auth.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { getSettings, upsertSettings, getSetupProgress } from "../../../../../backend/services/config.service";
 import { z } from "zod";
@@ -21,8 +22,11 @@ const settingsSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
-  if (auth.error) return auth.error;
+  const { user, error } = await authMiddleware(req);
+  if (error) return error;
+  const hospitalId = user!.hospitalId;
+  if (!hospitalId) return errorResponse("No hospital associated with this account", 403);
+  const auth = { user: user!, hospitalId };
 
   try {
     const [settings, progress] = await Promise.all([

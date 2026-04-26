@@ -14,7 +14,7 @@ import {
 import prisma from "../../../../backend/config/db";
 import { notifyAppointmentBooked } from "../../../../backend/services/notification.service";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD", "DEPT_HEAD"];
 
 export const dynamic = "force-dynamic";
 

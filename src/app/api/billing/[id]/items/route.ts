@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 // PUT /api/billing/[id]/items — replace bill items and recalculate totals
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST"]);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "SUB_DEPT_HEAD"]);
   if (auth.error) return auth.error;
   try {
     const body = await req.json();

@@ -1,12 +1,14 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../../../backend/utils/response";
+
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
 
 type Params = { params: Promise<{ id: string }> };
 
 // GET /api/config/doctors/[id]/schedule-overrides?month=2026-01
 export async function GET(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 // POST /api/config/doctors/[id]/schedule-overrides
 export async function POST(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -127,7 +129,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 // DELETE /api/config/doctors/[id]/schedule-overrides?date=2026-01-15 or ?month=2026-01
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

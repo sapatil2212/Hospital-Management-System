@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../../../backend/middlewares/role.middleware";
+
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
 import { successResponse, errorResponse } from "../../../../../../../backend/utils/response";
 import prisma from "../../../../../../../backend/config/db";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
   try {
     const { searchParams } = new URL(req.url);
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
   try {
     const body = await req.json();

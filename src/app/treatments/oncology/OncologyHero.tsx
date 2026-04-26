@@ -11,13 +11,9 @@ export default function OncologyHero() {
   const { openAppointment } = useAppointment();
   return (
     <section className={styles.hero}>
-      {/* Background decorations */}
-      <div className={styles.bgDecor1} />
-      <div className={styles.bgDecor2} />
-      <div className={styles.bgDecor3} />
-
       <div className="container">
-        <div className={styles.heroGrid}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroGrid}>
           {/* Left Content */}
           <div className={styles.heroContent}>
             <motion.div
@@ -25,10 +21,6 @@ export default function OncologyHero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <div className={styles.heroBadge}>
-                <HeartPulse size={16} />
-                <span>Head, Neck & Facial (HNF) Oncology</span>
-              </div>
               <h1 className={styles.heroTitle}>
                 Advanced Cancer Care with <span className={styles.accent}>Early Detection, Precision & Compassion</span>
               </h1>
@@ -81,6 +73,7 @@ export default function OncologyHero() {
                 />
               </motion.div>
             </div>
+          </div>
           </div>
         </div>
       </div>

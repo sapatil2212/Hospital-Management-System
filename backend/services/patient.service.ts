@@ -9,6 +9,7 @@ import {
   searchPatientsQuick,
   countPatients,
 } from "../repositories/patient.repo";
+import { Prisma } from "@prisma/client";
 import { CreatePatientInput, UpdatePatientInput } from "../validations/patient.validation";
 import { sendPatientWelcome } from "../utils/mailer";
 import { getSettings } from "./config.service";
@@ -43,27 +44,42 @@ export const registerPatient = async (
     return { patient: existing, isNew: false };
   }
 
-  // Generate unique sequential patient ID
-  const patientId = await generatePatientId(hospitalId);
-
-  const patient = await createPatientRepo({
-    hospitalId,
-    patientId,
-    name: input.name,
-    phone: input.phone,
-    email: input.email || null,
-    gender: input.gender || null,
-    dateOfBirth: input.dateOfBirth || null,
-    bloodGroup: input.bloodGroup || null,
-    address: input.address || null,
-    profilePhoto: input.profilePhoto || null,
-    documents: input.documents || null,
-    patientType: input.patientType || null,
-    allergies: input.allergies || null,
-    emergencyName: input.emergencyName || null,
-    emergencyRelation: input.emergencyRelation || null,
-    emergencyPhone: input.emergencyPhone || null,
-  });
+  // Generate unique sequential patient ID with retry on race-condition collision
+  let patient: any;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const patientId = await generatePatientId(hospitalId);
+    try {
+      patient = await createPatientRepo({
+        hospitalId,
+        patientId,
+        name: input.name,
+        phone: input.phone,
+        email: input.email || null,
+        gender: input.gender || null,
+        dateOfBirth: input.dateOfBirth || null,
+        bloodGroup: input.bloodGroup || null,
+        address: input.address || null,
+        profilePhoto: input.profilePhoto || null,
+        documents: input.documents || null,
+        patientType: input.patientType || null,
+        allergies: input.allergies || null,
+        emergencyName: input.emergencyName || null,
+        emergencyRelation: input.emergencyRelation || null,
+        emergencyPhone: input.emergencyPhone || null,
+      });
+      break; // success
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        attempt < 4
+      ) {
+        // patientId collision (rare race condition) — regenerate and retry
+        continue;
+      }
+      throw err;
+    }
+  }
 
   // Send welcome email asynchronously (fire-and-forget)
   if (input.email) {

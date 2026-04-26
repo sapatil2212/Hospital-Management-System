@@ -30,13 +30,6 @@ import {
   Send
 } from "lucide-react";
 
-const IconMap: Record<string, any> = {
-  Mountain,
-  Palmtree,
-  Waves,
-  Trees,
-  Compass
-};
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -46,6 +39,15 @@ import styles from "./medical-tourism.module.css";
 import heroStyles from "../treatments.module.css";
 import MedicalTourismHero from "./MedicalTourismHero";
 import BookingModal from "./BookingModal";
+import newsletterStyles from "@/components/Newsletter.module.css";
+
+const IconMap: Record<string, any> = {
+  Mountain,
+  Palmtree,
+  Waves,
+  Trees,
+  Compass
+};
 
 export default function MedicalTourismPage() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -124,31 +126,25 @@ export default function MedicalTourismPage() {
                 </div>
               </motion.div>
 
-              {/* Right: Stats */}
+              {/* Right: Image */}
               <motion.div 
-                className={styles.aboutStats}
+                className={styles.aboutImageContainer}
                 initial={{ opacity: 0, x: 30 }}
-                animate={isAboutInView ? { opacity: 1, x: 0 } : {}}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.6, delay: 0.3 }}
               >
-                <div className={styles.statCard}>
-                  <div className={styles.statNumber}>50K+</div>
-                  <div className={styles.statLabel}>International Patients</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statNumber}>25+</div>
-                  <div className={styles.statLabel}>Partner Hospitals</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statNumber}>15+</div>
-                  <div className={styles.statLabel}>Countries Served</div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statNumber}>98%</div>
-                  <div className={styles.statLabel}>Patient Satisfaction</div>
-                </div>
+                <Image
+                  src="/images/medical-tourism/medical-tourism-about.png"
+                  alt="Medical Tourism in India"
+                  fill
+                  className={styles.aboutImage}
+                  style={{ objectFit: "cover" }}
+                />
               </motion.div>
             </div>
+
+
           </div>
         </section>
 
@@ -248,17 +244,107 @@ export default function MedicalTourismPage() {
           </div>
         </section>
 
-        {/* CTA SECTION */}
-        <section className={styles.ctaSection}>
+        {/* TOP STATES SECTION */}
+        <section className={`${styles.circuitsSection} ${styles.statesSection}`}>
           <div className="container">
-            <div className={styles.ctaContainer}>
-              <div className={styles.ctaContent}>
-                <h3>Ready to Begin Your Medical Journey?</h3>
-                <p>Get a personalized medical tourism package tailored to your healthcare needs and travel preferences.</p>
-                <button onClick={() => openBookingModal()} className={styles.ctaBtn}>
-                  Get Free Consultation <ArrowRight size={16} />
+            <motion.div
+              className={styles.sectionHeader}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5 }}
+            >
+              <button className={styles.sectionLabelBtn} onClick={() => openBookingModal()}>
+                <MapPin size={16} />
+                Popular Destinations
+              </button>
+              <h2 className="section-title">
+                Explore Top <span className={styles.accent}>Healing Destinations</span>
+              </h2>
+              <p className="section-subtitle">
+                Discover our handpicked states offering world-class medical facilities and breathtaking beauty.
+              </p>
+            </motion.div>
+
+            <div className={styles.statesGrid}>
+              {medicalTourismData.flatMap(z => z.states).map((state, i) => (
+                <motion.div
+                  key={state.id}
+                  className={styles.stateCard}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                >
+                  <div className={styles.stateImageContainer}>
+                    <Image
+                      src={state.image}
+                      alt={state.name}
+                      fill
+                      className={styles.stateImage}
+                      onError={(e: any) => {
+                        e.target.src = "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=2071&auto=format&fit=crop";
+                      }}
+                    />
+                    <div className={styles.statePriceBadge}>From {state.startingPrice}</div>
+                  </div>
+                  <div className={styles.circuitContent}>
+                    <h3 className={styles.circuitTitle}>{state.name}</h3>
+                    <p className={styles.circuitDesc}>{state.experience}</p>
+                    
+                    <div className={styles.vibeTagsGroup}>
+                      {state.vibe.slice(0, 3).map(v => (
+                        <span key={v} className={styles.vibeTagBadge}>{v}</span>
+                      ))}
+                    </div>
+
+                    <div className={styles.cardActions} style={{ marginTop: 'auto' }}>
+                      <Link 
+                        href={`/treatments/medical-tourism/${state.id}`}
+                        className={styles.viewMoreBtn}
+                      >
+                        Explore {state.name} <ArrowRight size={14} />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA SECTION */}
+        <section className={newsletterStyles.newsletterSection}>
+          <div className={newsletterStyles.container}>
+            <div className={newsletterStyles.content}>
+              <h2 className={newsletterStyles.title}>
+                Ready to Begin Your <br /> Medical Journey?
+              </h2>
+              <p className={newsletterStyles.subtitle}>
+                Get a personalized medical tourism package tailored to your healthcare needs and travel preferences.
+              </p>
+              
+              <div className={newsletterStyles.form}>
+                <button 
+                  type="button" 
+                  className={newsletterStyles.button}
+                  onClick={() => openBookingModal()}
+                >
+                  Plan Your Journey
+                  <ArrowRight size={18} className={newsletterStyles.buttonIcon} />
                 </button>
               </div>
+            </div>
+            
+            <div className={newsletterStyles.imageWrapper}>
+              <Image 
+                src="/images/medical-tourism/medical-tourism-cta.png" 
+                alt="Medical Tourism Support" 
+                width={500} 
+                height={600} 
+                className={newsletterStyles.image}
+                priority
+              />
             </div>
           </div>
         </section>

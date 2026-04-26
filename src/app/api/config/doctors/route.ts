@@ -14,6 +14,7 @@ import {
 } from "../../../../../backend/validations/doctor.validation";
 
 const DROPDOWN_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/config/doctors - List doctors with pagination and filters
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
       return successResponse(data, "Doctors fetched");
     }
 
-    const auth = await requireHospitalAdmin(req);
+    const auth = await requireRole(req, HR_ROLES);
     if (auth.error) return auth.error;
 
     // Stats endpoint
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
 // POST /api/config/doctors - Create new doctor
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

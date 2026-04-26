@@ -56,7 +56,12 @@ const api = async (url: string, method = "GET", body?: unknown) => {
   return r.json();
 };
 
-export default function EnquiryPanel() {
+interface EnquiryPanelProps {
+  typeFilter?: string;
+  title?: string;
+}
+
+export default function EnquiryPanel({ typeFilter, title }: EnquiryPanelProps = {}) {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,6 +88,7 @@ export default function EnquiryPanel() {
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
       if (deptFilter) params.set("department", deptFilter);
+      if (typeFilter) params.set("type", typeFilter);
       const d = await api(`/api/enquiries?${params}`);
       if (d.success) {
         setEnquiries(d.data.enquiries);
@@ -92,7 +98,7 @@ export default function EnquiryPanel() {
       }
     } catch {}
     setLoading(false);
-  }, [page, search, statusFilter, deptFilter]);
+  }, [page, search, statusFilter, deptFilter, typeFilter]);
 
   // Using a timeout to satisfy strict lint about synchronous state updates in effects
   useEffect(() => { 
@@ -309,6 +315,18 @@ export default function EnquiryPanel() {
   return (
     <div style={{ animation: "fadeIn .25s ease" }}>
       <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      {title && (
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "18px 22px", marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 11, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E898F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b", marginBottom: 2 }}>{title}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>International patient enquiries filtered by Medical Tourism type</div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Bar */}
       {stats && (

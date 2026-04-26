@@ -395,8 +395,8 @@ export default function BodyShapingPage() {
                 { icon: <Shield size={24} />, text: "Premium, hygienic, and patient-friendly environment" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>

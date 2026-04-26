@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   MapPin,
   Phone,
@@ -140,9 +141,9 @@ export default function Footer() {
             © 2026 Celeb Aesthetica. All rights reserved.
           </p>
           <div className={styles.bottomLinks}>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Cookie Policy</a>
+            <Link href="/privacy-policy">Privacy Policy</Link>
+            <Link href="/terms-of-service">Terms of Service</Link>
+            <Link href="/cookie-policy">Cookie Policy</Link>
           </div>
         </div>
       </div>

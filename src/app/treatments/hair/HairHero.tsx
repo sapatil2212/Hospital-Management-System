@@ -11,13 +11,9 @@ export default function HairHero() {
   const { openAppointment } = useAppointment();
   return (
     <section className={styles.hero}>
-      {/* Background decorations */}
-      <div className={styles.bgDecor1} />
-      <div className={styles.bgDecor2} />
-      <div className={styles.bgDecor3} />
-
       <div className="container">
-        <div className={styles.heroGrid}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroGrid}>
           {/* Left Content */}
           <div className={styles.heroContent}>
             <motion.div
@@ -25,10 +21,6 @@ export default function HairHero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <div className={styles.heroBadge}>
-                <Sparkles size={16} />
-                <span>Hair & Trichology Sciences</span>
-              </div>
               <h1 className={styles.heroTitle}>
                 Advanced Hair Restoration Powered by <span className={styles.accent}>AI, Science & Precision</span>
               </h1>
@@ -74,26 +66,13 @@ export default function HairHero() {
                 <Image
                   src="/treatments/hair/hair-hero.png"
                   alt="Advanced Hair Restoration"
-                  width={580}
-                  height={640}
+                  width={400}
+                  height={440}
                   className={styles.heroImage}
                   priority
                 />
               </motion.div>
             </div>
-
-            {/* Floating Card: Doctors */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.doctorsCard}`}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className={styles.doctorInfo}>
-                <span className={styles.doctorCount}>
-                  Expert Trichologists
-                </span>
-              </div>
-            </motion.div>
 
             {/* Floating Card: Satisfied Clients */}
             <motion.div
@@ -114,6 +93,7 @@ export default function HairHero() {
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>
+          </div>
           </div>
         </div>
       </div>

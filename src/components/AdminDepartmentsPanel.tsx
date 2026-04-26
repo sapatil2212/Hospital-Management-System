@@ -6,7 +6,7 @@ import {
   ChevronRight, UserCheck, IndianRupee, Layers, Eye, ArrowLeft,
   Smile, Sparkles, Scissors, Heart, Microscope, Pill, Scan,
   TestTube2, Stethoscope, FlaskConical, ClipboardList, Receipt,
-  ToggleLeft, ToggleRight, CalendarDays, Package,
+  ToggleLeft, ToggleRight, CalendarDays, Package, Search, X,
 } from "lucide-react";
 
 /* ─── Dept-type metadata ─── */
@@ -87,11 +87,16 @@ export default function AdminDepartmentsPanel() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   DEPARTMENTS GRID — Card-based listing of all departments
+   DEPARTMENTS TABLE — Proper table listing with search / filters
    ═══════════════════════════════════════════════════════════════════ */
 function DepartmentsGrid({ onOpenDept }: { onOpenDept: (id: string) => void }) {
   const [depts, setDepts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortCol, setSortCol] = useState<"name" | "type" | "doctors" | "subdepts" | "staff">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const load = () => {
     setLoading(true);
@@ -103,108 +108,252 @@ function DepartmentsGrid({ onOpenDept }: { onOpenDept: (id: string) => void }) {
 
   useEffect(() => { load(); }, []);
 
+  const types = Array.from(new Set(depts.map((d: any) => d.type).filter(Boolean)));
+
+  const toggleSort = (col: typeof sortCol) => {
+    if (sortCol === col) setSortDir(p => p === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const filtered = depts
+    .filter((d: any) => {
+      const q = search.toLowerCase();
+      const matchQ = !q || d.name?.toLowerCase().includes(q) || d.code?.toLowerCase().includes(q) || (d.type || "").toLowerCase().includes(q) || (d.hodDoctor?.name || "").toLowerCase().includes(q);
+      const matchType = !typeFilter || d.type === typeFilter;
+      const matchStatus = !statusFilter || (statusFilter === "active" ? d.isActive : !d.isActive);
+      return matchQ && matchType && matchStatus;
+    })
+    .sort((a: any, b: any) => {
+      let va: any, vb: any;
+      if (sortCol === "name")     { va = a.name || ""; vb = b.name || ""; }
+      else if (sortCol === "type") { va = a.type || ""; vb = b.type || ""; }
+      else if (sortCol === "doctors")  { va = a._count?.doctors || 0; vb = b._count?.doctors || 0; }
+      else if (sortCol === "subdepts") { va = a._count?.subDepartments || 0; vb = b._count?.subDepartments || 0; }
+      else if (sortCol === "staff")    { va = a._count?.staff || 0; vb = b._count?.staff || 0; }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const summaryStats = [
+    { label: "Total Departments", val: depts.length, Icon: Building2 },
+    { label: "Active",            val: depts.filter((d: any) => d.isActive).length, Icon: Activity },
+    { label: "Total Doctors",     val: depts.reduce((s: number, d: any) => s + (d._count?.doctors || 0), 0), Icon: Stethoscope },
+    { label: "Sub-Departments",   val: depts.reduce((s: number, d: any) => s + (d._count?.subDepartments || 0), 0), Icon: Layers },
+  ];
+
+  const SortIcon = ({ col }: { col: typeof sortCol }) => (
+    <span style={{ marginLeft: 4, opacity: sortCol === col ? 1 : 0.35, fontSize: 10 }}>
+      {sortCol === col ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+    </span>
+  );
+
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+      <style>{`@keyframes deptSpin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
-          <div className="hd-pg-title" style={{ marginBottom: 0 }}>Departments</div>
-          <div style={{ fontSize: 12, color: "#0A6B70", marginTop: 2 }}>Click any department to view details and sub-departments</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", letterSpacing: "-.01em" }}>Departments</div>
+          <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Manage hospital departments and sub-departments</div>
         </div>
-        <button className="hd-btn-primary" onClick={load} style={{ gap: 6, fontSize: 12 }}>
-          <RefreshCw size={14} /> Refresh
+        <button onClick={load} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#334155", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+          <RefreshCw size={13} style={loading ? { animation: "deptSpin 1s linear infinite" } : {}} /> Refresh
         </button>
       </div>
 
-      {loading ? (
-        <div style={{ padding: 60, textAlign: "center", color: "#0E898F", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> Loading departments…
-        </div>
-      ) : depts.length === 0 ? (
-        <div style={{ padding: 60, textAlign: "center", color: "#0A6B70" }}>
-          <Building2 size={40} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
-          <div style={{ fontSize: 15, fontWeight: 600 }}>No departments found</div>
-          <div style={{ fontSize: 12, marginTop: 4 }}>Go to Configure Hospital to add departments</div>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 16 }}>
-          {depts.map((d: any) => {
-            const m = getDeptMeta(d.type);
-            const DI = m.Icon;
-            const isInactive = !d.isActive;
-            return (
-              <div
-                key={d.id}
-                onClick={() => !isInactive && onOpenDept(d.id)}
-                style={{
-                  background: "#fff",
-                  borderRadius: 14, border: `1px solid ${isInactive ? "#e2e8f0" : "#e2e8f0"}`,
-                  overflow: "hidden", cursor: isInactive ? "default" : "pointer",
-                  transition: "all .2s",
-                  opacity: isInactive ? 0.65 : 1,
-                }}
-                onMouseEnter={e => { if (!isInactive) { e.currentTarget.style.borderColor = "#B3E0E0"; } }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; }}
-              >
-                {/* Removed gradient bar */}
-                <div style={{ padding: "16px 18px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                    <div style={{
-                      width: 46, height: 46, borderRadius: 12,
-                      background: isInactive ? "#f8fafc" : m.lightBg,
-                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                    }}>
-                      <DI size={22} color={isInactive ? "#94a3b8" : m.accent} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: isInactive ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {d.name}
-                      </div>
-                      <div style={{ fontSize: 11, color: isInactive ? "#B3E0E0" : "#0A6B70", fontWeight: 600, marginTop: 1 }}>
-                        {d.code ? `${d.code} · ` : ""}{d.type?.replace(/_/g, " ")}
-                      </div>
-                    </div>
-                    {!isInactive && <ChevronRight size={18} color="#0E898F" />}
-                  </div>
-
-                  {d.description && (
-                    <div style={{ fontSize: 12, color: "#0A6B70", marginBottom: 14, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {d.description}
-                    </div>
-                  )}
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                    <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>{d._count?.doctors || 0}</div>
-                      <div style={{ fontSize: 9, color: "#0A6B70", fontWeight: 600, textTransform: "uppercase" }}>Doctors</div>
-                    </div>
-                    <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>{d._count?.subDepartments || 0}</div>
-                      <div style={{ fontSize: 9, color: "#0A6B70", fontWeight: 600, textTransform: "uppercase" }}>Sub-Depts</div>
-                    </div>
-                    <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>{d._count?.staff || 0}</div>
-                      <div style={{ fontSize: 9, color: "#0A6B70", fontWeight: 600, textTransform: "uppercase" }}>Staff</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid #E6F4F4" }}>
-                    <div style={{ fontSize: 11, color: "#0A6B70", display: "flex", alignItems: "center", gap: 5 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: d.isActive ? "#d1fae5" : "#fee2e2", color: d.isActive ? "#059669" : "#dc2626" }}>
-                        {d.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    {d.hodDoctor && (
-                      <div style={{ fontSize: 11, color: "#0A6B70", display: "flex", alignItems: "center", gap: 4 }}>
-                        <Stethoscope size={11} color="#0E898F" /> {d.hodDoctor.name}
-                      </div>
-                    )}
-                  </div>
-                </div>
+      {/* Summary Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+        {summaryStats.map((s, i) => {
+          const SI = s.Icon;
+          return (
+            <div key={i} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <SI size={16} color="#0A6B70" />
               </div>
-            );
-          })}
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{s.val}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>{s.label}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Table Panel */}
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+
+        {/* Toolbar */}
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180 }}>
+            <Search size={13} color="#94a3b8" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name, code, type, HOD…"
+              style={{ width: "100%", padding: "8px 28px 8px 30px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none", background: "#f8fafc", color: "#334155" }}
+            />
+            {search && (
+              <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 2 }}>
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none", background: "#f8fafc", color: "#334155", minWidth: 140 }}>
+            <option value="">All Types</option>
+            {types.map(t => <option key={String(t)} value={String(t)}>{String(t).replace(/_/g, " ")}</option>)}
+          </select>
+
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none", background: "#f8fafc", color: "#334155", minWidth: 120 }}>
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <div style={{ fontSize: 11, color: "#94a3b8", marginLeft: "auto", whiteSpace: "nowrap" }}>
+            {filtered.length} of {depts.length} departments
+          </div>
         </div>
-      )}
+
+        {/* Table */}
+        {loading ? (
+          <div style={{ padding: 56, textAlign: "center", color: "#0E898F", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <Loader2 size={18} style={{ animation: "deptSpin 1s linear infinite" }} /> Loading departments…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 56, textAlign: "center" }}>
+            <Building2 size={32} color="#94a3b8" style={{ margin: "0 auto 10px", display: "block", opacity: 0.3 }} />
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>
+              {depts.length === 0 ? "No departments found" : "No results match your filters"}
+            </div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+              {depts.length === 0 ? "Go to Configure Hospital to add departments" : "Try adjusting your search or filters"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", width: 36 }}>#</th>
+                  <th onClick={() => toggleSort("name")} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: sortCol === "name" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                    Department <SortIcon col="name" />
+                  </th>
+                  <th onClick={() => toggleSort("type")} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: sortCol === "type" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                    Type <SortIcon col="type" />
+                  </th>
+                  <th onClick={() => toggleSort("doctors")} style={{ padding: "10px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: sortCol === "doctors" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                    Doctors <SortIcon col="doctors" />
+                  </th>
+                  <th onClick={() => toggleSort("subdepts")} style={{ padding: "10px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: sortCol === "subdepts" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                    Sub-Depts <SortIcon col="subdepts" />
+                  </th>
+                  <th onClick={() => toggleSort("staff")} style={{ padding: "10px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: sortCol === "staff" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                    Staff <SortIcon col="staff" />
+                  </th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", whiteSpace: "nowrap" }}>HOD Doctor</th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9" }}>Status</th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((d: any, i: number) => {
+                  const m = getDeptMeta(d.type);
+                  const DI = m.Icon;
+                  return (
+                    <tr
+                      key={d.id}
+                      style={{ borderBottom: "1px solid #f8fafc", transition: "background .1s" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#fafeff")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "")}
+                    >
+                      <td style={{ padding: "12px 14px", fontSize: 11, color: "#cbd5e1", fontWeight: 600 }}>{i + 1}</td>
+
+                      <td style={{ padding: "12px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <DI size={16} color="#0A6B70" />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{d.name}</div>
+                            {d.code && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{d.code}</div>}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td style={{ padding: "12px 14px" }}>
+                        <span style={{ padding: "3px 9px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 10, fontWeight: 700 }}>
+                          {(d.type || "—").replace(/_/g, " ")}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{d._count?.doctors || 0}</span>
+                      </td>
+
+                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{d._count?.subDepartments || 0}</span>
+                      </td>
+
+                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{d._count?.staff || 0}</span>
+                      </td>
+
+                      <td style={{ padding: "12px 14px" }}>
+                        {d.hodDoctor ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 24, height: 24, borderRadius: 6, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Stethoscope size={11} color="#0A6B70" />
+                            </div>
+                            <span style={{ fontSize: 12, color: "#334155", fontWeight: 500 }}>{d.hodDoctor.name}</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "#cbd5e1" }}>—</span>
+                        )}
+                      </td>
+
+                      <td style={{ padding: "12px 14px" }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: d.isActive ? "#dcfce7" : "#fee2e2", color: d.isActive ? "#16a34a" : "#dc2626" }}>
+                          {d.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: "12px 14px" }}>
+                        <button
+                          onClick={() => d.isActive && onOpenDept(d.id)}
+                          disabled={!d.isActive}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: `1px solid ${d.isActive ? "#B3E0E0" : "#e2e8f0"}`, background: d.isActive ? "#E6F4F4" : "#f8fafc", color: d.isActive ? "#0A6B70" : "#94a3b8", fontSize: 11, fontWeight: 600, cursor: d.isActive ? "pointer" : "not-allowed", whiteSpace: "nowrap", transition: "all .15s" }}
+                          onMouseEnter={e => { if (d.isActive) { e.currentTarget.style.background = "#d0edee"; e.currentTarget.style.borderColor = "#0A6B70"; } }}
+                          onMouseLeave={e => { if (d.isActive) { e.currentTarget.style.background = "#E6F4F4"; e.currentTarget.style.borderColor = "#B3E0E0"; } }}
+                        >
+                          <Eye size={12} /> View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Footer count */}
+        {!loading && filtered.length > 0 && (
+          <div style={{ padding: "10px 16px", borderTop: "1px solid #f1f5f9", background: "#fafcff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>
+              Showing <strong style={{ color: "#334155" }}>{filtered.length}</strong> department{filtered.length !== 1 ? "s" : ""}
+              {(search || typeFilter || statusFilter) && <> — filtered from <strong style={{ color: "#334155" }}>{depts.length}</strong> total</>}
+            </div>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>
+              Click a column header to sort · Click <strong style={{ color: "#0A6B70" }}>View</strong> for details
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

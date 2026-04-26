@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../../backend/utils/response";
 import {
   getDoctorById,
@@ -13,13 +13,15 @@ import {
   toggleDoctorStatusSchema,
 } from "../../../../../../backend/validations/doctor.validation";
 
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
+
 type Params = { params: Promise<{ id: string }> };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/config/doctors/[id] - Get single doctor with full details
 // ─────────────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 // PUT /api/config/doctors/[id] - Update doctor
 // ─────────────────────────────────────────────────────────────────────────────
 export async function PUT(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -67,7 +69,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 // PATCH /api/config/doctors/[id] - Toggle status (isActive/isAvailable)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -97,7 +99,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/config/doctors/[id] - Delete doctor
 // ─────────────────────────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

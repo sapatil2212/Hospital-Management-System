@@ -483,7 +483,7 @@ export async function recordPayment(
 // ── Get bills list ─────────────────────────────────────────────────────────
 export async function getBills(
   hospitalId: string,
-  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string; pharmacyOnly?: boolean }
+  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string; pharmacyOnly?: boolean; labOnly?: boolean }
 ) {
   const page  = Math.max(1, opts.page  || 1);
   const limit = Math.min(opts.pharmacyOnly ? 200 : 50, opts.limit || 20);
@@ -491,6 +491,10 @@ export async function getBills(
 
   if (opts.pharmacyOnly) {
     where.billItems = { some: { type: "PHARMACY" } };
+  }
+
+  if (opts.labOnly) {
+    where.billItems = { some: { type: "LAB_TEST" } };
   }
 
   if (opts.patientId) where.patientId = opts.patientId;
@@ -528,18 +532,19 @@ export async function getBills(
     (prisma as any).bill.count({ where }),
   ]);
 
-  // Stats
+  // Stats — scope to lab-only or pharmacy-only when requested
   const today = new Date(); today.setHours(0, 0, 0, 0);
+  const scopeFilter: any = opts.labOnly ? { billItems: { some: { type: "LAB_TEST" } } } : opts.pharmacyOnly ? { billItems: { some: { type: "PHARMACY" } } } : {};
   const [todayRevenue, monthRevenue, pendingCount] = await Promise.all([
     (prisma as any).bill.aggregate({
-      where: { hospitalId, status: "PAID", paidAt: { gte: today } },
+      where: { hospitalId, status: "PAID", paidAt: { gte: today }, ...scopeFilter },
       _sum: { total: true },
     }),
     (prisma as any).bill.aggregate({
-      where: { hospitalId, status: "PAID", paidAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } },
+      where: { hospitalId, status: "PAID", paidAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }, ...scopeFilter },
       _sum: { total: true },
     }),
-    (prisma as any).bill.count({ where: { hospitalId, status: "PENDING" } }),
+    (prisma as any).bill.count({ where: { hospitalId, status: "PENDING", ...scopeFilter } }),
   ]);
 
   return {
@@ -857,7 +862,59 @@ export async function getBillingQueue(
     prescriptionNo: b.billNo,
   }));
 
-  return [...apptQueue, ...rxQueue, ...csQueue];
+  // ── 4. Lab order bills (no appointment, no prescription — created from pathology orders) ──
+  const labBillWhere: any = {
+    hospitalId,
+    prescriptionId: null,
+    visitId: null,
+    billItems: { some: { type: "LAB_TEST" } },
+    NOT: { notes: { contains: "PHARMACY_COUNTER_SALE" } },
+  };
+
+  if (opts.date) {
+    const d = new Date(opts.date);
+    const nextDay = new Date(d);
+    nextDay.setDate(nextDay.getDate() + 1);
+    labBillWhere.createdAt = { gte: d, lt: nextDay };
+  }
+
+  if (opts.search) {
+    labBillWhere.OR = [
+      { patient: { name: { contains: opts.search } } },
+      { patient: { patientId: { contains: opts.search } } },
+      { patient: { phone: { contains: opts.search } } },
+      { billNo: { contains: opts.search } },
+    ];
+  }
+
+  const labBills = await (prisma as any).bill.findMany({
+    where: labBillWhere,
+    include: {
+      patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
+      billItems: true,
+      payments: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  const labQueue = labBills.map((b: any) => ({
+    id: b.id,
+    appointmentDate: b.createdAt,
+    type: "LAB_ORDER",
+    status: "COMPLETED",
+    consultationFee: 0,
+    billingNote: b.notes || "Lab Order",
+    patient: b.patient,
+    doctor: null,
+    department: null,
+    subDepartment: { name: "Pathology Lab" },
+    bill: b,
+    source: "lab_order",
+    timeSlot: null,
+  }));
+
+  return [...apptQueue, ...rxQueue, ...csQueue, ...labQueue];
 }
 
 // ── Revert bill to PENDING (for regeneration) ───────────────────────────

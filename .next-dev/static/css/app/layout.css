@@ -178,6 +178,8 @@ input, textarea {
 
 .section-label {
   display: inline-flex;
+  width: -moz-fit-content;
+  width: fit-content;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
@@ -553,7 +555,7 @@ input, textarea {
 }
 
 .ai-chatbot_messagesContainer__xSU_S {
-  flex: 1 1;
+  flex: 1;
   overflow-y: auto;
   padding: 20px;
   display: flex;
@@ -645,7 +647,7 @@ input, textarea {
 }
 
 .ai-chatbot_input__ib5rw {
-  flex: 1 1;
+  flex: 1;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 10px 14px;
@@ -864,7 +866,7 @@ input, textarea {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex: 1 1;
+  flex: 1;
   position: relative;
 }
 
@@ -893,7 +895,7 @@ input, textarea {
 }
 
 .AppointmentModal_stepLine__CDlTA {
-  flex: 1 1;
+  flex: 1;
   height: 2px;
   background: var(--gray-200);
   margin: 0 var(--space-2);
@@ -927,7 +929,7 @@ input, textarea {
 
 /* ─── Step Body (scrollable) ─── */
 .AppointmentModal_stepBody__VSpBd {
-  flex: 1 1;
+  flex: 1;
   overflow-y: auto;
   padding: var(--space-6) var(--space-8);
 }
@@ -950,7 +952,6 @@ input, textarea {
 .AppointmentModal_formRow__1eprd {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-gap: var(--space-4);
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
@@ -1009,11 +1010,16 @@ input, textarea {
 }
 
 .AppointmentModal_input__soHVO {
-  flex: 1 1;
+  flex: 1;
   padding: 6px var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--gray-800);
   background: transparent;
+}
+
+.AppointmentModal_input__soHVO::-moz-placeholder {
+  color: var(--gray-400);
+  font-size: 11px;
 }
 
 .AppointmentModal_input__soHVO::placeholder {
@@ -1045,7 +1051,7 @@ input, textarea {
 }
 
 .AppointmentModal_selectValue__rYtB1 {
-  flex: 1 1;
+  flex: 1;
   padding: 6px var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--gray-800);
@@ -1127,7 +1133,7 @@ input, textarea {
 }
 
 .AppointmentModal_optionLabel__zgrxT {
-  flex: 1 1;
+  flex: 1;
 }
 
 .AppointmentModal_optionDesc__hgOwG {
@@ -1199,7 +1205,6 @@ input, textarea {
 .AppointmentModal_calGrid__HeCOh {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-gap: 2px;
   gap: 2px;
 }
 
@@ -1269,7 +1274,6 @@ input, textarea {
 .AppointmentModal_timeGrid__Lum9X {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-gap: var(--space-2);
   gap: var(--space-2);
 }
 
@@ -1317,7 +1321,7 @@ input, textarea {
 }
 
 .AppointmentModal_customTimeInput__2Dihw {
-  flex: 1 1;
+  flex: 1;
   padding: 6px var(--space-3);
   border: 2px solid var(--gray-200);
   border-radius: var(--radius-md);
@@ -1362,7 +1366,7 @@ input, textarea {
 }
 
 .AppointmentModal_footerSpacer__tXVsk {
-  flex: 1 1;
+  flex: 1;
 }
 
 .AppointmentModal_footerBtn__A8Dqp {
@@ -1420,7 +1424,7 @@ input, textarea {
 }
 
 .AppointmentModal_summarySectionHeader__VDD6s span {
-  flex: 1 1;
+  flex: 1;
 }
 
 .AppointmentModal_editBtn__WJ_I0 {
@@ -1444,7 +1448,6 @@ input, textarea {
 .AppointmentModal_summaryGrid__zADZf {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-gap: var(--space-2) var(--space-4);
   gap: var(--space-2) var(--space-4);
 }
 
@@ -1555,8 +1558,7 @@ input, textarea {
   right: 0;
   padding: 5px 8px;
   background: rgba(255, 255, 255, 0.95);
-  -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
   z-index: 999;
 }
@@ -1569,7 +1571,7 @@ input, textarea {
 
 .mobile-appointment_appointmentButton__248jk,
 .mobile-appointment_contactButton__nZcxh {
-  flex: 1 1;
+  flex: 1;
   height: 32px;
   display: flex;
   align-items: center;
@@ -1653,7 +1655,8 @@ input, textarea {
 }
 
 .Preloader_logo__mWOw6 {
-  object-fit: contain;
+  -o-object-fit: contain;
+     object-fit: contain;
 }
 
 .Preloader_loaderLine__JecIe {

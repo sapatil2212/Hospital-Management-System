@@ -17,6 +17,7 @@ import { CreateStaffInput, UpdateStaffInput } from "../validations/staff.validat
 import { hashPassword, comparePassword } from "../utils/hash";
 import { generateToken } from "../utils/jwt";
 import { Role } from "@prisma/client";
+import prisma from "../config/db";
 import crypto from "crypto";
 
 export class StaffServiceError extends Error {
@@ -326,14 +327,23 @@ export const changeStaffPassword = async (
 };
 
 export const getStaffStats = async (hospitalId: string) => {
-  const [total, active] = await Promise.all([
+  const [total, active, roleGroups] = await Promise.all([
     countStaff(hospitalId),
     countStaff(hospitalId, { isActive: true }),
+    prisma.staff.groupBy({
+      by: ["role"],
+      where: { hospitalId },
+      _count: { role: true },
+    }),
   ]);
+
+  const byRole: Record<string, number> = {};
+  roleGroups.forEach((g: any) => { byRole[g.role] = g._count.role; });
 
   return {
     total,
     active,
     inactive: total - active,
+    byRole,
   };
 };

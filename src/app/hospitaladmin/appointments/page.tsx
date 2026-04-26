@@ -37,7 +37,7 @@ export default function AppointmentsPage() {
     <div style={{ padding: 24 }}>
       {/* Sub-tabs + Book button */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <div style={{ display: "flex", gap: 6, background: "#fff", borderRadius: 12, padding: 6, border: "1px solid #e2e8f0", width: "fit-content", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+        <div style={{ display: "flex", gap: 6, background: "#fff", borderRadius: 12, padding: 6, border: "1px solid #e2e8f0", width: "fit-content" }}>
           {TABS.map(t => {
             const Icon = t.icon;
             const active = tab === t.id;

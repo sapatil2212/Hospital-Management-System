@@ -83,49 +83,24 @@ const SUB_DEPT_TYPES = [
 ];
 
 const DEPT_SUBDEPT_MAP: Record<string, Array<{value: string; label: string; color: string}>> = {
-  ADMINISTRATIVE: [
-    { value: "RECEPTION",  label: "Reception / Front Desk",    color: "#3b82f6" },
-    { value: "BILLING",    label: "Billing (GST / Non-GST)",   color: "#f59e0b" },
-    { value: "HR",         label: "HR",                        color: "#8b5cf6" },
-    { value: "ACCOUNTS",   label: "Accounts",                  color: "#10b981" },
-    { value: "CUSTOM",     label: "Custom",                    color: "#94a3b8" },
-  ],
-  SUPPORT: [
-    { value: "PHARMACY",    label: "Pharmacy",                  color: "#0E898F" },
-    { value: "NURSING",     label: "Nursing",                   color: "#ec4899" },
-    { value: "HOUSEKEEPING",label: "Housekeeping",              color: "#f97316" },
-    { value: "AMBULANCE",   label: "Ambulance",                 color: "#ef4444" },
-    { value: "BIOMEDICAL",  label: "Biomedical / Equipment",    color: "#6366f1" },
-    { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
-  ],
-  PROCEDURE: [
-    { value: "OT",                 label: "Operation Theatre (OT)",    color: "#ef4444" },
-    { value: "DIALYSIS",           label: "Dialysis Unit",             color: "#6366f1" },
-    { value: "PHYSIOTHERAPY",      label: "Physiotherapy",             color: "#84cc16" },
-    { value: "DENTAL",             label: "Dental",                    color: "#06b6d4" },
-    { value: "COSMETIC",           label: "Cosmetic / Aesthetic",      color: "#ec4899" },
-    { value: "ENDOSCOPY",          label: "Endoscopy",                 color: "#f97316" },
-    { value: "CLINICAL_PROCEDURE", label: "Clinical Procedure",        color: "#0ea5e9" },
-    { value: "CUSTOM",             label: "Custom",                    color: "#94a3b8" },
-  ],
-  DIAGNOSTIC: [
-    { value: "PATHOLOGY",   label: "Pathology / Lab",           color: "#10b981" },
-    { value: "RADIOLOGY",   label: "Radiology (X-ray, MRI, CT Scan)", color: "#6366f1" },
-    { value: "BLOOD_BANK",  label: "Blood Bank",                color: "#ef4444" },
-    { value: "ECG",         label: "ECG / EEG",                 color: "#f59e0b" },
-    { value: "CUSTOM",      label: "Custom",                    color: "#94a3b8" },
-  ],
   CLINICAL: [
     { value: "OPD",                label: "OPD (Outpatient Department)",  color: "#0ea5e9" },
     { value: "IPD",                label: "IPD (Inpatient Department)",   color: "#8b5cf6" },
-    { value: "EMERGENCY",          label: "Emergency / Casualty",         color: "#ef4444" },
-    { value: "ICU",                label: "ICU / NICU",                   color: "#f97316" },
-    { value: "GENERAL_MEDICINE",   label: "General Medicine",             color: "#10b981" },
-    { value: "SURGERY",            label: "Surgery",                      color: "#64748b" },
-    { value: "GYNECOLOGY",         label: "Gynecology",                   color: "#ec4899" },
-    { value: "PEDIATRICS",         label: "Pediatrics",                   color: "#06b6d4" },
-    { value: "CLINICAL_PROCEDURE", label: "Clinical Procedure",           color: "#0ea5e9" },
-    { value: "CUSTOM",             label: "Custom",                       color: "#94a3b8" },
+    { value: "CLINICAL_PROCEDURE", label: "Clinical Procedures",          color: "#0ea5e9" },
+  ],
+  ADMINISTRATIVE: [
+    { value: "RECEPTION", label: "Reception",  color: "#3b82f6" },
+    { value: "BILLING",   label: "Billing",    color: "#f59e0b" },
+    { value: "HR",        label: "HR",         color: "#8b5cf6" },
+  ],
+  SUPPORT: [
+    { value: "PHARMACY",     label: "Pharmacy",     color: "#0E898F" },
+    { value: "AMBULANCE",    label: "Ambulance",    color: "#ef4444" },
+    { value: "HOUSEKEEPING", label: "Housekeeping", color: "#f97316" },
+  ],
+  DIAGNOSTIC: [
+    { value: "PATHOLOGY",  label: "Pathology Lab",  color: "#10b981" },
+    { value: "BLOOD_BANK", label: "Blood Bank",     color: "#ef4444" },
   ],
 };
 
@@ -224,6 +199,61 @@ const api = async (url: string, method = "GET", body?: any) => {
   const r = await fetch(url, opts);
   return r.json();
 };
+
+function SearchableSelect({
+  value, onChange, options, placeholder = "Select...",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; desc?: string; color?: string }[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  const selected = options.find(o => o.value === value);
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div onClick={() => { setOpen(o => !o); setSearch(""); }}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", border: `1.5px solid ${open ? "#80CCCC" : "#e2e8f0"}`, borderRadius: 9, padding: "8px 11px", cursor: "pointer", fontSize: 12, color: selected ? "#1e293b" : "#94a3b8", fontWeight: selected ? 600 : 400, userSelect: "none", boxShadow: open ? "0 0 0 3px rgba(147,197,253,.2)" : "none" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
+          {selected?.color && <span style={{ width: 8, height: 8, borderRadius: "50%", background: selected.color, flexShrink: 0 }} />}
+          <span>{selected?.label || placeholder}</span>
+        </div>
+        <ChevronDown size={12} style={{ color: "#94a3b8", flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+      </div>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 3px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 9, boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 200 }}>
+          <div style={{ padding: "7px 9px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 5 }}>
+            <Search size={11} color="#94a3b8" />
+            <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
+              style={{ border: "none", outline: "none", fontSize: 11, color: "#334155", background: "transparent", width: "100%" }} />
+            {search && <button type="button" onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0, lineHeight: 1 }}><X size={10} /></button>}
+          </div>
+          <div style={{ maxHeight: 180, overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: "10px 12px", fontSize: 11, color: "#94a3b8" }}>No results</div>
+            ) : filtered.map(o => (
+              <div key={o.value} onClick={() => { onChange(o.value); setOpen(false); setSearch(""); }}
+                style={{ padding: "8px 12px", cursor: "pointer", background: o.value === value ? "#E6F4F4" : "#fff", borderBottom: "1px solid #f8fafc", display: "flex", alignItems: "center", gap: 7 }}
+                onMouseEnter={e => { if (o.value !== value) (e.currentTarget as HTMLElement).style.background = "#f8fafc"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = o.value === value ? "#E6F4F4" : "#fff"; }}>
+                {o.color && <span style={{ width: 7, height: 7, borderRadius: "50%", background: o.color, flexShrink: 0 }} />}
+                <span style={{ fontSize: 12, fontWeight: 600, color: o.value === value ? "#0E898F" : "#1e293b" }}>{o.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const getTypeInfo = (type: string) => {
   const legacy = SUB_DEPT_TYPES.find(t => t.value === type);
@@ -454,7 +484,7 @@ export default function SubDepartmentPanel() {
     const isSupport = ["SUPPORT", "ADMINISTRATIVE"].includes(newParentType);
     setForm((f: any) => {
       const currentValid = options.some((t: any) => t.value === f.type);
-      const newType = currentValid ? f.type : (options[0]?.value || "CUSTOM");
+      const newType = currentValid ? f.type : (options[0]?.value || ALL_SUBDEPT_OPTIONS[0]?.value || "OPD");
       const typeColor = options.find((o: any) => o.value === newType)?.color || f.color;
       return {
         ...f,
@@ -774,20 +804,20 @@ export default function SubDepartmentPanel() {
         .sd-modal-sm{max-width:420px;padding:28px;text-align:center}
         .sd-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0}
         .sd-modal-title{font-size:16px;font-weight:800;color:#1e293b}
-        .sd-modal-body{padding:22px 24px;overflow-y:auto;flex:1}
+        .sd-modal-body{padding:18px 22px;overflow-y:auto;flex:1}
         .sd-modal-foot{padding:14px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;flex-shrink:0}
-        .sd-section{margin-bottom:22px}
+        .sd-section{margin-bottom:16px}
         .sd-section:last-child{margin-bottom:0}
-        .sd-section-title{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
-        .sd-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .sd-field{display:flex;flex-direction:column;gap:4px}
+        .sd-section-title{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
+        .sd-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .sd-field{display:flex;flex-direction:column;gap:3px}
         .sd-field.full{grid-column:1/-1}
-        .sd-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
-        .sd-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
+        .sd-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
+        .sd-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
         .sd-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
         .sd-input::placeholder{color:#94a3b8}
         .sd-textarea{min-height:72px;resize:vertical}
-        .sd-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;width:100%;cursor:pointer}
+        .sd-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;color:#1e293b;outline:none;width:100%;cursor:pointer}
         .sd-select:focus{border-color:#80CCCC}
         .sd-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
         .sd-type-card{padding:10px 8px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;text-align:center;transition:all .15s;font-size:11px;font-weight:600;color:#64748b}
@@ -941,7 +971,7 @@ export default function SubDepartmentPanel() {
         <div className="sd-filters">
           <select className="sd-filter-select" value={filterType} onChange={e => { setFilterType(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}>
             <option value="">All Types</option>
-            {SUB_DEPT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {ALL_SUBDEPT_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
           <select className="sd-filter-select" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}>
             <option value="">All Status</option>
@@ -1108,51 +1138,30 @@ export default function SubDepartmentPanel() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                     <div className="sd-field">
                       <label className="sd-lbl">Parent Department</label>
-                      <select
-                        className="sd-select"
+                      <SearchableSelect
                         value={form.departmentId}
-                        onChange={e => handleParentDeptChange(e.target.value)}
-                      >
-                        <option value="">— None / Independent —</option>
-                        {departments.map(d => (
-                          <option key={d.id} value={d.id}>{d.name}{d.type ? ` (${d.type.charAt(0) + d.type.slice(1).toLowerCase()})` : ""}</option>
-                        ))}
-                      </select>
-                      {!form.departmentId && (
-                        <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Optionally link to a parent department.</p>
-                      )}
+                        onChange={v => handleParentDeptChange(v)}
+                        options={[
+                          { value: "", label: "— None / Independent —" },
+                          ...departments.map(d => ({ value: d.id, label: d.name + (d.type ? ` · ${d.type.charAt(0) + d.type.slice(1).toLowerCase()}` : "") }))
+                        ]}
+                        placeholder="Select parent department..."
+                      />
                     </div>
                     <div className="sd-field">
                       <label className="sd-lbl">Sub-Department Type *</label>
                       {(() => {
                         const options = DEPT_SUBDEPT_MAP[form.parentDeptType] || ALL_SUBDEPT_OPTIONS;
                         return (
-                          <>
-                            <select
-                              className="sd-select"
-                              value={form.type}
-                              onChange={e => {
-                                const t = options.find((o: any) => o.value === e.target.value);
-                                setForm((f: any) => ({ ...f, type: e.target.value, color: t?.color || f.color, customName: "", accessFeatures: PREDEFINED_ACCESS[e.target.value] || [] }));
-                              }}
-                              required
-                            >
-                              {options.map((t: any) => (
-                                <option key={t.value} value={t.value}>{t.label}</option>
-                              ))}
-                            </select>
-                            {form.type === "CUSTOM" && (
-                              <div style={{ marginTop: 8 }}>
-                                <input
-                                  className="sd-input"
-                                  placeholder="e.g., Research Lab, ICU Step-Down..."
-                                  value={form.customName}
-                                  onChange={e => setForm((f: any) => ({ ...f, customName: e.target.value }))}
-                                  required
-                                />
-                              </div>
-                            )}
-                          </>
+                          <SearchableSelect
+                            value={form.type}
+                            onChange={v => {
+                              const t = options.find((o: any) => o.value === v);
+                              setForm((f: any) => ({ ...f, type: v, color: t?.color || f.color, customName: "", accessFeatures: PREDEFINED_ACCESS[v] || [] }));
+                            }}
+                            options={options}
+                            placeholder="Select sub-dept type..."
+                          />
                         );
                       })()}
                     </div>
@@ -1175,56 +1184,15 @@ export default function SubDepartmentPanel() {
                       <label className="sd-lbl">Description</label>
                       <textarea className="sd-input sd-textarea" placeholder="Brief description..." value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} />
                     </div>
-                    {!["SUPPORT", "ADMINISTRATIVE"].includes(form.parentDeptType) && (<>
-                    <div className="sd-field">
-                      <label className="sd-lbl">Accent Color</label>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input type="color" value={form.color || "#0E898F"} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} style={{ width: 38, height: 36, border: "1.5px solid #e2e8f0", borderRadius: 9, cursor: "pointer", padding: 2 }} />
-                        <input className="sd-input" value={form.color} onChange={e => setForm((f: any) => ({ ...f, color: e.target.value }))} placeholder="#0E898F" style={{ flex: 1 }} />
-                      </div>
-                    </div>
-                    <div className="sd-field full">
-                      <label className="sd-lbl">Patient Flow</label>
-                      <input className="sd-input" placeholder="e.g., OPD → Procedure → Billing → Follow-up" value={form.flow} onChange={e => setForm((f: any) => ({ ...f, flow: e.target.value }))} />
-                    </div>
                     <div className="sd-field full">
                       <div className="sd-toggle-wrap">
-                        <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Active</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Accept patients and appointments</div></div>
+                        <div><div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>Active</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Accept patients and appointments</div></div>
                         <button type="button" className={`sd-toggle ${form.isActive ? "on" : ""}`} onClick={() => setForm((f: any) => ({ ...f, isActive: !f.isActive }))}><span className="sd-toggle-thumb" /></button>
                       </div>
                     </div>
-                    </>)}
                   </div>
                 </div>
 
-                {/* Dashboard Access — manual selection (hidden for SUPPORT/ADMINISTRATIVE) */}
-                {!["SUPPORT", "ADMINISTRATIVE"].includes(form.parentDeptType) && (
-                <div className="sd-section">
-                  <div className="sd-section-title">
-                    <ShieldCheck size={14} />Dashboard Access
-                    <span style={{ marginLeft: "auto", fontSize: 10, background: "#eff6ff", color: "#2563eb", padding: "2px 8px", borderRadius: 100, fontWeight: 700, border: "1px solid #bfdbfe" }}>Manual</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>Select features this sub-department dashboard can access. <em style={{ color: "#0E898F" }}>Auto-tagged</em> ones are suggested based on type.</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                    {Object.entries(FEATURE_LABELS).map(([key, label]) => {
-                      const checked = (form.accessFeatures || []).includes(key);
-                      const isPredefined = (PREDEFINED_ACCESS[form.type] || []).includes(key);
-                      return (
-                        <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 11px", background: checked ? "#f0fdf4" : "#f8fafc", border: `1.5px solid ${checked ? "#bbf7d0" : "#e2e8f0"}`, borderRadius: 9, cursor: "pointer", transition: "all .15s" }}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => setForm((f: any) => ({ ...f, accessFeatures: checked ? f.accessFeatures.filter((x: string) => x !== key) : [...(f.accessFeatures || []), key] }))}
-                            style={{ width: 14, height: 14, accentColor: "#0E898F", cursor: "pointer", flexShrink: 0 }}
-                          />
-                          <span style={{ fontSize: 12, fontWeight: 600, color: checked ? "#16a34a" : "#64748b", flex: 1 }}>{label}</span>
-                          {isPredefined && <span style={{ fontSize: 9, background: "#E6F4F4", color: "#0A6B70", padding: "1px 5px", borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>Auto</span>}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-                )}
 
                 {/* HOD */}
                 <div className="sd-section">

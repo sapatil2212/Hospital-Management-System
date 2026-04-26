@@ -3,7 +3,7 @@ import { requireRole } from "../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../backend/utils/response";
 import prisma from "../../../../backend/config/db";
 
-const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD"];
+const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "SUB_DEPT_HEAD"];
 export const dynamic = "force-dynamic";
 
 // GET /api/revenue

@@ -10,7 +10,7 @@ import { updateAppointmentSchema } from "../../../../../backend/validations/appo
 import { notifyAppointmentStatusChanged } from "../../../../../backend/services/notification.service";
 import prisma from "../../../../../backend/config/db";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD", "DEPT_HEAD"];
 
 export const dynamic = "force-dynamic";
 

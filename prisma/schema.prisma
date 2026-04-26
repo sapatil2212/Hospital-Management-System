@@ -58,6 +58,11 @@ model Hospital {
   stockTransfers        StockTransfer[]
   stockTransferItems    StockTransferItem[]
   stockReturns          StockReturn[]
+  labTests              LabTest[]
+  labPanels             LabPanel[]
+  labOrders             LabOrder[]
+  labSamples            LabSample[]
+  labReports            LabReport[]
 }
 
 model User {
@@ -202,6 +207,9 @@ model SubDepartment {
   treatmentPlans        TreatmentPlan[]
   stockLocations        StockLocation[]
   purchases             Purchase[]
+  labTests              LabTest[]
+  labPanels             LabPanel[]
+  labOrders             LabOrder[]
 
   @@unique([hospitalId, name, type])
   @@index([hospitalId])
@@ -286,6 +294,7 @@ model Doctor {
   prescriptions        Prescription[]
   visits               Visit[]
   treatmentPlans       TreatmentPlan[]
+  labOrders            LabOrder[]
 
   @@unique([hospitalId, email])
   @@index([hospitalId])
@@ -774,6 +783,7 @@ model Patient {
   procedureRecords ProcedureRecord[]
   visits           Visit[]
   treatmentPlans   TreatmentPlan[]
+  labOrders        LabOrder[]
 
   @@unique([hospitalId, patientId])
   @@unique([hospitalId, phone])
@@ -810,6 +820,7 @@ model Appointment {
   prescription       Prescription?
   procedureRecords   ProcedureRecord[]
   treatmentSessions  TreatmentSession[]
+  labOrders          LabOrder[]
 
   @@index([hospitalId])
   @@index([patientId])
@@ -1822,4 +1833,213 @@ model StockReturn {
   @@index([fromLocationId])
   @@index([toLocationId])
   @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATHOLOGY LAB — LIS (Laboratory Information System)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model LabTest {
+  id              String        @id @default(uuid())
+  hospitalId      String
+  subDepartmentId String
+  name            String
+  code            String
+  category        String        @default("OTHER")
+  specimenType    String        @default("BLOOD")
+  price           Float         @default(0)
+  unit            String?
+  normalRangeMin  Float?
+  normalRangeMax  Float?
+  normalRangeText String?
+  method          String?
+  turnaroundHrs   Int           @default(24)
+  isActive        Boolean       @default(true)
+  machineId       String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  hospital        Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  subDepartment   SubDepartment @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)
+  panelItems      LabPanelItem[]
+  orderItems      LabOrderItem[]
+
+  @@unique([hospitalId, code])
+  @@index([hospitalId])
+  @@index([subDepartmentId])
+  @@index([hospitalId, category])
+}
+
+model LabPanel {
+  id              String        @id @default(uuid())
+  hospitalId      String
+  subDepartmentId String
+  name            String
+  code            String
+  description     String?       @db.Text
+  price           Float         @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  hospital        Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  subDepartment   SubDepartment @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)
+  items           LabPanelItem[]
+  orderItems      LabOrderItem[]
+
+  @@unique([hospitalId, code])
+  @@index([hospitalId])
+  @@index([subDepartmentId])
+}
+
+model LabPanelItem {
+  id       String   @id @default(uuid())
+  panelId  String
+  testId   String
+  sequence Int      @default(0)
+  panel    LabPanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  test     LabTest  @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([panelId, testId])
+  @@index([panelId])
+  @@index([testId])
+}
+
+model LabOrder {
+  id                String         @id @default(uuid())
+  hospitalId        String
+  subDepartmentId   String
+  patientId         String
+  appointmentId     String?
+  doctorId          String?
+  orderNo           String
+  priority          LabPriority    @default(ROUTINE)
+  status            LabOrderStatus @default(PENDING)
+  orderType         String         @default("MANUAL")
+  clinicalNotes     String?        @db.Text
+  referralNotes     String?        @db.Text
+  isHomeCollection  Boolean        @default(false)
+  collectionAddress String?        @db.Text
+  totalAmount       Float          @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  hospital          Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  subDepartment     SubDepartment  @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)
+  patient           Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment       Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  doctor            Doctor?        @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  items             LabOrderItem[]
+  sample            LabSample?
+  report            LabReport?
+
+  @@unique([hospitalId, orderNo])
+  @@index([hospitalId])
+  @@index([subDepartmentId])
+  @@index([patientId])
+  @@index([appointmentId])
+  @@index([hospitalId, status])
+  @@index([hospitalId, createdAt])
+}
+
+model LabOrderItem {
+  id          String             @id @default(uuid())
+  orderId     String
+  testId      String?
+  panelId     String?
+  status      LabItemStatus      @default(PENDING)
+  result      String?            @db.Text
+  unit        String?
+  normalRange String?
+  isAbnormal  Boolean            @default(false)
+  isCritical  Boolean            @default(false)
+  notes       String?            @db.Text
+  enteredBy   String?
+  enteredAt   DateTime?
+  verifiedBy  String?
+  verifiedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  order       LabOrder           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  test        LabTest?           @relation(fields: [testId], references: [id], onDelete: SetNull)
+  panel       LabPanel?          @relation(fields: [panelId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([testId])
+  @@index([panelId])
+}
+
+model LabSample {
+  id              String          @id @default(uuid())
+  orderId         String          @unique
+  hospitalId      String
+  barcodeId       String
+  specimenType    String          @default("BLOOD")
+  collectedBy     String?
+  collectedAt     DateTime        @default(now())
+  receivedAt      DateTime?
+  receivedBy      String?
+  status          LabSampleStatus @default(COLLECTED)
+  rejectionReason String?
+  notes           String?         @db.Text
+  order           LabOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  hospital        Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, barcodeId])
+  @@index([hospitalId])
+  @@index([hospitalId, status])
+}
+
+model LabReport {
+  id             String          @id @default(uuid())
+  orderId        String          @unique
+  hospitalId     String
+  reportData     String?         @db.LongText
+  verifiedBy     String?
+  verifiedAt     DateTime?
+  deliveredAt    DateTime?
+  deliveryMethod String?
+  status         LabReportStatus @default(DRAFT)
+  notes          String?         @db.Text
+  generatedAt    DateTime        @default(now())
+  order          LabOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  hospital       Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
+  @@index([hospitalId, status])
+}
+
+enum LabPriority {
+  ROUTINE
+  URGENT
+  STAT
+}
+
+enum LabOrderStatus {
+  PENDING
+  SAMPLE_COLLECTED
+  IN_PROCESS
+  RESULT_ENTERED
+  VERIFIED
+  REPORTED
+  DELIVERED
+  CANCELLED
+}
+
+enum LabItemStatus {
+  PENDING
+  IN_PROCESS
+  RESULT_ENTERED
+  VERIFIED
+  CANCELLED
+}
+
+enum LabSampleStatus {
+  COLLECTED
+  RECEIVED
+  IN_PROCESS
+  REJECTED
+  DISPOSED
+}
+
+enum LabReportStatus {
+  DRAFT
+  VERIFIED
+  DELIVERED
 }

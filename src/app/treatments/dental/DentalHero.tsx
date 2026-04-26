@@ -11,13 +11,9 @@ export default function DentalHero() {
   const { openAppointment } = useAppointment();
   return (
     <section className={styles.hero}>
-      {/* Background decorations */}
-      <div className={styles.bgDecor1} />
-      <div className={styles.bgDecor2} />
-      <div className={styles.bgDecor3} />
-
       <div className="container">
-        <div className={styles.heroGrid}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroGrid}>
           {/* Left Content */}
           <div className={styles.heroContent}>
            
@@ -100,6 +96,7 @@ export default function DentalHero() {
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>
+          </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireHospitalAdmin, requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { createPricing, findAllPricing, updatePricing, deletePricing } from "../../../../../backend/repositories/pricing.repo";
 import { z } from "zod";
@@ -14,7 +14,7 @@ const pricingSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "SUB_DEPT_HEAD"]);
   if (auth.error) return auth.error;
   try {
     const { searchParams } = new URL(req.url);

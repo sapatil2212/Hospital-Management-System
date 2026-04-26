@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../../backend/utils/response";
 import { hashPassword } from "../../../../../../backend/utils/hash";
 import { sendDoctorCredentials } from "../../../../../../backend/utils/mailer";
+
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
 import prisma from "../../../../../../backend/config/db";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 // POST /api/config/doctors/send-credentials-bulk
 // Sends credentials to all doctors where credentialsSent=false
 export async function POST(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

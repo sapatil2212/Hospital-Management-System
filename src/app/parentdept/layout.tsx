@@ -86,7 +86,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         setLoading(false);
         fetch("/api/parentdept/me", { credentials: "include" })
           .then(r => r.json())
-          .then(pd => { if (pd.success) setDeptProfile(pd.data); })
+          .then(pd => {
+            if (pd.success) {
+              setDeptProfile(pd.data);
+              const t = pd.data?.type;
+              if (t === "CLINICAL")        { router.replace("/clinical/dashboard");        return; }
+              if (t === "ADMINISTRATIVE")  { router.replace("/administrative/dashboard"); return; }
+              if (t === "SUPPORT")         { router.replace("/support/dashboard");        return; }
+              if (t === "DIAGNOSTIC")      { router.replace("/diagnostic/dashboard");     return; }
+            }
+          })
           .catch(() => {});
         fetch("/api/config/settings", { credentials: "include" })
           .then(r => r.json())

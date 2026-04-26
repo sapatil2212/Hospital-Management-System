@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../../../backend/utils/response";
 import {
   setAvailability,
@@ -20,13 +20,15 @@ import {
 } from "../../../../../../../backend/validations/doctor.validation";
 import { z } from "zod";
 
+const HR_ROLES = ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"];
+
 type Params = { params: Promise<{ id: string }> };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/config/doctors/[id]/availability - Get weekly schedule
 // ─────────────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -70,7 +72,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 // POST /api/config/doctors/[id]/availability - Set/update availability
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -156,7 +158,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 // PATCH /api/config/doctors/[id]/availability - Toggle day active status
 // ─────────────────────────────────────────────────────────────────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {
@@ -192,7 +194,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 // DELETE /api/config/doctors/[id]/availability - Remove availability
 // ─────────────────────────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, HR_ROLES);
   if (auth.error) return auth.error;
 
   try {

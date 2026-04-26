@@ -11,13 +11,9 @@ export default function FacialTraumaHero() {
   const { openAppointment } = useAppointment();
   return (
     <section className={styles.hero}>
-      {/* Background decorations */}
-      <div className={styles.bgDecor1} />
-      <div className={styles.bgDecor2} />
-      <div className={styles.bgDecor3} />
-
       <div className="container">
-        <div className={styles.heroGrid}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroGrid}>
           {/* Left Content */}
           <div className={styles.heroContent}>
             <motion.div
@@ -25,12 +21,8 @@ export default function FacialTraumaHero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <div className={styles.heroBadge}>
-                <Activity size={16} />
-                <span>Facial Trauma & Maxillofacial Surgery</span>
-              </div>
               <h1 className={styles.heroTitle}>
-                Advanced Emergency Care for <span className={styles.accent}>Facial Injuries, Reconstruction & Recovery</span>
+                Advanced Care for <span className={styles.accent}>Facial Injuries, Reconstruction & Recovery</span>
               </h1>
 
               <p className={styles.heroDescription}>
@@ -114,6 +106,7 @@ export default function FacialTraumaHero() {
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>
+          </div>
           </div>
         </div>
       </div>

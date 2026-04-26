@@ -262,10 +262,12 @@
 
   .imageSection {
     order: 1;
+    justify-content: center;
   }
 
   .contentSection {
     order: 2;
+    text-align: left;
   }
 
   .imageWrapper {

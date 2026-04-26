@@ -24,7 +24,7 @@ const ITEM_TYPES = [
   { value: "CONSULTATION", label: "Consultation", icon: Stethoscope, color: "#0E898F" },
   { value: "PROCEDURE",    label: "Procedure",    icon: Scissors,   color: "#8b5cf6" },
   { value: "LAB_TEST",     label: "Lab Test",     icon: FlaskConical,color: "#10b981" },
-  { value: "RADIOLOGY",    label: "Radiology",    icon: Scan,       color: "#f59e0b" },
+  { value: "RADIOLOGY",    label: "Radiology",    icon: Scan,       color: "#0E898F" },
   { value: "PHARMACY",     label: "Pharmacy",     icon: Pill,       color: "#ec4899" },
   { value: "ROOM_CHARGE",  label: "Room Charge",  icon: BedDouble,  color: "#06b6d4" },
   { value: "SURGERY",      label: "Surgery",      icon: Scissors,   color: "#ef4444" },
@@ -32,8 +32,8 @@ const ITEM_TYPES = [
 ];
 const PAYMENT_METHODS = ["CASH","CARD","UPI","NETBANKING","CHEQUE","DD","INSURANCE","OTHER"];
 const STATUS_COLORS: Record<string,{bg:string;color:string;label:string}> = {
-  PENDING:       { bg:"#fff7ed", color:"#c2410c", label:"Pending"       },
-  PARTIALLY_PAID:{ bg:"#fef3c7", color:"#b45309", label:"Partial"       },
+  PENDING:       { bg:"#E6F4F4", color:"#0E898F", label:"Pending"       },
+  PARTIALLY_PAID:{ bg:"#E6F4F4", color:"#0b7075", label:"Partial"       },
   PAID:          { bg:"#f0fdf4", color:"#166534", label:"Paid"          },
   CANCELLED:     { bg:"#fef2f2", color:"#dc2626", label:"Cancelled"     },
   DRAFT:         { bg:"#f1f5f9", color:"#475569", label:"Draft"         },
@@ -49,7 +49,7 @@ const apiFetch = async (url: string, opts?: RequestInit) => {
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function BillingModule() {
+export default function BillingModule({ scope }: { scope?: "lab" | "pharmacy" } = {}) {
   const [view, setView] = useState<BillView>("list");
   const [bills, setBills] = useState<any[]>([]);
   const [stats, setStats] = useState({ todayRevenue: 0, monthRevenue: 0, pendingCount: 0 });
@@ -85,6 +85,8 @@ export default function BillingModule() {
     if (statusFilter) params.set("status",   statusFilter);
     if (dateFrom)     params.set("dateFrom", dateFrom);
     if (dateTo)       params.set("dateTo",   dateTo);
+    if (scope === "lab") params.set("labOnly", "true");
+    if (scope === "pharmacy") params.set("pharmacyOnly", "true");
     const d = await apiFetch(`/api/billing?${params}`);
     if (d.success) {
       setBills(d.data.bills || []);
@@ -92,7 +94,7 @@ export default function BillingModule() {
       setStats(d.data.stats || { todayRevenue:0, monthRevenue:0, pendingCount:0 });
     }
     setListLoading(false);
-  }, [search, statusFilter, dateFrom, dateTo]);
+  }, [search, statusFilter, dateFrom, dateTo, scope]);
 
   useEffect(() => { fetchBills(1); }, [fetchBills]);
 
@@ -214,7 +216,7 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
         {[
           { label:"Today's Collection", val:fmtCur(stats.todayRevenue),  icon:<IndianRupee size={18}/>, bg:"#E6F4F4", ic:"#0E898F" },
           { label:"Month Revenue",       val:fmtCur(stats.monthRevenue),  icon:<TrendingUpIcon/>,        bg:"#f0fdf4", ic:"#10b981" },
-          { label:"Pending Bills",       val:stats.pendingCount,          icon:<Clock size={18}/>,       bg:"#fff7ed", ic:"#f59e0b" },
+          { label:"Pending Bills",       val:stats.pendingCount,          icon:<Clock size={18}/>,       bg:"#E6F4F4", ic:"#0E898F" },
           { label:"Total Bills",         val:pagination.total,            icon:<Receipt size={18}/>,     bg:"#fdf4ff", ic:"#a855f7" },
         ].map((s,i)=>(
           <div key={i} className="bm-stat-card" style={{background:s.bg}}>
@@ -1569,7 +1571,7 @@ function PrintBill({ bill, hospitalInfo }:{ bill:any; hospitalInfo:any }) {
 
       {/* Notes */}
       {bill.notes && (
-        <div style={{marginTop:16,padding:"10px 14px",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,fontSize:12,color:"#92400e"}}>
+        <div style={{marginTop:16,padding:"10px 14px",background:"#E6F4F4",border:"1px solid #b2d8da",borderRadius:8,fontSize:12,color:"#0b7075"}}>
           <b>Notes:</b> {bill.notes}
         </div>
       )}

@@ -30,7 +30,7 @@ import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
   Save, Ban, ChevronDown, ChevronUp, MessageSquare, UserCheck, Eye, Download,
   ShieldCheck, BarChart2, Package, UserPlus, ArrowUpDown, FileSpreadsheet,
-  FileType, AlertTriangle
+  FileType, AlertTriangle, Bed, CreditCard
 } from "lucide-react";
 
 const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Queue...</span></div> });
@@ -41,6 +41,14 @@ const NursingDashboardLazy = dynamic(() => import("@/components/NursingDashboard
 const HousekeepingDashboardLazy = dynamic(() => import("@/components/HousekeepingDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Housekeeping Dashboard...</span></div> });
 const AmbulanceDashboardLazy = dynamic(() => import("@/components/AmbulanceDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Ambulance Dashboard...</span></div> });
 const BiomedicalDashboardLazy = dynamic(() => import("@/components/BiomedicalDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Biomedical Dashboard...</span></div> });
+const LabDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/LabDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Lab Dashboard...</span></div> });
+const CriticalCareDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/CriticalCareDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Critical Care Dashboard...</span></div> });
+const SpecialtyClinicDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/SpecialtyClinicDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Specialty Dashboard...</span></div> });
+const OPDDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void; meta?: any }>(() => import("@/components/OPDDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading OPD Dashboard...</span></div> });
+const PathologyDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/PathologyDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Pathology Dashboard...</span></div> });
+const BillingDepartmentDashboardLazy = dynamic<{ profile: any; user: any; activeTab: string; onTabChange: (t: string) => void; meta: any }>(() => import("@/components/BillingDepartmentDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Dashboard...</span></div> });
+const AccountSettingsPanelLazy = dynamic<{ user: any }>(() => import("@/components/AccountSettingsPanel"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Account Settings...</span></div> });
+const HRDepartmentDashboardLazy = dynamic<{ profile: any; user: any; activeTab: string; onTabChange: (t: string) => void; meta: any }>(() => import("@/components/HRDepartmentDashboard"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading HR Dashboard...</span></div> });
 
 // ─── Department metadata ──────────────────────────────────────────────────────
 type DeptMeta = { Icon: any; gradient: string; accent: string; lightBg: string; borderColor: string };
@@ -57,6 +65,8 @@ const SUB_DEPT_META: Record<string, DeptMeta> = {
   LABORATORY:  { Icon: TestTube2,   gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
   PROCEDURE:   { Icon: Stethoscope, gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
   RECEPTION:   { Icon: Users,       gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
+  OPD:              { Icon: Building2,   gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0E898F", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  GENERAL_MEDICINE: { Icon: Stethoscope, gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0E898F", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
   NURSING:     { Icon: Heart,       gradient: "linear-gradient(135deg,#ec4899,#be185d)", accent: "#be185d", lightBg: "#fdf2f8", borderColor: "#fbcfe8" },
   HOUSEKEEPING:{ Icon: ClipboardList,gradient: "linear-gradient(135deg,#f97316,#c2410c)", accent: "#c2410c", lightBg: "#fff7ed", borderColor: "#fed7aa" },
   AMBULANCE:   { Icon: Activity,    gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
@@ -93,7 +103,7 @@ function SubDeptDashboardContent() {
   const [profile, setProfile] = useState<any>(null);
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"finance"|"revenue"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept">("overview");
+  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"billing-queue"|"all-bills"|"finance"|"revenue"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept"|"account-settings"|"staff">("overview");
 
   // Sync tab from URL on mount
   useEffect(() => {
@@ -269,6 +279,18 @@ function SubDeptDashboardContent() {
       setLoading(false);
     })();
   }, [router, loadSessions]);
+
+  // ── Listen for profile updates from AccountSettingsPanel ──
+  useEffect(() => {
+    const handleProfileUpdate = async () => {
+      try {
+        const me = await fetch("/api/auth/me", { credentials: "include", cache: "no-store", headers: { "Cache-Control": "no-cache" } }).then(r => r.json());
+        if (me.success) setUser(me.data);
+      } catch {}
+    };
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdate);
+  }, []);
 
   // ── Load queue ──
   const loadQueue = useCallback(async () => {
@@ -742,43 +764,75 @@ function SubDeptDashboardContent() {
   // Type-based predefined tabs
   const deptType = profile?.type || "OTHER";
   const TYPE_TABS: Record<string, string[]> = {
-    DENTAL:      ["overview","queue","procedures","records","inventory","reports","dept"],
-    DERMATOLOGY: ["overview","queue","procedures","records","inventory","reports","dept"],
-    HAIR:        ["overview","queue","procedures","records","inventory","reports","dept"],
-    ONCOLOGY:    ["overview","queue","procedures","records","inventory","reports","dept"],
-    CARDIOLOGY:  ["overview","queue","procedures","records","inventory","reports","dept"],
-    RECEPTION:   ["overview","appointments","billing","patients","doctors","inventory","reports","dept"],
-    PHARMACY:    ["overview","queue","inventory","billing","revenue","reports","dept"],
-    NURSING:     ["overview","inventory","dept"],
-    HOUSEKEEPING:["overview","inventory","dept"],
-    AMBULANCE:   ["overview","inventory","dept"],
-    BIOMEDICAL:  ["overview","inventory","dept"],
-    BILLING:     ["overview","queue","billing","records","inventory","reports","dept"],
-    PATHOLOGY:   ["overview","queue","procedures","records","inventory","reports","dept"],
-    RADIOLOGY:   ["overview","queue","procedures","records","inventory","reports","dept"],
-    LABORATORY:  ["overview","queue","procedures","records","inventory","reports","dept"],
-    PROCEDURE:   ["overview","queue","procedures","records","inventory","reports","dept"],
-    OTHER:       ["overview","queue","procedures","records","inventory","reports","dept"],
+    DENTAL:           ["overview","queue","procedures","records","inventory","reports","dept"],
+    DERMATOLOGY:      ["overview","queue","procedures","records","inventory","reports","dept"],
+    HAIR:             ["overview","queue","procedures","records","inventory","reports","dept"],
+    ONCOLOGY:         ["overview","queue","procedures","records","inventory","reports","dept"],
+    CARDIOLOGY:       ["overview","queue","procedures","records","inventory","reports","dept"],
+    COSMETIC:         ["overview","queue","procedures","records","inventory","reports","dept"],
+    PHYSIOTHERAPY:    ["overview","queue","procedures","records","inventory","reports","dept"],
+    DIALYSIS:         ["overview","queue","procedures","records","inventory","reports","dept"],
+    GYNECOLOGY:       ["overview","queue","procedures","records","inventory","reports","dept"],
+    PEDIATRICS:       ["overview","queue","procedures","records","inventory","reports","dept"],
+    RECEPTION:        ["overview","appointments","billing","patients","doctors","inventory","reports","dept"],
+    PHARMACY:         ["overview","queue","inventory","billing","revenue","reports","dept"],
+    NURSING:          ["overview","inventory","dept"],
+    HOUSEKEEPING:     ["overview","inventory","dept"],
+    AMBULANCE:        ["overview","inventory","dept"],
+    BIOMEDICAL:       ["overview","inventory","dept"],
+    BILLING:          ["overview","billing-queue","finance","inventory","reports","dept"],
+    PATHOLOGY:        ["overview","orders","samples","results","reports","revenue","tests","panels","analytics","dept"],
+    RADIOLOGY:        ["overview","queue","records","reports","dept"],
+    LABORATORY:       ["overview","queue","records","reports","dept"],
+    BLOOD_BANK:       ["overview","queue","records","reports","dept"],
+    ECG:              ["overview","queue","records","reports","dept"],
+    ENDOSCOPY:        ["overview","queue","records","reports","dept"],
+    ICU:              ["overview","queue","records","reports","dept"],
+    EMERGENCY:        ["overview","queue","records","reports","dept"],
+    IPD:              ["overview","queue","records","reports","dept"],
+    OPD:              ["overview","appointments","queue","patients","consultations","records","reports","dept"],
+    GENERAL_MEDICINE: ["overview","appointments","queue","patients","consultations","records","reports","dept"],
+    OT:               ["overview","queue","procedures","records","reports","dept"],
+    SURGERY:          ["overview","queue","procedures","records","reports","dept"],
+    CLINICAL_PROCEDURE:["overview","queue","procedures","records","reports","dept"],
+    HR:               ["overview","staff","doctors","reports","dept"],
+    ACCOUNTS:         ["overview","queue","procedures","records","reports","dept"],
+    PROCEDURE:        ["overview","queue","procedures","records","inventory","reports","dept"],
+    OTHER:            ["overview","queue","procedures","records","inventory","reports","dept"],
+    CUSTOM:           ["overview","queue","procedures","records","inventory","reports","dept"],
   };
   const enabledTabs = new Set(TYPE_TABS[deptType] || TYPE_TABS.OTHER);
 
   const allNavItems: {id:string;label:string;icon:any;badge?:any}[] = [
     { id: "overview",      label: "Overview",           icon: <LayoutDashboard size={16}/> },
-    { id: "queue",         label: deptType === "PHARMACY" ? "Rx Queue" : "Referrals Today", icon: <UserCheck size={16}/>, badge: queue.length || null },
+    { id: "queue",         label: deptType === "PHARMACY" ? "Rx Queue" : ["OPD","GENERAL_MEDICINE"].includes(deptType) ? "Queue / Tokens" : "Referrals Today", icon: <UserCheck size={16}/>, badge: queue.length || null },
+    { id: "consultations",  label: "Consultations",       icon: <Stethoscope size={16}/> },
     { id: "procedures",    label: "Procedures",         icon: <ClipboardList size={16}/> },
     { id: "records",       label: "Patient Records",    icon: <IndianRupee size={16}/>,    badge: recordsMeta.todayRecords || null },
     { id: "appointments",  label: "Appointments",       icon: <CalendarDays size={16}/> },
     { id: "billing",       label: "Billing",            icon: <Receipt size={16}/> },
+    { id: "billing-queue",  label: "Billing Queue",      icon: <CreditCard size={16}/> },
+    
     { id: "patients",      label: "Patient Management", icon: <Users size={16}/> },
     { id: "doctors",       label: "Doctors",            icon: <Stethoscope size={16}/> },
     { id: "inventory",     label: "Inventory",          icon: <Package size={16}/> },
+        { id: "staff",          label: "Staff Management",   icon: <Users size={16}/> },
     { id: "purchases",    label: "Purchases",          icon: <Package size={16}/> },
-    { id: "reports",       label: "Reports",            icon: <BarChart2 size={16}/> },
+    { id: "reports",       label: deptType==="PATHOLOGY" ? "Report & Deliver" : "Reports", icon: <BarChart2 size={16}/> },
     { id: "revenue",       label: "Revenue / Expense",  icon: <IndianRupee size={16}/> },
     { id: "finance",       label: "Finance",            icon: <TrendingUp size={16}/> },
-    { id: "dept",          label: "Department",         icon: <Building2 size={16}/> },
+    // Pathology LIS tabs
+    { id: "orders",        label: "Lab Orders",        icon: <ClipboardList size={16}/> },
+    { id: "samples",       label: "Sample Collections", icon: <FlaskConical size={16}/> },
+    { id: "results",       label: "Result Entry",       icon: <Activity size={16}/> },
+    { id: "tests",         label: "Test Master",        icon: <TestTube2 size={16}/> },
+    { id: "panels",        label: "Test Panels",        icon: <Layers size={16}/> },
+    { id: "analytics",     label: "Analytics",          icon: <TrendingUp size={16}/> },
+    { id: "dept",          label: deptType==="PATHOLOGY" ? "Settings" : "Department", icon: <Building2 size={16}/> },
   ];
-  const navItems = allNavItems.filter(n => enabledTabs.has(n.id));
+  const navItems = (TYPE_TABS[deptType] || TYPE_TABS.OTHER)
+    .map(id => allNavItems.find(n => n.id === id))
+    .filter(Boolean) as {id:string;label:string;icon:any;badge?:any}[];
 
   const filteredQueue = queue.filter(q => {
     return !queueSearch ||
@@ -787,11 +841,14 @@ function SubDeptDashboardContent() {
       String(q.tokenNumber || "").includes(queueSearch);
   });
 
+  const TAB_TITLES: Record<string,string> = {"billing-queue":"Billing Queue","all-bills":"All Bills",overview:"Overview",queue:"Patient Queue",procedures:"Procedures",records:"Patient Records",appointments:"Appointments",billing:"Billing",finance:"Finance",doctors:"Doctors",patients:"Patient Management",inventory:"Inventory",reports:"Reports",revenue:"Revenue",dept:"Department Info",staff:"Staff Management"};
+
   return (
     <>
       <Preloader loading={loading} />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
         body{font-family:'Inter',sans-serif}
@@ -842,6 +899,19 @@ function SubDeptDashboardContent() {
         .sd2-flow-step{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#475569}
         .sd2-flow-arrow{color:#94a3b8;font-size:11px}
         .sd2-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700}
+        .hd-center{padding:0;overflow:visible}
+        .hd-pg-title{font-size:18px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
+        .hd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+        .hd-stat{background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+        .hd-stat-ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .hd-stat-num{font-size:22px;font-weight:800;color:#1e293b}
+        .hd-stat-lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+        .hd-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+        .hd-card-hd{padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+        .hd-table{width:100%;border-collapse:collapse}
+        .hd-table th{text-align:left;font-size:11px;font-weight:600;color:#94a3b8;padding:10px 14px;border-bottom:2px solid #f1f5f9;white-space:nowrap}
+        .hd-table td{padding:12px 14px;font-size:13px;color:#475569;border-bottom:1px solid #f8fafc;vertical-align:middle}
+        .hd-table tbody tr:hover td{background:#fafbff}
       `}</style>
 
       <div className="sd2" style={{"--grad":meta.gradient,"--acc":meta.accent,"--lbg":meta.lightBg,"--bc":meta.borderColor} as any}>
@@ -889,11 +959,7 @@ function SubDeptDashboardContent() {
           {/* Top Bar */}
           <header className="sd2-topbar">
             <div>
-              <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{{
-                overview:"Overview",queue:"Patient Queue",procedures:"Procedures",records:"Patient Records",
-                appointments:"Appointments",billing:"Billing",finance:"Finance",doctors:"Doctors",
-                patients:"Patient Management",inventory:"Inventory",reports:"Reports",revenue:"Revenue",dept:"Department Info"
-              }[tab] || "Overview"}</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{TAB_TITLES[tab] || "Overview"}</div>
               <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{today}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -940,7 +1006,7 @@ function SubDeptDashboardContent() {
                       </div>
                       <div style={{ padding: 8 }}>
                         <button 
-                          onClick={() => { setProfileDropdownOpen(false); router.push("/subdept/profile"); }}
+                          onClick={() => { setProfileDropdownOpen(false); setTab("account-settings" as any); }}
                           style={{
                             width: "100%",
                             padding: "10px 12px",
@@ -997,7 +1063,9 @@ function SubDeptDashboardContent() {
           <div className="sd2-body">
 
             {/* ═══════════════════ SUPPORT DEPARTMENT DASHBOARDS ═══════════════════ */}
-            {deptType === "PHARMACY" && tab !== "dept" ? (
+            {deptType === "PATHOLOGY" && tab !== "dept" ? (
+              <PathologyDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} />
+            ) : deptType === "PHARMACY" && tab !== "dept" ? (
               <PharmacyDashboardLazy profile={profile} user={user} activeTab={tab} />
             ) : deptType === "NURSING" ? (
               <NursingDashboardLazy profile={profile} user={user} />
@@ -1007,6 +1075,14 @@ function SubDeptDashboardContent() {
               <AmbulanceDashboardLazy profile={profile} user={user} />
             ) : deptType === "BIOMEDICAL" ? (
               <BiomedicalDashboardLazy profile={profile} user={user} />
+            ) : ["OPD","GENERAL_MEDICINE"].includes(deptType) ? (
+              <OPDDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
+            ) : tab === "account-settings" ? (
+              <AccountSettingsPanelLazy user={user} />
+            ) : deptType === "HR" && ["overview","staff","doctors"].includes(tab) ? (
+              <HRDepartmentDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
+            ) : deptType === "BILLING" && ["overview","billing-queue","finance","inventory"].includes(tab) ? (
+              <BillingDepartmentDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
             ) : (<>
 
             {/* ═══════════════════ OVERVIEW ═══════════════════ */}

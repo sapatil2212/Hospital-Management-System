@@ -26,10 +26,13 @@ export interface PaginatedResult<T> {
 
 // Generate next sequential patient ID for hospital
 export const generatePatientId = async (hospitalId: string): Promise<string> => {
-  // Get the count of existing patients to derive the next number
-  const count = await prisma.patient.count({ where: { hospitalId } });
-  const seq = count + 1;
-  // Pad to 4 digits; e.g., PT-0001
+  // Find the highest existing patientId to avoid collisions from deletions or concurrent requests
+  const last = await prisma.patient.findFirst({
+    where: { hospitalId, patientId: { startsWith: "PT-" } },
+    orderBy: { patientId: "desc" },
+    select: { patientId: true },
+  });
+  const seq = last ? (parseInt(last.patientId.slice(3), 10) + 1) : 1;
   return `PT-${seq.toString().padStart(4, "0")}`;
 };
 

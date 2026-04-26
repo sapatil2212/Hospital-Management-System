@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireHospitalAdmin } from "../../../../../backend/middlewares/role.middleware";
+import { requireRole } from "../../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import * as service from "../../../../../backend/services/central-inventory.service";
 
@@ -7,7 +7,7 @@ import * as service from "../../../../../backend/services/central-inventory.serv
 // Body: { subDepartmentId, subDeptName, items: [{ itemId, quantity }], notes? }
 // Auto-resolves Central→Dept locations + auto-approves transfer
 export async function POST(req: NextRequest) {
-  const auth = await requireHospitalAdmin(req);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "SUB_DEPT_HEAD"]);
   if (auth.error) return auth.error;
 
   try {

@@ -447,8 +447,8 @@ export default function PremiumAestheticPage() {
                 { icon: <Shield size={24} />, text: "Strong focus on safety, ethics, and patient satisfaction" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>

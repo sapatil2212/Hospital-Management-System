@@ -77,7 +77,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/treatments/hnf/2.png" 
+                    src="/treatments/oncology/screening.png" 
                     alt="Oral Cancer Screening" 
                     width={500} 
                     height={600} 
@@ -126,7 +126,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-cancer -2.png" 
+                    src="/treatments/oncology/diagnosis.png" 
                     alt="Head & Neck Tumor Diagnosis" 
                     width={500} 
                     height={600} 
@@ -175,7 +175,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Hnfcancer.png" 
+                    src="/treatments/oncology/screening.png" 
                     alt="Biopsy & Histopathology" 
                     width={500} 
                     height={600} 
@@ -224,7 +224,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-cancer.png" 
+                    src="/treatments/oncology/surgery.png" 
                     alt="Surgical Oncology" 
                     width={500} 
                     height={600} 
@@ -273,7 +273,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-cancer -2.png" 
+                    src="/treatments/oncology/surgery.png" 
                     alt="Reconstruction Surgeries" 
                     width={500} 
                     height={600} 
@@ -322,7 +322,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/Quick-Treatments/Hnfcancer.png" 
+                    src="/treatments/oncology/diagnosis.png" 
                     alt="Multidisciplinary Care" 
                     width={500} 
                     height={600} 
@@ -372,7 +372,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-cancer.png" 
+                    src="/treatments/oncology/rehab.png" 
                     alt="Palliative Support" 
                     width={500} 
                     height={600} 
@@ -421,7 +421,7 @@ export default function OncologyPage() {
               <div className={styles.aboutVisual}>
                 <div className={styles.aboutImageWrapper}>
                   <Image 
-                    src="/images/treatment-cancer -2.png" 
+                    src="/treatments/oncology/rehab.png" 
                     alt="De-Addiction Programs" 
                     width={500} 
                     height={600} 
@@ -449,8 +449,8 @@ export default function OncologyPage() {
                 { icon: <Target size={24} />, text: "Strong focus on prevention and awareness" },
               ].map((feature, index) => (
                 <div key={index} className={styles.featureItem}>
-                  <span className={styles.featureIcon}>{feature.icon}</span>
-                  <span>{feature.text}</span>
+                  <div className={styles.featureIcon}>{feature.icon}</div>
+                  <span className={styles.featureTitle}>{feature.text}</span>
                 </div>
               ))}
             </div>
@@ -459,9 +459,9 @@ export default function OncologyPage() {
 
         {/* CTA Section — Home Page Style */}
         <CTASection
-          title="Book a Cancer Screening <br /> Consultation"
+          title="chedule Your Cancer Screening Consultation"
           description="Early detection can make a life-saving difference. Take the first step toward timely diagnosis and expert care at Celeb Aesthetica."
-          imageSrc="/images/Quick-Treatments/Hnfcancer.png"
+          imageSrc="/treatments/oncology/hnf-cta.png"
           imageAlt="Expert Oncology Care"
         />
       </main>

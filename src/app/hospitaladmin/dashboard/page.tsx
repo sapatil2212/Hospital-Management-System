@@ -1,4 +1,5 @@
-﻿"use client";
+// Hot-reload trigger
+"use client";
 import { useEffect, useState, Suspense, Fragment, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";

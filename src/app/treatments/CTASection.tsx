@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useAppointment } from "@/components/AppointmentProvider";
 import styles from "./treatments.module.css";
 
@@ -35,17 +36,23 @@ export default function CTASection({
               className={styles.ctaButtonWhite}
               onClick={openAppointment}
             >
-              Book Appointment Now
-              <ArrowRight size={18} className={styles.ctaButtonIcon} />
+              Book Appointment
+              <ArrowRight size={16} className={styles.ctaButtonIcon} />
             </button>
+            <Link
+              href="/contact"
+              className={styles.ctaButtonOutline}
+            >
+              Contact us
+            </Link>
           </div>
         </div>
         <div className={styles.ctaImageWrapper}>
           <Image
             src={imageSrc}
             alt={imageAlt}
-            width={500}
-            height={600}
+            width={400}
+            height={480}
             className={styles.ctaImage}
             priority
           />

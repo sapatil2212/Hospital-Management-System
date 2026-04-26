@@ -40,6 +40,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedZone, preSele
     consent: false
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [showTerms, setShowTerms] = useState(false);
   
   // Dropdown states
@@ -87,13 +89,57 @@ export default function BookingModal({ isOpen, onClose, preSelectedZone, preSele
   const availableStates = selectedRegionData?.states || [];
   const filteredStates = availableStates.filter(s => s.name.toLowerCase().includes(stateSearch.toLowerCase()));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-    }, 2000);
+    setSubmitting(true);
+    setSubmitError("");
+
+    const regionName = medicalTourismData.find(z => z.id === formData.region)?.name || formData.region;
+    const stateName  = availableStates.find(s => s.id === formData.state)?.name || formData.state;
+    const procedureLabel = formData.procedure.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    const treatmentLabel = formData.treatmentType === "dental" ? "Dental" : formData.treatmentType === "aesthetic" ? "Aesthetic / Cosmetic" : formData.treatmentType;
+
+    const detailParts: string[] = [];
+    if (regionName)     detailParts.push(`Region: ${regionName}`);
+    if (stateName)      detailParts.push(`Destination State: ${stateName}`);
+    if (procedureLabel) detailParts.push(`Procedure: ${procedureLabel}`);
+    if (formData.travelMonth) detailParts.push(`Preferred Travel Month: ${new Date(formData.travelMonth + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" })}`);
+    if (formData.persons)    detailParts.push(`Number of Persons: ${formData.persons}`);
+    if (formData.contactMethod) detailParts.push(`Preferred Contact: ${formData.contactMethod.charAt(0).toUpperCase() + formData.contactMethod.slice(1)}`);
+    if (formData.concern) detailParts.push(`\nPatient Concern:\n${formData.concern}`);
+
+    const payload = {
+      fullName:    formData.name,
+      mobile:      formData.phone,
+      email:       formData.email,
+      country:     formData.country,
+      state:       stateName,
+      department:  treatmentLabel,
+      enquiryType: "MEDICAL_TOURISM",
+      details:     detailParts.join("\n"),
+    };
+
+    try {
+      const res = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+        setTimeout(() => {
+          setSubmitted(false);
+          onClose();
+        }, 3500);
+      } else {
+        setSubmitError(data.message || "Submission failed. Please try again.");
+      }
+    } catch {
+      setSubmitError("Network error. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -111,8 +157,8 @@ export default function BookingModal({ isOpen, onClose, preSelectedZone, preSele
             {submitted ? (
               <div className={styles.successMessage}>
                 <div className={styles.successIcon}><Check size={32} /></div>
-                <h4>Thank You!</h4>
-                <p>We&apos;ll contact you within 24 hours.</p>
+                <h4>Request Submitted!</h4>
+                <p>A confirmation email has been sent to <strong>{formData.email}</strong>. Our team will contact you within 24 hours.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className={styles.bookingForm}>
@@ -296,7 +342,21 @@ export default function BookingModal({ isOpen, onClose, preSelectedZone, preSele
                   </label>
                 </div>
 
-                <button type="submit" className={styles.submitBtn}><Send size={16} /> Get Free Consultation</button>
+                {submitError && (
+                  <div style={{ background: "#fff5f5", border: "1px solid #feb2b2", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#c53030", display: "flex", alignItems: "center", gap: 8 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {submitError}
+                  </div>
+                )}
+
+                <button type="submit" disabled={submitting} className={styles.submitBtn} style={{ opacity: submitting ? 0.75 : 1, cursor: submitting ? "not-allowed" : "pointer" }}>
+                  {submitting ? (
+                    <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin .7s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Submitting...</>
+                  ) : (
+                    <><Send size={16} /> Get Free Consultation</>
+                  )}
+                </button>
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               </form>
             )}
           </div>

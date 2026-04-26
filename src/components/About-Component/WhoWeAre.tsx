@@ -12,48 +12,18 @@ export default function WhoWeAre() {
   return (
     <section className={styles.whoWeAreSection} ref={ref}>
       <div className="container">
-        <motion.div
-          className={styles.sectionHeader}
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          style={{ textAlign: "center", marginBottom: "var(--space-12)" }}
-        >
-          <h2 className="section-title">
-            Redefining Healthcare with AI
-          </h2>
-          <p className="section-subtitle">
-            Pioneering the future of medical technology with ethical, patient-first care.
-          </p>
-        </motion.div>
-
         <div className={styles.container}>
-          {/* Left Side - Content */}
-          <motion.div
-            className={styles.contentSection}
-            initial={{ opacity: 0, x: -40 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <p className="section-subtitle" style={{ textAlign: "left", margin: "0", maxWidth: "100%", fontSize: "var(--font-size-lg)", marginBottom: "var(--space-4)" }}>
-              Celeb Aesthetica is proudly recognized as India's first AI-based robotic aesthetic hospital, specializing in skin, hair, dental, and head & neck oncology (HNF oncology). We are at the forefront of modern healthcare, where advanced technology seamlessly integrates with ethical, patient-first care to deliver exceptional clinical outcomes.
-            </p>
-
-            <p className="section-subtitle" style={{ textAlign: "left", margin: "0", maxWidth: "100%", fontSize: "var(--font-size-lg)" }}>
-              Our mission is to transform the healthcare experience by combining Artificial Intelligence (AI), robotic precision, and globally approved medical technologies—ensuring accurate diagnosis, personalized treatment planning, and safe, long-lasting results.
-            </p>
-          </motion.div>
-
-          {/* Right Side - Image */}
+          {/* Left Side - Image */}
           <motion.div
             className={styles.imageSection}
-            initial={{ opacity: 0, x: 40 }}
+            initial={{ opacity: 0, x: -40 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6 }}
           >
             <div className={styles.imageWrapper}>
               <Image
-                src="/images/about-team.png"
-                alt="Medical Team with Patient"
+                src="/images/indian_ai_healthcare.png"
+                alt="Indian Doctor using AI Interface"
                 width={480}
                 height={380}
                 className={styles.mainImage}
@@ -86,6 +56,28 @@ export default function WhoWeAre() {
                 </div>
               </motion.div>
             </div>
+          </motion.div>
+
+          {/* Right Side - Content */}
+          <motion.div
+            className={styles.contentSection}
+            initial={{ opacity: 0, x: 40 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <h2 className="section-title">
+              Redefining Healthcare with AI
+            </h2>
+            <p className="section-subtitle" style={{ textAlign: "left", margin: 0, maxWidth: "100%", marginBottom: "var(--space-4)" }}>
+              Pioneering the future of medical technology with ethical, patient-first care.
+            </p>
+            <p className={styles.description}>
+              Celeb Aesthetica is proudly recognized as India's first AI-based robotic aesthetic hospital, specializing in skin, hair, dental, and head & neck oncology (HNF oncology). We are at the forefront of modern healthcare, where advanced technology seamlessly integrates with ethical, patient-first care to deliver exceptional clinical outcomes.
+            </p>
+
+            <p className={styles.description}>
+              Our mission is to transform the healthcare experience by combining Artificial Intelligence (AI), robotic precision, and globally approved medical technologies—ensuring accurate diagnosis, personalized treatment planning, and safe, long-lasting results.
+            </p>
           </motion.div>
         </div>
       </div>

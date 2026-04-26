@@ -77,7 +77,7 @@ const PAYMENT_MODES = ["Bank Transfer", "Cheque", "Cash", "UPI", "Online"];
 const PAYMENT_METHODS = ["CASH", "UPI", "CARD", "BANK_TRANSFER", "CHEQUE", "ONLINE"];
 
 type Tab = "overview" | "stock" | "suppliers" | "transfers" | "purchases";
-const CHART_COLORS = ["#0E898F", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#3b82f6", "#ec4899", "#14b8a6"];
+const CHART_COLORS = ["#0E898F", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#14b8a6"];
 
 export default function AdminInventoryPanel() {
   const [tab, setTab] = useState<Tab>("overview");
@@ -379,7 +379,7 @@ export default function AdminInventoryPanel() {
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }} />
-                  <Bar dataKey="qty" name="Quantity" radius={[6, 6, 0, 0]} fill="#f59e0b" />
+                  <Bar dataKey="qty" name="Quantity" radius={[6, 6, 0, 0]} fill="#0E898F" />
                 </BarChart>
               </ResponsiveContainer>
             ) : <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>No departments have stock yet</div>}
@@ -424,7 +424,7 @@ export default function AdminInventoryPanel() {
               {[
                 { label: "Add New Item", icon: <Plus size={16} />, color: "#0E898F", bg: "#E6F4F4", action: () => setItemModal({ mode: "add", item: null }) },
                 { label: "Restock / Purchase", icon: <ShoppingCart size={16} />, color: "#10b981", bg: "#f0fdf4", action: () => setShowRestock(true) },
-                { label: "Transfer to Dept", icon: <Truck size={16} />, color: "#f59e0b", bg: "#fffbeb", action: () => setShowQuickTransfer(true) },
+                { label: "Transfer to Dept", icon: <Truck size={16} />, color: "#0E898F", bg: "#E6F4F4", action: () => setShowQuickTransfer(true) },
                 { label: "View All Purchases", icon: <Receipt size={16} />, color: "#8b5cf6", bg: "#f5f3ff", action: () => setTab("purchases") },
                 { label: "Manage Suppliers", icon: <Users size={16} />, color: "#3b82f6", bg: "#eff6ff", action: () => setTab("suppliers") },
               ].map((a, i) => (
@@ -691,10 +691,10 @@ export default function AdminInventoryPanel() {
             const pharmTotal = pharmPurch.reduce((s:number,p:any)=>s+(p.grandTotal||p.totalAmount||0),0);
             const adminTotal = adminPurch.reduce((s:number,p:any)=>s+(p.grandTotal||p.totalAmount||0),0);
             if (pharmPurch.length > 0) return (
-              <div style={{ background: "#fffbeb", borderRadius: 10, padding: "10px 16px", border: "1px solid #fde68a", marginBottom: 12, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#92400e" }}>📊 Purchase Breakdown:</span>
+              <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 16px", border: "1px solid #b2d8da", marginBottom: 12, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#0b7075" }}>📊 Purchase Breakdown:</span>
                 <span style={{ fontSize: 12, color: "#64748b" }}>Admin: <strong style={{ color: "#1e293b" }}>{adminPurch.length} orders</strong> · {fmtCur(adminTotal)}</span>
-                <span style={{ fontSize: 12, color: "#64748b" }}>Sub-Departments: <strong style={{ color: "#92400e" }}>{pharmPurch.length} orders</strong> · {fmtCur(pharmTotal)}</span>
+                <span style={{ fontSize: 12, color: "#64748b" }}>Sub-Departments: <strong style={{ color: "#0b7075" }}>{pharmPurch.length} orders</strong> · {fmtCur(pharmTotal)}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: "#0E898F", marginLeft: "auto" }}>Grand Total: {fmtCur(pharmTotal + adminTotal)}</span>
               </div>
             ); return null;
@@ -1130,9 +1130,9 @@ export default function AdminInventoryPanel() {
 
                 {/* Notes */}
                 {vt.notes && (
-                  <div style={{ marginTop: 16, padding: "10px 14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a" }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Notes</div>
-                    <div style={{ fontSize: 12, color: "#78350f" }}>{vt.notes}</div>
+                  <div style={{ marginTop: 16, padding: "10px 14px", background: "#E6F4F4", borderRadius: 10, border: "1px solid #b2d8da" }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "#0b7075", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Notes</div>
+                    <div style={{ fontSize: 12, color: "#0b7075" }}>{vt.notes}</div>
                   </div>
                 )}
               </div>
@@ -1596,7 +1596,7 @@ function RestockModal({ items, suppliers, onClose, onSuccess }: { items: any[]; 
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><CheckCircle2 size={28} color="#16a34a" /></div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#166534" }}>Purchase Recorded!</div>
             <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>{pItems.length} item(s) restocked - {fmtCur(grandTotal)} total</div>
-            {form.paymentType === "CREDIT" && <div style={{ fontSize: 12, color: "#f59e0b", marginTop: 6 }}>Payment due: {fmtDate(form.dueDate)} - Reminder will appear on due date</div>}
+            {form.paymentType === "CREDIT" && <div style={{ fontSize: 12, color: "#0E898F", marginTop: 6 }}>Payment due: {fmtDate(form.dueDate)} - Reminder will appear on due date</div>}
             <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 20 }}>
               <button onClick={() => onSuccess(done)} style={{ padding: "10px 24px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "none", display: "flex", alignItems: "center", gap: 6 }}><Eye size={14} /> View Invoice</button>
               <button onClick={() => onSuccess()} style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: "#10b981", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "none" }}>Done</button>
@@ -1701,11 +1701,11 @@ function RestockModal({ items, suppliers, onClose, onSuccess }: { items: any[]; 
                   {(["CREDIT", "PAID"] as const).map(t => (
                     <button key={t} type="button" onClick={() => setForm({ ...form, paymentType: t })} style={{
                       flex: 1, padding: "12px 16px", borderRadius: 10, cursor: "pointer", textAlign: "center",
-                      border: form.paymentType === t ? `2px solid ${t === "PAID" ? "#10b981" : "#f59e0b"}` : "1.5px solid #e2e8f0",
-                      background: form.paymentType === t ? (t === "PAID" ? "#f0fdf4" : "#fffbeb") : "#fff",
+                      border: form.paymentType === t ? `2px solid ${t === "PAID" ? "#10b981" : "#0E898F"}` : "1.5px solid #e2e8f0",
+                      background: form.paymentType === t ? (t === "PAID" ? "#f0fdf4" : "#E6F4F4") : "#fff",
                       boxShadow: "none",
                     }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: form.paymentType === t ? (t === "PAID" ? "#166534" : "#92400e") : "#64748b" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: form.paymentType === t ? (t === "PAID" ? "#166534" : "#0b7075") : "#64748b" }}>
                         {t === "CREDIT" ? "Credit (Pay Later)" : "Pay Now"}
                       </div>
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>
@@ -1741,9 +1741,9 @@ function RestockModal({ items, suppliers, onClose, onSuccess }: { items: any[]; 
                       />
                       {dueDateError && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4, fontWeight: 600 }}>{dueDateError}</div>}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fef3c7" }}>
-                      <Bell size={16} color="#f59e0b" />
-                      <div style={{ fontSize: 11, color: "#92400e" }}><strong>Reminder</strong> will auto-appear on the due date at 12:00 PM noon as a popup notification</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#E6F4F4", borderRadius: 10, border: "1px solid #b2d8da" }}>
+                      <Bell size={16} color="#0E898F" />
+                      <div style={{ fontSize: 11, color: "#0b7075" }}><strong>Reminder</strong> will auto-appear on the due date at 12:00 PM noon as a popup notification</div>
                     </div>
                   </div>
                 )}
@@ -1867,7 +1867,7 @@ function AddSupplierModal({ existing, onClose, onSuccess }: { existing: any; onC
             </div>
           </>}
           {section === "compliance" && <>
-            <div style={{ background: "#fffbeb", borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontSize: 11, color: "#92400e" }}><strong>Compliance</strong> - Store license and tax details</div>
+            <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontSize: 11, color: "#0b7075" }}><strong>Compliance</strong> - Store license and tax details</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               <div className="hd-mf"><label className="hd-ml">GST Number</label><input className="hd-mi" name="gstNumber" value={form.gstNumber} onChange={h} style={{ textTransform: "uppercase" }} /></div>
               <div className="hd-mf"><label className="hd-ml">PAN Number</label><input className="hd-mi" name="panNumber" value={form.panNumber} onChange={h} style={{ textTransform: "uppercase" }} /></div>
@@ -2191,7 +2191,7 @@ function QuickTransferModal({ onClose, onSuccess }: { onClose: () => void; onSuc
                 disabled={!selectedCategory || categoryItems.length === 0}
                 renderValue={(it: any) => it.name}
                 renderOption={(it: any) => {
-                  const stockColor = (it.totalStock ?? 0) > (it.minStock ?? 10) ? "#10b981" : (it.totalStock ?? 0) > 5 ? "#f59e0b" : "#ef4444";
+                  const stockColor = (it.totalStock ?? 0) > (it.minStock ?? 10) ? "#10b981" : (it.totalStock ?? 0) > 5 ? "#0E898F" : "#ef4444";
                   return (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                       <div style={{ minWidth: 0 }}>
@@ -2797,12 +2797,12 @@ function PaymentReminderPopup({ reminders, onClose, onPay }: { reminders: any[];
             const isOverdue = new Date(r.dueDate) < new Date();
             const balance = (r.grandTotal || r.totalAmount || 0) - (r.amountPaid || 0);
             return (
-              <div key={r.id} style={{ padding: "14px 16px", borderRadius: 12, marginBottom: 10, border: `1.5px solid ${isOverdue ? "#fecaca" : "#fef3c7"}`, background: isOverdue ? "#fff5f5" : "#fffbeb" }}>
+              <div key={r.id} style={{ padding: "14px 16px", borderRadius: 12, marginBottom: 10, border: `1.5px solid ${isOverdue ? "#fecaca" : "#b2d8da"}`, background: isOverdue ? "#fff5f5" : "#E6F4F4" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{r.purchaseNo}</div>
                     <div style={{ fontSize: 12, color: "#64748b" }}>{r.supplier?.name || "Unknown"} - {r._count?.items || 0} items</div>
-                    <div style={{ fontSize: 11, color: isOverdue ? "#ef4444" : "#f59e0b", fontWeight: 600, marginTop: 4 }}>
+                    <div style={{ fontSize: 11, color: isOverdue ? "#ef4444" : "#0E898F", fontWeight: 600, marginTop: 4 }}>
                       {isOverdue ? `Overdue since ${fmtDate(r.dueDate)}` : `Due: ${fmtDate(r.dueDate)}`}
                     </div>
                   </div>

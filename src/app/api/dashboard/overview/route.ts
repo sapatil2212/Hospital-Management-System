@@ -164,6 +164,7 @@ export async function GET(req: NextRequest) {
           appointmentCount: 0,
           firstSlot: appt.timeSlot,
           lastSlot: appt.timeSlot,
+          fromAvailability: false,
         });
       }
       if (appt.doctor && doctorMap.has(appt.doctor.id)) {
@@ -173,7 +174,36 @@ export async function GET(req: NextRequest) {
         }
       }
     }
-    const doctorsOnDuty = Array.from(doctorMap.values()).slice(0, 8);
+
+    // Also include doctors with scheduled availability for today's day-of-week
+    const DAY_NAMES = ["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
+    const todayDayName = DAY_NAMES[now.getDay()];
+    const availableDoctors = await px.doctorAvailability.findMany({
+      where: { isActive: true, day: todayDayName, doctor: { hospitalId, isActive: true } },
+      select: {
+        startTime: true,
+        endTime: true,
+        doctor: { select: { id: true, name: true, specialization: true, department: { select: { name: true } } } },
+      },
+    }).catch(() => []);
+
+    for (const av of availableDoctors) {
+      if (!av.doctor) continue;
+      if (!doctorMap.has(av.doctor.id)) {
+        doctorMap.set(av.doctor.id, {
+          id: av.doctor.id,
+          name: av.doctor.name,
+          specialization: av.doctor.specialization,
+          department: av.doctor.department?.name || av.doctor.specialization,
+          appointmentCount: 0,
+          firstSlot: av.startTime,
+          lastSlot: av.endTime,
+          fromAvailability: true,
+        });
+      }
+    }
+
+    const doctorsOnDuty = Array.from(doctorMap.values()).slice(0, 10);
 
     // Follow-up stats
     const followUpStats = await px.followUp.findMany({
