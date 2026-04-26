@@ -781,7 +781,7 @@ function SubDeptDashboardContent() {
     AMBULANCE:        ["overview","inventory","dept"],
     BIOMEDICAL:       ["overview","inventory","dept"],
     BILLING:          ["overview","billing-queue","finance","inventory","reports","dept"],
-    PATHOLOGY:        ["overview","orders","samples","results","reports","revenue","tests","panels","analytics","dept"],
+    PATHOLOGY:        ["overview","orders","samples","results","reports","revenue","tests","panels","analytics"],
     RADIOLOGY:        ["overview","queue","records","reports","dept"],
     LABORATORY:       ["overview","queue","records","reports","dept"],
     BLOOD_BANK:       ["overview","queue","records","reports","dept"],
@@ -795,7 +795,7 @@ function SubDeptDashboardContent() {
     OT:               ["overview","queue","procedures","records","reports","dept"],
     SURGERY:          ["overview","queue","procedures","records","reports","dept"],
     CLINICAL_PROCEDURE:["overview","queue","procedures","records","reports","dept"],
-    HR:               ["overview","staff","doctors","reports","dept"],
+    HR:               ["overview","staff","doctors"],
     ACCOUNTS:         ["overview","queue","procedures","records","reports","dept"],
     PROCEDURE:        ["overview","queue","procedures","records","inventory","reports","dept"],
     OTHER:            ["overview","queue","procedures","records","inventory","reports","dept"],
@@ -1063,8 +1063,10 @@ function SubDeptDashboardContent() {
           <div className="sd2-body">
 
             {/* ═══════════════════ SUPPORT DEPARTMENT DASHBOARDS ═══════════════════ */}
-            {deptType === "PATHOLOGY" && tab !== "dept" ? (
+            {deptType === "PATHOLOGY" && tab !== "dept" && tab !== "account-settings" ? (
               <PathologyDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} />
+            ) : tab === "account-settings" ? (
+              <AccountSettingsPanelLazy user={user} />
             ) : deptType === "PHARMACY" && tab !== "dept" ? (
               <PharmacyDashboardLazy profile={profile} user={user} activeTab={tab} />
             ) : deptType === "NURSING" ? (
@@ -1077,8 +1079,6 @@ function SubDeptDashboardContent() {
               <BiomedicalDashboardLazy profile={profile} user={user} />
             ) : ["OPD","GENERAL_MEDICINE"].includes(deptType) ? (
               <OPDDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
-            ) : tab === "account-settings" ? (
-              <AccountSettingsPanelLazy user={user} />
             ) : deptType === "HR" && ["overview","staff","doctors"].includes(tab) ? (
               <HRDepartmentDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
             ) : deptType === "BILLING" && ["overview","billing-queue","finance","inventory"].includes(tab) ? (

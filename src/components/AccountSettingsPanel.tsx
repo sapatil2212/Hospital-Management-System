@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import {
   Building2, User, Mail, Save, Loader2, CheckCircle, AlertCircle,
-  Shield, Key, Camera, Lock, Eye, EyeOff,
+  Shield, Key, Camera, Lock, Eye, EyeOff, Phone, FileText, Palette,
 } from "lucide-react";
 
 interface Props {
@@ -19,6 +19,12 @@ export default function AccountSettingsPanel({ user: parentUser }: Props) {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Department info state
+  const [deptData, setDeptData] = useState<any>(null);
+  const [deptForm, setDeptForm] = useState({ name: "", description: "", hodPhone: "", hodEmail: "", hodName: "" });
+  const [deptSaving, setDeptSaving] = useState(false);
+  const [deptMessage, setDeptMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Change password state
   const [cpOld, setCpOld] = useState("");
@@ -38,7 +44,25 @@ export default function AccountSettingsPanel({ user: parentUser }: Props) {
       setUserData(d.data);
       setFormData({ name: d.data.name || "", email: d.data.email || "" });
       setProfilePhoto(d.data.profilePhoto || null);
+      if (d.data.role === "SUB_DEPT_HEAD") loadDeptProfile();
     } catch {} finally { setLoading(false); }
+  };
+
+  const loadDeptProfile = async () => {
+    try {
+      const r = await fetch("/api/subdept/me", { credentials: "include" });
+      const d = await r.json();
+      if (d.success) {
+        setDeptData(d.data);
+        setDeptForm({
+          name: d.data.name || "",
+          description: d.data.description || "",
+          hodPhone: d.data.hodPhone || "",
+          hodEmail: d.data.hodEmail || "",
+          hodName: d.data.hodName || "",
+        });
+      }
+    } catch {}
   };
 
   useEffect(() => { loadUser(); }, []);
@@ -133,6 +157,31 @@ export default function AccountSettingsPanel({ user: parentUser }: Props) {
       setCpMessage({ type: "error", text: "Network error. Please try again." });
     } finally {
       setCpSaving(false);
+    }
+  };
+
+  const handleDeptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeptSaving(true);
+    setDeptMessage(null);
+    try {
+      const res = await fetch("/api/subdept/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(deptForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDeptMessage({ type: "success", text: "Department information updated successfully!" });
+        await loadDeptProfile();
+      } else {
+        setDeptMessage({ type: "error", text: data.message || "Failed to update department" });
+      }
+    } catch {
+      setDeptMessage({ type: "error", text: "Network error. Please try again." });
+    } finally {
+      setDeptSaving(false);
     }
   };
 
@@ -243,6 +292,89 @@ export default function AccountSettingsPanel({ user: parentUser }: Props) {
           </div>
         </form>
       </div>
+
+      {/* Department Information Section — only for SUB_DEPT_HEAD */}
+      {(u?.role === "SUB_DEPT_HEAD" || deptData) && (
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 28, marginTop: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+            <Building2 size={16} color="#0E898F" />Department Information
+          </h3>
+          <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>
+            Update your department's display name, description, and contact details.
+          </p>
+
+          {deptData && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: 20 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: "linear-gradient(135deg,#0E898F,#0b7075)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Building2 size={18} color="#fff" />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{deptData.name}</div>
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{deptData.type?.replace(/_/g, " ")} · Code: {deptData.code}</div>
+              </div>
+              <span style={{ marginLeft: "auto", padding: "3px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: deptData.isActive ? "#f0fdf4" : "#fef2f2", color: deptData.isActive ? "#16a34a" : "#dc2626", border: `1px solid ${deptData.isActive ? "#bbf7d0" : "#fecaca"}` }}>
+                {deptData.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
+          )}
+
+          {deptMessage && (
+            <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, background: deptMessage.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${deptMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: deptMessage.type === "success" ? "#16a34a" : "#dc2626", fontSize: 12, fontWeight: 500 }}>
+              {deptMessage.type === "success" ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+              {deptMessage.text}
+            </div>
+          )}
+
+          <form onSubmit={handleDeptSubmit}>
+            <div style={{ display: "grid", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Department Name</label>
+                  <div style={{ position: "relative" }}>
+                    <Building2 size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                    <input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" as any }} placeholder="Department display name" />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>HOD Name</label>
+                  <div style={{ position: "relative" }}>
+                    <User size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                    <input value={deptForm.hodName} onChange={(e) => setDeptForm({ ...deptForm, hodName: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" as any }} placeholder="Head of Department name" />
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>HOD Phone</label>
+                  <div style={{ position: "relative" }}>
+                    <Phone size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                    <input value={deptForm.hodPhone} onChange={(e) => setDeptForm({ ...deptForm, hodPhone: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" as any }} placeholder="Contact phone number" />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>HOD Email</label>
+                  <div style={{ position: "relative" }}>
+                    <Mail size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                    <input type="email" value={deptForm.hodEmail} onChange={(e) => setDeptForm({ ...deptForm, hodEmail: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" as any }} placeholder="HOD email address" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Description</label>
+                <div style={{ position: "relative" }}>
+                  <FileText size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: 12 }} />
+                  <textarea value={deptForm.description} onChange={(e) => setDeptForm({ ...deptForm, description: e.target.value })} rows={3} style={{ width: "100%", padding: "10px 10px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box" as any, fontFamily: "inherit" }} placeholder="Brief description of the department and its services" />
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 20 }}>
+              <button type="submit" disabled={deptSaving} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 600, cursor: deptSaving ? "not-allowed" : "pointer", opacity: deptSaving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(14,137,143,0.25)" }}>
+                {deptSaving ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Saving...</> : <><Save size={16} />Save Department Info</>}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Change Password Section */}
       <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", padding: 28, marginTop: 20 }}>

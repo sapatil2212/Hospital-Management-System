@@ -1,6 +1,7 @@
 "use client";
 import React,{useEffect,useState,useCallback,useRef}from"react";
 import dynamic from"next/dynamic";
+import{PieChart,Pie,Cell,BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,Legend}from"recharts";
 import{FlaskConical,TestTube2,Activity,Plus,X,RefreshCw,Loader2,CheckCircle2,Clock,AlertTriangle,FileText,Mail,MessageSquare,Eye,Edit2,Trash2,Check,TrendingUp,IndianRupee,ClipboardList,ShieldCheck,ToggleLeft,ToggleRight,Save,ArrowRight,BarChart2,Bell,ChevronRight,Download,FileSpreadsheet,FileType,ChevronDown,Send,Pencil,Receipt,CreditCard}from"lucide-react";
 const LabBillingQueue=dynamic(()=>import("@/components/BillingQueue"),{ssr:false,loading:()=><div style={{padding:40,textAlign:"center"}}><Loader2 size={18} style={{animation:"spin .7s linear infinite",display:"inline"}}/><div style={{fontSize:12,color:"#94a3b8",marginTop:8}}>Loading Billing Queue...</div></div>});
 const LabBillingModule=dynamic(()=>import("@/components/BillingModule"),{ssr:false,loading:()=><div style={{padding:40,textAlign:"center"}}><Loader2 size={18} style={{animation:"spin .7s linear infinite",display:"inline"}}/><div style={{fontSize:12,color:"#94a3b8",marginTop:8}}>Loading Bills...</div></div>});
@@ -1495,24 +1496,156 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
         </>}
 
         {/* ANALYTICS */}
-        {tab==="analytics"&&<>
-          <div className="sec"><div className="dot"/>Analytics</div>
-          <div className="g4" style={{marginBottom:12}}>
-            {[{l:"Total Orders",v:stats?.kpis?.totalOrders||0,c:A,bg:L},{l:"Total Revenue",v:`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`,c:"#7c3aed",bg:"#faf5ff"},{l:"Tests Configured",v:tests.length,c:"#2563eb",bg:"#eff6ff"},{l:"Avg TAT",v:`${stats?.kpis?.avgTat||0}h`,c:"#b45309",bg:"#fffbeb"}].map((k,i)=>(
-              <div key={i} className="kpi" style={{padding:"14px"}}><div><div style={{fontSize:8,color:"#94a3b8",fontWeight:600,textTransform:"uppercase" as any,letterSpacing:".05em"}}>{k.l}</div><div style={{fontSize:18,fontWeight:800,color:k.c,marginTop:3}}>{k.v}</div></div></div>
-            ))}
-          </div>
-          <div className="g2">
-            <div className="card"><div className="chd"><span className="ct"><Activity size={12} color={A}/>By Priority</span></div><div style={{padding:"10px 14px"}}>
-              {(stats?.ordersByPriority||[]).map((p:any)=>{const c=PR[p.priority]||PR.ROUTINE;const pct=Math.round((p.count/Math.max(stats?.kpis?.totalOrders||1,1))*100);return(<div key={p.priority} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><Bdg bg={c.bg} c={c.c} bd={c.bd}>{c.label}</Bdg><span style={{fontSize:10,fontWeight:700,color:"#1e293b"}}>{p.count} ({pct}%)</span></div><div style={{background:"#f1f5f9",borderRadius:100,height:5,overflow:"hidden"}}><div style={{width:`${pct}%`,height:"100%",background:c.c,borderRadius:100}}/></div></div>);})}
-              {!stats?.ordersByPriority?.length&&<div className="empty">No data</div>}
-            </div></div>
-            <div className="card"><div className="chd"><span className="ct"><BarChart2 size={12} color={A}/>By Status</span></div><div style={{padding:"10px 14px"}}>
-              {(stats?.ordersByStatus||[]).map((s:any)=>{const c=OS[s.status]||OS.PENDING;const pct=Math.round((s.count/Math.max(stats?.kpis?.totalOrders||1,1))*100);return(<div key={s.status} style={{marginBottom:9}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:10,color:"#475569",fontWeight:600}}>{c.label}</span><span style={{fontSize:10,fontWeight:700,color:"#1e293b"}}>{s.count}</span></div><div style={{background:"#f1f5f9",borderRadius:100,height:4,overflow:"hidden"}}><div style={{width:`${pct}%`,height:"100%",background:c.c,borderRadius:100}}/></div></div>);})}
-              {!stats?.ordersByStatus?.length&&<div className="empty">No data</div>}
-            </div></div>
-          </div>
-        </>}
+        {tab==="analytics"&&(()=>{
+          const pieData=(stats?.ordersByStatus||[]).map((s:any)=>({name:OS[s.status]?.label||s.status,value:s.count,color:OS[s.status]?.c||"#94a3b8"}));
+          const barData=(stats?.ordersByPriority||[]).map((p:any)=>({name:PR[p.priority]?.label||p.priority,count:p.count,fill:PR[p.priority]?.c||"#94a3b8"}));
+          const total=stats?.kpis?.totalOrders||0;
+
+          const exportExcel=async()=>{
+            try{
+              const XLSX=await import("xlsx");
+              const wb=XLSX.utils.book_new();
+              const kpiRows=[["Metric","Value"],["Total Orders",total],["Total Revenue",`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`],["Tests Configured",tests.length],["Avg TAT (hrs)",stats?.kpis?.avgTat||0],["Today's Orders",stats?.kpis?.totalToday||0],["Today's Revenue",`₹${(stats?.kpis?.revenueToday||0).toLocaleString("en-IN")}`],["Pending Samples",stats?.kpis?.pendingSamples||0],["In Process",stats?.kpis?.inProcess||0],["Critical Cases",stats?.kpis?.criticalCases||0]];
+              XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kpiRows),"KPI Summary");
+              const statusRows=[["Status","Count"],..."ordersByStatus" in (stats||{})?(stats.ordersByStatus||[]).map((s:any)=>[OS[s.status]?.label||s.status,s.count]):[]];
+              XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(statusRows),"Status Breakdown");
+              const priorityRows=[["Priority","Count"],..."ordersByPriority" in (stats||{})?(stats.ordersByPriority||[]).map((p:any)=>[PR[p.priority]?.label||p.priority,p.count]):[]];
+              XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(priorityRows),"Priority Breakdown");
+              XLSX.writeFile(wb,`Pathology_Analytics_${new Date().toISOString().slice(0,10)}.xlsx`);
+            }catch(e){console.error(e);}
+          };
+
+          const exportPDF=async()=>{
+            try{
+              const{default:jsPDF}=await import("jspdf");
+              const{default:autoTable}=await import("jspdf-autotable");
+              const doc=new jsPDF();
+              doc.setFontSize(16);doc.setFont("helvetica","bold");
+              doc.text("Pathology Lab — Analytics Report",14,18);
+              doc.setFontSize(10);doc.setFont("helvetica","normal");doc.setTextColor(100);
+              doc.text(`Generated: ${new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}`,14,26);
+              autoTable(doc,{startY:32,head:[["Metric","Value"]],body:[[" Total Orders",String(total)],[" Total Revenue",`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`],[" Tests Configured",String(tests.length)],[" Avg TAT",`${stats?.kpis?.avgTat||0} hrs`],[" Today's Orders",String(stats?.kpis?.totalToday||0)],[" Today's Revenue",`₹${(stats?.kpis?.revenueToday||0).toLocaleString("en-IN")}`],[" Pending Samples",String(stats?.kpis?.pendingSamples||0)],[" In Process",String(stats?.kpis?.inProcess||0)]],styles:{fontSize:10},headStyles:{fillColor:[4,120,87]}});
+              const y1=(doc as any).lastAutoTable.finalY+10;
+              autoTable(doc,{startY:y1,head:[["Status","Count"]],body:(stats?.ordersByStatus||[]).map((s:any)=>[OS[s.status]?.label||s.status,String(s.count)]),styles:{fontSize:10},headStyles:{fillColor:[4,120,87]}});
+              const y2=(doc as any).lastAutoTable.finalY+10;
+              autoTable(doc,{startY:y2,head:[["Priority","Count"]],body:(stats?.ordersByPriority||[]).map((p:any)=>[PR[p.priority]?.label||p.priority,String(p.count)]),styles:{fontSize:10},headStyles:{fillColor:[4,120,87]}});
+              doc.save(`Pathology_Analytics_${new Date().toISOString().slice(0,10)}.pdf`);
+            }catch(e){console.error(e);}
+          };
+
+          const exportWord=async()=>{
+            try{
+              const{Document,Paragraph,Table,TableRow,TableCell,HeadingLevel,TextRun,WidthType,Packer}=await import("docx");
+              const makeRow=(cells:string[],bold=false)=>new TableRow({children:cells.map(t=>new TableCell({children:[new Paragraph({children:[new TextRun({text:t,bold,size:20})]})]}))} );
+              const kpiTable=new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[makeRow(["Metric","Value"],true),makeRow(["Total Orders",String(total)]),makeRow(["Total Revenue",`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`]),makeRow(["Tests Configured",String(tests.length)]),makeRow(["Avg TAT",`${stats?.kpis?.avgTat||0} hrs`]),makeRow(["Today's Orders",String(stats?.kpis?.totalToday||0)]),makeRow(["Today's Revenue",`₹${(stats?.kpis?.revenueToday||0).toLocaleString("en-IN")}`]),makeRow(["Pending Samples",String(stats?.kpis?.pendingSamples||0)]),makeRow(["In Process",String(stats?.kpis?.inProcess||0)])]});
+              const statusTable=new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[makeRow(["Status","Count"],true),...(stats?.ordersByStatus||[]).map((s:any)=>makeRow([OS[s.status]?.label||s.status,String(s.count)]))]});
+              const priorityTable=new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[makeRow(["Priority","Count"],true),...(stats?.ordersByPriority||[]).map((p:any)=>makeRow([PR[p.priority]?.label||p.priority,String(p.count)]))]});
+              const doc=new Document({sections:[{children:[new Paragraph({text:"Pathology Lab — Analytics Report",heading:HeadingLevel.HEADING_1}),new Paragraph({text:`Generated: ${new Date().toLocaleDateString("en-IN")}`,children:[new TextRun({text:`Generated: ${new Date().toLocaleDateString("en-IN")}`,color:"888888",size:18})]}),new Paragraph(""),new Paragraph({text:"KPI Summary",heading:HeadingLevel.HEADING_2}),kpiTable,new Paragraph(""),new Paragraph({text:"Order Status Breakdown",heading:HeadingLevel.HEADING_2}),statusTable,new Paragraph(""),new Paragraph({text:"Priority Breakdown",heading:HeadingLevel.HEADING_2}),priorityTable]}]});
+              const blob=await Packer.toBlob(doc);
+              const url=URL.createObjectURL(blob);
+              const a=document.createElement("a");a.href=url;a.download=`Pathology_Analytics_${new Date().toISOString().slice(0,10)}.docx`;a.click();
+              URL.revokeObjectURL(url);
+            }catch(e){console.error(e);}
+          };
+
+          return(<>
+            {/* Header row with export */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+              <div className="sec" style={{marginBottom:0}}><div className="dot"/>Analytics Dashboard</div>
+              <div style={{display:"flex",gap:6}}>
+                <Btn onClick={()=>{ldStats();}} style={{background:"#fff",color:"#64748b",borderColor:"#e2e8f0",fontSize:10}}><RefreshCw size={10} className={sL?"spin":""}/> Refresh</Btn>
+                <Btn onClick={exportExcel} style={{background:"#f0fdf4",color:"#16a34a",borderColor:"#bbf7d0",fontSize:10}}><FileSpreadsheet size={10}/> Excel</Btn>
+                <Btn onClick={exportPDF} style={{background:"#fff5f5",color:"#ef4444",borderColor:"#fecaca",fontSize:10}}><FileText size={10}/> PDF</Btn>
+                <Btn onClick={exportWord} style={{background:"#eff6ff",color:"#2563eb",borderColor:"#bfdbfe",fontSize:10}}><FileType size={10}/> Word</Btn>
+              </div>
+            </div>
+
+            {/* KPI Cards — faint borders, no shadows */}
+            <div className="g4" style={{marginBottom:14}}>
+              {[
+                {l:"Total Orders",v:total,c:A,bg:L,ic:<ClipboardList size={14}/>},
+                {l:"Total Revenue",v:`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`,c:"#7c3aed",bg:"#faf5ff",ic:<IndianRupee size={14}/>},
+                {l:"Tests Configured",v:tests.length,c:"#2563eb",bg:"#eff6ff",ic:<TestTube2 size={14}/>},
+                {l:"Avg TAT",v:stats?.kpis?.avgTat?`${stats.kpis.avgTat}h`:"—",c:"#b45309",bg:"#fffbeb",ic:<Clock size={14}/>},
+                {l:"Today's Orders",v:stats?.kpis?.totalToday||0,c:"#0891b2",bg:"#ecfeff",ic:<Activity size={14}/>},
+                {l:"Today's Revenue",v:`₹${(stats?.kpis?.revenueToday||0).toLocaleString("en-IN")}`,c:"#047857",bg:L,ic:<TrendingUp size={14}/>},
+                {l:"Pending Samples",v:stats?.kpis?.pendingSamples||0,c:"#b45309",bg:"#fffbeb",ic:<FlaskConical size={14}/>},
+                {l:"Critical Cases",v:stats?.kpis?.criticalCases||0,c:"#b91c1c",bg:"#fff5f5",ic:<AlertTriangle size={14}/>},
+              ].map((k,i)=>(
+                <div key={i} style={{background:"#fff",borderRadius:11,border:"1px solid #e2e8f0",padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:36,height:36,borderRadius:9,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:k.c}}>{k.ic}</div>
+                  <div><div style={{fontSize:9,color:"#94a3b8",fontWeight:600,textTransform:"uppercase" as any,letterSpacing:".05em"}}>{k.l}</div><div style={{fontSize:17,fontWeight:800,color:k.c,marginTop:2}}>{sL?<Loader2 size={12} className="spin"/>:k.v}</div></div>
+                </div>
+              ))}
+            </div>
+
+            {/* Charts row */}
+            <div className="g2" style={{marginBottom:14}}>
+              {/* Status Pie Chart */}
+              <div style={{background:"#fff",borderRadius:11,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                <div className="chd"><span className="ct"><Activity size={12} color={A}/>Order Status Distribution</span><span style={{fontSize:10,color:"#94a3b8"}}>{total} total</span></div>
+                <div style={{padding:"14px 10px"}}>
+                  {pieData.length>0?(
+                    <ResponsiveContainer width="100%" height={220}>
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} dataKey="value" label={({name,percent}:any)=>`${name} ${(percent*100).toFixed(0)}%`} labelLine={false} fontSize={9}>
+                          {pieData.map((entry:any,i:number)=><Cell key={i} fill={entry.color}/>)}
+                        </Pie>
+                        <Tooltip formatter={(v:any,n:any)=>[v,n]} contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:11}}/>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ):<div className="empty" style={{height:220,display:"flex",alignItems:"center",justifyContent:"center"}}>No data yet</div>}
+                  {pieData.length>0&&<div style={{display:"flex",flexWrap:"wrap" as any,gap:"4px 10px",padding:"0 8px",marginTop:4}}>
+                    {pieData.map((d:any,i:number)=>(
+                      <span key={i} style={{fontSize:10,color:"#475569",display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:2,background:d.color,display:"inline-block"}}/>  {d.name}: <b>{d.value}</b></span>
+                    ))}
+                  </div>}
+                </div>
+              </div>
+
+              {/* Priority Bar Chart */}
+              <div style={{background:"#fff",borderRadius:11,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                <div className="chd"><span className="ct"><BarChart2 size={12} color={A}/>Orders by Priority</span></div>
+                <div style={{padding:"14px 10px"}}>
+                  {barData.length>0?(
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={barData} margin={{top:4,right:8,left:-16,bottom:4}}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
+                        <XAxis dataKey="name" tick={{fontSize:11,fill:"#64748b"}} axisLine={false} tickLine={false}/>
+                        <YAxis tick={{fontSize:10,fill:"#94a3b8"}} axisLine={false} tickLine={false} allowDecimals={false}/>
+                        <Tooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:11}} cursor={{fill:"#f8fafc"}}/>
+                        <Bar dataKey="count" radius={[6,6,0,0]}>
+                          {barData.map((entry:any,i:number)=><Cell key={i} fill={entry.fill}/>)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ):<div className="empty" style={{height:220,display:"flex",alignItems:"center",justifyContent:"center"}}>No data yet</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Status detail table */}
+            <div style={{background:"#fff",borderRadius:11,border:"1px solid #e2e8f0",overflow:"hidden",marginBottom:14}}>
+              <div className="chd"><span className="ct"><BarChart2 size={12} color={A}/>Status Breakdown — Detail</span></div>
+              <div style={{padding:"10px 14px"}}>
+                {(stats?.ordersByStatus||[]).length>0?(
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8}}>
+                    {(stats.ordersByStatus||[]).map((s:any)=>{const c=OS[s.status]||OS.PENDING;const pct=Math.round((s.count/Math.max(total,1))*100);return(
+                      <div key={s.status} style={{padding:"10px 12px",borderRadius:9,background:c.bg,border:`1px solid ${c.bd}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                          <span style={{fontSize:11,fontWeight:700,color:c.c}}>{c.label}</span>
+                          <span style={{fontSize:16,fontWeight:800,color:c.c}}>{s.count}</span>
+                        </div>
+                        <div style={{background:"rgba(255,255,255,.6)",borderRadius:100,height:4,overflow:"hidden"}}><div style={{width:`${pct}%`,height:"100%",background:c.c,borderRadius:100,transition:"width .4s"}}/></div>
+                        <div style={{fontSize:9,color:c.c,marginTop:4,fontWeight:600}}>{pct}% of total</div>
+                      </div>
+                    );})}
+                  </div>
+                ):<div className="empty">No order data yet</div>}
+              </div>
+            </div>
+          </>);
+        })()}
     </div>
 
     {/* Modal: New Order */}
