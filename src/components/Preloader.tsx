@@ -56,10 +56,10 @@ export default function Preloader({ loading: externalLoading }: PreloaderProps) 
               <Image
                 src="/logo/favicon-icon.png"
                 alt="Celeb Aesthetica Logo"
-                fill
+                width={100}
+                height={100}
                 className={styles.logo}
                 priority
-                sizes="(max-width: 375px) 50px, (max-width: 640px) 80px, 100px"
               />
             </motion.div>
             
