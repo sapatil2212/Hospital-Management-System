@@ -227,22 +227,28 @@
     max-width: 100%;
   }
 
-  /* Mobile buttons: side by side, equal size */
+  /* Mobile buttons: side by side, equal size, prevent overflow */
   .ctaRow {
     flex-wrap: nowrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-2);
     width: 100%;
+    overflow: visible;
   }
 
-  .ctaRow .btn {
-    flex: 1 1 0;
+  .aboutCta,
+  .secondaryCta {
     min-width: 0;
+    flex: 1 1 0;
+    max-width: 180px;
     padding: 8px 10px;
     font-size: 12px;
     height: 38px;
     text-align: center;
     justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .ctaRow .btn svg {

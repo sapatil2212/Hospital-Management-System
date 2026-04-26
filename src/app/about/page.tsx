@@ -104,8 +104,8 @@ export default function AboutPage() {
     <>
       <Navbar />
       <main>
-        {/* About Hero Banner */}
-        <div className="container">
+        {/* About Hero Banner - hidden on mobile */}
+        <div className={`container ${styles.heroWrapper}`}>
           <AboutHero />
         </div>
 

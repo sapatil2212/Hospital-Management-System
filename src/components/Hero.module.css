@@ -140,6 +140,7 @@
   position: relative;
   min-width: 160px;
   box-shadow: none !important;
+  white-space: nowrap;
 }
 
 .ctaPrimary:hover,
@@ -395,17 +396,20 @@
     gap: var(--space-2);
   }
 
-  .ctaGroup .btn {
+  .ctaPrimary,
+  .ctaSecondary {
+    min-width: 0;
     flex: 1;
-    max-width: 140px;
-    padding: 6px 10px;
-    font-size: 11px;
-    height: 34px;
+    max-width: 160px;
+    padding: 8px 10px;
+    font-size: 12px;
+    height: 40px;
   }
 
   .ctaGroup .btn svg {
     width: 13px;
     height: 13px;
+    flex-shrink: 0;
   }
 
   .ratingRow {
@@ -426,13 +430,19 @@
   }
 
   .heroVisual {
-    min-height: 300px;
+    height: 300px;
+    min-height: unset;
     align-self: flex-end;
   }
 
   .imageWrapper {
     max-width: 320px;
+    height: 300px;
     margin-bottom: 0;
+  }
+
+  .imageSlide {
+    height: 100%;
   }
 }
 
@@ -444,7 +454,20 @@
     padding: var(--space-6) 0 0;
   }
   .heroVisual {
-    min-height: 260px;
+    height: 260px;
+    min-height: unset;
     align-self: flex-end;
+  }
+
+  .imageWrapper {
+    height: 260px;
+  }
+
+  .ctaPrimary,
+  .ctaSecondary {
+    max-width: 148px;
+    font-size: 11px;
+    padding: 7px 8px;
+    height: 38px;
   }
 }
