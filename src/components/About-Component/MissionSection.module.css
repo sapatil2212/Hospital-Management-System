@@ -143,11 +143,28 @@
   color: var(--primary);
 }
 
-.description {
+.descriptionWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 540px;
+}
+
+.descriptionText {
   font-size: var(--font-size-lg);
   color: var(--gray-600);
   line-height: 1.6;
-  max-width: 540px;
+}
+
+/* Standardized mobile font size for descriptive content */
+@media (max-width: 768px) {
+  .descriptionText {
+    font-size: var(--font-size-base);
+  }
+  
+  .missionSection {
+    padding: var(--space-16) 0;
+  }
 }
 
 /* Features Grid */

@@ -75,13 +75,15 @@ export default function MissionSection() {
             <h2 className="section-title">
               Healthcare Designed Around <span className={styles.headingAccent}>You</span>
             </h2>
-            <p className="section-subtitle" style={{ textAlign: "left", margin: 0, marginBottom: "var(--space-4)" }}>
-              We combine state-of-the-art medical technology with a compassionate,
-              human-centered approach.
-            </p>
-            <p className={styles.description} style={{ color: "var(--gray-600)" }}>
-              MediFlow isn't just a clinic; it's your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
-            </p>
+            <div className={styles.descriptionWrapper}>
+              <p className={styles.descriptionText}>
+                We combine state-of-the-art medical technology with a compassionate,
+                human-centered approach.
+              </p>
+              <p className={styles.descriptionText}>
+                MediFlow isn't just a clinic; it's your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
+              </p>
+            </div>
 
             {/* Features Grid */}
             <div className={styles.featuresGrid}>

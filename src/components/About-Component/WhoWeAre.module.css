@@ -181,6 +181,7 @@
 
   .description {
     max-width: 600px;
+    font-size: var(--font-size-base); /* Standardized mobile font size */
   }
 }
 
