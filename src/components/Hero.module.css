@@ -2,7 +2,7 @@
   position: relative;
   background: var(--bg-light);
   padding: var(--space-12) 0 0;
-  overflow: visible;
+  overflow: hidden;
   min-height: 580px; /* Reduced from 700px */
   display: flex;
   align-items: stretch;

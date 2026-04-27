@@ -46,13 +46,12 @@
 
 @media (max-width: 480px) {
   .section {
-    padding: 0.75rem 16px 1rem;
+    padding: 0.75rem 0 1rem;
   }
 
   .cardsContainer {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
-    padding: 0 8px;
   }
 
   .card {
