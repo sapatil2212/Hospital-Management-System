@@ -57,7 +57,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We utilize advanced AI technology to analyze your scalp condition, hair density, and follicle health to identify the root cause of hair loss.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Detailed scalp and follicle analysis",
                     "Identification of underlying causes (genetic, hormonal, lifestyle)",
@@ -107,7 +107,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We offer customized solutions for different types of hair loss, including androgenetic alopecia, stress-related hair fall, and hormonal imbalances.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Medical management and therapies",
                     "Nutritional and lifestyle guidance",
@@ -156,7 +156,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Platelet-Rich Plasma (PRP) and Growth Factor Concentrate (GFC) therapies use your body’s natural growth factors to stimulate hair follicles.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Strengthens weak hair roots",
                     "Promotes new hair growth",
@@ -206,7 +206,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Mesotherapy delivers essential vitamins, minerals, and growth factors directly into the scalp for deep nourishment.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Nourishes hair follicles",
                     "Reduces hair fall",
@@ -256,7 +256,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We offer advanced hair transplant procedures using FUE (Follicular Unit Extraction) and FUT (Follicular Unit Transplantation) techniques.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Natural hairline design",
                     "Minimally invasive procedures",
@@ -306,7 +306,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We provide specialized transplant procedures to improve beard and eyebrow density with natural growth patterns.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Natural growth pattern",
                     "Customized design for facial harmony",
@@ -355,7 +355,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We diagnose and treat various scalp conditions that contribute to hair loss and discomfort.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Dandruff and flaky scalp",
                     "Fungal infections",
@@ -405,7 +405,7 @@ export default function HairTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We offer cutting-edge regenerative treatments to repair and rejuvenate damaged hair follicles for sustainable regrowth.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Combination therapies (PRP + GFC + Mesotherapy)",
                     "Collagen stimulation and follicle activation",

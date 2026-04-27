@@ -53,7 +53,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   Injection lipolysis is a non-surgical treatment that dissolves localized fat deposits in areas resistant to diet and exercise.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Reduces stubborn fat pockets (chin, abdomen, thighs)",
                     "Non-invasive with minimal downtime",
@@ -102,7 +102,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   We use globally advanced technologies to reshape your body effectively without surgery or pain.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Cryolipolysis (fat freezing)",
                     "Radio Frequency (RF) fat reduction",
@@ -151,7 +151,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   Loose or sagging skin is tightened using advanced collagen-stimulating technologies for face and body.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Improved skin elasticity",
                     "Firmer, tighter appearance",
@@ -200,7 +200,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   We offer targeted treatments to reduce cellulite and improve skin smoothness and firmness.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Reduced dimpled appearance",
                     "Smoother skin texture",
@@ -249,7 +249,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   Advanced therapies help reduce the visibility of stretch marks and improve overall skin quality.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Fades stretch marks",
                     "Improves skin tone and texture",
@@ -298,7 +298,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   Our personalized programs combine multiple treatments for effective inch loss and body reshaping.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Targeted fat reduction therapies",
                     "Skin tightening solutions",
@@ -347,7 +347,7 @@ export default function BodyShapingPage() {
                 <p className={styles.aboutDescription}>
                   After significant weight loss, we offer advanced correction solutions for loose skin and uneven contours.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Skin tightening",
                     "Contour refinement",

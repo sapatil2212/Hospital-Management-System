@@ -10,7 +10,7 @@ export const treatments = [
     icon: Sparkles,
     color: "#0E898F",
     bgColor: "#E6F4F4",
-    image: "/images/treatment-dermatology.png",
+    image: "/images/treatments/cards/prp-hair.png",
     heroDesc: "Natural hair regrowth therapy using your own platelet-rich plasma for stronger, healthier hair growth.",
     features: [
       "Natural regrowth",
@@ -30,7 +30,7 @@ export const treatments = [
     icon: Stethoscope,
     color: "#0E898F",
     bgColor: "#E6F4F4",
-    image: "/images/Quick-Treatments/Trauma.png",
+    image: "/images/treatments/cards/facial-trauma.png",
     heroDesc: "Rapid emergency care, advanced surgical treatment, and aesthetic rehabilitation for facial injuries and maxillofacial trauma.",
     features: [
       "RTA Injury Management",
@@ -50,7 +50,7 @@ export const treatments = [
     icon: SmilePlus,
     color: "#10B981",
     bgColor: "#D1FAE5",
-    image: "/images/treatment-dental.png",
+    image: "/images/treatments/cards/dental.png",
     heroDesc: "From routine checkups to advanced dental treatments, we provide painless, modern, and affordable solutions to keep your smile healthy and bright.",
     features: [
       "Teeth cleaning & polishing",
@@ -70,7 +70,7 @@ export const treatments = [
     icon: Sparkles,
     color: "#EC4899",
     bgColor: "#FCE7F3",
-    image: "/images/treatment-dermatology.png",
+    image: "/images/treatments/cards/dermatology.png",
     heroDesc: "Treat acne, pigmentation, hair issues, and more with expert dermatologists. Personalized care for glowing, clear, and healthy skin.",
     features: [
       "Acne & scar treatment",
@@ -90,7 +90,7 @@ export const treatments = [
     icon: Scissors,
     color: "#10B981",
     bgColor: "#D1FAE5",
-    image: "/images/Quick-Treatments/BodyShaping.png",
+    image: "/images/treatments/cards/body-shaping.png",
     heroDesc: "Advanced non-surgical body contouring and fat reduction treatments for a toned and sculpted appearance.",
     features: [
       "Fat Reduction (Lipolysis)",
@@ -110,7 +110,7 @@ export const treatments = [
     icon: Gem,
     color: "#8B5CF6",
     bgColor: "#EDE9FE",
-    image: "/images/Quick-Treatments/Premiumaesthetic.png",
+    image: "/images/treatments/cards/premium-aesthetic.png",
     heroDesc: "Luxury aesthetic care designed for natural, refined, and timeless beauty using advanced medical science.",
     features: [
       "Luxury Facial Aesthetics",
@@ -130,7 +130,7 @@ export const treatments = [
     icon: ShieldCheck,
     color: "#EF4444",
     bgColor: "#FEE2E2",
-    image: "/images/Quick-Treatments/Sexualhealth.png",
+    image: "/images/treatments/cards/sexual-health.png",
     heroDesc: "Confidential, compassionate, and result-oriented care for intimate health using advanced medical and regenerative therapies.",
     features: [
       "Erectile Dysfunction Treatment",
@@ -190,7 +190,7 @@ export const treatments = [
     icon: Ribbon,
     color: "#8B5CF6",
     bgColor: "#EDE9FE",
-    image: "/images/treatment-cancer.png",
+    image: "/images/treatments/cards/cancer.png",
     heroDesc: "Early detection, expert oncologists, and personalized treatment plans — supporting you at every stage with care, strength, and hope.",
     features: [
       "Early cancer screening & detection",

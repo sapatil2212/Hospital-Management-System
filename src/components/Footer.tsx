@@ -16,11 +16,11 @@ import { usePathname } from "next/navigation";
 import styles from "./Footer.module.css";
 
 const quickLinks = [
-  { label: "Home", href: "#home" },
-  { label: "About Us", href: "#about" },
-  { label: "Services", href: "#services" },
-  { label: "Blog", href: "#blog" },
-  { label: "Contact Us", href: "#contact" },
+  { label: "Home", href: "/" },
+  { label: "About Us", href: "/about" },
+  { label: "Treatments", href: "/treatments" },
+  { label: "Blog", href: "/blog" },
+  { label: "Contact Us", href: "/contact" },
 ];
 
 const treatmentLinks = [
@@ -53,7 +53,7 @@ export default function Footer() {
       <div className={`container ${styles.footerContent} ${!isHomePage ? styles.footerNoNewsletter : ""}`}>
         {/* About Column */}
         <div className={styles.footerCol}>
-          <a href="#home" className={styles.footerLogo}>
+          <Link href="/" className={styles.footerLogo}>
             <Image
               src="/logo/celeb-aesthecia-logo.png"
               alt="Celeb Aesthetica"
@@ -61,7 +61,7 @@ export default function Footer() {
               height={42}
               className={styles.footerLogoImage}
             />
-          </a>
+          </Link>
           <h5 className={styles.footerTagline}>Experience the Future of Healthcare</h5>
           <p className={styles.footerAbout}>
             At Celeb Aesthetica, we are not just treating patients—we are redefining healthcare experiences through innovation, precision, and compassion.
@@ -86,10 +86,10 @@ export default function Footer() {
           <ul className={styles.linkList}>
             {quickLinks.map((link) => (
               <li key={link.label}>
-                <a href={link.href} className={styles.footerLink}>
+                <Link href={link.href} className={styles.footerLink}>
                   <ArrowRight size={14} />
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -101,10 +101,10 @@ export default function Footer() {
           <ul className={styles.linkList}>
             {treatmentLinks.map((treatment) => (
               <li key={treatment.label}>
-                <a href={treatment.href} className={styles.footerLink}>
+                <Link href={treatment.href} className={styles.footerLink}>
                   <ArrowRight size={14} />
                   {treatment.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

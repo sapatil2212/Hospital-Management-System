@@ -66,8 +66,8 @@ export default function FacialTraumaHero() {
                 <Image
                   src="/treatments/facial-trauma/facial-trauma-hero.png"
                   alt="Facial Trauma Care"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   priority
                 />
@@ -102,7 +102,7 @@ export default function FacialTraumaHero() {
                 <Users size={20} />
               </div>
               <div>
-                <div className={styles.satisfiedCount}>12K+</div>
+                <div className={styles.satisfiedCount}>9K+</div>
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>

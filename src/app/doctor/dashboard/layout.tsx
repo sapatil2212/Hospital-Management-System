@@ -48,7 +48,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         input,select,button,textarea{font-family:'Inter',sans-serif}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-        .doc{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#ffffff}
+        .doc{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#ffffff}
         .doc-sb{width:220px;background:#fff;border-right:1px solid #d1fae5;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(16,185,129,0.06)}
         .doc-logo{padding:18px 20px 14px;border-bottom:1px solid #ecfdf5;display:flex;flex-direction:column;align-items:center;gap:8px}
         .doc-logo-ic{width:52px;height:52px;background:linear-gradient(135deg,#10b981,#059669);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);flex-shrink:0}
@@ -68,8 +68,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-urole{font-size:10px;font-weight:500;color:#059669}
         .doc-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .doc-logout:hover{background:#fee2e2}
-        .doc-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-        .doc-topbar{height:64px;background:#fff;border-bottom:1px solid #d1fae5;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(16,185,129,0.06)}
+        .doc-main{margin-left:220px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+        .doc-topbar{height:64px;background:#fff;border-bottom:1px solid #d1fae5;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(16,185,129,0.06)}
         .doc-search-wrap{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:10px;padding:8px 14px;width:280px}
         .doc-search-wrap:focus-within{border-color:#6ee7b7}
         .doc-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
@@ -81,7 +81,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
         .doc-profile-name{font-size:12px;font-weight:600;color:#1e293b}
         .doc-profile-role{font-size:10px;color:#059669}
-        .doc-body{display:grid;grid-template-columns:1fr;flex:1}
+        .doc-body{display:grid;grid-template-columns:1fr;flex:1;padding-top:0}
         .doc-center{padding:22px 20px;overflow-y:auto}
         .doc-pg-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
       `}</style>

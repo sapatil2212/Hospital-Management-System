@@ -66,8 +66,8 @@ export default function SexualHealthHero() {
                 <Image
                   src="/images/sexual-health/hero.png"
                   alt="Sexual Health & Wellness"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   style={{ borderRadius: '24px', objectFit: 'cover' }}
                   priority
@@ -103,7 +103,7 @@ export default function SexualHealthHero() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <div className={styles.satisfiedCount}>100%</div>
+                <div className={styles.satisfiedCount}>9K+</div>
                 <div className={styles.satisfiedLabel}>Confidential Care</div>
               </div>
             </motion.div>

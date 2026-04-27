@@ -35,11 +35,13 @@ export async function GET(req: NextRequest) {
       include: {
         order: {
           include: {
-            patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
-            doctor: { select: { id: true, name: true } },
+            patient: { select: { id: true, name: true, patientId: true, phone: true, email: true, gender: true, dateOfBirth: true } },
+            doctor: { select: { id: true, name: true, specialization: true, qualification: true } },
+            sample: { select: { specimenType: true, barcodeId: true, collectedBy: true, collectedAt: true, receivedAt: true, status: true } },
             items: {
               include: {
-                test: { select: { id: true, name: true, unit: true, normalRangeMin: true, normalRangeMax: true, normalRangeText: true } },
+                test: { select: { id: true, name: true, unit: true, normalRangeMin: true, normalRangeMax: true, normalRangeText: true, category: true, method: true } },
+                panel: { select: { id: true, name: true } },
               },
             },
           },

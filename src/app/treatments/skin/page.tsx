@@ -56,7 +56,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our advanced AI systems analyze your skin in detail—identifying concerns like pigmentation, acne, aging signs, and hydration levels.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Accurate skin assessment using AI technology",
                     "Customized treatment plans based on real data",
@@ -106,7 +106,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We provide expert treatment for a wide range of skin conditions using clinically proven methods.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Acne & acne scars",
                     "Psoriasis & eczema",
@@ -156,7 +156,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We use FDA-approved and CE-certified laser systems for targeted and effective skin treatments.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "CO2 laser (resurfacing & scar reduction)",
                     "Q-Switch laser (pigmentation & tattoo removal)",
@@ -205,7 +205,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our anti-aging solutions focus on enhancing your natural beauty without overdoing it.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Botox for wrinkle reduction",
                     "Dermal fillers for volume restoration",
@@ -254,7 +254,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We use advanced regenerative treatments to stimulate collagen and skin repair naturally.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Improves skin texture and glow",
                     "Reduces fine lines and pigmentation",
@@ -303,7 +303,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our medical facials go beyond basic skincare to deliver deep nourishment and rejuvenation.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Chemical peels for exfoliation and renewal",
                     "HydraFacial for hydration and glow",
@@ -352,7 +352,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our advanced skin rejuvenation treatments focus on improving texture, tone, and overall skin quality.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Brighter and even skin tone",
                     "Improved skin texture",
@@ -401,7 +401,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We provide targeted treatments to reduce scars and pigmentation effectively.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Acne scar reduction",
                     "Stretch mark improvement",
@@ -450,7 +450,7 @@ export default function SkinTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our dermatosurgical procedures are performed with advanced techniques ensuring safety and minimal discomfort.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Mole removal",
                     "Wart removal",

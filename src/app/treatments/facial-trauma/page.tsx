@@ -55,7 +55,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   We provide urgent and structured management for facial injuries caused by road accidents, ensuring rapid stabilization and assessment.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Rapid assessment and stabilization",
                     "Management of complex facial injuries",
@@ -104,7 +104,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   We treat mandibular and maxillary fractures using advanced fixation techniques to restore proper bite and symmetry.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Rigid fixation with plates and screws",
                     "Alignment restoration for proper bite (occlusion)",
@@ -153,7 +153,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   Severe trauma can affect facial bones and structure. We offer advanced reconstructive solutions to restore normal anatomy.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Reconstruction of cheekbones, jaw, and facial contours",
                     "Correction of deformities post-injury",
@@ -202,7 +202,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   We provide expert repair of facial soft tissues including skin, muscles, and nerves with a focus on minimal scarring.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Suturing and wound management",
                     "Minimizing scars and tissue damage",
@@ -251,7 +251,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   We manage fractures involving the eye socket (orbit) and nasal bones with precision to protect vision and breathing.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Restoration of facial symmetry",
                     "Protection of vision and breathing function",
@@ -300,7 +300,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   After initial healing, we offer aesthetic treatments to improve appearance and restore confidence.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Scar revision treatments",
                     "Facial contour correction",
@@ -349,7 +349,7 @@ export default function FacialTraumaPage() {
                 <p className={styles.aboutDescription}>
                   All major trauma surgeries are performed in our state-of-the-art modular operation theatre, ensuring international safety standards.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "International sterilization protocols",
                     "Advanced infection control systems",

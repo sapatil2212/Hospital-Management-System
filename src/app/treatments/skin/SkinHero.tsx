@@ -66,26 +66,15 @@ export default function SkinHero() {
                 <Image
                   src="/treatments/skin/skin-hero.png"
                   alt="Advanced Skin Care"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   priority
                 />
               </motion.div>
             </div>
 
-            {/* Floating Card: Doctors */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.doctorsCard}`}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <div className={styles.doctorInfo}>
-                <span className={styles.doctorCount}>
-                  Expert Skin Specialists
-                </span>
-              </div>
-            </motion.div>
+
 
             {/* Floating Card: Satisfied Clients */}
             <motion.div

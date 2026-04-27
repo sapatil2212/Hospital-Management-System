@@ -57,7 +57,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   Every individual is unique—and so should be their diet. We provide customized meal plans based on body type, lifestyle, and health conditions.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Customized meal plans based on body type and lifestyle",
                     "Balanced nutrition using practical Indian diet habits",
@@ -106,7 +106,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   Whether your goal is weight loss or healthy weight gain, our programs are scientifically designed for lasting results without muscle loss.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Fat loss without muscle loss",
                     "Healthy weight gain with proper nutrition",
@@ -155,7 +155,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   Hormonal imbalances require specialized care and nutrition planning to manage symptoms and improve metabolism naturally.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Improved hormonal balance",
                     "Better metabolism and weight control",
@@ -204,7 +204,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   We provide clinically guided nutrition plans for managing chronic conditions like diabetes and heart disease.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Blood sugar control through diet",
                     "Heart-healthy nutrition plans",
@@ -253,7 +253,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   Healthy skin and hair start with the right nutrition. Enhance your natural beauty through a nutrient-rich diet.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Improved skin glow and texture",
                     "Reduced hair fall and better hair growth",
@@ -302,7 +302,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   Our detox programs help eliminate toxins and restore internal balance for improved digestion and increased energy.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Improved digestion and metabolism",
                     "Increased energy levels",
@@ -351,7 +351,7 @@ export default function NutritionPage() {
                 <p className={styles.aboutDescription}>
                   We focus on addressing the root cause of lifestyle diseases through structured programs for obesity, diabetes, and hypertension.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Obesity and Metabolic disorders",
                     "Diabetes management and reversal",

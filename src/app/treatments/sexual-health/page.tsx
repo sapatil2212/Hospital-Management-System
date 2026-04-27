@@ -58,7 +58,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   We provide advanced medical solutions to help men overcome erectile dysfunction safely and effectively through personalized evaluation.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Detailed evaluation of underlying causes",
                     "Medical and regenerative therapies",
@@ -107,7 +107,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   Our expert-led treatments focus on improving control and enhancing overall sexual performance through behavioral and medical therapies.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Personalized therapy plans",
                     "Behavioral and medical treatments",
@@ -156,7 +156,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   We address low libido and performance concerns with scientifically designed treatments to improve stamina and overall wellbeing.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Improved stamina and energy",
                     "Enhanced sexual desire",
@@ -205,7 +205,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   Restore balance for optimal physical and emotional health through personalized hormone correction therapies and diagnosis.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Hormonal evaluation and diagnosis",
                     "Personalized hormone correction therapies",
@@ -254,7 +254,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   We offer professional counseling to help couples address intimacy concerns and improve emotional connection and understanding.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Communication and emotional connection",
                     "Relationship challenges",
@@ -303,7 +303,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   We provide dedicated solutions for women’s sexual and reproductive health concerns with safe, respectful, and effective care.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Hormonal balance and wellness",
                     "Intimate health treatments",
@@ -352,7 +352,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   Modern, non-surgical treatments focusing on natural healing and improvement with minimal recovery time.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Minimally invasive procedures",
                     "Faster recovery",
@@ -401,7 +401,7 @@ export default function SexualHealthPage() {
                 <p className={styles.aboutDescription}>
                   We maintain the highest standards of confidentiality and professionalism in a safe, non-judgmental environment.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "100% private consultations",
                     "Respectful and non-judgmental approach",

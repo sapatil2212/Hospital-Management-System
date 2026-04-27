@@ -101,7 +101,7 @@ export default function ReceptionistDashboard() {
       *{box-sizing:border-box;margin:0;padding:0}
       ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#fefce8}::-webkit-scrollbar-thumb{background:#fef08a;border-radius:4px}
       input,select,button{font-family:'Inter',sans-serif}
-      .rec{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#fefdf0}
+      .rec{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#fefdf0}
       .rec-sb{width:220px;background:#fff;border-right:1px solid #fef08a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(234,179,8,0.07)}
       .rec-logo{padding:20px 20px 16px;border-bottom:1px solid #fefce8;display:flex;align-items:center;gap:10px}
       .rec-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#eab308,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(234,179,8,0.3)}
@@ -123,8 +123,8 @@ export default function ReceptionistDashboard() {
       .rec-urole{font-size:10px;font-weight:500;color:#ca8a04}
       .rec-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
       .rec-logout:hover{background:#fee2e2}
-      .rec-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-      .rec-topbar{height:64px;background:#fff;border-bottom:1px solid #fef08a;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(234,179,8,0.07)}
+      .rec-main{margin-left:220px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+      .rec-topbar{height:64px;background:#fff;border-bottom:1px solid #fef08a;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(234,179,8,0.07)}
       .rec-search-wrap{display:flex;align-items:center;gap:8px;background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:8px 14px;width:280px}
       .rec-search-wrap:focus-within{border-color:#fcd34d}
       .rec-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
@@ -136,7 +136,7 @@ export default function ReceptionistDashboard() {
       .rec-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
       .rec-profile-name{font-size:12px;font-weight:600;color:#1e293b}
       .rec-profile-role{font-size:10px;color:#ca8a04}
-      .rec-body{display:grid;grid-template-columns:1fr 260px;flex:1}
+      .rec-body{display:grid;grid-template-columns:1fr 260px;flex:1;overflow:hidden}
       .rec-center{padding:22px 20px;overflow-y:auto}
       .rec-right{background:#fff;border-left:1px solid #fef08a;padding:22px 18px;overflow-y:auto}
       .rec-pg-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}

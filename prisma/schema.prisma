@@ -1916,10 +1916,14 @@ model LabOrder {
   orderType         String         @default("MANUAL")
   clinicalNotes     String?        @db.Text
   referralNotes     String?        @db.Text
-  isHomeCollection  Boolean        @default(false)
-  collectionAddress String?        @db.Text
-  totalAmount       Float          @default(0)
-  createdAt         DateTime       @default(now())
+  isHomeCollection    Boolean        @default(false)
+  collectionAddress   String?        @db.Text
+  totalAmount         Float          @default(0)
+  interpretation      String?        @db.Text
+  impression          String?        @db.Text
+  pathologistRemarks  String?        @db.Text
+  recommendation      String?        @db.Text
+  createdAt           DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   hospital          Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   subDepartment     SubDepartment  @relation(fields: [subDepartmentId], references: [id], onDelete: Cascade)

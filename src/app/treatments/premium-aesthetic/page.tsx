@@ -56,7 +56,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Experience next-level facial treatments that deeply nourish, repair, and rejuvenate your skin for a radiant and youthful glow.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Instant glow and hydration",
                     "Improved skin tone and texture",
@@ -105,7 +105,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Achieve a naturally lifted appearance using advanced non-invasive techniques for skin tightening and lifting.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Thread lift procedures",
                     "Skin tightening technologies",
@@ -154,7 +154,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Enhance your facial contours and achieve a well-balanced profile with scientifically planned aesthetic treatments.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Jawline contouring with fillers",
                     "Chin and profile enhancement",
@@ -203,7 +203,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   We create beautifully proportioned lips that complement your overall facial aesthetics with subtle, natural-looking volume.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Natural-looking volume enhancement",
                     "Improved symmetry and definition",
@@ -252,7 +252,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Our full-face approach addresses multiple concerns like wrinkles and volume loss to restore youthful balance.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Wrinkle reduction",
                     "Volume restoration",
@@ -301,7 +301,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Exclusive makeover packages tailored for weddings and events, ensuring you are camera-ready with confidence.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Personalized pre-event treatment planning",
                     "Skin, face, and aesthetic enhancements",
@@ -350,7 +350,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Our anti-aging solutions focus on maintaining youthful skin while preserving your natural beauty without overcorrection.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Botox for fine lines and wrinkles",
                     "Dermal fillers for volume restoration",
@@ -399,7 +399,7 @@ export default function PremiumAestheticPage() {
                 <p className={styles.aboutDescription}>
                   Advanced AI technology analyzes your facial structure and skin condition for precise and predictable treatment planning.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Personalized treatment roadmap",
                     "Accurate facial analysis",

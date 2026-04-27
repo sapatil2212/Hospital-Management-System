@@ -8,7 +8,7 @@ import {
   CreditCard, IndianRupee, Plus, Trash2, Eye, ChevronRight, ChevronLeft,
   Phone, Mail, Calendar, Droplet, User, Activity, RefreshCw, Loader2,
   UserCircle, AlertTriangle, Pencil, X, Download, FileText, FileSpreadsheet,
-  FileType, Upload, Image, FileIcon, Camera
+  FileType, Upload, Image, FileIcon, Camera, Check
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -85,6 +85,7 @@ export function PatientsManagementPanel() {
   const [procedures, setProcedures] = useState<any[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
   const [selectedRxAppointment, setSelectedRxAppointment] = useState<any>(null);
+  const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
 
   // Upload state
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -148,6 +149,13 @@ export function PatientsManagementPanel() {
   };
 
   useEffect(() => { loadPatients(); }, [currentPage, searchTerm]);
+
+  const handleViewProfile = async (p: any) => {
+    setLoadingProfileId(p.id);
+    await loadPatientDetails(p.id);
+    setSelectedPatient(p);
+    setLoadingProfileId(null);
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -839,8 +847,9 @@ export function PatientsManagementPanel() {
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                   <th style={{ padding: "13px 10px 13px 16px", width: 36 }}>
-                    <input type="checkbox" checked={patients.length > 0 && selectedIds.size === patients.length} onChange={toggleAll}
-                      style={{ width: 16, height: 16, accentColor: "#0E898F", cursor: "pointer" }} />
+                    <div onClick={toggleAll} style={{ width: 18, height: 18, borderRadius: 6, border: `2px solid ${patients.length > 0 && selectedIds.size === patients.length ? "#0E898F" : "#cbd5e1"}`, background: patients.length > 0 && selectedIds.size === patients.length ? "#0E898F" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+                      {patients.length > 0 && selectedIds.size === patients.length && <Check size={12} color="#fff" strokeWidth={3} />}
+                    </div>
                   </th>
                   {["Patient ID", "Patient", "Contact", "Gender", "Age", "Blood Group", "Visits", "Registered", "Actions"].map(h => (
                     <th key={h} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
@@ -854,17 +863,15 @@ export function PatientsManagementPanel() {
                     onMouseLeave={e => { if (!selectedIds.has(p.id)) e.currentTarget.style.background = "transparent"; }}
                   >
                     <td style={{ padding: "15px 10px 15px 16px", width: 36 }}>
-                      <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)}
-                        style={{ width: 16, height: 16, accentColor: "#0E898F", cursor: "pointer" }} />
+                      <div onClick={() => toggleSelect(p.id)} style={{ width: 18, height: 18, borderRadius: 6, border: `2px solid ${selectedIds.has(p.id) ? "#0E898F" : "#cbd5e1"}`, background: selectedIds.has(p.id) ? "#0E898F" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+                        {selectedIds.has(p.id) && <Check size={12} color="#fff" strokeWidth={3} />}
+                      </div>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
                       <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6 }}>{p.patientId}</span>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0ea5e9,#07595D)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0, overflow: "hidden" }}>
-                          {p.profilePhoto ? <img src={p.profilePhoto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : p.name.charAt(0).toUpperCase()}
-                        </div>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{p.name}</span>
                       </div>
                     </td>
@@ -884,11 +891,16 @@ export function PatientsManagementPanel() {
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
-                          onClick={() => { setSelectedPatient(p); loadPatientDetails(p.id); }}
-                          style={{ padding: "8px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                          onClick={() => handleViewProfile(p)}
+                          disabled={loadingProfileId === p.id}
+                          style={{ padding: "6px 12px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 8, cursor: loadingProfileId === p.id ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, opacity: loadingProfileId === p.id ? 0.7 : 1 }}
                           title="View Profile"
                         >
-                          <Eye size={15} />
+                          {loadingProfileId === p.id ? (
+                            <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Loading...</>
+                          ) : (
+                            <>View Profile <ChevronRight size={14} /></>
+                          )}
                         </button>
                         <button
                           onClick={() => setBookingPatient(p)}

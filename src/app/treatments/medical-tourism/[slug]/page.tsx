@@ -925,21 +925,18 @@ function ZoneDetailView({ zone }: { zone: any }) {
                     <ChevronLeft size={16} /> Back to Medical Tourism
                   </Link>
                 </motion.div>
-                <motion.p
-                  className={zoneStyles.heroTagline}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-                >
-                  Regional Circuit
-                </motion.p>
                 <motion.h1
                   className={zoneStyles.heroHeading}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  {zone.name}
+                  {zone.name.includes(':') ? (
+                    <>
+                      {zone.name.split(':')[0]}:<br />
+                      <span className={zoneStyles.heroSubHeading}>{zone.name.split(':')[1]}</span>
+                    </>
+                  ) : zone.name}
                 </motion.h1>
                 <motion.p
                   className={zoneStyles.heroDescription}
@@ -947,7 +944,7 @@ function ZoneDetailView({ zone }: { zone: any }) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
                 >
-                  {zone.shortDescription} Experience world-class healthcare combined with unforgettable travel experiences across {zone.coverage.join(", ")}.
+                  {zone.shortDescription}
                 </motion.p>
               </motion.div>
 
@@ -981,29 +978,39 @@ function ZoneDetailView({ zone }: { zone: any }) {
                     <span key={tag} className={zoneStyles.vibeTag}>{tag}</span>
                   ))}
                 </div>
+
+                <div className={zoneStyles.aboutHighlightsGrid}>
+                  {zone.highlights.map((highlight: string, idx: number) => (
+                    <div key={highlight} className={zoneStyles.highlightCard}>
+                      <div className={zoneStyles.highlightNumber}>{idx + 1}</div>
+                      <div className={zoneStyles.highlightInfo}>
+                        <p className={zoneStyles.highlightText}>{highlight}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className={zoneStyles.coverageBadge}>
+                    <MapPin size={18} />
+                    <div>
+                      <span className={zoneStyles.coverageLabel}>Coverage Area</span>
+                      <span className={zoneStyles.coverageValue}>{zone.coverage.length} States & Regions</span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
+              
               <motion.div
-                className={zoneStyles.aboutHighlights}
+                className={zoneStyles.aboutImageWrapper}
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                {zone.highlights.map((highlight: string, idx: number) => (
-                  <div key={highlight} className={zoneStyles.highlightCard}>
-                    <div className={zoneStyles.highlightNumber}>{idx + 1}</div>
-                    <div className={zoneStyles.highlightInfo}>
-                      <p className={zoneStyles.highlightText}>{highlight}</p>
-                    </div>
-                  </div>
-                ))}
-                <div className={zoneStyles.coverageBadge}>
-                  <MapPin size={18} />
-                  <div>
-                    <span className={zoneStyles.coverageLabel}>Coverage Area</span>
-                    <span className={zoneStyles.coverageValue}>{zone.coverage.length} States & Regions</span>
-                  </div>
-                </div>
+                <Image
+                  src={`/images/medical-tourism/about-${zone.id}.png`}
+                  alt={`About ${zone.name.split(":")[0]}`}
+                  fill
+                  className={zoneStyles.aboutRegionImage}
+                />
               </motion.div>
             </div>
           </div>

@@ -2,10 +2,9 @@
 import React,{useEffect,useState,useCallback,useRef}from"react";
 import dynamic from"next/dynamic";
 import{PieChart,Pie,Cell,BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,Legend}from"recharts";
-import{FlaskConical,TestTube2,Activity,Plus,X,RefreshCw,Loader2,CheckCircle2,Clock,AlertTriangle,FileText,Mail,MessageSquare,Eye,Edit2,Trash2,Check,TrendingUp,IndianRupee,ClipboardList,ShieldCheck,ToggleLeft,ToggleRight,Save,ArrowRight,BarChart2,Bell,ChevronRight,Download,FileSpreadsheet,FileType,ChevronDown,Send,Pencil,Receipt,CreditCard}from"lucide-react";
+import{FlaskConical,TestTube2,Activity,Plus,X,RefreshCw,Loader2,CheckCircle2,Clock,AlertTriangle,FileText,Mail,MessageSquare,Eye,Edit2,Trash2,Check,TrendingUp,IndianRupee,ClipboardList,ShieldCheck,ToggleLeft,ToggleRight,Save,ArrowRight,BarChart2,Bell,ChevronRight,Download,FileSpreadsheet,FileType,ChevronDown,Send,Pencil,Receipt,CreditCard,Sparkles,Mic,MicOff,Wand2}from"lucide-react";
 const LabBillingQueue=dynamic(()=>import("@/components/BillingQueue"),{ssr:false,loading:()=><div style={{padding:40,textAlign:"center"}}><Loader2 size={18} style={{animation:"spin .7s linear infinite",display:"inline"}}/><div style={{fontSize:12,color:"#94a3b8",marginTop:8}}>Loading Billing Queue...</div></div>});
 const LabBillingModule=dynamic(()=>import("@/components/BillingModule"),{ssr:false,loading:()=><div style={{padding:40,textAlign:"center"}}><Loader2 size={18} style={{animation:"spin .7s linear infinite",display:"inline"}}/><div style={{fontSize:12,color:"#94a3b8",marginTop:8}}>Loading Bills...</div></div>});
-const LabFinancePanel=dynamic(()=>import("@/app/hospitaladmin/finance/page"),{ssr:false,loading:()=><div style={{padding:40,textAlign:"center"}}><Loader2 size={18} style={{animation:"spin .7s linear infinite",display:"inline"}}/><div style={{fontSize:12,color:"#94a3b8",marginTop:8}}>Loading Finance...</div></div>});
 const A="#047857",G1="#10b981",G2="#047857",L="#f0fdf4",B="#a7f3d0",GR=`linear-gradient(135deg,${G1},${G2})`;
 const ST=["BLOOD","URINE","STOOL","SPUTUM","CSF","SWAB","TISSUE","SERUM","OTHER"];
 const CA=["HEMATOLOGY","BIOCHEMISTRY","MICROBIOLOGY","SEROLOGY","PATHOLOGY","URINE","IMMUNOLOGY","HORMONES","COAGULATION","OTHER"];
@@ -41,6 +40,8 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
   const[showSM,setShowSM]=useState(false);const[smOrder,setSmOrder]=useState<any>(null);const[smForm,setSmForm]=useState({specimenType:"BLOOD",collectedBy:"",notes:""});const[smSav,setSmSav]=useState(false);
   const[reports,setReports]=useState<any[]>([]);const[rL,setRL]=useState(false);const[vRep,setVRep]=useState<any>(null);const[rActL,setRActL]=useState(false);
   const[resOrder,setResOrder]=useState<any>(null);const[resItems,setResItems]=useState<any[]>([]);const[resSav,setResSav]=useState(false);const[resMsg,setResMsg]=useState("");
+  const[aiResL,setAiResL]=useState(false);const[aiResMsg,setAiResMsg]=useState("");const[isListening,setIsListening]=useState(false);const[listenIdx,setListenIdx]=useState(-1);
+  const[finSearch,setFinSearch]=useState("");
   const[resSearch,setResSearch]=useState("");const[resFilter,setResFilter]=useState("");const[resSort,setResSort]=useState("newest");const[resSortOpen,setResSortOpen]=useState(false);
   const[resExtra,setResExtra]=useState<any>({specimenCondition:"NORMAL",fastingStatus:"",collectedAt:"",receivedAt:"",reportedAt:"",pathRemarks:"",interpretation:"",impression:"",recommendation:"",verifiedBy:"",qualification:"",approvedBy:"",reportVersion:"ORIGINAL",amendmentNotes:"",deliveryMode:"PRINT"});
   const[srch,setSrch]=useState("");const[delT,setDelT]=useState<any>(null);const[delL,setDelL]=useState(false);
@@ -87,6 +88,8 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
   const[revStats,setRevStats]=useState<any>({total:0,collected:0,pending:0,today:0});
   const[revSubTab,setRevSubTab]=useState<"overview"|"billing-queue"|"all-bills"|"finance">("overview");
   const imgCache=useRef<Record<string,string|null>>({});
+  const recogRef=useRef<any>(null);
+  const srchAbort=useRef<AbortController|null>(null);
   const loadImageAsBase64=(url:string):Promise<string|null>=>{if(!url)return Promise.resolve(null);if(imgCache.current[url]!==undefined)return Promise.resolve(imgCache.current[url]);return new Promise((resolve)=>{let imgUrl=url;if(url.match(/\.pdf$/i)||url.includes('/raw/upload/')){imgUrl=url.replace('/upload/','/upload/f_png,pg_1/').replace(/\.pdf$/i,'.png');}try{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{try{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');if(ctx){ctx.drawImage(img,0,0);const d=c.toDataURL('image/png');imgCache.current[url]=d;resolve(d);return;}}catch{}imgCache.current[url]=null;resolve(null);};img.onerror=()=>{imgCache.current[url]=null;resolve(null);};img.src=imgUrl;}catch{imgCache.current[url]=null;resolve(null);}});};
 
   // Helpers
@@ -158,7 +161,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
     if(tab==="analytics")ldStats();
   },[tab]);// eslint-disable-line
 
-  const srchPat=useCallback(async(q:string)=>{if(q.length<2){setPatR([]);return;}const d=await fetch(`/api/patients?q=${encodeURIComponent(q)}`,{credentials:"include"}).then(r=>r.json());if(d.success)setPatR(Array.isArray(d.data)?d.data:(d.data?.patients||d.data?.data||[]));},[]);
+  const srchPat=useCallback(async(q:string)=>{if(srchAbort.current)srchAbort.current.abort();if(q.length<2){setPatR([]);return;}srchAbort.current=new AbortController();try{const d=await fetch(`/api/patients?q=${encodeURIComponent(q)}`,{credentials:"include",signal:srchAbort.current.signal}).then(r=>r.json());if(d.success)setPatR(Array.isArray(d.data)?d.data:(d.data?.patients||d.data?.data||[]));}catch(e:any){if(e.name!=="AbortError")setPatR([]);}},[]);
   const createOrder=async()=>{if(!oForm.patientId&&!oForm.patientName){setOMsg("Select or enter a patient");return;}if(!oForm.items.length){setOMsg("Add at least one test");return;}setOSaving(true);setOMsg("");const res=await fetch("/api/pathology/orders",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({...oForm,billingAction:oForm.billingAction||"defer",paymentMethod:oForm.paymentMode,discount:oForm.discount,taxPercent:oForm.taxPercent,billingSubdeptId:oForm.billingSubdeptId||undefined})}).then(r=>r.json());if(res.success){const bInfo=res.data?.bill;setShowOM(false);setOForm(BO);setPatR([]);setNewOrderTab(0);await ldOrders();if(bInfo?.billNo){if(oForm.billingAction==="collect_at_lab")alert(`✅ Order ${res.data?.orderNo||""} created.\nPayment collected — Bill: ${bInfo.billNo}`);else if(oForm.billingAction==="send_to_billing")alert(`✅ Order ${res.data?.orderNo||""} created.\nBill ${bInfo.billNo} sent to billing queue.`);}}else setOMsg(res.message||"Failed");setOSaving(false);};
   const addTest=(t:any)=>{if(oForm.items.find((i:any)=>i.testId===t.id))return;setOForm((f:any)=>({...f,items:[...f.items,{testId:t.id,panelId:null,name:t.name,code:t.code,price:t.price||0}]}));};
   const addPanel=(p:any)=>{if(oForm.items.find((i:any)=>i.panelId===p.id))return;setOForm((f:any)=>({...f,items:[...f.items,{testId:null,panelId:p.id,name:p.name,code:p.code,price:p.price||0}]}));};
@@ -168,6 +171,61 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
   const updSample=async(id:string,status:string,rr?:string)=>{await fetch("/api/pathology/samples",{method:"PATCH",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({sampleId:id,status,rejectionReason:rr})});await ldSamples();};
   const openRes=(o:any)=>{const tmpl:any=(()=>{try{return JSON.parse(localStorage.getItem("lab_res_templates")||"{}")}catch{return{};}})();setResOrder(o);setResItems((o.items||[]).map((i:any)=>{const t=tmpl[i.test?.name]||{};return({id:i.id,testName:i.test?.name||i.panel?.name||"—",testCode:i.test?.code||"",unit:i.unit||i.test?.unit||t.unit||"",normalRange:i.normalRange||i.test?.normalRangeText||t.normalRange||"",result:i.result||"",isAbnormal:i.isAbnormal||false,isCritical:i.isCritical||false,notes:i.notes||"",enteredBy:i.enteredBy||t.enteredBy||"",method:i.method||i.test?.method||""});}));setResExtra({specimenCondition:"NORMAL",fastingStatus:"",collectedAt:o.sample?.collectedAt?new Date(o.sample.collectedAt).toISOString().slice(0,16):"",receivedAt:"",reportedAt:new Date().toISOString().slice(0,16),pathRemarks:"",interpretation:"",impression:"",recommendation:"",verifiedBy:"",qualification:"",approvedBy:"",reportVersion:"ORIGINAL",amendmentNotes:"",deliveryMode:"PRINT"});setResMsg("");window.scrollTo({top:0,behavior:"smooth"});};
   const saveRes=async()=>{if(!resOrder)return;setResSav(true);setResMsg("");const res=await fetch(`/api/pathology/orders/${resOrder.id}`,{method:"PUT",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"RESULT_ENTERED",pathologistRemarks:resExtra.pathRemarks,interpretation:resExtra.interpretation,impression:resExtra.impression,verifiedBy:resExtra.verifiedBy,deliveryMode:resExtra.deliveryMode,items:resItems.map(i=>({id:i.id,result:i.result,isAbnormal:i.isAbnormal,isCritical:i.isCritical,notes:i.notes,enteredBy:i.enteredBy,method:i.method,status:"RESULT_ENTERED"}))})}).then(r=>r.json());if(res.success){try{const tmpl:any=JSON.parse(localStorage.getItem("lab_res_templates")||"{}" );resItems.forEach(item=>{if(item.result)tmpl[item.testName]={unit:item.unit,normalRange:item.normalRange,enteredBy:item.enteredBy};});localStorage.setItem("lab_res_templates",JSON.stringify(tmpl));}catch{}setResOrder(null);await ldOrders();}else setResMsg(res.message||"Failed");setResSav(false);};
+  const generateAiResults=async()=>{
+    if(!resOrder||!resItems.length)return;
+    setAiResL(true);setAiResMsg("");
+    try{
+      const age=resOrder.patient?.dateOfBirth?Math.floor((Date.now()-new Date(resOrder.patient.dateOfBirth).getTime())/(365.25*24*60*60*1000)):undefined;
+      const body={
+        tests:resItems.map((i:any)=>({name:i.testName,code:i.testCode,unit:i.unit,normalRange:i.normalRange,specimenType:resOrder.sample?.specimenType})),
+        patientAge:age,
+        patientGender:resOrder.patient?.gender,
+        clinicalNotes:resOrder.clinicalNotes||resOrder.diagnosis||"",
+        diagnosis:resOrder.diagnosis||"",
+        specimenType:resOrder.sample?.specimenType||resOrder.specimenType||"",
+      };
+      const res=await fetch("/api/pathology/ai-results",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(r=>r.json());
+      if(res.success&&res.data){
+        const d=res.data;
+        setResItems((prev:any[])=>prev.map((item:any)=>{
+          const match=d.results?.find((r:any)=>{
+            const rn=r.testName.toLowerCase();const tn=item.testName.toLowerCase();
+            return rn===tn||rn.includes(tn)||tn.includes(rn);
+          });
+          if(match)return{...item,result:match.result||item.result,unit:match.unit||item.unit,isAbnormal:!!match.isAbnormal,isCritical:!!match.isCritical,notes:match.notes||item.notes};
+          return item;
+        }));
+        if(d.interpretation)setResExtra((x:any)=>({...x,interpretation:d.interpretation}));
+        if(d.impression)setResExtra((x:any)=>({...x,impression:d.impression}));
+        if(d.recommendation)setResExtra((x:any)=>({...x,recommendation:d.recommendation}));
+        if(d.pathRemarks)setResExtra((x:any)=>({...x,pathRemarks:d.pathRemarks}));
+        setAiResMsg("✅ AI suggestions applied — review carefully and replace with actual measured values before saving.");
+      }else{
+        setAiResMsg("⚠ "+( res.message||"AI did not return results. Check API keys in .env."));
+      }
+    }catch(e:any){
+      setAiResMsg("⚠ AI error: "+e.message);
+    }finally{
+      setAiResL(false);
+    }
+  };
+  const startVoice=(idx:number)=>{
+    const SR=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition;
+    if(!SR){alert("Voice input is not supported in this browser. Please use Chrome or Edge.");return;}
+    if(recogRef.current){recogRef.current.abort();}
+    const r=new SR();
+    r.lang="en-IN";r.continuous=false;r.interimResults=false;
+    r.onstart=()=>{setIsListening(true);setListenIdx(idx);};
+    r.onresult=(e:any)=>{
+      const transcript=e.results[0][0].transcript.trim();
+      setResItems((prev:any[])=>{const u=[...prev];u[idx]={...u[idx],result:transcript};return u;});
+    };
+    r.onend=()=>{setIsListening(false);setListenIdx(-1);};
+    r.onerror=()=>{setIsListening(false);setListenIdx(-1);};
+    recogRef.current=r;
+    r.start();
+  };
+  const stopVoice=()=>{if(recogRef.current)try{recogRef.current.stop();}catch{}setIsListening(false);setListenIdx(-1);};
   const doRep=async(orderId:string,action:string,dm?:string)=>{setRActL(true);const res=await fetch("/api/pathology/reports",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,action,deliveryMethod:dm})}).then(r=>r.json());if(res.success){setVRep(null);await Promise.all([ldReports(),ldOrders()]);}else alert(res.message||"Failed");setRActL(false);};
   const deleteReport=async()=>{if(!delRep)return;setDelRepL(true);try{const r=await fetch(`/api/pathology/reports?reportId=${delRep.id}`,{method:"DELETE",credentials:"include"}).then(r=>r.json());if(r.success){setDelRep(null);await Promise.all([ldReports(),ldOrders()]);}else alert(r.message||"Failed to delete");}catch(e:any){alert(e.message||"Error");}finally{setDelRepL(false);};};
   const saveEditReport=async()=>{if(!editRep)return;setEditRepSaving(true);setEditRepMsg("");try{const r=await fetch("/api/pathology/reports",{method:"PATCH",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({reportId:editRep.id,verifiedBy:editRepForm.verifiedBy,notes:editRepForm.notes,items:editRepItems})}).then(r=>r.json());if(r.success){setEditRep(null);await ldReports();}else setEditRepMsg(r.message||"Failed");}catch(e:any){setEditRepMsg(e.message||"Error");}finally{setEditRepSaving(false);};};
@@ -321,6 +379,26 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
 
     const finalY=(doc as any).lastAutoTable?.finalY||y+50;let sy=finalY+10;
 
+    // --- CLINICAL FINDINGS BLOCK ---
+    const clinBlocks:any[]=[
+      {label:"Pathologist Remarks / Gross Description",val:rep.order?.pathologistRemarks},
+      {label:"Clinical Interpretation",val:rep.order?.interpretation},
+      {label:"Impression / Diagnosis",val:rep.order?.impression},
+      {label:"Recommendation",val:rep.order?.recommendation},
+    ].filter((b:any)=>b.val&&b.val.trim());
+    clinBlocks.forEach((b:any)=>{
+      if(sy+18>ph-30){doc.addPage();sy=20;}
+      doc.setFillColor(240,253,244);doc.roundedRect(mx,sy,pw-2*mx,14+Math.ceil(b.val.length/90)*4.5,2,2,"F");
+      doc.setDrawColor(167,243,208);doc.setLineWidth(0.2);doc.roundedRect(mx,sy,pw-2*mx,14+Math.ceil(b.val.length/90)*4.5,2,2,"S");
+      doc.setFont("helvetica","bold");doc.setFontSize(7);doc.setTextColor(...accent);
+      doc.text(b.label.toUpperCase(),mx+3,sy+5);
+      doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...dark);
+      const wrapped=doc.splitTextToSize(b.val,pw-2*mx-6);
+      doc.text(wrapped,mx+3,sy+10);
+      sy+=16+wrapped.length*4.5;
+    });
+    if(clinBlocks.length>0)sy+=4;
+
     // --- SIGNATORY BLOCK ---
     if(sy+30>ph-20){doc.addPage();sy=20;}
     const sigY=Math.max(sy,ph-(hasLetterhead?60:50));
@@ -429,8 +507,8 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
     .chd{padding:10px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
     .ct{font-size:12px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:5px}
     .pt{width:100%;border-collapse:collapse}
-    .pt th{text-align:left;font-size:8.5px;font-weight:700;color:#94a3b8;padding:7px 10px;border-bottom:2px solid #f1f5f9;text-transform:uppercase;letter-spacing:.05em}
-    .pt td{padding:8px 10px;font-size:11px;color:#475569;border-bottom:1px solid #f8fafc}
+    .pt th{text-align:left;font-size:8.5px;font-weight:700;color:#94a3b8;padding:7px 10px;border-bottom:1px solid #e2e8f0;text-transform:uppercase;letter-spacing:.05em}
+    .pt td{padding:8px 10px;font-size:11px;color:#475569;border-bottom:1px solid #e2e8f0}
     .pt tbody tr:hover td{background:#fafafa}
     .pt tr:last-child td{border-bottom:none}
     .empty{text-align:center;padding:28px;color:#94a3b8;font-size:11px}
@@ -482,7 +560,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
               <div style={{fontSize:11,color:"#64748b",marginTop:2,marginLeft:38}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
             </div>
             <div style={{display:"flex",gap:6}}>
-              <Btn onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);ldTests();ldPanels();ldSubdepts();setShowOM(true);}} style={{background:A,color:"#fff",borderColor:A}}><Plus size={11}/>New Order</Btn>
+              <Btn onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);setPatR([]);ldTests();ldPanels();ldSubdepts();setShowOM(true);}} style={{background:A,color:"#fff",borderColor:A}}><Plus size={11}/>New Order</Btn>
               <Btn onClick={()=>{ldStats();ldOrders();}} style={{background:"#fff",color:"#64748b",borderColor:"#e2e8f0"}}><RefreshCw size={10} className={sL?"spin":""}/></Btn>
             </div>
           </div>
@@ -494,7 +572,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
               {steps.map((step,i)=>{
                 const active=step.count>0;
                 return(<React.Fragment key={step.n}>
-                  <button onClick={()=>sw(step.tab)} style={{flex:1,padding:"10px 6px 8px",borderRadius:11,border:`2px solid ${active?step.bc:"#f1f5f9"}`,background:active?step.bg:"#fafafa",cursor:"pointer",textAlign:"center" as any,transition:"all .18s",position:"relative" as any,minWidth:0}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,.08)";}} onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                  <button onClick={()=>sw(step.tab)} style={{flex:1,padding:"10px 6px 8px",borderRadius:11,border:`1px solid #e2e8f0`,background:"#fff",cursor:"pointer",textAlign:"center" as any,transition:"all .18s",position:"relative" as any,minWidth:0}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=step.bc;}} onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor="#e2e8f0";}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginBottom:4}}>
                       <div style={{width:24,height:24,borderRadius:7,background:active?step.bc:"#e2e8f0",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0}}>{i+1}</div>
                     </div>
@@ -532,7 +610,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
                 {show:awaitReport>0,label:"Ready for Report",count:awaitReport,icon:<FileText size={14}/>,bg:"#ecfdf5",bc:"#a7f3d0",c:A,tab:"reports",btn:"Generate"},
                 {show:awaitVerify>0,label:"Awaiting Verify",count:awaitVerify,icon:<ShieldCheck size={14}/>,bg:"#f0f9ff",bc:"#bae6fd",c:"#0284c7",tab:"reports",btn:"Verify"},
               ].filter(c=>c.show).map(c=>(
-                <div key={c.label} style={{background:c.bg,border:`1.5px solid ${c.bc}`,borderRadius:10,padding:"10px 12px",display:"flex",flexDirection:"column" as any,gap:6}}>
+                <div key={c.label} style={{background:"#fff",border:`1px solid #e2e8f0`,borderRadius:10,padding:"10px 12px",display:"flex",flexDirection:"column" as any,gap:6,transition:"all .2s"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=c.bc;e.currentTarget.style.transform="translateY(-2px)";}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.transform="none";}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                     <span style={{color:c.c}}>{c.icon}</span>
                     <span style={{fontSize:20,fontWeight:800,color:c.c}}>{c.count}</span>
@@ -656,7 +734,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
                 </div>
               ))}
               {/* Walk-in new order card */}
-              <div style={{background:"#fafafa",border:"1.5px dashed #e2e8f0",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column" as any,alignItems:"center",justifyContent:"center",gap:8,minHeight:140,cursor:"pointer"}} onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);ldTests();ldPanels();ldSubdepts();setShowOM(true);}}>
+              <div style={{background:"#fafafa",border:"1.5px dashed #e2e8f0",borderRadius:12,padding:"14px 16px",display:"flex",flexDirection:"column" as any,alignItems:"center",justifyContent:"center",gap:8,minHeight:140,cursor:"pointer"}} onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);setPatR([]);ldTests();ldPanels();ldSubdepts();setShowOM(true);}}>
                 <div style={{width:40,height:40,borderRadius:12,background:"#f0fdf4",border:"1.5px solid #a7f3d0",display:"flex",alignItems:"center",justifyContent:"center"}}><Plus size={18} color={A}/></div>
                 <div style={{textAlign:"center" as any}}><div style={{fontSize:12,fontWeight:700,color:"#475569"}}>Walk-in Patient</div><div style={{fontSize:10,color:"#94a3b8"}}>New order without referral</div></div>
               </div>
@@ -668,7 +746,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
             <div style={{width:48,height:48,borderRadius:14,background:L,border:`1.5px solid ${B}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}><FlaskConical size={22} color={A}/></div>
             <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>No orders yet</div>
             <div style={{fontSize:11,color:"#64748b",marginBottom:12}}>Doctor referrals will appear here. You can also create a walk-in order.</div>
-            <button onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);ldTests();ldPanels();ldSubdepts();setShowOM(true);}} style={{padding:"8px 20px",borderRadius:9,background:A,color:"#fff",border:"none",fontSize:12,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Plus size={13}/>New Walk-in Order</button>
+            <button onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);setPatR([]);ldTests();ldPanels();ldSubdepts();setShowOM(true);}} style={{padding:"8px 20px",borderRadius:9,background:A,color:"#fff",border:"none",fontSize:12,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Plus size={13}/>New Walk-in Order</button>
           </div>}
 
           {/* Stats bar */}
@@ -758,7 +836,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
             {/* Refresh / Clear */}
             <button onClick={()=>ldOrders()} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:11,cursor:"pointer"}}><RefreshCw size={11} className={oL?"spin":""}/></button>
             {(ordSearch||ordFilter)&&<button onClick={()=>{setOrdSearch("");setOrdFilter("");}} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:8,border:"1px solid #fecaca",background:"#fff5f5",color:"#ef4444",fontSize:11,fontWeight:600,cursor:"pointer"}}><X size={11}/>Clear</button>}
-            <Btn onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);ldTests();ldPanels();setShowOM(true);}} style={{background:A,color:"#fff",borderColor:A,marginLeft:"auto"}}><Plus size={12}/>New Order</Btn>
+            <Btn onClick={()=>{setOForm({...BO,sampleDate:new Date().toISOString().slice(0,10)});setOMsg("");setNewOrderTab(0);setPatR([]);ldTests();ldPanels();setShowOM(true);}} style={{background:A,color:"#fff",borderColor:A,marginLeft:"auto"}}><Plus size={12}/>New Order</Btn>
           </div>
 
           {/* Table */}
@@ -880,9 +958,18 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:9,fontWeight:700,background:"#faf5ff",color:"#7c3aed",border:"1px solid #e9d5ff",borderRadius:20,padding:"2px 10px"}}>{resExtra.reportVersion}</span>
-                  <button onClick={()=>setResOrder(null)} style={{background:"none",border:"none",cursor:"pointer",color:"#94a3b8",padding:4,display:"flex"}}><X size={15}/></button>
+                  <button onClick={generateAiResults} disabled={aiResL} title="AI auto-fill result values and interpretation" style={{display:"flex",alignItems:"center",gap:5,padding:"5px 13px",borderRadius:8,border:"1.5px solid #a78bfa",background:aiResL?"#ede9fe":"linear-gradient(135deg,#8b5cf6,#7c3aed)",color:"#fff",fontSize:11,fontWeight:700,cursor:aiResL?"not-allowed":"pointer",opacity:aiResL?.7:1,transition:"all .2s"}}>{aiResL?<><Loader2 size={12} style={{animation:"spin .7s linear infinite"}}/>&nbsp;Generating…</>:<><Sparkles size={12}/>&nbsp;AI Fill</>}</button>
+                  <button onClick={()=>setResOrder(null)} title="Back to orders list" style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:11,fontWeight:700,cursor:"pointer"}}><ArrowRight size={12} style={{transform:"rotate(180deg)"}}/> Back</button>
                 </div>
               </div>
+
+              {aiResMsg&&(
+                <div style={{padding:"9px 18px",background:aiResMsg.startsWith("✅")?"#f0fdf4":"#fff7ed",borderBottom:"1px solid",borderBottomColor:aiResMsg.startsWith("✅")?"#a7f3d0":"#fed7aa",display:"flex",alignItems:"center",gap:10}}>
+                  {aiResMsg.startsWith("✅")?<CheckCircle2 size={13} color="#15803d"/>:<AlertTriangle size={13} color="#b45309"/>}
+                  <span style={{fontSize:11,fontWeight:600,color:aiResMsg.startsWith("✅")?"#15803d":"#b45309",flex:1}}>{aiResMsg}</span>
+                  <button onClick={()=>setAiResMsg("")} style={{background:"none",border:"none",cursor:"pointer",padding:2,display:"flex"}}><X size={11} color="#94a3b8"/></button>
+                </div>
+              )}
 
               <div style={{padding:"16px 18px"}}>
                 {/* ── Section 1: Patient Info + Sample Details ── */}
@@ -959,6 +1046,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
                           <div style={{display:"flex",gap:3}}>
                             <input value={item.result} onChange={e=>{const u=[...resItems];u[idx]={...item,result:e.target.value};setResItems(u);}} placeholder="Enter value…" style={{flex:1,fontSize:12,fontWeight:700,border:`1.5px solid ${isC?"#fca5a5":isA?"#fde68a":"#d1d5db"}`,borderRadius:6,padding:"5px 9px",outline:"none",background:"#fff",color:"#1e293b"}}/>
                             {item.normalRange&&<button title="Auto-fill midpoint of reference range" onClick={()=>{const r=item.normalRange;let s="";if(/negative/i.test(r))s="Negative";else if(/absent/i.test(r))s="Absent";else{const m=r.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);if(m)s=((parseFloat(m[1])+parseFloat(m[2]))/2).toFixed(1);}if(s){const u=[...resItems];u[idx]={...item,result:s};setResItems(u);}}} style={{width:28,height:34,borderRadius:6,border:"1px solid #a7f3d0",background:"#f0fdf4",color:A,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>⚡</button>}
+                            <button title={listenIdx===idx&&isListening?"Stop voice input (click to stop)":"Speak result value (voice input)"} onClick={()=>{if(listenIdx===idx&&isListening)stopVoice();else startVoice(idx);}} style={{width:28,height:34,borderRadius:6,border:`1px solid ${listenIdx===idx&&isListening?"#fca5a5":"#bfdbfe"}`,background:listenIdx===idx&&isListening?"#fff5f5":"#eff6ff",color:listenIdx===idx&&isListening?"#ef4444":"#2563eb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,animation:listenIdx===idx&&isListening?"pulse 1s ease-in-out infinite":""}}>{listenIdx===idx&&isListening?<MicOff size={12}/>:<Mic size={12}/>}</button>
                           </div>
                         </div>
                         <div>
@@ -1080,6 +1168,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
             </div>
           )}
 
+          {!resOrder&&<>
           {/* ── Stats Bar ── */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
             {([{l:"Total Awaiting",v:resCand.length,bg:"#f8fafc",c:"#475569",k:""},{l:"Sample Collected",v:cntSC,bg:"#faf5ff",c:"#7c3aed",k:"SAMPLE_COLLECTED"},{l:"In Process",v:cntIP,bg:"#fff7ed",c:"#b45309",k:"IN_PROCESS"},{l:"Results Entered",v:cntRE,bg:"#f0fdf4",c:"#15803d",k:"RESULT_ENTERED"}] as any[]).map((k:any)=>(
@@ -1180,6 +1269,7 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
               <span>{cntSC} collected · {cntIP} in process · {cntRE} results entered</span>
             </div>
           </div>
+          </>}
           </>);
         })()}
 
@@ -1399,29 +1489,80 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
               );})}
             </div>
 
-            {/* Quick Actions */}
+            {/* Quick Actions — Payment Queue & Bill Management with live data */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-              <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden"}}>
-                <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <span style={{fontSize:13,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:6}}><CreditCard size={14} color={A}/>Payment Queue</span>
-                  <button onClick={()=>setRevSubTab("billing-queue")} style={{fontSize:11,fontWeight:600,color:A,background:L,border:`1px solid ${B}`,borderRadius:7,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={11}/></button>
+              {/* Payment Queue */}
+              <div style={{background:"#fff",border:`1px solid ${B}`,borderRadius:14,overflow:"hidden"}}>
+                <div style={{padding:"12px 16px",borderBottom:`1px solid ${B}`,background:L,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:13,fontWeight:700,color:A,display:"flex",alignItems:"center",gap:6}}><CreditCard size={14} color={A}/>Payment Queue</span>
+                  <button onClick={()=>setRevSubTab("billing-queue")} style={{fontSize:11,fontWeight:600,color:A,background:"#fff",border:`1px solid ${B}`,borderRadius:7,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={11}/></button>
                 </div>
-                <div style={{padding:"20px",textAlign:"center" as any}}>
-                  <div style={{width:48,height:48,borderRadius:12,background:L,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}><Clock size={22} color={A}/></div>
-                  <div style={{fontSize:13,color:"#64748b",marginBottom:12}}>Pending lab test payments waiting for collection</div>
-                  <button onClick={()=>setRevSubTab("billing-queue")} style={{background:GR,color:"#fff",border:"none",borderRadius:9,padding:"9px 20px",fontSize:12,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><CreditCard size={14}/>Start Collecting</button>
+                <div style={{maxHeight:260,overflowY:"auto" as any}}>
+                  {(()=>{const pending=revenue.filter((b:any)=>b.status!=="PAID"&&b.status!=="CANCELLED");
+                  if(revL)return<div style={{padding:"20px",textAlign:"center" as any,color:"#94a3b8",fontSize:12}}><Loader2 size={14} className="spin" style={{display:"inline",marginRight:6}}/>Loading…</div>;
+                  if(!pending.length)return(<div style={{padding:"24px",textAlign:"center" as any}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:L,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}><Clock size={18} color={A}/></div>
+                    <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>No pending payments</div>
+                    <button onClick={()=>setRevSubTab("billing-queue")} style={{background:GR,color:"#fff",border:"none",borderRadius:8,padding:"7px 16px",fontSize:11,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}><CreditCard size={12}/>Collect Payment</button>
+                  </div>);
+                  return pending.slice(0,8).map((b:any,i:number)=>{
+                    const isPaid=b.status==="PAID";
+                    const stC=isPaid?"#15803d":b.status==="CANCELLED"?"#94a3b8":"#b45309";
+                    const stBg=isPaid?"#f0fdf4":b.status==="CANCELLED"?"#f8fafc":"#fffbeb";
+                    return(<div key={b.id||i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 14px",borderBottom:`1px solid ${B}`,gap:8}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" as any}}>{b.patient?.name||b.order?.patient?.name||"Patient"}</div>
+                        <div style={{fontSize:10,color:"#94a3b8"}}>{b.billNo||b.order?.orderNo||"—"}</div>
+                      </div>
+                      <div style={{textAlign:"right" as any,flexShrink:0}}>
+                        <div style={{fontSize:12,fontWeight:800,color:A}}>{fmtCur(parseFloat(b.total||b.amount||0))}</div>
+                        <span style={{fontSize:9,fontWeight:700,padding:"1px 7px",borderRadius:20,background:stBg,color:stC}}>{b.status||"PENDING"}</span>
+                      </div>
+                    </div>);
+                  });})()} 
                 </div>
+                {revenue.filter((b:any)=>b.status!=="PAID"&&b.status!=="CANCELLED").length>8&&(
+                  <div style={{padding:"8px 14px",borderTop:`1px solid ${B}`,textAlign:"center" as any}}>
+                    <button onClick={()=>setRevSubTab("billing-queue")} style={{fontSize:11,color:A,fontWeight:600,background:"none",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>View all pending <ArrowRight size={11}/></button>
+                  </div>
+                )}
               </div>
-              <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden"}}>
-                <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <span style={{fontSize:13,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:6}}><FileText size={14} color={A}/>Bill Management</span>
-                  <button onClick={()=>setRevSubTab("all-bills")} style={{fontSize:11,fontWeight:600,color:A,background:L,border:`1px solid ${B}`,borderRadius:7,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={11}/></button>
+
+              {/* Bill Management */}
+              <div style={{background:"#fff",border:`1px solid ${B}`,borderRadius:14,overflow:"hidden"}}>
+                <div style={{padding:"12px 16px",borderBottom:`1px solid ${B}`,background:L,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:13,fontWeight:700,color:A,display:"flex",alignItems:"center",gap:6}}><FileText size={14} color={A}/>Bill Management</span>
+                  <button onClick={()=>setRevSubTab("all-bills")} style={{fontSize:11,fontWeight:600,color:A,background:"#fff",border:`1px solid ${B}`,borderRadius:7,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={11}/></button>
                 </div>
-                <div style={{padding:"20px",textAlign:"center" as any}}>
-                  <div style={{width:48,height:48,borderRadius:12,background:"#faf5ff",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}><FileText size={22} color="#7c3aed"/></div>
-                  <div style={{fontSize:13,color:"#64748b",marginBottom:12}}>View, create & manage all pathology lab bills</div>
-                  <button onClick={()=>setRevSubTab("all-bills")} style={{background:GR,color:"#fff",border:"none",borderRadius:9,padding:"9px 20px",fontSize:12,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><Receipt size={14}/>View All Bills</button>
+                <div style={{maxHeight:260,overflowY:"auto" as any}}>
+                  {(()=>{
+                  if(revL)return<div style={{padding:"20px",textAlign:"center" as any,color:"#94a3b8",fontSize:12}}><Loader2 size={14} className="spin" style={{display:"inline",marginRight:6}}/>Loading…</div>;
+                  if(!revenue.length)return(<div style={{padding:"24px",textAlign:"center" as any}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:L,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}><FileText size={18} color={A}/></div>
+                    <div style={{fontSize:12,color:"#64748b",marginBottom:10}}>No bills yet</div>
+                    <button onClick={()=>setRevSubTab("all-bills")} style={{background:GR,color:"#fff",border:"none",borderRadius:8,padding:"7px 16px",fontSize:11,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}><Receipt size={12}/>View Bills</button>
+                  </div>);
+                  return revenue.slice(0,8).map((b:any,i:number)=>{
+                    const isPaid=b.status==="PAID";
+                    const stC=isPaid?"#15803d":b.status==="CANCELLED"?"#94a3b8":"#b45309";
+                    const stBg=isPaid?"#f0fdf4":b.status==="CANCELLED"?"#f8fafc":"#fffbeb";
+                    return(<div key={b.id||i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 14px",borderBottom:`1px solid ${B}`,gap:8}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" as any}}>{b.patient?.name||b.order?.patient?.name||"Patient"}</div>
+                        <div style={{fontSize:10,color:"#94a3b8"}}>{b.billNo||"—"} · {b.createdAt?new Date(b.createdAt).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}):""}</div>
+                      </div>
+                      <div style={{textAlign:"right" as any,flexShrink:0}}>
+                        <div style={{fontSize:12,fontWeight:800,color:A}}>{fmtCur(parseFloat(b.total||b.amount||0))}</div>
+                        <span style={{fontSize:9,fontWeight:700,padding:"1px 7px",borderRadius:20,background:stBg,color:stC}}>{b.status||"PENDING"}</span>
+                      </div>
+                    </div>);
+                  });})()} 
                 </div>
+                {revenue.length>8&&(
+                  <div style={{padding:"8px 14px",borderTop:`1px solid ${B}`,textAlign:"center" as any}}>
+                    <button onClick={()=>setRevSubTab("all-bills")} style={{fontSize:11,color:A,fontWeight:600,background:"none",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>View all bills <ArrowRight size={11}/></button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1440,8 +1581,111 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
           {/* ═══ ALL BILLS — Lab scoped ═══ */}
           {rst==="all-bills"&&<LabBillingModule scope="lab"/>}
 
-          {/* ═══ FINANCE ═══ */}
-          {rst==="finance"&&<LabFinancePanel/>}
+          {/* ═══ FINANCE — Pathology Lab scoped ═══ */}
+          {rst==="finance"&&(()=>{
+            const fmtCurF=(v:number)=>`₹${Number(v||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+            const filt=revenue.filter((b:any)=>{
+              if(!finSearch.trim())return true;
+              const q=finSearch.toLowerCase();
+              return(b.patient?.name||b.order?.patient?.name||"").toLowerCase().includes(q)||(b.billNo||"").toLowerCase().includes(q)||(b.order?.orderNo||"").toLowerCase().includes(q)||(b.status||"").toLowerCase().includes(q);
+            });
+            const collected=revenue.filter((b:any)=>b.status==="PAID").reduce((s:number,b:any)=>s+parseFloat(b.total||b.amount||0),0);
+            const pending=revenue.filter((b:any)=>b.status!=="PAID"&&b.status!=="CANCELLED").reduce((s:number,b:any)=>s+parseFloat(b.total||b.amount||0),0);
+            const total=revenue.reduce((s:number,b:any)=>s+parseFloat(b.total||b.amount||0),0);
+            return(<>
+            {/* Header */}
+            <div style={{background:GR,borderRadius:14,padding:"18px 22px",marginBottom:16,color:"#fff",display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:44,height:44,borderRadius:12,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><IndianRupee size={22} color="#fff"/></div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase" as any,letterSpacing:".08em",opacity:.8,marginBottom:2}}>Pathology Lab · Scoped View</div>
+                <div style={{fontSize:16,fontWeight:800,lineHeight:1.2}}>Lab Financial Summary</div>
+                <div style={{fontSize:11,opacity:.75,marginTop:2}}>Showing only pathology department revenue — {revenue.length} transactions</div>
+              </div>
+              <button onClick={()=>ldRevenue()} disabled={revL} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",borderRadius:9,padding:"7px 14px",fontSize:11,fontWeight:700,color:"#fff",cursor:revL?"not-allowed":"pointer",backdropFilter:"blur(4px)"}}><RefreshCw size={12} className={revL?"spin":""}/>Refresh</button>
+            </div>
+
+            {/* KPI Cards */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+              {[
+                {l:"Total Billed",v:fmtCurF(total),c:A,bg:L,Icon:Receipt},
+                {l:"Collected",v:fmtCurF(collected),c:"#15803d",bg:"#f0fdf4",Icon:CheckCircle2},
+                {l:"Pending",v:fmtCurF(pending),c:"#b45309",bg:"#fffbeb",Icon:Clock},
+                {l:"Today's Revenue",v:fmtCurF(revStats.today||0),c:A,bg:L,Icon:TrendingUp},
+              ].map((k,i)=>{const KI=k.Icon;return(
+                <div key={i} style={{background:"#fff",border:`1px solid ${B}`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:38,height:38,borderRadius:10,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><KI size={18} color={k.c}/></div>
+                  <div>
+                    <div style={{fontSize:18,fontWeight:800,color:k.c,lineHeight:1.1}}>{revL?<Loader2 size={13} className="spin" style={{display:"inline"}}/>:k.v}</div>
+                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{k.l}</div>
+                  </div>
+                </div>
+              );})}
+            </div>
+
+            {/* Revenue Transactions Table */}
+            <div style={{background:"#fff",border:`1px solid ${B}`,borderRadius:14,overflow:"hidden"}}>
+              {/* Toolbar */}
+              <div style={{padding:"10px 14px",borderBottom:`1px solid ${B}`,background:L,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,background:"#fff",border:`1px solid ${B}`,borderRadius:9,padding:"6px 12px",flex:1,maxWidth:320}}>
+                  <Eye size={12} color="#94a3b8"/>
+                  <input style={{background:"none",border:"none",outline:"none",fontSize:12,color:"#334155",width:"100%"}} placeholder="Search patient, bill no, order no, status…" value={finSearch} onChange={e=>setFinSearch(e.target.value)}/>
+                  {finSearch&&<button onClick={()=>setFinSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={11} color="#94a3b8"/></button>}
+                </div>
+                <div style={{fontSize:11,color:A,fontWeight:600,background:"#fff",border:`1px solid ${B}`,borderRadius:7,padding:"4px 10px"}}>{filt.length} of {revenue.length} records</div>
+              </div>
+              {/* Table */}
+              <div style={{overflowX:"auto" as any}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr style={{background:"#f8fafc"}}>
+                    {["Patient","Bill No / Order No","Date","Amount","Status","Payment Method"].map(h=>(
+                      <th key={h} style={{textAlign:"left" as any,fontSize:10,fontWeight:700,color:"#94a3b8",padding:"9px 12px",borderBottom:`2px solid ${B}`,whiteSpace:"nowrap" as any,letterSpacing:".04em"}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {revL?<tr><td colSpan={6} style={{textAlign:"center" as any,padding:32,color:"#94a3b8",fontSize:12}}><Loader2 size={14} className="spin" style={{display:"inline",marginRight:6}}/>Loading…</td></tr>
+                    :!filt.length?<tr><td colSpan={6} style={{textAlign:"center" as any,padding:40,color:"#94a3b8",fontSize:12}}>
+                      <IndianRupee size={28} color={B} style={{display:"block",margin:"0 auto 8px"}}/>
+                      {revenue.length===0?"No lab revenue records yet":"No records match your search"}
+                    </td></tr>
+                    :filt.map((b:any,i:number)=>{
+                      const isPaid=b.status==="PAID";
+                      const isCancelled=b.status==="CANCELLED";
+                      const stC=isPaid?"#15803d":isCancelled?"#94a3b8":"#b45309";
+                      const stBg=isPaid?"#f0fdf4":isCancelled?"#f8fafc":"#fffbeb";
+                      const stBd=isPaid?"#a7f3d0":isCancelled?"#e2e8f0":"#fde68a";
+                      const patName=b.patient?.name||b.order?.patient?.name||"—";
+                      const billNo=b.billNo||"—";
+                      const orderNo=b.order?.orderNo||"—";
+                      const dt=b.paidAt||b.createdAt;
+                      const pm=b.payments?.[0]?.method||b.paymentMode||"—";
+                      return(<tr key={b.id||i} style={{borderBottom:`1px solid ${B}`}}>
+                        <td style={{padding:"9px 12px"}}>
+                          <div style={{fontWeight:700,fontSize:12,color:"#1e293b"}}>{patName}</div>
+                          <div style={{fontSize:10,color:"#94a3b8"}}>{b.patient?.patientId||b.order?.patient?.patientId||""}</div>
+                        </td>
+                        <td style={{padding:"9px 12px"}}>
+                          <div style={{fontWeight:700,fontSize:11,color:A}}>{billNo}</div>
+                          {orderNo!=="—"&&<div style={{fontSize:10,color:"#94a3b8"}}>{orderNo}</div>}
+                        </td>
+                        <td style={{padding:"9px 12px",fontSize:11,color:"#64748b",whiteSpace:"nowrap" as any}}>{dt?new Date(dt).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—"}</td>
+                        <td style={{padding:"9px 12px",fontWeight:800,fontSize:13,color:A}}>{fmtCurF(parseFloat(b.total||b.amount||0))}</td>
+                        <td style={{padding:"9px 12px"}}>
+                          <span style={{fontSize:9,fontWeight:700,padding:"2px 9px",borderRadius:20,background:stBg,color:stC,border:`1px solid ${stBd}`}}>{b.status||"PENDING"}</span>
+                        </td>
+                        <td style={{padding:"9px 12px",fontSize:11,color:"#64748b"}}>{pm!=="—"?pm.replace(/_/g," "):"—"}</td>
+                      </tr>);
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Footer */}
+              {filt.length>0&&<div style={{padding:"8px 14px",borderTop:`1px solid ${B}`,display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,color:"#94a3b8"}}>
+                <span>Showing {filt.length} pathology lab records</span>
+                <span style={{fontWeight:700,color:A}}>Total: {fmtCurF(filt.reduce((s:number,b:any)=>s+parseFloat(b.total||b.amount||0),0))}</span>
+              </div>}
+            </div>
+            </>);
+          })()}
           </>);
         })()}
 
@@ -1454,9 +1698,9 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
           <div className="card"><table className="pt"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Specimen</th><th>Normal Range</th><th>Price</th><th>TAT</th><th>Active</th><th></th></tr></thead><tbody>
             {tL?<tr><td colSpan={9} className="empty"><Loader2 size={13} className="spin" style={{verticalAlign:"middle"}}/></td></tr>:fTests.length===0?<tr><td colSpan={9} className="empty">No tests — click "Add Test"</td></tr>:fTests.map((t:any)=>(
               <tr key={t.id}>
-                <td><code style={{fontSize:9,fontWeight:700,color:A,background:L,padding:"1px 5px",borderRadius:3}}>{t.code}</code></td>
+                <td><code style={{fontSize:9,fontWeight:700,color:A,background:"#f8fafc",border:"1px solid #e2e8f0",padding:"1px 5px",borderRadius:3}}>{t.code}</code></td>
                 <td style={{fontWeight:600,color:"#1e293b",fontSize:11}}>{t.name}</td>
-                <td><Bdg bg="#f8fafc" c="#475569" bd="#e2e8f0">{t.category}</Bdg></td>
+                <td><Bdg bg="#fff" c="#475569" bd="#e2e8f0">{t.category}</Bdg></td>
                 <td style={{fontSize:10,color:"#64748b"}}>{t.specimenType}</td>
                 <td style={{fontSize:10,color:"#64748b"}}>{t.normalRangeText||((t.normalRangeMin!=null&&t.normalRangeMax!=null)?`${t.normalRangeMin}–${t.normalRangeMax} ${t.unit||""}`:"—")}</td>
                 <td style={{fontWeight:700,color:A,fontSize:11}}>₹{t.price||0}</td>
@@ -1478,8 +1722,8 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
             {pL?<div className="empty" style={{gridColumn:"1/-1"}}><Loader2 size={18} className="spin"/></div>:panels.length===0?<div className="card" style={{gridColumn:"1/-1"}}><div className="empty">No panels yet — group tests (CBC, LFT, KFT, etc.)</div></div>:panels.map((p:any)=>(
               <div key={p.id} className="card">
                 <div className="chd">
-                  <div><span className="ct"><code style={{fontSize:9,color:A,background:L,padding:"1px 4px",borderRadius:3,marginRight:5}}>{p.code}</code>{p.name}</span>{p.description&&<div style={{fontSize:9,color:"#94a3b8",marginTop:1}}>{p.description}</div>}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:12,fontWeight:800,color:A}}>₹{p.price||0}</span><Btn onClick={()=>{setEditP(p);setPForm({name:p.name,code:p.code,description:p.description||"",price:p.price,testIds:p.items.map((i:any)=>i.testId)});setPMsg("");setShowPF(true);}} style={{background:"#eff6ff",color:"#2563eb",borderColor:"#bfdbfe",padding:"2px 5px"}}><Edit2 size={9}/></Btn><Btn onClick={()=>setDelT({type:"panel",item:p})} style={{background:"#fff5f5",color:"#ef4444",borderColor:"#fecaca",padding:"2px 5px"}}><Trash2 size={9}/></Btn></div>
+                  <div><span className="ct"><code style={{fontSize:9,color:A,background:"#f8fafc",border:"1px solid #e2e8f0",padding:"1px 4px",borderRadius:3,marginRight:5}}>{p.code}</code>{p.name}</span>{p.description&&<div style={{fontSize:9,color:"#94a3b8",marginTop:1}}>{p.description}</div>}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:12,fontWeight:800,color:A}}>₹{p.price||0}</span><Btn onClick={()=>{setEditP(p);setPForm({name:p.name,code:p.code,description:p.description||"",price:p.price,testIds:p.items.map((i:any)=>i.testId)});setPMsg("");setShowPF(true);}} style={{background:"#fff",color:"#2563eb",borderColor:"#e2e8f0",padding:"2px 5px"}}><Edit2 size={9}/></Btn><Btn onClick={()=>setDelT({type:"panel",item:p})} style={{background:"#fff",color:"#ef4444",borderColor:"#e2e8f0",padding:"2px 5px"}}><Trash2 size={9}/></Btn></div>
                 </div>
                 <div style={{padding:"8px 14px"}}>
                   {(p.items||[]).length===0?<div style={{fontSize:10,color:"#94a3b8",fontStyle:"italic"}}>No tests</div>:(p.items||[]).map((pi:any)=>(
@@ -1563,17 +1807,17 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
             {/* KPI Cards — faint borders, no shadows */}
             <div className="g4" style={{marginBottom:14}}>
               {[
-                {l:"Total Orders",v:total,c:A,bg:L,ic:<ClipboardList size={14}/>},
-                {l:"Total Revenue",v:`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`,c:"#7c3aed",bg:"#faf5ff",ic:<IndianRupee size={14}/>},
-                {l:"Tests Configured",v:tests.length,c:"#2563eb",bg:"#eff6ff",ic:<TestTube2 size={14}/>},
-                {l:"Avg TAT",v:stats?.kpis?.avgTat?`${stats.kpis.avgTat}h`:"—",c:"#b45309",bg:"#fffbeb",ic:<Clock size={14}/>},
-                {l:"Today's Orders",v:stats?.kpis?.totalToday||0,c:"#0891b2",bg:"#ecfeff",ic:<Activity size={14}/>},
-                {l:"Today's Revenue",v:`₹${(stats?.kpis?.revenueToday||0).toLocaleString("en-IN")}`,c:"#047857",bg:L,ic:<TrendingUp size={14}/>},
-                {l:"Pending Samples",v:stats?.kpis?.pendingSamples||0,c:"#b45309",bg:"#fffbeb",ic:<FlaskConical size={14}/>},
-                {l:"Critical Cases",v:stats?.kpis?.criticalCases||0,c:"#b91c1c",bg:"#fff5f5",ic:<AlertTriangle size={14}/>},
+                {l:"Total Orders",v:total,c:A,bg:"#fff",ic:<ClipboardList size={14}/>},
+                {l:"Total Revenue",v:`₹${(stats?.kpis?.revenueTotal||0).toLocaleString("en-IN")}`,c:"#7c3aed",bg:"#fff",ic:<IndianRupee size={14}/>},
+                {l:"Tests Configured",v:tests.length,c:"#2563eb",bg:"#fff",ic:<TestTube2 size={14}/>},
+                {l:"Avg TAT",v:stats?.kpis?.avgTat?`${stats.kpis.avgTat}h`:"—",c:"#b45309",bg:"#fff",ic:<Clock size={14}/>},
+                {l:"Today's Orders",v:stats?.kpis?.totalToday||0,c:"#0891b2",bg:"#fff",ic:<Activity size={14}/>},
+                {l:"Today's Revenue",v:`₹${(stats?.kpis?.revenueToday||0).toLocaleString("en-IN")}`,c:"#047857",bg:"#fff",ic:<TrendingUp size={14}/>},
+                {l:"Pending Samples",v:stats?.kpis?.pendingSamples||0,c:"#b45309",bg:"#fff",ic:<FlaskConical size={14}/>},
+                {l:"Critical Cases",v:stats?.kpis?.criticalCases||0,c:"#b91c1c",bg:"#fff",ic:<AlertTriangle size={14}/>},
               ].map((k,i)=>(
                 <div key={i} style={{background:"#fff",borderRadius:11,border:"1px solid #e2e8f0",padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:36,height:36,borderRadius:9,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:k.c}}>{k.ic}</div>
+                  <div style={{width:36,height:36,borderRadius:9,background:"#f8fafc",border:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:k.c}}>{k.ic}</div>
                   <div><div style={{fontSize:9,color:"#94a3b8",fontWeight:600,textTransform:"uppercase" as any,letterSpacing:".05em"}}>{k.l}</div><div style={{fontSize:17,fontWeight:800,color:k.c,marginTop:2}}>{sL?<Loader2 size={12} className="spin"/>:k.v}</div></div>
                 </div>
               ))}
@@ -1726,7 +1970,8 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
                 <Lbl>Search Patient (UHID / Name / Phone)</Lbl>
                 <div style={{position:"relative",marginBottom:10}}>
                   <Inp placeholder="Type name, UHID or phone to search…" value={oForm.patientSearch}
-                    onChange={(e:any)=>{setOForm((f:any)=>({...f,patientSearch:e.target.value,patientId:""}));srchPat(e.target.value);}}/>
+                    onChange={(e:any)=>{const v=e.target.value;setOForm((f:any)=>{const hadPatient=!!f.patientId;return{...f,patientSearch:v,patientId:"",...(hadPatient?{patientName:"",phone:"",gender:"",age:"",dob:"",email:""}:{})};});srchPat(v);}}
+                    onBlur={()=>setTimeout(()=>setPatR([]),180)}/>
                   {patR.length>0&&<div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,.1)",zIndex:50,maxHeight:180,overflowY:"auto"}}>
                     {patR.map((p:any)=>(
                       <div key={p.id} style={{padding:"8px 14px",cursor:"pointer",borderBottom:"1px solid #f8fafc",display:"flex",justifyContent:"space-between",alignItems:"center"}} onClick={()=>{const computedAge=p.dateOfBirth?String(Math.floor((Date.now()-new Date(p.dateOfBirth).getTime())/(365.25*24*3600*1000))):"";setOForm((f:any)=>({...f,patientId:p.id,patientSearch:`${p.name} (${p.patientId})`,patientName:p.name,phone:p.phone||"",gender:p.gender||"",age:computedAge,dob:p.dateOfBirth||"",email:p.email||"",patientType:"EXISTING"}));setPatR([]);}}>
@@ -1740,7 +1985,8 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
                 <div style={{background:"#fafafa",borderRadius:9,border:"1px dashed #e2e8f0",padding:"10px 12px"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#94a3b8",marginBottom:8}}>PATIENT DETAILS {oForm.patientId&&<span style={{color:A,marginLeft:6}}>✓ Existing patient selected</span>}</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
-                    <div style={{gridColumn:"span 2"}}><Lbl>Full Name *</Lbl><Inp value={oForm.patientName} onChange={(e:any)=>setOForm((f:any)=>({...f,patientName:e.target.value,patientId:f.patientId&&f.patientName!==e.target.value?"":f.patientId}))} placeholder="Patient full name"/></div>
+                    <div style={{gridColumn:"span 2"}}><Lbl>Full Name *</Lbl><Inp value={oForm.patientName} onChange={(e:any)=>setOForm((f:any)=>{const hadPatient=!!f.patientId&&f.patientName!==e.target.value;return{...f,patientName:e.target.value,...(hadPatient?{patientId:"",phone:"",gender:"",age:"",dob:"",email:"",patientSearch:""}:{})};})}
+                      placeholder="Patient full name"/></div>
                     <div><Lbl>Mobile</Lbl><Inp value={oForm.phone} onChange={(e:any)=>setOForm((f:any)=>({...f,phone:e.target.value}))} placeholder="Phone"/></div>
                     <div><Lbl>Age</Lbl><Inp type="number" value={oForm.age} onChange={(e:any)=>setOForm((f:any)=>({...f,age:e.target.value}))} placeholder="yrs"/></div>
                   </div>
@@ -2158,6 +2404,17 @@ export default function PathologyDashboard({profile,user,activeTab,onTabChange}:
               </table>
             </div>);
           })()}
+          {/* Clinical Findings — pathologistRemarks / interpretation / impression / recommendation */}
+          {(vRep.order?.pathologistRemarks||vRep.order?.interpretation||vRep.order?.impression||vRep.order?.recommendation)&&(
+            <div style={{marginBottom:14}}>
+              {([{k:"pathologistRemarks",label:"Pathologist Remarks / Gross Description",bg:"#f8fafc",bc:"#e2e8f0",tc:"#475569"},{k:"interpretation",label:"Clinical Interpretation",bg:"#f0fdf4",bc:"#a7f3d0",tc:"#065f46"},{k:"impression",label:"Impression / Diagnosis",bg:"#faf5ff",bc:"#e9d5ff",tc:"#6b21a8"},{k:"recommendation",label:"Recommendation / Follow-up",bg:"#eff6ff",bc:"#bfdbfe",tc:"#1d4ed8"}] as any[]).map((s:any)=>vRep.order?.[s.k]?(
+                <div key={s.k} style={{padding:"10px 14px",background:s.bg,borderRadius:9,border:`1px solid ${s.bc}`,marginBottom:8}}>
+                  <div style={{fontSize:9,fontWeight:700,color:s.tc,textTransform:"uppercase" as any,letterSpacing:".05em",marginBottom:4}}>{s.label}</div>
+                  <div style={{fontSize:12,color:"#1e293b",lineHeight:1.6,whiteSpace:"pre-wrap" as any}}>{vRep.order[s.k]}</div>
+                </div>
+              ):null)}
+            </div>
+          )}
           {vRep.notes&&<div style={{padding:"10px 14px",background:"#f8fafc",borderRadius:9,border:"1px solid #e2e8f0",marginBottom:10,fontSize:12,color:"#475569"}}><div style={{fontSize:9,fontWeight:700,color:"#94a3b8",marginBottom:3}}>NOTES</div>{vRep.notes}</div>}
           {vRep.verifiedBy&&<div style={{padding:"10px 14px",background:"#f0fdf4",border:"1px solid #a7f3d0",borderRadius:9,marginBottom:10,fontSize:12}}><b>Electronically Verified by:</b> {vRep.verifiedBy}{vRep.verifiedAt?` on ${new Date(vRep.verifiedAt).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"})}`:""}</div>}
           {vRep.deliveredAt&&<div style={{padding:"8px 14px",background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:9,fontSize:11,color:"#2563eb"}}><Send size={10} style={{display:"inline",marginRight:5}}/>Delivered via {vRep.deliveryMethod} on {new Date(vRep.deliveredAt).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"})}</div>}

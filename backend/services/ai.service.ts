@@ -3,11 +3,11 @@ const getGeminiKey = () => process.env.GEMINI_API_KEY || "";
 const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Free models to try in order on OpenRouter (updated April 2025)
+// Primary model: NVIDIA Nemotron 3 Super (free) via OpenRouter; others are fallbacks
 const OPENROUTER_MODELS = [
+  "nvidia/nemotron-3-super-120b-a12b:free",
   "deepseek/deepseek-chat-v3-0324:free",
   "deepseek/deepseek-r1:free",
-  "google/gemma-3-4b-it:free",
   "google/gemma-3-12b-it:free",
   "microsoft/phi-3-mini-128k-instruct:free",
 ];
@@ -39,29 +39,29 @@ export async function getAiPrescriptionSuggestions(input: AiPrescriptionInput): 
   const openRouterKey = getOpenRouterKey();
   console.log("AI keys present — Gemini:", !!geminiKey, "OpenRouter:", !!openRouterKey);
 
-  // Try Gemini first
-  if (geminiKey) {
-    try {
-      const result = await callGemini(prompt, geminiKey);
-      if (result) return result;
-    } catch (err: any) {
-      console.error("Gemini failed, trying OpenRouter:", err.message);
-    }
-  }
-
-  // Fallback to OpenRouter
+  // Try OpenRouter (Nemotron) first — primary provider
   if (openRouterKey) {
     try {
       const result = await callOpenRouter(prompt, openRouterKey);
       if (result) return result;
     } catch (err: any) {
-      console.error("OpenRouter failed:", err.message);
+      console.error("OpenRouter failed, trying Gemini fallback:", err.message);
     }
   } else {
     console.error("OpenRouter key not found in environment");
   }
 
-  // Return empty if both fail
+  // Fallback to Gemini
+  if (geminiKey) {
+    try {
+      const result = await callGemini(prompt, geminiKey);
+      if (result) return result;
+    } catch (err: any) {
+      console.error("Gemini fallback also failed:", err.message);
+    }
+  }
+
+  // Return empty if all providers fail
   console.error("All AI providers failed");
   return {
     diagnosis: [],
@@ -239,19 +239,188 @@ Respond with a JSON object (no markdown, just pure JSON) with these fields:
 Keep medications practical and commonly prescribed. Include dosages appropriate for the patient's age. Limit to 3-5 most relevant medications, 2-4 lab tests, and 3-5 advice items.`;
 }
 
+// ── Generic AI caller (returns raw parsed JSON) ──────────────────────────────
+async function callAIRaw(prompt: string): Promise<any | null> {
+  const openRouterKey = getOpenRouterKey();
+  if (openRouterKey) {
+    for (const model of OPENROUTER_MODELS) {
+      try {
+        const res = await fetch(OPENROUTER_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openRouterKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://hospital-management-system.com",
+            "X-Title": "Hospital Management System",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: "You are a medical AI assistant. Always respond with valid JSON only, no markdown, no extra text.\n\n" + prompt }],
+            temperature: 0.3,
+            max_tokens: 2048,
+          }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content || "";
+        if (!text) continue;
+        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) continue;
+        return JSON.parse(jsonMatch[0]);
+      } catch { continue; }
+    }
+  }
+  const geminiKey = getGeminiKey();
+  if (geminiKey) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+      const res = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
+        }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(cleaned);
+    } catch { return null; }
+  }
+  return null;
+}
+
+// ── Pathology Lab Result AI ───────────────────────────────────────────────────
+export interface AiLabResultInput {
+  tests: { name: string; code?: string; unit?: string; normalRange?: string; specimenType?: string }[];
+  patientAge?: number;
+  patientGender?: string;
+  clinicalNotes?: string;
+  diagnosis?: string;
+  specimenType?: string;
+}
+
+export interface AiLabResultOutput {
+  results: { testName: string; result: string; unit: string; isAbnormal: boolean; isCritical: boolean; notes: string }[];
+  interpretation: string;
+  impression: string;
+  recommendation: string;
+  pathRemarks: string;
+}
+
+export async function getAiLabResults(input: AiLabResultInput): Promise<AiLabResultOutput> {
+  const prompt = buildLabResultPrompt(input);
+  const parsed = await callAIRaw(prompt);
+  if (!parsed) {
+    return { results: [], interpretation: "", impression: "", recommendation: "", pathRemarks: "" };
+  }
+  return {
+    results: (parsed.results || []).map((r: any) => ({
+      testName: r.testName || "",
+      result: String(r.result ?? ""),
+      unit: r.unit || "",
+      isAbnormal: !!r.isAbnormal,
+      isCritical: !!r.isCritical,
+      notes: r.notes || "",
+    })),
+    interpretation: parsed.interpretation || "",
+    impression: parsed.impression || "",
+    recommendation: parsed.recommendation || "",
+    pathRemarks: parsed.pathRemarks || "",
+  };
+}
+
+function buildLabResultPrompt(input: AiLabResultInput): string {
+  const tests = input.tests
+    .map((t, i) =>
+      `${i + 1}. ${t.name}${t.code ? ` (${t.code})` : ""}${t.unit ? `, unit: ${t.unit}` : ""}${t.normalRange ? `, reference range: ${t.normalRange}` : ""}`
+    )
+    .join("\n");
+
+  return `You are a pathology AI assistant helping a lab technician in a hospital management system. Based on the clinical context provided, generate TYPICAL/PLAUSIBLE lab result values.
+
+IMPORTANT: These are AI-SUGGESTED reference values only. The lab technician MUST review and replace with actual measured values before saving.
+
+Patient Context:
+- Age: ${input.patientAge ? `${input.patientAge} years` : "unknown"}
+- Gender: ${input.patientGender || "unknown"}
+- Clinical Notes / Diagnosis: ${input.clinicalNotes || "Not provided"}
+- Specimen Type: ${input.specimenType || "Not specified"}
+
+Tests Ordered:
+${tests}
+
+Instructions:
+- If clinical notes/diagnosis suggest a condition, generate values consistent with that condition (e.g., high WBC for infection, low Hb for anaemia).
+- If no diagnosis is given, generate typical normal adult values.
+- For qualitative tests (e.g., urine culture, serology), use "Positive"/"Negative"/"Trace"/"1+"/"2+" etc.
+- Set isAbnormal=true if result is outside normal range; isCritical=true only for life-threatening values.
+
+Respond with ONLY a JSON object (no markdown):
+{
+  "results": [
+    {
+      "testName": "exact test name as given above",
+      "result": "result value as string",
+      "unit": "unit of measurement",
+      "isAbnormal": false,
+      "isCritical": false,
+      "notes": "brief 1-line clinical note for this result"
+    }
+  ],
+  "interpretation": "2-3 sentence clinical interpretation of the complete result set",
+  "impression": "1-2 sentence overall pathological impression or diagnosis suggestion",
+  "recommendation": "Recommended follow-up tests or clinical actions",
+  "pathRemarks": "Specimen macroscopic observations or lab remarks"
+}
+
+Return a result entry for ALL ${input.tests.length} test(s) listed above.`;
+}
+
 export async function getAiMedicationSuggestion(
   symptom: string,
   currentMeds: string[] = []
 ): Promise<{ name: string; dosage: string; frequency: string; duration: string; route: string; instructions: string }[]> {
-  const geminiKey = getGeminiKey();
-  if (!geminiKey) return [];
-
   const prompt = `You are a medical AI assistant. Suggest 3-5 commonly prescribed medications for: "${symptom}".
 ${currentMeds.length ? `Already prescribed: ${currentMeds.join(", ")}. Do NOT repeat these.` : ""}
 
-Return a JSON array (no markdown) of objects with: name, dosage, frequency, duration, route, instructions.
-Keep suggestions practical and evidence-based. Use generic drug names.`;
+Return ONLY a JSON array (no markdown, no extra text) of objects with fields: name, dosage, frequency, duration, route, instructions.
+Use generic drug names. Keep suggestions practical and evidence-based.`;
 
+  const openRouterKey = getOpenRouterKey();
+  // Try OpenRouter (Nemotron) first
+  if (openRouterKey) {
+    try {
+      const res = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openRouterKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://hospital-management-system.com",
+          "X-Title": "Hospital Management System",
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODELS[0],
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.3,
+          max_tokens: 1024,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content || "";
+        const jsonMatch = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim().match(/\[[\s\S]*\]/);
+        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      }
+    } catch { /* fall through to Gemini */ }
+  }
+
+  // Fallback: Gemini
+  const geminiKey = getGeminiKey();
+  if (!geminiKey) return [];
   try {
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
     const res = await fetch(geminiUrl, {
@@ -262,7 +431,6 @@ Keep suggestions practical and evidence-based. Use generic drug names.`;
         generationConfig: { temperature: 0.3, maxOutputTokens: 1024, responseMimeType: "application/json" },
       }),
     });
-
     if (!res.ok) return [];
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "[]";

@@ -46,7 +46,9 @@ export default function TreatmentsPage() {
         <section className={styles.section}>
           <div className="container">
             <div className={styles.treatmentsGrid}>
-              {treatments.map((t, i) => {
+              {treatments
+                .filter(t => !["medical-tourism", "nutrition", "cardiology"].includes(t.slug))
+                .map((t, i) => {
                 return (
                   <motion.div
                     key={t.slug}

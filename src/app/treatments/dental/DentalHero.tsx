@@ -14,89 +14,87 @@ export default function DentalHero() {
       <div className="container">
         <div className={styles.heroContainer}>
           <div className={styles.heroGrid}>
-          {/* Left Content */}
-          <div className={styles.heroContent}>
-           
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            >
-              <h1 className={styles.heroTitle}>
-                Precision <span className={styles.accent}>Dentistry</span> Powered by AI & Advanced Technology
-              </h1>
+            {/* Left Content */}
+            <div className={styles.heroContent}>
 
-              <p className={styles.heroDescription}>
-                At Celeb Aesthetica, we offer comprehensive dental care under one roof, combining AI-based diagnostics, 
-                robotic precision, and modern dental technologies to deliver safe, painless, and long-lasting results.
-              </p>
-          
-            </motion.div>
-
-            <motion.div
-              className={styles.ctaGroup}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
-              <button
-                onClick={openAppointment}
-                className={`btn btn-primary btn-sm ${styles.ctaPrimary}`}
-              >
-                <Calendar size={16} />
-                Book Appointment
-              </button>
-              <Link
-                href="/contact"
-                className={`btn btn-secondary btn-sm ${styles.ctaSecondary}`}
-              >
-                <Phone size={16} />
-                Contact Us
-              </Link>
-            </motion.div>
-
-          
-          </div>
-
-          {/* Right Visual */}
-          <div className={styles.heroVisual}>
-            <div className={styles.imageWrapper}>
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <Image
-                  src="/treatments/dental/dental-hero.png"
-                  alt="Advanced Dental Care"
-                  width={580}
-                  height={640}
-                  className={styles.heroImage}
-                  priority
-                />
+                <h1 className={styles.heroTitle}>
+                  Precision <span className={styles.accent}>Dentistry</span> Powered by AI & Advanced Technology
+                </h1>
+
+                <p className={styles.heroDescription}>
+                  At Celeb Aesthetica, we provide complete dental care using AI diagnostics, robotic precision, and advanced technology for safe, painless, long-lasting results.</p>
+
               </motion.div>
+
+              <motion.div
+                className={styles.ctaGroup}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                <button
+                  onClick={openAppointment}
+                  className={`btn btn-primary btn-sm ${styles.ctaPrimary}`}
+                >
+                  <Calendar size={16} />
+                  Book Appointment
+                </button>
+                <Link
+                  href="/contact"
+                  className={`btn btn-secondary btn-sm ${styles.ctaSecondary}`}
+                >
+                  <Phone size={16} />
+                  Contact Us
+                </Link>
+              </motion.div>
+
+
             </div>
 
-            {/* Floating Card: Satisfied Clients */}
-            <motion.div
-              className={`${styles.floatingCard} ${styles.satisfiedCard}`}
-              animate={{ y: [0, -10, 0] }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            >
-              <div className={styles.satisfiedIcon}>
-                <Users size={20} />
+            {/* Right Visual */}
+            <div className={styles.heroVisual}>
+              <div className={styles.imageWrapper}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  <Image
+                    src="/treatments/dental/dental-hero.png"
+                    alt="Advanced Dental Care"
+                    width={480}
+                    height={530}
+                    className={styles.heroImage}
+                    priority
+                  />
+                </motion.div>
               </div>
-              <div>
-                <div className={styles.satisfiedCount}>9K+</div>
-                <div className={styles.satisfiedLabel}>Happy Patients</div>
-              </div>
-            </motion.div>
-          </div>
+
+              {/* Floating Card: Satisfied Clients */}
+              <motion.div
+                className={`${styles.floatingCard} ${styles.satisfiedCard}`}
+                animate={{ y: [0, -10, 0] }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1,
+                }}
+              >
+                <div className={styles.satisfiedIcon}>
+                  <Users size={20} />
+                </div>
+                <div>
+                  <div className={styles.satisfiedCount}>9K+</div>
+                  <div className={styles.satisfiedLabel}>Happy Patients</div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </div>

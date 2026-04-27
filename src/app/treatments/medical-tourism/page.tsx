@@ -74,7 +74,7 @@ export default function MedicalTourismPage() {
       <Navbar />
       <main className={styles.page}>
         {/* HERO SECTION - Same as other treatment pages */}
-        <MedicalTourismHero />
+        <MedicalTourismHero onBookNow={() => openBookingModal()} />
 
         {/* ABOUT SECTION - Basic details about medical tourism */}
         <section className={styles.aboutSection} ref={aboutRef}>

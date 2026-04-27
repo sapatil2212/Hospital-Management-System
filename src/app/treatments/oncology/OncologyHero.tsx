@@ -66,8 +66,8 @@ export default function OncologyHero() {
                 <Image
                   src="/treatments/hnf/hnf-hero.png"
                   alt="Advanced Cancer Care"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   priority
                 />

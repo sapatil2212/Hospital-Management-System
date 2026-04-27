@@ -120,7 +120,7 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         input,select,button,textarea{font-family:inherit}
 
         /* ─── Layout shell ─── */
-        .cl-wrap{display:flex;min-height:100vh;background:#f0f9f9}
+        .cl-wrap{display:flex;height:100vh;overflow:hidden;background:#f0f9f9}
 
         /* ─── Sidebar ─── */
         .cl-sb{width:224px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 10px rgba(14,137,143,.06)}
@@ -144,8 +144,8 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         .cl-logout:hover{background:#fee2e2}
 
         /* ─── Main ─── */
-        .cl-main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-        .cl-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 6px rgba(14,137,143,.06)}
+        .cl-main{margin-left:224px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+        .cl-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 6px rgba(14,137,143,.06)}
         .cl-search{display:flex;align-items:center;gap:8px;background:#f0f9f9;border:1.5px solid #B3E0E0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
         .cl-search:focus-within{border-color:#0E898F;box-shadow:0 0 0 3px rgba(14,137,143,.1)}
         .cl-search input{background:none;border:none;outline:none;font-size:12.5px;color:#334155;width:100%}

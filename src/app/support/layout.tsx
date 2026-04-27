@@ -119,7 +119,7 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         body{font-family:'Inter',sans-serif}
         input,select,button,textarea{font-family:inherit}
 
-        .sp-wrap{display:flex;min-height:100vh;background:#f0fdf9}
+        .sp-wrap{display:flex;height:100vh;overflow:hidden;background:#f0fdf9}
         .sp-sb{width:224px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 10px rgba(5,150,105,.06)}
         .sp-sb-logo{padding:18px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;min-height:64px}
         .sp-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,${ACCENT},${ACCENT2});border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(5,150,105,.3);flex-shrink:0}
@@ -136,8 +136,8 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         .sp-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:11.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .sp-logout:hover{background:#fee2e2}
 
-        .sp-main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-        .sp-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 6px rgba(5,150,105,.06)}
+        .sp-main{margin-left:224px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+        .sp-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 6px rgba(5,150,105,.06)}
         .sp-search{display:flex;align-items:center;gap:8px;background:${ACCENT_LIGHT};border:1.5px solid ${ACCENT_BDR};border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
         .sp-search:focus-within{border-color:${ACCENT};box-shadow:0 0 0 3px rgba(5,150,105,.1)}
         .sp-search input{background:none;border:none;outline:none;font-size:12.5px;color:#334155;width:100%}

@@ -1,11 +1,42 @@
-import OpenAI from "openai";
 import prisma from "../config/db";
 
 const px = prisma as any;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || "",
-});
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || "";
+const VOICE_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
+
+async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string): Promise<string> {
+  const key = getOpenRouterKey();
+  if (!key) throw new Error("OPENROUTER_API_KEY not configured");
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://hospital-management-system.com",
+      "X-Title": "Hospital Management System",
+    },
+    body: JSON.stringify({
+      model: VOICE_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 3000,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`OpenRouter error ${res.status}: ${err.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content || "";
+}
 
 export interface VoiceTranscriptionResult {
   transcription: string;
@@ -146,18 +177,12 @@ IMPORTANT:
 - Ensure medication details are complete and safe
 - Return ONLY valid JSON, no markdown formatting`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.3,
-      response_format: { type: "json_object" }
-    });
-
-    let text = completion.choices[0].message.content || "{}";
-    text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    let raw = await callOpenRouterForVoice(systemPrompt, userPrompt);
+    // Strip markdown fences if model wraps the JSON
+    let text = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    // Extract JSON object in case there's surrounding prose
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    text = jsonMatch ? jsonMatch[0] : text;
 
     const parsed = JSON.parse(text);
     const processingTime = Date.now() - startTime;
@@ -299,23 +324,10 @@ Patient: [what patient said]
 
 Be accurate and use medical terminology where appropriate.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a medical transcription assistant. Transcribe doctor-patient conversations accurately.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 1000,
-    });
-
-    const text = response.choices[0]?.message?.content?.trim() || "";
+    const text = await callOpenRouterForVoice(
+      "You are a medical transcription assistant. Transcribe doctor-patient conversations accurately.",
+      prompt
+    );
 
     return {
       transcript: text,

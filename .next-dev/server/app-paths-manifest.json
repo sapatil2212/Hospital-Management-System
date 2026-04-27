@@ -1,12 +1,10 @@
 {
-  "/api/pathology/orders/route": "app/api/pathology/orders/route.js",
-  "/api/pharmacy/revenue-expense/route": "app/api/pharmacy/revenue-expense/route.js",
-  "/api/billing/queue/route": "app/api/billing/queue/route.js",
-  "/api/config/settings/route": "app/api/config/settings/route.js",
+  "/about/page": "app/about/page.js",
   "/subdept/dashboard/page": "app/subdept/dashboard/page.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/api/dashboard/overview/route": "app/api/dashboard/overview/route.js",
-  "/api/patients/route": "app/api/patients/route.js",
-  "/api/billing/route": "app/api/billing/route.js",
-  "/api/appointments/route": "app/api/appointments/route.js",
-  "/api/billing/[id]/rou
+  "/api/notifications/stream/route": "app/api/notifications/stream/route.js",
+  "/api/appointments/stream/route": "app/api/appointments/stream/route.js",
+  "/api/pharmacy/notifications/stream/route": "app/api/pharmacy/notifications/stream/route.js",
+  "/hospitaladmin/configure/page": "app/hospitaladmin/configure/page.js",
+  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js",
+  "/hospitaladmin/appointments/page": "app/hospitaladmin/appointments/page.js"
+}

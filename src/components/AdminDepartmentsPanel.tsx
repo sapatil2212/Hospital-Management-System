@@ -6,45 +6,45 @@ import {
   ChevronRight, UserCheck, IndianRupee, Layers, Eye, ArrowLeft,
   Smile, Sparkles, Scissors, Heart, Microscope, Pill, Scan,
   TestTube2, Stethoscope, FlaskConical, ClipboardList, Receipt,
-  ToggleLeft, ToggleRight, CalendarDays, Package, Search, X,
+  ToggleLeft, ToggleRight, CalendarDays, Package, Search, X, Check
 } from "lucide-react";
 
 /* ─── Dept-type metadata ─── */
 type DeptMeta = { Icon: any; gradient: string; accent: string; lightBg: string; borderColor: string };
 const DEPT_TYPE_META: Record<string, DeptMeta> = {
-  GENERAL:     { Icon: Building2,    gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#07595D", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
-  SURGICAL:    { Icon: Scissors,     gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
-  DIAGNOSTIC:  { Icon: Microscope,   gradient: "linear-gradient(135deg,#8b5cf6,#6d28d9)", accent: "#6d28d9", lightBg: "#f5f3ff", borderColor: "#ddd6fe" },
-  EMERGENCY:   { Icon: Activity,     gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
-  OUTPATIENT:  { Icon: Users,        gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
-  INPATIENT:   { Icon: Building2,    gradient: "linear-gradient(135deg,#10b981,#047857)", accent: "#047857", lightBg: "#f0fdf4", borderColor: "#a7f3d0" },
-  LABORATORY:  { Icon: TestTube2,    gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
-  PHARMACY:    { Icon: Pill,         gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#07595D", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
-  RADIOLOGY:   { Icon: Scan,         gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
-  CARDIOLOGY:  { Icon: Heart,        gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
-  NEUROLOGY:   { Icon: Activity,     gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
-  PEDIATRICS:  { Icon: Smile,        gradient: "linear-gradient(135deg,#f59e0b,#d97706)", accent: "#d97706", lightBg: "#fffbeb", borderColor: "#fde68a" },
-  ORTHOPEDICS: { Icon: Stethoscope,  gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
-  ONCOLOGY:    { Icon: FlaskConical, gradient: "linear-gradient(135deg,#f97316,#c2410c)", accent: "#c2410c", lightBg: "#fff7ed", borderColor: "#fed7aa" },
-  DERMATOLOGY: { Icon: Sparkles,     gradient: "linear-gradient(135deg,#ec4899,#be185d)", accent: "#be185d", lightBg: "#fdf2f8", borderColor: "#fbcfe8" },
-  OTHER:       { Icon: Layers,       gradient: "linear-gradient(135deg,#64748b,#334155)", accent: "#334155", lightBg: "#f8fafc", borderColor: "#e2e8f0" },
+  GENERAL:     { Icon: Building2,    gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  SURGICAL:    { Icon: Scissors,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  DIAGNOSTIC:  { Icon: Microscope,   gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  EMERGENCY:   { Icon: Activity,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  OUTPATIENT:  { Icon: Users,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  INPATIENT:   { Icon: Building2,    gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  LABORATORY:  { Icon: TestTube2,    gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  PHARMACY:    { Icon: Pill,         gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  RADIOLOGY:   { Icon: Scan,         gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  CARDIOLOGY:  { Icon: Heart,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  NEUROLOGY:   { Icon: Activity,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  PEDIATRICS:  { Icon: Smile,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  ORTHOPEDICS: { Icon: Stethoscope,  gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  ONCOLOGY:    { Icon: FlaskConical, gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  DERMATOLOGY: { Icon: Sparkles,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  OTHER:       { Icon: Layers,       gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
 };
 const getDeptMeta = (type: string) => DEPT_TYPE_META[type] || DEPT_TYPE_META.OTHER;
 
 /* Sub-dept type metadata (same as parentdept page) */
 const SUB_DEPT_META: Record<string, DeptMeta> = {
-  DENTAL:      { Icon: Smile,        gradient: "linear-gradient(135deg,#06b6d4,#0891b2)", accent: "#0891b2", lightBg: "#ecfeff", borderColor: "#a5f3fc" },
-  DERMATOLOGY: { Icon: Sparkles,     gradient: "linear-gradient(135deg,#ec4899,#be185d)", accent: "#be185d", lightBg: "#fdf2f8", borderColor: "#fbcfe8" },
-  HAIR:        { Icon: Scissors,     gradient: "linear-gradient(135deg,#8b5cf6,#6d28d9)", accent: "#6d28d9", lightBg: "#f5f3ff", borderColor: "#ddd6fe" },
-  ONCOLOGY:    { Icon: Activity,     gradient: "linear-gradient(135deg,#f97316,#c2410c)", accent: "#c2410c", lightBg: "#fff7ed", borderColor: "#fed7aa" },
-  CARDIOLOGY:  { Icon: Heart,        gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
-  PATHOLOGY:   { Icon: Microscope,   gradient: "linear-gradient(135deg,#10b981,#047857)", accent: "#047857", lightBg: "#f0fdf4", borderColor: "#a7f3d0" },
-  PHARMACY:    { Icon: Pill,         gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#07595D", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
-  BILLING:     { Icon: Receipt,      gradient: "linear-gradient(135deg,#f59e0b,#b45309)", accent: "#b45309", lightBg: "#fffbeb", borderColor: "#fde68a" },
-  RADIOLOGY:   { Icon: Scan,         gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
-  LABORATORY:  { Icon: TestTube2,    gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
-  PROCEDURE:   { Icon: Stethoscope,  gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
-  OTHER:       { Icon: Layers,       gradient: "linear-gradient(135deg,#64748b,#334155)", accent: "#334155", lightBg: "#f8fafc", borderColor: "#e2e8f0" },
+  DENTAL:      { Icon: Smile,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  DERMATOLOGY: { Icon: Sparkles,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  HAIR:        { Icon: Scissors,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  ONCOLOGY:    { Icon: Activity,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  CARDIOLOGY:  { Icon: Heart,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  PATHOLOGY:   { Icon: Microscope,   gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  PHARMACY:    { Icon: Pill,         gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  BILLING:     { Icon: Receipt,      gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  RADIOLOGY:   { Icon: Scan,         gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  LABORATORY:  { Icon: TestTube2,    gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  PROCEDURE:   { Icon: Stethoscope,  gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
+  OTHER:       { Icon: Layers,       gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0A6B70", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
 };
 const getSubDeptMeta = (type: string) => SUB_DEPT_META[type] || SUB_DEPT_META.OTHER;
 
@@ -97,6 +97,19 @@ function DepartmentsGrid({ onOpenDept }: { onOpenDept: (id: string) => void }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [sortCol, setSortCol] = useState<"name" | "type" | "doctors" | "subdepts" | "staff">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
+  };
+
+  const toggleAll = () => {
+    if (filtered.length > 0 && selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((d: any) => d.id)));
+  };
 
   const load = () => {
     setLoading(true);
@@ -182,7 +195,7 @@ function DepartmentsGrid({ onOpenDept }: { onOpenDept: (id: string) => void }) {
       </div>
 
       {/* Table Panel */}
-      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
 
         {/* Toolbar */}
         <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -236,28 +249,32 @@ function DepartmentsGrid({ onOpenDept }: { onOpenDept: (id: string) => void }) {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: "#f8fafc" }}>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", width: 36 }}>#</th>
-                  <th onClick={() => toggleSort("name")} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: sortCol === "name" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                  <th style={{ padding: "13px 10px 13px 16px", width: 36 }}>
+                    <div onClick={toggleAll} style={{ width: 18, height: 18, borderRadius: 6, border: `2px solid ${filtered.length > 0 && selectedIds.size === filtered.length ? "#0E898F" : "#cbd5e1"}`, background: filtered.length > 0 && selectedIds.size === filtered.length ? "#0E898F" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+                      {filtered.length > 0 && selectedIds.size === filtered.length && <Check size={12} color="#fff" strokeWidth={3} />}
+                    </div>
+                  </th>
+                  <th onClick={() => toggleSort("name")} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: sortCol === "name" ? "#0A6B70" : "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
                     Department <SortIcon col="name" />
                   </th>
-                  <th onClick={() => toggleSort("type")} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: sortCol === "type" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                  <th onClick={() => toggleSort("type")} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: sortCol === "type" ? "#0A6B70" : "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
                     Type <SortIcon col="type" />
                   </th>
-                  <th onClick={() => toggleSort("doctors")} style={{ padding: "10px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: sortCol === "doctors" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                  <th onClick={() => toggleSort("doctors")} style={{ padding: "13px 16px", textAlign: "center", fontSize: 11, fontWeight: 700, color: sortCol === "doctors" ? "#0A6B70" : "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
                     Doctors <SortIcon col="doctors" />
                   </th>
-                  <th onClick={() => toggleSort("subdepts")} style={{ padding: "10px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: sortCol === "subdepts" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                  <th onClick={() => toggleSort("subdepts")} style={{ padding: "13px 16px", textAlign: "center", fontSize: 11, fontWeight: 700, color: sortCol === "subdepts" ? "#0A6B70" : "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
                     Sub-Depts <SortIcon col="subdepts" />
                   </th>
-                  <th onClick={() => toggleSort("staff")} style={{ padding: "10px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: sortCol === "staff" ? "#0A6B70" : "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
+                  <th onClick={() => toggleSort("staff")} style={{ padding: "13px 16px", textAlign: "center", fontSize: 11, fontWeight: 700, color: sortCol === "staff" ? "#0A6B70" : "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", whiteSpace: "nowrap", userSelect: "none" }}>
                     Staff <SortIcon col="staff" />
                   </th>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9", whiteSpace: "nowrap" }}>HOD Doctor</th>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9" }}>Status</th>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", borderBottom: "1px solid #f1f5f9" }}>Action</th>
+                  <th style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>HOD Doctor</th>
+                  <th style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</th>
+                  <th style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,70 +284,73 @@ function DepartmentsGrid({ onOpenDept }: { onOpenDept: (id: string) => void }) {
                   return (
                     <tr
                       key={d.id}
-                      style={{ borderBottom: "1px solid #f8fafc", transition: "background .1s" }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "#fafeff")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "")}
+                      style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.1s", background: selectedIds.has(d.id) ? "#f0fdfa" : undefined }}
+                      onMouseEnter={e => { if (!selectedIds.has(d.id)) e.currentTarget.style.background = "#fafbfc"; }}
+                      onMouseLeave={e => { if (!selectedIds.has(d.id)) e.currentTarget.style.background = "transparent"; }}
                     >
-                      <td style={{ padding: "12px 14px", fontSize: 11, color: "#cbd5e1", fontWeight: 600 }}>{i + 1}</td>
+                      <td style={{ padding: "15px 10px 15px 16px", width: 36 }}>
+                        <div onClick={() => toggleSelect(d.id)} style={{ width: 18, height: 18, borderRadius: 6, border: `2px solid ${selectedIds.has(d.id) ? "#0E898F" : "#cbd5e1"}`, background: selectedIds.has(d.id) ? "#0E898F" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+                          {selectedIds.has(d.id) && <Check size={12} color="#fff" strokeWidth={3} />}
+                        </div>
+                      </td>
 
-                      <td style={{ padding: "12px 14px" }}>
+                      <td style={{ padding: "15px 16px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <DI size={16} color="#0A6B70" />
+                          <div style={{ width: 32, height: 32, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <DI size={15} color="#0A6B70" />
                           </div>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{d.name}</div>
-                            {d.code && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{d.code}</div>}
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{d.name}</div>
+                            {d.code && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{d.code}</div>}
                           </div>
                         </div>
                       </td>
 
-                      <td style={{ padding: "12px 14px" }}>
-                        <span style={{ padding: "3px 9px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 10, fontWeight: 700 }}>
+                      <td style={{ padding: "15px 16px" }}>
+                        <span style={{ padding: "3px 8px", borderRadius: 6, background: "#f1f5f9", color: "#64748b", fontSize: 12 }}>
                           {(d.type || "—").replace(/_/g, " ")}
                         </span>
                       </td>
 
-                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{d._count?.doctors || 0}</span>
+                      <td style={{ padding: "15px 16px", textAlign: "center" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{d._count?.doctors || 0}</span>
                       </td>
 
-                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{d._count?.subDepartments || 0}</span>
+                      <td style={{ padding: "15px 16px", textAlign: "center" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{d._count?.subDepartments || 0}</span>
                       </td>
 
-                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{d._count?.staff || 0}</span>
+                      <td style={{ padding: "15px 16px", textAlign: "center" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{d._count?.staff || 0}</span>
                       </td>
 
-                      <td style={{ padding: "12px 14px" }}>
+                      <td style={{ padding: "15px 16px" }}>
                         {d.hodDoctor ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <div style={{ width: 24, height: 24, borderRadius: 6, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              <Stethoscope size={11} color="#0A6B70" />
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 26, height: 26, borderRadius: 6, background: "#f0f9ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Stethoscope size={13} color="#0284c7" />
                             </div>
-                            <span style={{ fontSize: 12, color: "#334155", fontWeight: 500 }}>{d.hodDoctor.name}</span>
+                            <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>{d.hodDoctor.name}</span>
                           </div>
                         ) : (
-                          <span style={{ fontSize: 11, color: "#cbd5e1" }}>—</span>
+                          <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
                         )}
                       </td>
 
-                      <td style={{ padding: "12px 14px" }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: d.isActive ? "#dcfce7" : "#fee2e2", color: d.isActive ? "#16a34a" : "#dc2626" }}>
+                      <td style={{ padding: "15px 16px" }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: d.isActive ? "#dcfce7" : "#fee2e2", color: d.isActive ? "#16a34a" : "#dc2626" }}>
                           {d.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
 
-                      <td style={{ padding: "12px 14px" }}>
+                      <td style={{ padding: "15px 16px" }}>
                         <button
                           onClick={() => d.isActive && onOpenDept(d.id)}
                           disabled={!d.isActive}
-                          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: `1px solid ${d.isActive ? "#B3E0E0" : "#e2e8f0"}`, background: d.isActive ? "#E6F4F4" : "#f8fafc", color: d.isActive ? "#0A6B70" : "#94a3b8", fontSize: 11, fontWeight: 600, cursor: d.isActive ? "pointer" : "not-allowed", whiteSpace: "nowrap", transition: "all .15s" }}
-                          onMouseEnter={e => { if (d.isActive) { e.currentTarget.style.background = "#d0edee"; e.currentTarget.style.borderColor = "#0A6B70"; } }}
-                          onMouseLeave={e => { if (d.isActive) { e.currentTarget.style.background = "#E6F4F4"; e.currentTarget.style.borderColor = "#B3E0E0"; } }}
+                          style={{ padding: "6px 12px", background: d.isActive ? "#E6F4F4" : "#f8fafc", color: d.isActive ? "#0E898F" : "#94a3b8", border: "none", borderRadius: 8, cursor: d.isActive ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, opacity: d.isActive ? 1 : 0.6 }}
+                          title="View Department"
                         >
-                          <Eye size={12} /> View
+                          View <ChevronRight size={14} />
                         </button>
                       </td>
                     </tr>
@@ -441,11 +461,11 @@ function DepartmentDetailView({ deptId, onBack, onOpenSubDept }: { deptId: strin
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Doctors", value: stats.totalDoctors, Icon: Stethoscope, color: "#8b5cf6", bg: "#f5f3ff" },
+          { label: "Doctors", value: stats.totalDoctors, Icon: Stethoscope, color: m.accent, bg: m.lightBg },
           { label: "Sub-Departments", value: stats.totalSubDepts, Icon: Building2, color: m.accent, bg: m.lightBg },
-          { label: "Today Appointments", value: stats.todayAppointments, Icon: CalendarDays, color: "#f59e0b", bg: "#fffbeb" },
-          { label: "Total Records", value: stats.totalRecords, Icon: ClipboardList, color: "#10b981", bg: "#f0fdf4" },
-          { label: "Today Revenue", value: `₹${(stats.todayRevenue || 0).toLocaleString("en-IN")}`, Icon: IndianRupee, color: "#059669", bg: "#f0fdf4" },
+          { label: "Today Appointments", value: stats.todayAppointments, Icon: CalendarDays, color: m.accent, bg: m.lightBg },
+          { label: "Total Records", value: stats.totalRecords, Icon: ClipboardList, color: m.accent, bg: m.lightBg },
+          { label: "Today Revenue", value: `₹${(stats.todayRevenue || 0).toLocaleString("en-IN")}`, Icon: IndianRupee, color: m.accent, bg: m.lightBg },
           { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString("en-IN")}`, Icon: TrendingUp, color: m.accent, bg: m.lightBg },
         ].map((s, i) => {
           const SI = s.Icon;
@@ -733,11 +753,11 @@ function AdminSubDeptDashboard({ subDeptId, onBack }: { subDeptId: string; onBac
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Pending Queue", value: stats.pendingQueue, Icon: UserCheck, color: "#f59e0b", bg: "#fffbeb" },
+          { label: "Pending Queue", value: stats.pendingQueue, Icon: UserCheck, color: m.accent, bg: m.lightBg },
           { label: "Today Referrals", value: stats.todayReferrals, Icon: ClipboardList, color: m.accent, bg: m.lightBg },
-          { label: "Completed Today", value: stats.completedToday, Icon: Activity, color: "#10b981", bg: "#f0fdf4" },
-          { label: "Active Procedures", value: stats.activeProcedures, Icon: Layers, color: "#6366f1", bg: "#eef2ff" },
-          { label: "Today Revenue", value: `₹${(stats.todayRevenue || 0).toLocaleString("en-IN")}`, Icon: IndianRupee, color: "#059669", bg: "#f0fdf4" },
+          { label: "Completed Today", value: stats.completedToday, Icon: Activity, color: m.accent, bg: m.lightBg },
+          { label: "Active Procedures", value: stats.activeProcedures, Icon: Layers, color: m.accent, bg: m.lightBg },
+          { label: "Today Revenue", value: `₹${(stats.todayRevenue || 0).toLocaleString("en-IN")}`, Icon: IndianRupee, color: m.accent, bg: m.lightBg },
           { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString("en-IN")}`, Icon: TrendingUp, color: m.accent, bg: m.lightBg },
         ].map((s, i) => {
           const SI = s.Icon;

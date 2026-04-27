@@ -56,7 +56,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   We emphasize routine screening and early detection, especially for high-risk individuals, using AI-assisted technology.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "AI-assisted oral cancer screening",
                     "Identification of precancerous lesions",
@@ -106,7 +106,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   We use advanced diagnostic tools to identify and evaluate tumors in the head and neck region accurately.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Clinical examination by oncology specialists",
                     "Advanced imaging and investigations",
@@ -155,7 +155,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   We perform detailed biopsy procedures followed by histopathological analysis to confirm cancer diagnosis and guide treatment.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Accurate identification of cancer type and stage",
                     "Guidance for personalized treatment planning",
@@ -204,7 +204,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   Our expert surgeons perform tumor removal procedures with a focus on safety, precision, and complete disease control.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Advanced surgical techniques",
                     "Modular OT setup for maximum safety",
@@ -253,7 +253,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   Post-tumor removal, we provide advanced reconstructive procedures to restore both function and appearance.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Facial reconstruction",
                     "Jaw and oral structure restoration",
@@ -302,7 +302,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   Our oncology care involves a team of specialists working together to provide comprehensive treatment.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Oncologists and Surgeons",
                     "Dermatologists and Pathologists",
@@ -351,7 +351,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   We provide supportive care to improve quality of life during and after cancer treatment.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Pain management and symptom control",
                     "Nutritional guidance and physical therapy",
@@ -401,7 +401,7 @@ export default function OncologyPage() {
                 <p className={styles.aboutDescription}>
                   We offer structured programs to help patients quit harmful habits that increase cancer risk.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Medical and behavioral counseling",
                     "Personalized de-addiction plans",

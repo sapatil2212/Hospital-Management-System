@@ -5,8 +5,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background-color: #ffffff;
   display: flex;
   align-items: center;
@@ -18,7 +18,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-6);
+  justify-content: center;
+  gap: 20px;
 }
 
 .Preloader_logoWrapper__u_Szo {
@@ -28,26 +29,62 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .Preloader_logo__mWOw6 {
-  -o-object-fit: contain;
-     object-fit: contain;
+  object-fit: contain;
 }
 
 .Preloader_loaderLine__JecIe {
-  height: 2px;
+  height: 3px;
   background: linear-gradient(90deg, transparent, var(--primary), transparent);
-  width: 150px;
-  max-width: 150px;
+  width: 160px;
   border-radius: var(--radius-full);
 }
 
 .Preloader_loadingText__mAGyk {
-  font-size: var(--font-size-sm);
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--primary);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .Preloader_logoWrapper__u_Szo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .Preloader_loaderLine__JecIe {
+    width: 130px;
+  }
+
+  .Preloader_loadingText__mAGyk {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .Preloader_content__ikS4k {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .Preloader_logoWrapper__u_Szo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .Preloader_loaderLine__JecIe {
+    width: 110px;
+  }
+
+  .Preloader_loadingText__mAGyk {
+    font-size: 0.65rem;
+  }
 }
 

@@ -235,7 +235,7 @@ export default function SuperAdminDashboard() {
       *{box-sizing:border-box;margin:0;padding:0}
       ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#fef2f2}::-webkit-scrollbar-thumb{background:#fca5a5;border-radius:4px}
       input,select,button{font-family:'Inter',sans-serif}
-      .sad{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#fef7f7}
+      .sad{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#fef7f7}
       .sad-sb{width:220px;background:#fff;border-right:1px solid #fee2e2;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(220,38,38,0.06)}
       .sad-logo{padding:20px 20px 16px;border-bottom:1px solid #fef2f2;display:flex;align-items:center;gap:10px}
       .sad-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(220,38,38,0.3)}
@@ -257,8 +257,8 @@ export default function SuperAdminDashboard() {
       .sad-urole{font-size:10px;font-weight:500;color:#dc2626}
       .sad-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
       .sad-logout:hover{background:#fee2e2}
-      .sad-main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-      .sad-topbar{height:64px;background:#fff;border-bottom:1px solid #fee2e2;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(220,38,38,0.06)}
+      .sad-main{margin-left:220px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+      .sad-topbar{height:64px;background:#fff;border-bottom:1px solid #fee2e2;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(220,38,38,0.06)}
       .sad-search-wrap{display:flex;align-items:center;gap:8px;background:#fef7f7;border:1px solid #fee2e2;border-radius:10px;padding:8px 14px;width:280px}
       .sad-search-wrap:focus-within{border-color:#fca5a5}
       .sad-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}

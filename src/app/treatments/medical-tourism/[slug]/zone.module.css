@@ -20,7 +20,7 @@
 .heroSection {
   position: relative;
   width: 100%;
-  min-height: 520px;
+  min-height: 340px;
   border-radius: 40px;
   overflow: hidden;
   margin: var(--space-6) auto;
@@ -34,9 +34,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: right center;
   z-index: 0;
   border-radius: 40px;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 80%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 80%);
 }
 
 .heroOverlay {
@@ -56,17 +58,15 @@
   position: relative;
   z-index: 2;
   height: 100%;
-  min-height: 520px;
+  min-height: 340px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .heroContent {
-  padding: var(--space-12) var(--space-16);
-  padding-bottom: var(--space-8);
+  padding: var(--space-8) var(--space-12);
   max-width: 800px;
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -104,20 +104,26 @@
 }
 
 .heroHeading {
-  font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
   font-weight: 800;
   color: var(--white);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   margin-bottom: var(--space-4);
 }
 
+.heroSubHeading {
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  font-weight: 600;
+  color: var(--primary);
+}
+
 .heroDescription {
-  font-size: var(--font-size-lg);
-  color: rgba(255, 255, 255, 0.88);
-  line-height: 1.7;
-  margin-bottom: var(--space-8);
-  max-width: 700px;
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  margin-bottom: var(--space-4);
+  max-width: 500px;
 }
 
 /* ==========================================================================
@@ -233,7 +239,11 @@
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: var(--space-16);
-  align-items: start;
+  align-items: center;
+}
+
+.aboutContent {
+  text-align: left;
 }
 
 .aboutTitle {
@@ -277,10 +287,30 @@
 }
 
 /* Highlights in About Section */
-.aboutHighlights {
-  display: flex;
-  flex-direction: column;
+.aboutHighlightsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+
+.aboutImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.aboutRegionImage {
+  object-fit: cover;
+  transition: transform var(--transition-base);
+}
+
+.aboutImageWrapper:hover .aboutRegionImage {
+  transform: scale(1.05);
 }
 
 .highlightCard {
@@ -640,17 +670,17 @@
 
 @media (max-width: 1024px) {
   .heroSection {
-    margin: var(--space-4);
-    min-height: 440px;
+    margin: var(--space-4) auto;
+    min-height: 300px;
     border-radius: 30px;
   }
 
   .heroInner {
-    min-height: 440px;
+    min-height: 300px;
   }
 
   .heroContent {
-    padding: var(--space-10) var(--space-8);
+    padding: var(--space-6) var(--space-8);
   }
 
   .heroBackground {
@@ -668,7 +698,15 @@
 
   .aboutGrid {
     grid-template-columns: 1fr;
-    gap: var(--space-10);
+    gap: var(--space-8);
+  }
+
+  .aboutHighlightsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .aboutImageWrapper {
+    min-height: 300px;
   }
 
   .aboutTitle {
@@ -678,13 +716,13 @@
 
 @media (max-width: 768px) {
   .heroSection {
-    min-height: 380px;
+    min-height: 280px;
     border-radius: 24px;
-    margin: var(--space-3);
+    margin: var(--space-3) auto;
   }
 
   .heroInner {
-    min-height: 380px;
+    min-height: 280px;
   }
 
   .heroBackground {
@@ -702,21 +740,21 @@
   }
 
   .heroContent {
-    padding: var(--space-8) var(--space-6);
-    padding-bottom: var(--space-4);
+    padding: var(--space-6) var(--space-6);
   }
 
   .heroTagline {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--space-2);
   }
 
   .heroHeading {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .heroDescription {
-    font-size: var(--font-size-base);
-    margin-bottom: var(--space-6);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
   }
 
   .featuresBar {
@@ -766,12 +804,13 @@
 
 @media (max-width: 480px) {
   .heroSection {
-    min-height: 340px;
+    min-height: 260px;
     border-radius: 20px;
+    margin: var(--space-2) auto;
   }
 
   .heroInner {
-    min-height: 340px;
+    min-height: 260px;
   }
 
   .heroBackground {
@@ -783,15 +822,15 @@
   }
 
   .heroContent {
-    padding: var(--space-6) var(--space-4);
+    padding: var(--space-4);
   }
 
   .heroTagline {
-    font-size: var(--font-size-xs);
+    font-size: 0.65rem;
   }
 
   .heroHeading {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .featuresBar {

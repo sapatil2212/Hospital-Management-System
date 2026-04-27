@@ -45,7 +45,7 @@ export default function DentalTreatmentsPage() {
                   Our preventive dentistry focuses on maintaining optimal oral health and detecting issues early through AI-assisted diagnosis and routine care.
                 </p>
 
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "AI-based dental consultation & screening",
                     "Oral prophylaxis (scaling & polishing)",
@@ -103,7 +103,7 @@ export default function DentalTreatmentsPage() {
                   We repair damaged or decayed teeth using advanced materials and techniques that mimic natural teeth.
                 </p>
 
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Tooth-colored aesthetic fillings",
                     "Post & core build-up",
@@ -157,7 +157,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We offer customized solutions to replace missing teeth and restore oral function.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Complete & partial dentures",
                     "Crown & bridge solutions",
@@ -202,7 +202,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our surgical procedures are performed in a modular OT setup, ensuring international safety standards.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Tooth extraction (simple & surgical)",
                     "Wisdom tooth removal",
@@ -249,7 +249,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We treat gum diseases and bone loss using both conventional and laser techniques.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Deep scaling & root planing",
                     "Gum flap surgery",
@@ -295,7 +295,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We provide modern orthodontic solutions for all age groups.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Metal, ceramic & self-ligating braces",
                     "Invisible aligners (clear aligners)",
@@ -340,7 +340,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We ensure a comfortable, child-friendly dental experience.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Pediatric dental check-ups",
                     "Fluoride application",
@@ -386,7 +386,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Enhance your smile with advanced cosmetic dental treatments.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Digital smile design (DSD)",
                     "Teeth whitening (laser / Zoom)",
@@ -435,7 +435,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We utilize cutting-edge digital workflows for faster, more accurate treatments.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Same-day crowns (chairside CAD-CAM)",
                     "Digital impressions (intraoral scanning)",
@@ -482,7 +482,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Advanced imaging ensures precise treatment planning.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Digital OPG (panoramic X-ray)",
                     "CBCT scan (3D imaging)",
@@ -527,7 +527,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We offer world-class dental implant solutions with high success rates.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Single tooth implants",
                     "Full mouth implants (All-on-4 / All-on-6)",
@@ -573,7 +573,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Laser technology ensures faster healing and reduced discomfort.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Laser fillings",
                     "Laser gum surgery",
@@ -618,7 +618,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   We provide quick and effective emergency dental care.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "Toothache relief",
                     "Dental trauma & fracture management",
@@ -662,7 +662,7 @@ export default function DentalTreatmentsPage() {
                 <p className={styles.aboutDescription}>
                   Our integrated support services ensure seamless patient experience.
                 </p>
-                <div className={styles.aboutFeatures}>
+                <div className={`${styles.aboutFeatures} ${styles.leftAlignMobile}`}>
                   {[
                     "In-house pharmacy",
                     "Advanced sterilization protocols (modular OT dentistry)",

@@ -536,7 +536,7 @@ export default function FinanceDashboard() {
         body,input,select,button,textarea{font-family:'Inter',sans-serif}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        .fin-wrap{display:flex;min-height:100vh;background:#f0f4f8}
+        .fin-wrap{display:flex;height:100vh;overflow:hidden;background:#f0f4f8}
         .fin-sb{width:228px;background:#fff;border-right:1px solid #fde68a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(245,158,11,.08)}
         .fin-logo{padding:20px 20px 16px;border-bottom:1px solid #fef3c7;display:flex;align-items:center;gap:10px}
         .fin-nav{flex:1;padding:12px;overflow-y:auto}
@@ -548,9 +548,9 @@ export default function FinanceDashboard() {
         .fin-nb svg{color:#94a3b8;flex-shrink:0}
         .fin-nb.on svg,.fin-nb:hover svg{color:#f59e0b}
         .fin-foot{padding:14px 16px 18px;border-top:1px solid #fef3c7}
-        .fin-main{margin-left:228px;flex:1;min-height:100vh}
-        .fin-topbar{height:64px;background:#fff;border-bottom:1px solid #fde68a;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(245,158,11,.08)}
-        .fin-body{padding:24px;animation:fadeUp .35s ease}
+        .fin-main{margin-left:228px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+        .fin-topbar{height:64px;background:#fff;border-bottom:1px solid #fde68a;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(245,158,11,.08)}
+        .fin-body{padding:24px;overflow-y:auto;flex:1;animation:fadeUp .35s ease}
         .fin-card{background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.04);overflow:hidden;margin-bottom:18px}
         .fin-card-hd{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
         .fin-card-title{font-size:14px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px}

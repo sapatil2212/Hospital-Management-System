@@ -7,8 +7,11 @@ import Image from "next/image";
 import styles from "../treatments.module.css";
 import { useAppointment } from "@/components/AppointmentProvider";
 
-export default function MedicalTourismHero() {
-  const { openAppointment } = useAppointment();
+interface MedicalTourismHeroProps {
+  onBookNow?: () => void;
+}
+
+export default function MedicalTourismHero({ onBookNow }: MedicalTourismHeroProps) {
   return (
     <section className={styles.hero}>
       <div className="container">
@@ -39,7 +42,7 @@ export default function MedicalTourismHero() {
               transition={{ delay: 0.5, duration: 0.6 }}
             >
               <button
-                onClick={openAppointment}
+                onClick={onBookNow}
                 className={`btn btn-primary btn-sm ${styles.ctaPrimary}`}
               >
                 <Calendar size={16} />
@@ -66,8 +69,8 @@ export default function MedicalTourismHero() {
                 <Image
                   src="/images/medical-tourism/medical-tourism-hero.png"
                   alt="Medical & Dental Tourism"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   priority
                 />
@@ -102,7 +105,7 @@ export default function MedicalTourismHero() {
                 <Plane size={20} />
               </div>
               <div>
-                <div className={styles.satisfiedCount}>Global</div>
+                <div className={styles.satisfiedCount}>9K+</div>
                 <div className={styles.satisfiedLabel}>Patient Support</div>
               </div>
             </motion.div>

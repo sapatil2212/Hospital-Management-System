@@ -222,7 +222,7 @@
 }
 
 .heroTitle {
-  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 700;
   line-height: 1.15;
   color: var(--gray-900);
@@ -723,12 +723,107 @@
 }
 
 @media (max-width: 768px) {
+  .hero {
+    padding: var(--space-4) var(--space-2) var(--space-4);
+  }
+
+  .heroContainer {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .heroTitle {
+    font-size: 1.4rem;
+  }
+
+  .heroDescription {
+    font-size: 0.75rem;
+  }
+
+  .ctaGroup {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .ctaPrimary, .ctaSecondary {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--font-size-xs);
+    padding: var(--space-2);
+  }
+
+  .leftAlignMobile {
+    align-self: flex-start;
+    text-align: left;
+    width: 100%;
+  }
+
+  .floatingCard {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .satisfiedIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .satisfiedIcon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .satisfiedCount {
+    font-size: var(--font-size-sm);
+  }
+
+  .satisfiedLabel {
+    font-size: 9px;
+  }
+
+  .satisfiedCard {
+    bottom: 30px;
+    left: -10px;
+  }
+
   .about {
-    padding: var(--space-12) 0;
+    padding: var(--space-8) 0;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+
+  .aboutDescription {
+    font-size: var(--font-size-sm);
+  }
+
+  .aboutFeatureText {
+    font-size: 0.8rem;
+  }
+
+  .aboutIdeal {
+    font-size: 0.8rem;
+    padding: var(--space-2) var(--space-3);
+    align-self: flex-start;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .heroBadge {
+    font-size: 0.75rem;
+    padding: var(--space-1) var(--space-3);
+    margin-bottom: 0;
+  }
+
+  .aboutContent {
+    gap: var(--space-2);
   }
 
   .whyChooseSection {
-    padding: var(--space-12) 0;
+    padding: var(--space-8) 0;
   }
 
   .whyChooseSection .sectionTitle {
@@ -741,12 +836,24 @@
   }
 
   .featureItem {
-    padding: var(--space-4);
+    padding: var(--space-2);
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
   }
 
   .featureIcon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .featureIcon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .featureTitle {
+    font-size: 0.7rem;
   }
 
   .ctaSection {
@@ -777,16 +884,19 @@
   }
 
   .ctaBtnRow {
-    flex-direction: column;
+    flex-direction: row;
     margin: 0 auto;
-    width: auto;
-    display: inline-flex;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
   }
 
-  .ctaButtonWhite {
-    padding: var(--space-2) var(--space-5);
-    font-size: var(--font-size-sm);
-    width: auto;
+  .ctaButtonWhite, .ctaButtonOutline {
+    padding: var(--space-2) var(--space-2);
+    font-size: 0.75rem;
+    flex: 1;
+    justify-content: center;
     white-space: nowrap;
   }
 
@@ -810,6 +920,6 @@
   }
 
   .featuresGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   try {
     const body = await req.json();
-    const { status, priority, clinicalNotes, referralNotes, items } = body;
+    const { status, priority, clinicalNotes, referralNotes, interpretation, impression, pathologistRemarks, recommendation, verifiedBy, deliveryMode, items } = body;
 
     const updated = await (prisma as any).labOrder.update({
       where: { id: params.id },
@@ -46,6 +46,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         ...(priority !== undefined && { priority }),
         ...(clinicalNotes !== undefined && { clinicalNotes }),
         ...(referralNotes !== undefined && { referralNotes }),
+        ...(interpretation !== undefined && { interpretation }),
+        ...(impression !== undefined && { impression }),
+        ...(pathologistRemarks !== undefined && { pathologistRemarks }),
+        ...(recommendation !== undefined && { recommendation }),
       },
     });
 

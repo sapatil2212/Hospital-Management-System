@@ -66,8 +66,8 @@ export default function HairHero() {
                 <Image
                   src="/treatments/hair/hair-hero.png"
                   alt="Advanced Hair Restoration"
-                  width={400}
-                  height={440}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   priority
                 />
@@ -89,7 +89,7 @@ export default function HairHero() {
                 <Users size={20} />
               </div>
               <div>
-                <div className={styles.satisfiedCount}>8K+</div>
+                <div className={styles.satisfiedCount}>9K+</div>
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>

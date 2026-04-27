@@ -66,8 +66,8 @@ export default function BodyShapingHero() {
                 <Image
                   src="/treatments/body-shaping/body-shaping-hero.png"
                   alt="Body Shaping & Contouring"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   priority
                 />

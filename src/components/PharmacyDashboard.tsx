@@ -238,9 +238,12 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [rxActionNotes, setRxActionNotes] = useState("");
   const [rxActioning, setRxActioning] = useState(false);
   const [rxDeleteRemark, setRxDeleteRemark] = useState("");
+  // Bill view for queue items
+  const [rxBillModal, setRxBillModal] = useState<{ rx: any; bill: any | null } | null>(null);
+  const [rxBillLoading, setRxBillLoading] = useState<string | null>(null);
   // Manual Rx creation
   const [rxCreateModal, setRxCreateModal] = useState(false);
-  const [rxCreateForm, setRxCreateForm] = useState({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none" as "collect"|"send_to_billing"|"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
+  const [rxCreateForm, setRxCreateForm] = useState({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none" as "collect"|"send_to_billing"|"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", billingSubdeptId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
   const [rxCreateSaving, setRxCreateSaving] = useState(false);
   const [rxCreateError, setRxCreateError] = useState("");
   const [rxCreatePatientSearch, setRxCreatePatientSearch] = useState("");
@@ -479,12 +482,13 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       discount: rxCreateForm.discount,
       billingNote: rxCreateForm.billingNote,
       transactionId: rxCreateForm.transactionId,
+      billingSubdeptId: rxCreateForm.billingSubdeptId || undefined,
       medications: validMeds.map(m => ({ name: m.name, dosage: m.dosage, frequency: m.frequency, duration: m.duration, quantity: parseInt(m.quantity) || 1, price: parseFloat(m.price) || 0, instructions: m.instructions })),
     });
     setRxCreateSaving(false);
     if (res.success) {
       setRxCreateModal(false);
-      setRxCreateForm({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
+      setRxCreateForm({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", billingSubdeptId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
       setRxCreatePatients([]);
       setRxCreatePatientSearch("");
       setRxCreateManualPatient(false);
@@ -664,6 +668,15 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     } else {
       setSuccessModal({ open: true, title: "Purchase Request Failed", message: res.message || "Failed to create purchase request", details: [] });
     }
+  };
+
+  // ── Fetch Bill for a Queue Item ──
+  const fetchRxBill = async (item: any) => {
+    setRxBillLoading(item.id);
+    const res = await api(`/api/billing?prescriptionId=${item.id}&limit=1`);
+    setRxBillLoading(null);
+    const bills = res.success ? (res.data?.bills || res.data?.data || []) : [];
+    setRxBillModal({ rx: item, bill: bills[0] || null });
   };
 
   // ── Delete Rx from Queue ──
@@ -1116,7 +1129,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }));
   }, [inventory, counterSaleModal]);
 
-  // ── Dispense Handler ──
+  // ── Dispense Handler (partial dispense supported) ──
   const handleDispense = async (item: QueueItem) => {
     setDispensingId(item.id);
 
@@ -1127,35 +1140,34 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         price: parseFloat(m.price) || m.amount || 0
       })) || [];
 
-    // Validate all items have inventoryItemId and sufficient stock
-    const invalidItems = formItems.filter((m: any) => !m.inventoryItemId);
-    if (invalidItems.length > 0) {
-      setSuccessModal({ open: true, title: "Missing Inventory Items", message: `Please select inventory items for all medications. ${invalidItems.length} item(s) missing.`, details: [] });
-      setDispensingId(null);
-      return;
-    }
+    // Separate dispensable vs unavailable items
+    const dispensableItems = formItems.filter((m: any) => {
+      if (!m.inventoryItemId) return false;
+      const inv = inventory.find((i: any) => i.id === m.inventoryItemId);
+      if (!inv) return false;
+      const available = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
+      return (m.quantity || 1) <= available;
+    });
 
-    // Check stock availability
-    const stockIssues = formItems.filter((m: any) => {
+    const unavailableItems = formItems.filter((m: any) => {
+      if (!m.inventoryItemId) return true;
       const inv = inventory.find((i: any) => i.id === m.inventoryItemId);
       if (!inv) return true;
-      const availableStock = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
-      return m.quantity > availableStock;
+      const available = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
+      return (m.quantity || 1) > available;
     });
-    
-    if (stockIssues.length > 0) {
-      setSuccessModal({ open: true, title: "Insufficient Stock", message: `Insufficient stock for ${stockIssues.length} item(s). Please adjust quantities.`, details: [] });
-      setDispensingId(null);
-      return;
-    }
 
-    const totalCharge = formItems.reduce((sum: number, m: any) => sum + ((parseFloat(m.price) || 0) * (parseInt(m.quantity) || 1)), 0);
+    const unavailableNote = unavailableItems.length > 0
+      ? ` | Not dispensed (stock unavailable): ${unavailableItems.map((m: any) => m.name || "item").join(", ")}`
+      : "";
+
+    const totalCharge = dispensableItems.reduce((sum: number, m: any) => sum + ((parseFloat(m.price) || 0) * (parseInt(m.quantity) || 1)), 0);
 
     const res = await api("/api/pharmacy/queue", "PATCH", {
       prescriptionId: item.id,
       workflowId: item.workflowId,
-      notes: dispenseNotes || "Dispensed from pharmacy",
-      dispensedItems: formItems,
+      notes: (dispenseNotes || "Dispensed from pharmacy") + unavailableNote,
+      dispensedItems: dispensableItems,
       totalCharge,
     });
 
@@ -1182,6 +1194,16 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       loadQueue();
       loadStats();
       loadInventory();
+      if (unavailableItems.length > 0) {
+        setSuccessModal({
+          open: true,
+          title: unavailableItems.length === formItems.length ? "Items Not Available" : "Partially Dispensed",
+          message: unavailableItems.length === formItems.length
+            ? `All ${unavailableItems.length} item(s) are out of stock — marked as not dispensed yet.`
+            : `${dispensableItems.length} item(s) dispensed. ${unavailableItems.length} item(s) unavailable — marked as not dispensed yet.`,
+          details: unavailableItems.map((m: any) => `${m.name || "Unknown"}: not in stock`),
+        });
+      }
     }
   };
 
@@ -1834,6 +1856,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                   <Trash2 size={13} />
                                 </button>
                               )}
+                              <button className="ph-tbl-action" title="Get Bill" onClick={e => { e.stopPropagation(); fetchRxBill(item); }}>
+                                {rxBillLoading === item.id ? <Loader2 size={13} className="ph-spin" /> : <Receipt size={13} color="#0ea5e9" />}
+                              </button>
                               <button className="ph-tbl-action" title={isExpanded ? "Collapse" : "Expand"} onClick={e => { e.stopPropagation(); setExpandedRx(isExpanded ? null : item.id); }}>
                                 {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                               </button>
@@ -2005,16 +2030,16 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   ))}
                 </div>
 
-                {/* Stock Status Alert */}
+                {/* Stock Status Alert — informational, not blocking */}
                 {hasStockIssues && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, marginBottom: 16 }}>
-                    <AlertCircle size={20} color="#dc2626" />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, marginBottom: 16 }}>
+                    <AlertTriangle size={20} color="#d97706" />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626" }}>Stock Issues Detected</div>
-                      <div style={{ fontSize: 11, color: "#7f1d1d" }}>
-                        {outOfStockCount > 0 && `${outOfStockCount} item(s) not available in inventory. `}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>Partial Stock Available</div>
+                      <div style={{ fontSize: 11, color: "#78350f" }}>
+                        {outOfStockCount > 0 && `${outOfStockCount} item(s) not in inventory. `}
                         {exceedsStockCount > 0 && `${exceedsStockCount} item(s) exceed available stock. `}
-                        Please select available inventory items and adjust quantities.
+                        Available items will be dispensed; unavailable items will be marked as “not dispensed yet”.
                       </div>
                     </div>
                   </div>
@@ -2170,18 +2195,116 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <button className="ph-btn-ghost" onClick={() => setDispenseModalItem(null)}>Cancel</button>
                 <button 
                   className="ph-btn-primary" 
-                  style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, borderRadius: 10 }}
-                  disabled={dispensingId === dItem.id || hasStockIssues || formMeds.some((m: any) => !m.inventoryItemId)}
+                  style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, borderRadius: 10, ...(hasStockIssues ? { background: "#d97706", borderColor: "#d97706" } : {}) }}
+                  disabled={dispensingId === dItem.id}
                   onClick={() => { handleDispense(dItem); setDispenseModalItem(null); }}
                 >
-                  {dispensingId === dItem.id ? <Loader2 size={14} className="ph-spin" /> : <CheckCircle2 size={14} />}
-                  {hasStockIssues ? "Resolve Stock Issues" : transferTo ? "Dispense & Transfer" : "Complete Dispensing"}
+                  {dispensingId === dItem.id ? <Loader2 size={14} className="ph-spin" /> : hasStockIssues ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
+                  {hasStockIssues ? "Dispense Available Items" : transferTo ? "Dispense & Transfer" : "Complete Dispensing"}
                 </button>
               </div>
             </div>
           </div>
         );
       })()}
+
+      {/* ── Bill View Modal ── */}
+      {rxBillModal && (
+        <div className="ph-modal-overlay" onClick={() => setRxBillModal(null)}>
+          <div className="ph-modal" style={{ width: 560 }} onClick={e => e.stopPropagation()}>
+            <div className="ph-modal-header" style={{ background: `linear-gradient(135deg, #0ea5e920, #0ea5e908)`, borderBottom: "1px solid #0ea5e930" }}>
+              <div>
+                <div className="ph-modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Receipt size={16} color="#0ea5e9" /> Bill — {rxBillModal.rx.prescriptionNo}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{rxBillModal.rx.patient?.name} ({rxBillModal.rx.patient?.patientId})</div>
+              </div>
+              <button className="ph-icon-btn-sm" onClick={() => setRxBillModal(null)}><X size={16} /></button>
+            </div>
+            <div className="ph-modal-body">
+              {!rxBillModal.bill ? (
+                <div style={{ padding: "32px 24px", textAlign: "center" }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                    <Receipt size={24} color="#94a3b8" />
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#475569", marginBottom: 6 }}>No Bill Created Yet</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                    This prescription was added to queue only (no billing at entry).<br />
+                    Payment will be collected when items are dispensed.
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+                    {[
+                      { l: "Bill No", v: rxBillModal.bill.billNo || "—" },
+                      { l: "Status", v: rxBillModal.bill.status || "—", colored: true },
+                      { l: "Date", v: rxBillModal.bill.createdAt ? new Date(rxBillModal.bill.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
+                    ].map((k, i) => (
+                      <div key={i} style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
+                        <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>{k.l}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: k.colored ? (rxBillModal.bill.status === "PAID" ? "#16a34a" : "#d97706") : "#1e293b" }}>{k.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {(rxBillModal.bill.billItems || []).length > 0 && (
+                    <div className="ph-tbl-wrap" style={{ marginBottom: 12 }}>
+                      <table className="ph-tbl">
+                        <thead><tr><th>#</th><th>Item</th><th style={{ textAlign: "right" }}>Qty</th><th style={{ textAlign: "right" }}>Unit Price</th><th style={{ textAlign: "right" }}>Amount</th></tr></thead>
+                        <tbody>
+                          {(rxBillModal.bill.billItems || []).map((bi: any, i: number) => (
+                            <tr key={bi.id || i}>
+                              <td>{i + 1}</td>
+                              <td><strong>{bi.name || "—"}</strong></td>
+                              <td style={{ textAlign: "right" }}>{bi.quantity}</td>
+                              <td style={{ textAlign: "right" }}>{fmtCurrency(bi.unitPrice || 0)}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700 }}>{fmtCurrency(bi.amount || 0)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginBottom: 16 }}>
+                    {(rxBillModal.bill.discount || 0) > 0 && (
+                      <div style={{ fontSize: 12, color: "#64748b" }}>Discount: <strong style={{ color: "#16a34a" }}>-{fmtCurrency(rxBillModal.bill.discount || 0)}</strong></div>
+                    )}
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>Total: <span style={{ color: ACCENT }}>{fmtCurrency(rxBillModal.bill.total || 0)}</span></div>
+                    {(rxBillModal.bill.paidAmount || 0) > 0 && (
+                      <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>Paid: {fmtCurrency(rxBillModal.bill.paidAmount || 0)}</div>
+                    )}
+                    {rxBillModal.bill.status !== "PAID" && (rxBillModal.bill.total || 0) > (rxBillModal.bill.paidAmount || 0) && (
+                      <div style={{ fontSize: 13, color: "#d97706", fontWeight: 700 }}>Due: {fmtCurrency((rxBillModal.bill.total || 0) - (rxBillModal.bill.paidAmount || 0))}</div>
+                    )}
+                  </div>
+                  {rxBillModal.bill.status !== "PAID" && (
+                    <div style={{ padding: "12px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                      <div style={{ fontSize: 12, color: "#92400e", display: "flex", alignItems: "center", gap: 6 }}><Clock size={13} /> Payment pending</div>
+                      <button
+                        className="ph-btn-primary"
+                        style={{ fontSize: 11, padding: "6px 14px", background: "#16a34a", display: "flex", alignItems: "center", gap: 6 }}
+                        onClick={() => { const b = rxBillModal.bill; setRxBillModal(null); setPaymentModal(b); setPaymentForm({ amount: String((b.total || 0) - (b.paidAmount || 0)), method: "CASH", transactionId: "", notes: "" }); }}
+                      >
+                        <Banknote size={12} /> Collect Payment
+                      </button>
+                    </div>
+                  )}
+                  {rxBillModal.bill.status === "PAID" && (
+                    <div style={{ padding: "10px 14px", background: "#f0fdf4", border: "1px solid #a7f3d0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                      <ShieldCheck size={16} color="#16a34a" />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#16a34a" }}>Fully Paid</span>
+                      {rxBillModal.bill.paymentMethod && <span style={{ fontSize: 11, color: "#64748b" }}>via {rxBillModal.bill.paymentMethod.replace(/_/g, " ")}</span>}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="ph-modal-footer">
+              <button className="ph-btn-ghost" onClick={() => setRxBillModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Queue: View Rx Detail Modal ── */}
       {queueViewModal && (
@@ -3130,7 +3253,16 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
 
                 {/* Send to billing fields */}
                 {rxCreateForm.paymentAction === "send_to_billing" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Bill To Department</div>
+                      <select className="ph-modal-input" value={rxCreateForm.billingSubdeptId} onChange={e => setRxCreateForm(f => ({ ...f, billingSubdeptId: e.target.value }))}>
+                        <option value="">— Select sub-department —</option>
+                        {subDepts.map((d: any) => (
+                          <option key={d.id} value={d.id}>{d.name}{d.type ? ` (${d.type})` : ""}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Discount (₹)</div>
                       <input type="number" min="0" className="ph-modal-input" placeholder="0" value={rxCreateForm.discount} onChange={e => setRxCreateForm(f => ({ ...f, discount: e.target.value }))} />

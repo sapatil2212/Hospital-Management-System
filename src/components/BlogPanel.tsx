@@ -205,17 +205,24 @@ export default function BlogPanel() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
           {[
-            { label: "Total Blogs", val: stats?.total ?? "—", icon: <BookOpen size={18} />, color: "#0E898F", bg: "#E6F4F4" },
-            { label: "Published", val: stats?.published ?? "—", icon: <Globe size={18} />, color: "#10b981", bg: "#d1fae5" },
-            { label: "Drafts", val: stats?.drafts ?? "—", icon: <FileText size={18} />, color: "#f59e0b", bg: "#fef3c7" },
-            { label: "Categories", val: stats?.categories?.length ?? "—", icon: <Tag size={18} />, color: "#8b5cf6", bg: "#ede9fe" },
-          ].map((s, i) => (
-            <div key={i} style={{ background: s.bg, borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0" }}>
-              <div style={{ color: s.color, marginBottom: 8 }}>{s.icon}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", lineHeight: 1, marginBottom: 4 }}>{s.val}</div>
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>{s.label}</div>
-            </div>
-          ))}
+            { label: "Total Blogs", val: stats?.total ?? "—", icon: BookOpen },
+            { label: "Published", val: stats?.published ?? "—", icon: Globe },
+            { label: "Drafts", val: stats?.drafts ?? "—", icon: FileText },
+            { label: "Categories", val: stats?.categories?.length ?? "—", icon: Tag },
+          ].map((s, i) => {
+            const SI = s.icon;
+            return (
+              <div key={i} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <SI size={16} color="#0A6B70" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{s.val}</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>{s.label}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Header */}

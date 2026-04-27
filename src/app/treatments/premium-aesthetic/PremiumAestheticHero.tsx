@@ -66,8 +66,8 @@ export default function PremiumAestheticHero() {
                 <Image
                   src="/images/premium-aesthetic/hero.png"
                   alt="Premium Aesthetic Care"
-                  width={580}
-                  height={640}
+                  width={480}
+                  height={530}
                   className={styles.heroImage}
                   style={{ borderRadius: "24px", objectFit: "cover", overflow: "hidden" }}
                   priority
@@ -103,7 +103,7 @@ export default function PremiumAestheticHero() {
                 <Users size={20} />
               </div>
               <div>
-                <div className={styles.satisfiedCount}>6K+</div>
+                <div className={styles.satisfiedCount}>9K+</div>
                 <div className={styles.satisfiedLabel}>Happy Patients</div>
               </div>
             </motion.div>
