@@ -70,7 +70,7 @@ export default function AboutHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Redefining Beauty with Precision & Care
+            Redefining Beauty with <br /> Precision & Care
           </motion.h1>
 
           <motion.p

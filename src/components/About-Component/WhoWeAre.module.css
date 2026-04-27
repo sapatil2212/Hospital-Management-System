@@ -190,6 +190,10 @@
     padding: var(--space-16) 0;
   }
 
+  .description {
+    font-size: var(--font-size-sm);
+  }
+
   .imageWrapper {
     max-width: 380px;
   }

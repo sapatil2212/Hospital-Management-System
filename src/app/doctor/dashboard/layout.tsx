@@ -32,9 +32,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#64748b", fontSize: 14, gap: 14 }}>
-        <div style={{ width: 32, height: 32, border: "3px solid #bbf7d0", borderTop: "3px solid #10b981", borderRadius: "50%", animation: "sp .8s linear infinite" }} />
-        <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>Loading Doctor Portal...
+      <div style={{ minHeight: "100vh", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 32, height: 32, border: "3px solid #E6F4F4", borderTop: "3px solid #0E898F", borderRadius: "50%", animation: "sp .8s linear infinite" }} />
+        <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
@@ -44,11 +44,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f0fdf4}::-webkit-scrollbar-thumb{background:#a7f3d0;border-radius:4px}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#ffffff}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
         input,select,button,textarea{font-family:'Inter',sans-serif}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-        .doc{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#f0fdf9}
+        .doc{display:flex;min-height:100vh;font-family:'Inter',sans-serif;background:#ffffff}
         .doc-sb{width:220px;background:#fff;border-right:1px solid #d1fae5;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(16,185,129,0.06)}
         .doc-logo{padding:18px 20px 14px;border-bottom:1px solid #ecfdf5;display:flex;flex-direction:column;align-items:center;gap:8px}
         .doc-logo-ic{width:52px;height:52px;background:linear-gradient(135deg,#10b981,#059669);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);flex-shrink:0}
@@ -253,9 +253,9 @@ export default function DoctorDashboardLayout({ children }: { children: React.Re
   return (
     <DoctorDashboardProvider>
       <Suspense fallback={
-        <div style={{ minHeight: "100vh", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#64748b", fontSize: 14, gap: 14 }}>
-          <div style={{ width: 32, height: 32, border: "3px solid #bbf7d0", borderTop: "3px solid #10b981", borderRadius: "50%", animation: "sp .8s linear infinite" }} />
-          <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>Loading...
+        <div style={{ minHeight: "100vh", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 32, height: 32, border: "3px solid #E6F4F4", borderTop: "3px solid #0E898F", borderRadius: "50%", animation: "sp .8s linear infinite" }} />
+          <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
         </div>
       }>
         <DashboardLayoutContent>{children}</DashboardLayoutContent>

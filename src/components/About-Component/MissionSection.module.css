@@ -159,7 +159,7 @@
 /* Standardized mobile font size for descriptive content */
 @media (max-width: 768px) {
   .descriptionText {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
   }
   
   .missionSection {

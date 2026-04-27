@@ -82,7 +82,7 @@ export default function PrescriptionPage() {
   const [showHist, setShowHist] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [msg, setMsg] = useState({ t: "", c: "" });
-  const [sections, setSections] = useState<Record<string, boolean>>({ vitals: true, complaint: true, diag: true, meds: true, tests: false, refs: false, advice: true, fu: false, fee: true });
+  const [sections, setSections] = useState<Record<string, boolean>>({ vitals: true, complaint: true, diag: true, meds: true, tests: false, refs: false, advice: true, fu: false, fee: true, hist: false });
   const [pSettings, setPSettings] = useState<any>(null);
   const [editMode, setEditMode] = useState(false);
   const [histLoaded, setHistLoaded] = useState(false);
@@ -252,6 +252,53 @@ export default function PrescriptionPage() {
     setAiLoading(false);
   };
 
+  const autoGenerateRx = async () => {
+    if (!complaint.trim()) { flash("Enter complaint first", "e"); return; }
+    setAiLoading(true);
+    const age = patient?.dateOfBirth ? Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / 31557600000) : undefined;
+    
+    const filteredVitals: Record<string, string> = {};
+    Object.entries(vitals).forEach(([key, value]) => {
+      if (value && value.trim()) filteredVitals[key] = value;
+    });
+    
+    const r = await api("/api/prescriptions/ai-assist", "POST", {
+      chiefComplaint: complaint,
+      patientAge: age,
+      patientGender: patient?.gender,
+      vitals: Object.keys(filteredVitals).length > 0 ? filteredVitals : undefined,
+      patientHistory: hist.map(h => h.diagnosis || h.chiefComplaint).filter(Boolean).join("; ") || undefined,
+      doctorSpecialization: doctor?.specialization,
+      departmentName: doctor?.department?.name,
+    });
+    
+    if (r.success) {
+      const data = r.data;
+      if (data.diagnosis && data.diagnosis.length > 0) setDiagnosis(data.diagnosis.join(", "));
+      if (data.icdCodes && data.icdCodes.length > 0) setIcdCodes(data.icdCodes);
+      if (data.medications && data.medications.length > 0) setMeds(data.medications);
+      if (data.labTests && data.labTests.length > 0) setTests(data.labTests);
+      if (data.advice && data.advice.length > 0) setAdvice(data.advice.map((a: string) => `• ${a}`).join("\n"));
+      flash("Prescription auto-generated from AI!", "s");
+      setTimeout(() => {
+        if (rx?.id) api(`/api/prescriptions/${rx.id}`, "PUT", payload());
+      }, 500);
+    } else {
+      flash("AI unavailable", "e");
+    }
+    setAiLoading(false);
+  };
+
+  const applyHistoryItem = (h: any) => {
+    if (h.chiefComplaint) setComplaint(h.chiefComplaint);
+    if (h.diagnosis) setDiagnosis(h.diagnosis);
+    if (h.icdCodes) try { setIcdCodes(JSON.parse(h.icdCodes)); } catch {}
+    if (h.medications) try { setMeds(JSON.parse(h.medications)); } catch {}
+    if (h.labTests) try { setTests(JSON.parse(h.labTests)); } catch {}
+    if (h.advice) setAdvice(h.advice);
+    flash("Prescription auto-filled from history!", "s");
+  };
+
   const email = async () => {
     if (!rx?.id) return; setEmailSending(true); await save();
     const r = await api(`/api/prescriptions/${rx.id}/email`, "POST");
@@ -389,6 +436,30 @@ export default function PrescriptionPage() {
             </div>
           </div>
 
+          {/* Patient History Card */}
+          {hist.length > 0 && (
+            <SectionCard title={`Patient History (${hist.length})`} icon={<History size={14} />} accent="#0369a1" expanded={sections.hist} onToggle={() => tog("hist")}>
+              {hist.map((h, i) => (
+                <div key={i} style={{ background: "#f0f9ff", borderRadius: 10, padding: 12, marginBottom: 8, border: "1px solid #bae6fd" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", fontFamily: "monospace" }}>{h.prescriptionNo}</span>
+                      <span style={{ fontSize: 10, color: "#64748b", marginLeft: 8 }}>{new Date(h.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    </div>
+                    {!locked && (
+                      <button onClick={() => applyHistoryItem(h)} style={{ fontSize: 10, padding: "4px 10px", borderRadius: 6, border: "none", background: "#0ea5e9", color: "#fff", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                        <Sparkles size={10} /> Same Consult
+                      </button>
+                    )}
+                  </div>
+                  {h.chiefComplaint && <p style={{ fontSize: 12, color: "#334155", marginBottom: 2 }}><strong>Complaint:</strong> {h.chiefComplaint}</p>}
+                  {h.diagnosis && <p style={{ fontSize: 12, color: "#1e293b", fontWeight: 600 }}>{h.diagnosis}</p>}
+                  {h.doctor && <p style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Dr. {h.doctor.name}</p>}
+                </div>
+              ))}
+            </SectionCard>
+          )}
+
           {/* Vitals */}
           <SectionCard title="Vitals" icon={<Activity size={14} />} accent="#ef4444" expanded={sections.vitals} onToggle={() => tog("vitals")}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
@@ -407,13 +478,17 @@ export default function PrescriptionPage() {
                 style={{ flex: 1, padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#334155", outline: "none", resize: "vertical", background: locked ? "#f8fafc" : "#fff" }} />
               {!locked && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <button onClick={autoGenerateRx} disabled={aiLoading}
+                    style={{ padding: "10px 14px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#7c3aed,#5b21b6)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 70, boxShadow: "0 2px 8px rgba(124,58,237,.3)" }}>
+                    {aiLoading ? <Loader2 size={15} style={{ animation: "spin .7s linear infinite" }} /> : <Sparkles size={15} />}<span style={{ fontSize: 9 }}>Auto-Gen AI</span>
+                  </button>
                   <button onClick={aiAssist} disabled={aiLoading}
                     style={{ padding: "10px 14px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#8b5cf6,#6d28d9)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 70, boxShadow: "0 2px 8px rgba(139,92,246,.3)" }}>
-                    {aiLoading ? <Loader2 size={15} style={{ animation: "spin .7s linear infinite" }} /> : <Sparkles size={15} />}<span style={{ fontSize: 9 }}>AI Assist</span>
+                    {aiLoading ? <Loader2 size={15} style={{ animation: "spin .7s linear infinite" }} /> : <Brain size={15} />}<span style={{ fontSize: 9 }}>AI Panel</span>
                   </button>
                   <button onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
                     style={{ padding: "10px 14px", borderRadius: 9, border: "none", background: showVoiceRecorder ? "linear-gradient(135deg,#ef4444,#dc2626)" : "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 70, boxShadow: showVoiceRecorder ? "0 2px 8px rgba(239,68,68,.3)" : "0 2px 8px rgba(16,185,129,.3)" }}>
-                    <Sparkles size={15} /><span style={{ fontSize: 9 }}>{showVoiceRecorder ? "Close" : "Voice Rx"}</span>
+                    <Stethoscope size={15} /><span style={{ fontSize: 9 }}>{showVoiceRecorder ? "Close" : "Voice Rx"}</span>
                   </button>
                 </div>
               )}

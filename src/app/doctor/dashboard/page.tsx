@@ -1174,12 +1174,12 @@ function DoctorDashboardContent() {
       )}
       <style>{`
         .doc-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
-        .doc-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #d1fae5;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(16,185,129,0.06);transition:transform .2s,box-shadow .2s}
-        .doc-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+        .doc-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #f1f5f9;display:flex;align-items:center;gap:14px;box-shadow:none;transition:transform .2s,box-shadow .2s}
+        .doc-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.04)}
         .doc-sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-        .doc-sc-lbl{font-size:11px;font-weight:500;color:#94a3b8;margin-bottom:2px}
-        .doc-sc-val{font-size:24px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
-        .doc-sc-sub{font-size:10px;color:#94a3b8;margin-top:3px}
+        .doc-sc-lbl{font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em}
+        .doc-sc-val{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1}
+        .doc-sc-sub{font-size:10px;color:#94a3b8;margin-top:3px;display:none}
         .doc-card{background:#fff;border-radius:14px;border:1px solid #d1fae5;box-shadow:0 1px 4px rgba(16,185,129,0.05);overflow:hidden;margin-bottom:16px}
         .doc-card-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ecfdf5}
         .doc-card-title{font-size:14px;font-weight:700;color:#1e293b}
@@ -1215,15 +1215,15 @@ function DoctorDashboardContent() {
               {tab === "schedule" && (
                 <div className="doc-stats">
                   {[
-                    { icon: <CalendarDays size={20} color="#fff" />, label: isToday ? "Today's Appointments" : "Appointments", val: todayTotal, sub: `${todayRemaining} remaining`, bg: "#E6F4F4", iconBg: "#0E898F" },
-                    { icon: <CheckCircle2 size={20} color="#fff" />, label: "Completed", val: todayDone, sub: isToday ? "today so far" : "on this day", bg: "#f0fdf4", iconBg: "#10b981" },
-                    { icon: <Clock size={20} color="#fff" />, label: "Remaining", val: todayRemaining, sub: "scheduled / confirmed", bg: "#fff7ed", iconBg: "#f59e0b" },
-                    { icon: <UserRound size={20} color="#fff" />, label: "Total Patients", val: allPatients.length, sub: "all time", bg: "#fdf4ff", iconBg: "#a855f7" },
-                    { icon: <Activity size={20} color="#fff" />, label: "Active Plans", val: activePlansCount ?? "—", sub: "treatment plans", bg: "#f0fdf4", iconBg: "#059669" },
+                    { icon: <CalendarDays size={20} color="#10b981" />, label: isToday ? "TODAY'S APPOINTMENTS" : "APPOINTMENTS", val: todayTotal, sub: `${todayRemaining} remaining`, bg: "#fff", iconBg: "#f0fdf4" },
+                    { icon: <CheckCircle2 size={20} color="#0E898F" />, label: "COMPLETED", val: todayDone, sub: isToday ? "today so far" : "on this day", bg: "#fff", iconBg: "#E6F4F4" },
+                    { icon: <Clock size={20} color="#f59e0b" />, label: "REMAINING", val: todayRemaining, sub: "scheduled / confirmed", bg: "#fff", iconBg: "#fffbeb" },
+                    { icon: <UserRound size={20} color="#8b5cf6" />, label: "TOTAL PATIENTS", val: allPatients.length, sub: "all time", bg: "#fff", iconBg: "#f5f3ff" },
+                    { icon: <Activity size={20} color="#ef4444" />, label: "ACTIVE PLANS", val: activePlansCount ?? "—", sub: "treatment plans", bg: "#fff", iconBg: "#fef2f2" },
                   ].map((s, i) => (
                     <div key={i} className="doc-sc" style={{ background: s.bg }}>
                       <div className="doc-sc-icon" style={{ background: s.iconBg }}>{s.icon}</div>
-                      <div><div className="doc-sc-lbl">{s.label}</div><div className="doc-sc-val">{s.val}</div><div className="doc-sc-sub">{s.sub}</div></div>
+                      <div><div className="doc-sc-lbl">{s.label}</div><div className="doc-sc-val" style={{ color: s.icon.props.color }}>{s.val}</div><div className="doc-sc-sub">{s.sub}</div></div>
                     </div>
                   ))}
                 </div>

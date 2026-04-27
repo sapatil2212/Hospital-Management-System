@@ -428,10 +428,12 @@
 
 @media (max-width: 640px) {
   .heroTitle { font-size: 2.5rem; }
-  .heroSubtext { font-size: var(--font-size-base); }
-  .missionText { font-size: var(--font-size-base); }
-  .valueDesc { font-size: var(--font-size-base); }
-  .infraSubtext { font-size: var(--font-size-base); }
+  .heroSubtext { font-size: var(--font-size-sm); }
+  .missionText { font-size: var(--font-size-sm); }
+  .valueDesc { font-size: var(--font-size-sm); }
+  .infraSubtext { font-size: var(--font-size-sm); }
+  .sectionHeader :global(.section-subtitle),
+  .infraHeader :global(.section-subtitle) { font-size: var(--font-size-sm); }
   .valuesGrid { grid-template-columns: 1fr; }
   .infraGrid { grid-template-columns: 1fr; }
   .section { padding: var(--space-16) 0; }

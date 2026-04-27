@@ -81,7 +81,7 @@ export default function MissionSection() {
                 human-centered approach.
               </p>
               <p className={styles.descriptionText}>
-                MediFlow isn't just a clinic; it's your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
+                Celeb Aesthetica isn't just a clinic; it's your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
               </p>
             </div>
 

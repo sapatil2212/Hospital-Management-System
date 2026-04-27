@@ -18,21 +18,7 @@ interface DoctorContextType {
 const DoctorDashboardContext = createContext<DoctorContextType | null>(null);
 
 function getDeptAccent(deptName?: string): string {
-  if (!deptName) return "#10b981";
-  const n = deptName.toLowerCase();
-  if (n.includes("cardio")) return "#ef4444";
-  if (n.includes("neuro")) return "#8b5cf6";
-  if (n.includes("ortho")) return "#f59e0b";
-  if (n.includes("pedia") || n.includes("child")) return "#0E898F";
-  if (n.includes("gyne") || n.includes("obs")) return "#ec4899";
-  if (n.includes("onco") || n.includes("cancer")) return "#6366f1";
-  if (n.includes("derma") || n.includes("skin")) return "#14b8a6";
-  if (n.includes("ophthal") || n.includes("eye")) return "#0ea5e9";
-  if (n.includes("ent") || n.includes("ear")) return "#f97316";
-  if (n.includes("surgery") || n.includes("surgical")) return "#dc2626";
-  if (n.includes("radio") || n.includes("imaging")) return "#7c3aed";
-  if (n.includes("emergency") || n.includes("icu")) return "#ef4444";
-  return "#10b981";
+  return "#0E898F";
 }
 
 export function DoctorDashboardProvider({ children }: { children: ReactNode }) {
