@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, Building2, LogOut,
   CalendarDays, Users,
   ClipboardList, ChevronDown, Search,
-  Stethoscope, Info,
+  Stethoscope, Info, Menu, X,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -62,6 +62,8 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
   const [hospitalLogo, setHospitalLogo] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const tab = searchParams.get("tab");
   const activeId = getActiveId(tab);
@@ -123,7 +125,7 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         .cl-wrap{display:flex;height:100vh;overflow:hidden;background:#f0f9f9}
 
         /* ─── Sidebar ─── */
-        .cl-sb{width:224px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 10px rgba(14,137,143,.06)}
+        .cl-sb{width:224px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 10px rgba(14,137,143,.06);transition:transform .25s cubic-bezier(.4,0,.2,1)}
         .cl-sb-logo{padding:18px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;min-height:64px}
         .cl-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(14,137,143,.3);flex-shrink:0}
         .cl-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -235,14 +237,31 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         /* ─── Misc ─── */
         .cl-empty{padding:48px;text-align:center;color:#94a3b8}
         .cl-empty-icon{opacity:.25;margin:0 auto 12px;display:block}
-        @media(max-width:900px){.cl-sb{display:none}.cl-main{margin-left:0}}
+        .cl-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+        .cl-overlay.open{display:block}
+        .cl-burger{display:none;width:36px;height:36px;border-radius:10px;background:#f0f9f9;border:1.5px solid #B3E0E0;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+        @media(max-width:900px){
+          .cl-sb{transform:translateX(-100%)}
+          .cl-sb.open{transform:translateX(0)}
+          .cl-main{margin-left:0}
+          .cl-burger{display:flex}
+          .cl-search{width:160px}
+        }
+        @media(max-width:600px){
+          .cl-topbar{padding:0 14px}
+          .cl-search{width:120px}
+          .cl-profile-name,.cl-profile-role{display:none}
+          .cl-content{padding:16px 12px 24px}
+          .cl-stats{grid-template-columns:repeat(2,1fr)}
+        }
         @keyframes cl-spin{to{transform:rotate(360deg)}}
         .cl-spin{animation:cl-spin .7s linear infinite}
       `}</style>
 
       <div className="cl-wrap">
+        {sidebarOpen && <div className="cl-overlay open" onClick={closeSidebar} />}
         {/* ── Sidebar ── */}
-        <aside className="cl-sb">
+        <aside className={`cl-sb${sidebarOpen ? " open" : ""}`}>
           <div className="cl-sb-logo">
             {hospitalLogo ? (
               <img src={hospitalLogo} alt="Logo" style={{ width: "100%", maxHeight: 52, objectFit: "contain", display: "block" }} />
@@ -267,7 +286,7 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
                     <button
                       key={item.id}
                       className={`cl-nb${isOn ? " on" : ""}`}
-                      onClick={() => router.push(item.href)}
+                      onClick={() => { router.push(item.href); setSidebarOpen(false); }}
                     >
                       <div className="cl-nb-bar" />
                       <item.Icon size={15} color={isOn ? "#0A6B70" : "#94a3b8"} />
@@ -289,6 +308,9 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         {/* ── Main ── */}
         <main className="cl-main">
           <header className="cl-topbar">
+            <button className="cl-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+              {sidebarOpen ? <X size={18} color="#0E898F" /> : <Menu size={18} color="#64748b" />}
+            </button>
             <div className="cl-search">
               <Search size={14} color="#94a3b8" />
               <input

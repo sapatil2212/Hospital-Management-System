@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronUp, Save, Trash2, Pencil, BarChart3,
   Wallet, Activity, ArrowUpRight, ArrowDownRight, RefreshCw,
   CalendarDays, Filter, Download, Users, CheckCircle2, Clock,
-  Settings
+  Settings, Menu
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -410,6 +410,7 @@ export default function FinanceDashboard() {
   const [payBill,    setPayBill]    = useState<any>(null);
   const [showNewBill, setShowNewBill] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Expenses
   const [expenses, setExpenses]           = useState<any[]>([]);
@@ -537,7 +538,10 @@ export default function FinanceDashboard() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .fin-wrap{display:flex;height:100vh;overflow:hidden;background:#f0f4f8}
-        .fin-sb{width:228px;background:#fff;border-right:1px solid #fde68a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(245,158,11,.08)}
+        .fin-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+        .fin-overlay.open{display:block}
+        .fin-sb{width:228px;background:#fff;border-right:1px solid #fde68a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(245,158,11,.08);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+        .fin-burger{display:none;width:36px;height:36px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
         .fin-logo{padding:20px 20px 16px;border-bottom:1px solid #fef3c7;display:flex;align-items:center;gap:10px}
         .fin-nav{flex:1;padding:12px;overflow-y:auto}
         .fin-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:10px 0 5px}
@@ -566,6 +570,16 @@ export default function FinanceDashboard() {
         .fin-input:focus{border-color:#fcd34d;box-shadow:0 0 0 3px rgba(252,211,77,.2)}
         .fin-primary{padding:10px 20px;border-radius:9px;border:none;background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(245,158,11,.3)}
         .fin-av{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#f59e0b,#b45309);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+        @media(max-width:900px){
+          .fin-sb{transform:translateX(-100%)}
+          .fin-sb.open{transform:translateX(0)}
+          .fin-main{margin-left:0}
+          .fin-burger{display:flex}
+        }
+        @media(max-width:600px){
+          .fin-topbar{padding:0 14px;gap:8px}
+          .fin-body{padding:16px 12px}
+        }
       `}</style>
 
       {/* Modals */}
@@ -580,8 +594,9 @@ export default function FinanceDashboard() {
       )}
 
       <div className="fin-wrap">
+        {sidebarOpen && <div className="fin-overlay open" onClick={() => setSidebarOpen(false)} />}
         {/* Sidebar */}
-        <aside className="fin-sb">
+        <aside className={`fin-sb${sidebarOpen ? " open" : ""}`}>
           <div className="fin-logo">
             <div style={{ width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg,#f59e0b,#b45309)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <IndianRupee size={19} color="#fff" />
@@ -596,7 +611,7 @@ export default function FinanceDashboard() {
             {navItems.map(n => {
               const Icon = n.icon;
               return (
-                <button key={n.id} className={`fin-nb${tab === n.id ? " on" : ""}`} onClick={() => setTab(n.id)}>
+                <button key={n.id} className={`fin-nb${tab === n.id ? " on" : ""}`} onClick={() => { setTab(n.id); setSidebarOpen(false); }}>
                   <Icon size={15} />{n.label}
                 </button>
               );
@@ -626,6 +641,9 @@ export default function FinanceDashboard() {
         {/* Main */}
         <main className="fin-main">
           <header className="fin-topbar">
+            <button className="fin-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+              {sidebarOpen ? <X size={18} color="#f59e0b" /> : <Menu size={18} color="#64748b" />}
+            </button>
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>
                 {tab === "overview" ? "Financial Overview" : tab === "bills" ? "Bills & Invoices" : tab === "payments" ? "Payment History" : tab === "expenses" ? "Expense Management" : "Revenue Reports"}

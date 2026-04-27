@@ -4,38 +4,82 @@ const px = prisma as any;
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || "";
-const VOICE_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
+const getGeminiKey = () => process.env.GEMINI_API_KEY || "";
+
+const VOICE_MODELS = [
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "deepseek/deepseek-chat-v3-0324:free",
+  "deepseek/deepseek-r1:free",
+  "google/gemma-3-12b-it:free",
+  "microsoft/phi-3-mini-128k-instruct:free",
+];
 
 async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string): Promise<string> {
   const key = getOpenRouterKey();
-  if (!key) throw new Error("OPENROUTER_API_KEY not configured");
 
-  const res = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${key}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://hospital-management-system.com",
-      "X-Title": "Hospital Management System",
-    },
-    body: JSON.stringify({
-      model: VOICE_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.3,
-      max_tokens: 3000,
-    }),
-  });
+  if (key) {
+    for (const model of VOICE_MODELS) {
+      try {
+        const res = await fetch(OPENROUTER_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://hospital-management-system.com",
+            "X-Title": "Hospital Management System",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.3,
+            max_tokens: 3000,
+          }),
+        });
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`OpenRouter error ${res.status}: ${err.slice(0, 200)}`);
+        if (!res.ok) {
+          const err = await res.text();
+          console.error(`Voice OpenRouter ${model} error (${res.status}):`, err.slice(0, 200));
+          continue;
+        }
+
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content || "";
+        if (!text) { console.error(`Voice OpenRouter ${model} returned empty`); continue; }
+        console.log(`Voice prescription used model: ${model}`);
+        return text;
+      } catch (err: any) {
+        console.error(`Voice OpenRouter ${model} threw:`, err.message);
+      }
+    }
   }
 
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content || "";
+  // Gemini fallback
+  const geminiKey = getGeminiKey();
+  if (geminiKey) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+      const res = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        if (text) { console.log("Voice prescription used Gemini fallback"); return text; }
+      }
+    } catch (err: any) {
+      console.error("Voice Gemini fallback failed:", err.message);
+    }
+  }
+
+  throw new Error("All AI providers failed for voice prescription. Please check OPENROUTER_API_KEY / GEMINI_API_KEY environment variables.");
 }
 
 export interface VoiceTranscriptionResult {

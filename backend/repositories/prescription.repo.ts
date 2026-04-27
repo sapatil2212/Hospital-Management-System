@@ -179,7 +179,7 @@ export async function findBillByPrescription(prescriptionId: string, hospitalId:
 
 // ─── Get Patient History ───
 export async function getPatientPrescriptionHistory(patientId: string, hospitalId: string, excludeId?: string) {
-  const where: any = { patientId, hospitalId };
+  const where: any = { patientId, hospitalId, status: { not: "DRAFT" } };
   if (excludeId) where.id = { not: excludeId };
 
   return px.prescription.findMany({

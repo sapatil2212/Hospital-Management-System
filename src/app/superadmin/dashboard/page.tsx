@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Building2, Activity, Settings, HelpCircle,
   LogOut, Search, Bell, MessageSquare, CheckCircle2, AlertTriangle,
   Plus, ChevronRight, Shield, TrendingUp, ServerCrash, Cpu, Database,
-  BarChart2, Filter, X, User, ChevronDown, Eye, Power, Trash2, MoreVertical
+  BarChart2, Filter, X, User, ChevronDown, Eye, Power, Trash2, MoreVertical, Menu
 } from "lucide-react";
 
 type Hospital = {
@@ -101,6 +101,7 @@ export default function SuperAdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalHospitals: 0,
@@ -236,7 +237,10 @@ export default function SuperAdminDashboard() {
       ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#fef2f2}::-webkit-scrollbar-thumb{background:#fca5a5;border-radius:4px}
       input,select,button{font-family:'Inter',sans-serif}
       .sad{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#fef7f7}
-      .sad-sb{width:220px;background:#fff;border-right:1px solid #fee2e2;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(220,38,38,0.06)}
+      .sad-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+      .sad-overlay.open{display:block}
+      .sad-sb{width:220px;background:#fff;border-right:1px solid #fee2e2;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(220,38,38,0.06);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+      .sad-burger{display:none;width:36px;height:36px;border-radius:10px;background:#fef7f7;border:1px solid #fee2e2;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
       .sad-logo{padding:20px 20px 16px;border-bottom:1px solid #fef2f2;display:flex;align-items:center;gap:10px}
       .sad-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(220,38,38,0.3)}
       .sad-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
@@ -331,6 +335,19 @@ export default function SuperAdminDashboard() {
       .sad-msg-ok{font-size:12px;color:#10b981;margin-top:8px;text-align:center;font-weight:600}
       .sad-msg-err{font-size:12px;color:#ef4444;margin-top:8px;text-align:center}
       .sad-filter-btn{padding:6px 14px;border-radius:8px;background:#fef7f7;border:1px solid #fee2e2;color:#64748b;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px}
+      @media(max-width:900px){
+        .sad-sb{transform:translateX(-100%)}
+        .sad-sb.open{transform:translateX(0)}
+        .sad-main{margin-left:0}
+        .sad-burger{display:flex}
+        .sad-search-wrap{width:180px}
+      }
+      @media(max-width:600px){
+        .sad-topbar{padding:0 14px}
+        .sad-search-wrap{width:130px}
+        .sad-profile-name,.sad-profile-role{display:none}
+        .sad-stats{grid-template-columns:repeat(2,1fr)}
+      }
     `}</style>
 
     {showModal&&(
@@ -374,7 +391,8 @@ export default function SuperAdminDashboard() {
     )}
 
     <div className="sad">
-      <aside className="sad-sb">
+      {sidebarOpen && <div className="sad-overlay open" onClick={() => setSidebarOpen(false)} />}
+      <aside className={`sad-sb${sidebarOpen ? " open" : ""}`}>
         <div className="sad-logo">
           <div className="sad-logo-ic"><Building2 size={18} color="white"/></div>
           <div><div className="sad-logo-tx">HMS Root</div><div className="sad-logo-sub">Super Admin</div></div>
@@ -382,7 +400,7 @@ export default function SuperAdminDashboard() {
         <nav className="sad-nav">
           <div className="sad-nav-sec">System</div>
           {navItems.map(n=>(
-            <button key={n.id} className={`sad-nb${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)}>
+            <button key={n.id} className={`sad-nb${tab===n.id?" on":""}`} onClick={()=>{setTab(n.id);setSidebarOpen(false);}}>
               <div className="sad-nb-dot"/>
               <span style={{color:tab===n.id?"#dc2626":"#94a3b8",display:"flex"}}>{n.icon}</span>
               {n.label}
@@ -402,6 +420,9 @@ export default function SuperAdminDashboard() {
 
       <main className="sad-main">
         <header className="sad-topbar">
+          <button className="sad-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+            {sidebarOpen ? <X size={18} color="#dc2626" /> : <Menu size={18} color="#64748b" />}
+          </button>
           <div className="sad-search-wrap">
             <Search size={14} color="#94a3b8"/>
             <input className="sad-search" placeholder="Search hospitals, users..." value={search} onChange={e=>setSearch(e.target.value)}/>

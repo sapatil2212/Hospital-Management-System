@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, HelpCircle, LogOut, Building2, ClipboardList,
   BarChart2, Package, ShoppingCart, ChevronDown, TrendingUp, Receipt,
-  Search, MessageSquare
+  Search, MessageSquare, Menu, X
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -67,6 +67,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const [search, setSearch] = useState("");
   const [deptProfile, setDeptProfile] = useState<any>(null);
   const [hospitalSettings, setHospitalSettings] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const tab = searchParams.get("tab");
   const activeId = getActiveId(pathname, tab);
@@ -118,7 +120,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     router.push("/login");
   };
 
-  const navigate = (item: typeof NAV_ITEMS[0]) => router.push(item.route);
+  const navigate = (item: typeof NAV_ITEMS[0]) => { router.push(item.route); setSidebarOpen(false); };
 
   if (loading) return <LoadingScreen />
 
@@ -130,7 +132,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
         input,select,button,textarea{font-family:'Inter',sans-serif}
         .hd{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#f0f4f8}
-        .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
+        .hd-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+        .hd-overlay.open{display:block}
+        .hd-sb{width:220px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04);transition:transform .25s cubic-bezier(.4,0,.2,1)}
         .hd-sb-logo{padding:20px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px}
         .hd-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(14,137,143,0.3)}
         .hd-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
@@ -149,6 +153,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-urole{font-size:10px;font-weight:500;color:#0E898F}
         .hd-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .hd-logout:hover{background:#fee2e2}
+        .hd-burger{display:none;width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s}
+        .hd-burger:hover{background:#E6F4F4}
         .hd-main{margin-left:220px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
         .hd-topbar{height:64px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
         .hd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px;transition:border-color .2s}
@@ -168,6 +174,23 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-pg-title{font-size:18px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
         .hd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
         @media(max-width:1100px){.hd-stats{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:900px){
+          .hd-sb{transform:translateX(-100%)}
+          .hd-sb.open{transform:translateX(0)}
+          .hd-main{margin-left:0}
+          .hd-burger{display:flex}
+          .hd-search-wrap{width:180px}
+          .hd-body{grid-template-columns:1fr}
+          .hd-right{display:none}
+        }
+        @media(max-width:600px){
+          .hd-topbar{padding:0 14px;gap:8px}
+          .hd-search-wrap{width:130px}
+          .hd-profile-name,.hd-profile-role{display:none}
+          .hd-center{padding:16px 12px}
+          .hd-stats{grid-template-columns:repeat(2,1fr)}
+          .hd-mid{grid-template-columns:1fr}
+        }
         .hd-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .2s,box-shadow .2s;cursor:default}
         .hd-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
         .hd-sc-icon{width:40px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -232,13 +255,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         .hd-msg-ok{font-size:11px;color:#10b981;margin-top:8px;text-align:center;font-weight:600}
         .hd-msg-err{font-size:11px;color:#ef4444;margin-top:8px;text-align:center}
         .mb16{margin-bottom:16px}
-        @media(max-width:900px){.hd-sb{display:none}.hd-main{margin-left:0}}
-        @media(max-width:1200px){.hd-body{grid-template-columns:1fr}}
+
       `}</style>
 
       <div className="hd">
+        {sidebarOpen && <div className="hd-overlay open" onClick={closeSidebar} />}
         {/* ── Sidebar ── */}
-        <aside className="hd-sb">
+        <aside className={`hd-sb${sidebarOpen ? " open" : ""}`}>
           <div className="hd-sb-logo">
             {hospitalSettings?.logo
               ? <img src={hospitalSettings.logo} alt="Logo" style={{ width: "100%", maxHeight: 52, objectFit: "contain", display: "block" }} />
@@ -300,6 +323,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         {/* ── Main ── */}
         <main className="hd-main">
           <header className="hd-topbar">
+            <button className="hd-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+              {sidebarOpen ? <X size={18} color="#0E898F" /> : <Menu size={18} color="#64748b" />}
+            </button>
             <div className="hd-search-wrap">
               <Search size={14} color="#94a3b8" />
               <input

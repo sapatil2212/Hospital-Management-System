@@ -159,13 +159,15 @@ export default function PrescriptionPage() {
 
       setLoading(false);
 
-      if (!viewOnly && ar.data.patient?.id) {
+      if (ar.data.patient?.id) {
         const rxId = rr.data?.prescription?.id || "";
         const histUrl = `/api/prescriptions/patient-history/${ar.data.patient.id}${rxId ? `?excludeId=${rxId}` : ""}`;
         api(histUrl).then(h => {
           if (h.success) setHist(h.data || []);
           setHistLoaded(true);
         }).catch(() => { setHistLoaded(true); });
+      } else {
+        setHistLoaded(true);
       }
 
       // Load doctor's active treatment plans for assignment

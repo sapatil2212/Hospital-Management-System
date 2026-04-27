@@ -61,17 +61,8 @@ export async function getAiPrescriptionSuggestions(input: AiPrescriptionInput): 
     }
   }
 
-  // Return empty if all providers fail
-  console.error("All AI providers failed");
-  return {
-    diagnosis: [],
-    icdCodes: [],
-    medications: [],
-    labTests: [],
-    advice: [],
-    differentialDiagnosis: [],
-    redFlags: [],
-  };
+  // All providers failed — throw so the API route returns a 500 error instead of silent empty result
+  throw new Error("AI service unavailable. Please ensure OPENROUTER_API_KEY or GEMINI_API_KEY is set in environment variables.");
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<AiSuggestion | null> {

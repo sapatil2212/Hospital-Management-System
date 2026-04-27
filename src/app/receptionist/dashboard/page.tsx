@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   ClipboardList, CalendarDays, UserRound, LogOut, Search, Bell,
   MessageSquare, HelpCircle, Plus, Check, X, Play, ChevronRight,
-  Clock, TrendingUp, Users, BarChart2, Pencil, Trash2
+  Clock, TrendingUp, Users, BarChart2, Pencil, Trash2, Menu
 } from "lucide-react";
 import AppointmentAlertModal from "@/components/AppointmentAlertModal";
 
@@ -68,6 +68,7 @@ export default function ReceptionistDashboard() {
   const [queue, setQueue] = useState(todayQueue);
   const [booking, setBooking] = useState({patientName:"",mobile:"",dept:"Cardiology",doctor:"Dr. Priya Sharma",timeSlot:"09:00 AM",type:"OPD"});
   const [booked, setBooked] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(()=>{
     fetch("/api/auth/me",{credentials:"include"}).then(r=>r.json()).then(d=>{if(!d.success){router.push("/login");return;}setUser(d.data);setLoading(false);}).catch(()=>router.push("/login"));
@@ -102,7 +103,10 @@ export default function ReceptionistDashboard() {
       ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#fefce8}::-webkit-scrollbar-thumb{background:#fef08a;border-radius:4px}
       input,select,button{font-family:'Inter',sans-serif}
       .rec{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#fefdf0}
-      .rec-sb{width:220px;background:#fff;border-right:1px solid #fef08a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(234,179,8,0.07)}
+      .rec-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+      .rec-overlay.open{display:block}
+      .rec-sb{width:220px;background:#fff;border-right:1px solid #fef08a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(234,179,8,0.07);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+      .rec-burger{display:none;width:36px;height:36px;border-radius:10px;background:#fefce8;border:1px solid #fef08a;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
       .rec-logo{padding:20px 20px 16px;border-bottom:1px solid #fefce8;display:flex;align-items:center;gap:10px}
       .rec-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#eab308,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(234,179,8,0.3)}
       .rec-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
@@ -177,10 +181,26 @@ export default function ReceptionistDashboard() {
       .rec-submit:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(234,179,8,0.4)}
       .rec-success{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:9px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:13px;color:#16a34a;font-weight:600;margin-top:10px}
       .rec-right-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:12px}
+      @media(max-width:900px){
+        .rec-sb{transform:translateX(-100%)}
+        .rec-sb.open{transform:translateX(0)}
+        .rec-main{margin-left:0}
+        .rec-burger{display:flex}
+        .rec-search-wrap{width:160px}
+        .rec-body{grid-template-columns:1fr}
+        .rec-right{display:none}
+      }
+      @media(max-width:600px){
+        .rec-topbar{padding:0 14px}
+        .rec-search-wrap{width:120px}
+        .rec-profile-name,.rec-profile-role{display:none}
+        .rec-stats{grid-template-columns:repeat(2,1fr)}
+      }
     `}</style>
 
     <div className="rec">
-      <aside className="rec-sb">
+      {sidebarOpen && <div className="rec-overlay open" onClick={() => setSidebarOpen(false)} />}
+      <aside className={`rec-sb${sidebarOpen ? " open" : ""}`}>
         <div className="rec-logo">
           <div className="rec-logo-ic"><CalendarDays size={18} color="white"/></div>
           <div><div className="rec-logo-tx">MediCare+</div><div className="rec-logo-sub">Front Desk</div></div>
@@ -188,7 +208,7 @@ export default function ReceptionistDashboard() {
         <nav className="rec-nav">
           <div className="rec-nav-sec">Front Desk</div>
           {navItems.map(n=>(
-            <button key={n.id} className={`rec-nb${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)}>
+            <button key={n.id} className={`rec-nb${tab===n.id?" on":""}`} onClick={()=>{setTab(n.id);setSidebarOpen(false);}}>
               <div className="rec-nb-dot"/>
               <span style={{color:tab===n.id?"#854d0e":"#94a3b8",display:"flex"}}>{n.icon}</span>
               {n.label}
@@ -208,6 +228,9 @@ export default function ReceptionistDashboard() {
 
       <main className="rec-main">
         <header className="rec-topbar">
+          <button className="rec-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+            {sidebarOpen ? <X size={18} color="#eab308" /> : <Menu size={18} color="#64748b" />}
+          </button>
           <div className="rec-search-wrap"><Search size={14} color="#94a3b8"/><input className="rec-search" placeholder="Search appointments, patients..."/></div>
           <div className="rec-tb-right">
             <div className="rec-notif"><Bell size={16} color="#64748b"/><span className="rec-notif-dot"/></div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, Building2, LogOut,
   CalendarDays, Users, ClipboardList,
-  ChevronDown, Search, Info, Stethoscope,
+  ChevronDown, Search, Info, Stethoscope, Menu, X,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -60,6 +60,8 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
   const [hospitalName, setHospitalName] = useState("Hospital");
   const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch]           = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const tab      = searchParams.get("tab");
   const activeId = getActiveId(tab);
@@ -104,6 +106,7 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
   const go = (id: string) => {
     const base = "/support/dashboard";
     router.push(id === "overview" ? base : `${base}?tab=${id}`);
+    setSidebarOpen(false);
   };
 
   if (loading) return <Spinner />;
@@ -120,7 +123,10 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         input,select,button,textarea{font-family:inherit}
 
         .sp-wrap{display:flex;height:100vh;overflow:hidden;background:#f0fdf9}
-        .sp-sb{width:224px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 10px rgba(5,150,105,.06)}
+        .sp-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+        .sp-overlay.open{display:block}
+        .sp-sb{width:224px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 10px rgba(5,150,105,.06);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+        .sp-burger{display:none;width:36px;height:36px;border-radius:10px;background:${ACCENT_LIGHT};border:1.5px solid ${ACCENT_BDR};align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
         .sp-sb-logo{padding:18px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;min-height:64px}
         .sp-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,${ACCENT},${ACCENT2});border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(5,150,105,.3);flex-shrink:0}
         .sp-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -189,11 +195,25 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         .dd-section-dot{width:4px;height:18px;background:linear-gradient(180deg,${ACCENT},${ACCENT2});border-radius:4px;flex-shrink:0}
         .dd-empty{padding:48px;text-align:center;color:#94a3b8}
         @keyframes dd-spin{to{transform:rotate(360deg)}}
-        @media(max-width:900px){.sp-sb{display:none}.sp-main{margin-left:0}}
+        @media(max-width:900px){
+          .sp-sb{transform:translateX(-100%)}
+          .sp-sb.open{transform:translateX(0)}
+          .sp-main{margin-left:0}
+          .sp-burger{display:flex}
+          .sp-search{width:160px}
+        }
+        @media(max-width:600px){
+          .sp-topbar{padding:0 14px}
+          .sp-search{width:120px}
+          .sp-profile-name,.sp-profile-role{display:none}
+          .sp-content{padding:16px 12px 24px}
+          .dd-stats{grid-template-columns:repeat(2,1fr)}
+        }
       `}</style>
 
       <div className="sp-wrap">
-        <aside className="sp-sb">
+        {sidebarOpen && <div className="sp-overlay open" onClick={closeSidebar} />}
+        <aside className={`sp-sb${sidebarOpen ? " open" : ""}`}>
           <div className="sp-sb-logo">
             {hospitalLogo ? (
               <img src={hospitalLogo} alt="Logo" style={{ width: "100%", maxHeight: 52, objectFit: "contain", display: "block" }} />
@@ -233,6 +253,9 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
 
         <main className="sp-main">
           <header className="sp-topbar">
+            <button className="sp-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+              {sidebarOpen ? <X size={18} color={ACCENT} /> : <Menu size={18} color="#64748b" />}
+            </button>
             <div className="sp-search">
               <Search size={14} color="#94a3b8" />
               <input placeholder="Search patients, appointments…" value={search} onChange={e => setSearch(e.target.value)} />

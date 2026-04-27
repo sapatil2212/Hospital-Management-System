@@ -30,7 +30,7 @@ import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
   Save, Ban, ChevronDown, ChevronUp, MessageSquare, UserCheck, Eye, Download,
   ShieldCheck, BarChart2, Package, UserPlus, ArrowUpDown, FileSpreadsheet,
-  FileType, AlertTriangle, Bed, CreditCard
+  FileType, AlertTriangle, Bed, CreditCard, Menu
 } from "lucide-react";
 
 const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Billing Queue...</span></div> });
@@ -136,6 +136,7 @@ function SubDeptDashboardContent() {
     }
   }, [tab, slugPath, pathname, router, searchParams]);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Department Stock (from Central Store transfers)
   const [deptStock, setDeptStock] = useState<any>(null);
@@ -855,7 +856,10 @@ function SubDeptDashboardContent() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .sd2{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#f0f4f8}
-        .sd2-sb{width:224px;background:#fff;border-right:1px solid var(--bc);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04)}
+        .sd2-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+        .sd2-overlay.open{display:block}
+        .sd2-sb{width:224px;background:#fff;border-right:1px solid var(--bc);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+        .sd2-burger{display:none;width:36px;height:36px;border-radius:10px;background:var(--lbg);border:1px solid var(--bc);align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
         .sd2-logo{padding:18px 20px 14px;border-bottom:1px solid var(--bc);display:flex;flex-direction:column;align-items:center;gap:8px}
         .sd2-logo-ic{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.08);flex-shrink:0;overflow:hidden;background:#fff;border:1px solid #e2e8f0}
         .sd2-logo-ic img{width:100%;height:100%;object-fit:contain}
@@ -912,12 +916,23 @@ function SubDeptDashboardContent() {
         .hd-table th{text-align:left;font-size:11px;font-weight:600;color:#94a3b8;padding:10px 14px;border-bottom:2px solid #f1f5f9;white-space:nowrap}
         .hd-table td{padding:12px 14px;font-size:13px;color:#475569;border-bottom:1px solid #f8fafc;vertical-align:middle}
         .hd-table tbody tr:hover td{background:#fafbff}
+        @media(max-width:900px){
+          .sd2-sb{transform:translateX(-100%)}
+          .sd2-sb.open{transform:translateX(0)}
+          .sd2-main{margin-left:0}
+          .sd2-burger{display:flex}
+        }
+        @media(max-width:600px){
+          .sd2-topbar{padding:0 14px;gap:8px}
+          .sd2-body{padding:16px 12px}
+          .sd2-search{width:160px}
+        }
       `}</style>
 
       <div className="sd2" style={{"--grad":meta.gradient,"--acc":meta.accent,"--lbg":meta.lightBg,"--bc":meta.borderColor} as any}>
-
+        {sidebarOpen && <div className="sd2-overlay open" onClick={() => setSidebarOpen(false)} />}
         {/* ── Sidebar ── */}
-        <aside className="sd2-sb">
+        <aside className={`sd2-sb${sidebarOpen ? " open" : ""}`}>
           <div className="sd2-logo">
             {profile?.hospitalSettings?.logo ? (
               <img src={profile.hospitalSettings.logo} alt="Hospital Logo" style={{ width: "100%", maxHeight: 60, objectFit: "contain", display: "block" }} />
@@ -931,7 +946,7 @@ function SubDeptDashboardContent() {
           <nav className="sd2-nav">
             <div className="sd2-nav-sec">Navigation</div>
             {navItems.map(n => (
-              <button key={n.id} className={`sd2-nb${tab===n.id?" on":""}`} onClick={()=>setTab(n.id as any)}>
+              <button key={n.id} className={`sd2-nb${tab===n.id?" on":""}`} onClick={()=>{setTab(n.id as any);setSidebarOpen(false);}}>
                 <div className="sd2-nb-dot"/>
                 <span style={{display:"flex"}}>{n.icon}</span>
                 {n.label}
@@ -958,6 +973,9 @@ function SubDeptDashboardContent() {
 
           {/* Top Bar */}
           <header className="sd2-topbar">
+            <button className="sd2-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+              {sidebarOpen ? <X size={18} color="var(--acc)" /> : <Menu size={18} color="#64748b" />}
+            </button>
             <div>
               <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{TAB_TITLES[tab] || "Overview"}</div>
               <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{today}</div>

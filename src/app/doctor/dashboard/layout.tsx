@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   CalendarDays, Stethoscope, LogOut, Search,
   Bell, HelpCircle, UserRound, FileText,
-  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock, BarChart2
+  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock, BarChart2, Menu, X
 } from "lucide-react";
 import { DoctorDashboardProvider, useDoctorDashboard } from "./DoctorDashboardContext";
 import NotificationBell from "@/components/NotificationBell";
@@ -16,6 +16,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const { doctor, loading, logout, accent, doctorName, deptName, initials } = useDoctorDashboard();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const isProfilePage = pathname === "/doctor/dashboard/profile";
   const currentTab = searchParams.get("tab") || "schedule";
@@ -49,7 +51,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
         .doc{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#ffffff}
-        .doc-sb{width:220px;background:#fff;border-right:1px solid #d1fae5;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(16,185,129,0.06)}
+        .doc-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
+        .doc-overlay.open{display:block}
+        .doc-sb{width:220px;background:#fff;border-right:1px solid #d1fae5;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(16,185,129,0.06);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+        .doc-burger{display:none;width:36px;height:36px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
         .doc-logo{padding:18px 20px 14px;border-bottom:1px solid #ecfdf5;display:flex;flex-direction:column;align-items:center;gap:8px}
         .doc-logo-ic{width:52px;height:52px;background:linear-gradient(135deg,#10b981,#059669);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);flex-shrink:0}
         .doc-nav{flex:1;padding:12px 12px;overflow-y:auto}
@@ -84,11 +89,24 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-body{display:grid;grid-template-columns:1fr;flex:1;padding-top:0}
         .doc-center{padding:22px 20px;overflow-y:auto}
         .doc-pg-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
+        @media(max-width:900px){
+          .doc-sb{transform:translateX(-100%)}
+          .doc-sb.open{transform:translateX(0)}
+          .doc-main{margin-left:0}
+          .doc-burger{display:flex}
+          .doc-search-wrap{width:180px}
+        }
+        @media(max-width:600px){
+          .doc-topbar{padding:0 14px}
+          .doc-search-wrap{width:130px}
+          .doc-profile-name,.doc-profile-role{display:none}
+        }
       `}</style>
 
       <div className="doc" style={{ '--dept-accent': accent, '--dept-bg': accent + '22' } as any}>
+        {sidebarOpen && <div className="doc-overlay open" onClick={closeSidebar} />}
         {/* Sidebar */}
-        <aside className="doc-sb">
+        <aside className={`doc-sb${sidebarOpen ? " open" : ""}`}>
           <div className="doc-logo">
             {doctor?.hospitalSettings?.logo ? (
               <img src={doctor.hospitalSettings.logo} alt="Hospital Logo" style={{ width: "100%", maxHeight: 60, objectFit: "contain", display: "block" }} />
@@ -106,7 +124,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <button
                   key={n.id}
                   className={`doc-nb${isActive ? " on" : ""}`}
-                  onClick={() => router.push(n.path)}
+                  onClick={() => { router.push(n.path); setSidebarOpen(false); }}
                 >
                   <div className="doc-nb-dot" />
                   <span style={{ color: isActive ? "#059669" : "#94a3b8", display: "flex" }}>{n.icon}</span>
@@ -117,7 +135,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <div className="doc-nav-sec">Settings</div>
             <button
               className={`doc-nb${isProfilePage ? " on" : ""}`}
-              onClick={() => router.push("/doctor/dashboard/profile")}
+              onClick={() => { router.push("/doctor/dashboard/profile"); setSidebarOpen(false); }}
             >
               <div className="doc-nb-dot" />
               <span style={{ color: isProfilePage ? "#059669" : "#94a3b8", display: "flex" }}><User size={16} /></span>
@@ -143,6 +161,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         {/* Main Content */}
         <main className="doc-main">
           <header className="doc-topbar">
+            <button className="doc-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
+              {sidebarOpen ? <X size={18} color="#10b981" /> : <Menu size={18} color="#64748b" />}
+            </button>
             <div className="doc-search-wrap"><Search size={14} color="#94a3b8" /><input className="doc-search" placeholder="Search patients, prescriptions..." /></div>
             <div className="doc-tb-right">
               <NotificationBell
