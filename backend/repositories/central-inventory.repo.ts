@@ -350,7 +350,7 @@ export const approveTransfer = async (id: string, hospitalId: string, approvedBy
         transferredAt: new Date(),
       },
     });
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 };
 
 export const rejectTransfer = async (id: string, hospitalId: string, approvedBy: string) => {

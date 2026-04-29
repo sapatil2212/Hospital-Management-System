@@ -127,6 +127,22 @@ export async function POST(req: NextRequest) {
       include: { supplier: true, items: { include: { item: true } } },
     });
 
+    // Log expense when purchase is paid immediately
+    if (pType === "PAID" && finalGrandTotal > 0) {
+      const supplierName = purchase.supplier?.name || "Unknown Supplier";
+      await px.expense.create({
+        data: {
+          hospitalId: auth.hospitalId,
+          title: `Pharmacy Purchase: ${purchaseNo} — ${supplierName}`,
+          category: "PHARMACY",
+          amount: finalGrandTotal,
+          date: new Date(),
+          description: `Pharmacy purchase order ${purchaseNo}. ${notes || ""}`.trim(),
+          addedBy: auth.user.userId || null,
+        },
+      }).catch(() => {});
+    }
+
     return successResponse(purchase, "Purchase order created");
   } catch (error: any) {
     return errorResponse(error.message || "Failed to create purchase", 500);
@@ -143,14 +159,45 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, status } = body;
+    const { id, status, action, paymentMethod, amountPaid, transactionId } = body;
     if (!id) return errorResponse("id is required", 400);
 
     const purchase = await px.purchase.findFirst({
       where: { id, hospitalId: auth.hospitalId },
-      include: { items: true },
+      include: { items: true, supplier: { select: { name: true } } },
     });
     if (!purchase) return errorResponse("Purchase not found", 404);
+
+    // Pay action — record payment for a credit purchase
+    if (action === "pay") {
+      const paidAmount = parseFloat(amountPaid) || purchase.grandTotal;
+      const newPaidTotal = (purchase.amountPaid || 0) + paidAmount;
+      const fullyPaid = newPaidTotal >= purchase.grandTotal;
+      await px.purchase.update({
+        where: { id },
+        data: {
+          amountPaid: newPaidTotal,
+          paymentStatus: fullyPaid ? "PAID" : "PARTIAL",
+          paymentMethod: paymentMethod || "BANK_TRANSFER",
+          transactionId: transactionId || null,
+        },
+      });
+      // Log expense for this payment
+      if (paidAmount > 0) {
+        await px.expense.create({
+          data: {
+            hospitalId: auth.hospitalId,
+            title: `Pharmacy Payment: ${purchase.purchaseNo} — ${purchase.supplier?.name || "Supplier"}`,
+            category: "PHARMACY",
+            amount: paidAmount,
+            date: new Date(),
+            description: `Payment for pharmacy PO ${purchase.purchaseNo}. Method: ${paymentMethod || "BANK_TRANSFER"}`,
+            addedBy: auth.user.userId || null,
+          },
+        }).catch(() => {});
+      }
+      return successResponse(null, "Payment recorded");
+    }
 
     await px.purchase.update({
       where: { id },

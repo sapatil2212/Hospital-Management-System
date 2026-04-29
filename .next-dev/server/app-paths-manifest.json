@@ -1,10 +1,9 @@
 {
   "/about/page": "app/about/page.js",
+  "/api/inventory/stock-notifications/route": "app/api/inventory/stock-notifications/route.js",
   "/subdept/dashboard/page": "app/subdept/dashboard/page.js",
-  "/api/notifications/stream/route": "app/api/notifications/stream/route.js",
-  "/api/appointments/stream/route": "app/api/appointments/stream/route.js",
-  "/api/pharmacy/notifications/stream/route": "app/api/pharmacy/notifications/stream/route.js",
+  "/login/page": "app/login/page.js",
   "/hospitaladmin/configure/page": "app/hospitaladmin/configure/page.js",
-  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js",
-  "/hospitaladmin/appointments/page": "app/hospitaladmin/appointments/page.js"
+  "/diagnostic/dashboard/page": "app/diagnostic/dashboard/page.js",
+  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js"
 }

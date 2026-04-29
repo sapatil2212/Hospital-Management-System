@@ -68,7 +68,7 @@
   color: var(--primary);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 /* Heading */
@@ -78,15 +78,15 @@
   color: var(--white);
   line-height: 1.1;
   letter-spacing: -0.03em;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 /* Description */
 .heroDescription {
   font-size: var(--font-size-sm);
   color: rgba(255, 255, 255, 0.9);
-  line-height: 1.7;
-  margin-bottom: var(--space-4);
+  line-height: 1.6;
+  margin-bottom: var(--space-3);
   max-width: 700px;
 }
 

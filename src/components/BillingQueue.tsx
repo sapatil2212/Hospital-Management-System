@@ -152,7 +152,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
 
   // Sort state
-  const [sortBy, setSortBy] = useState<string>("newest");
+  const [sortBy, setSortBy] = useState<string>("status_pending");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
@@ -1233,6 +1233,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     queueCount: queue.length,
     totalPending: queue.reduce((sum, q) => sum + (q.bill?.status === "PENDING" ? (q.bill?.total || 0) : 0), 0),
     totalCollected: queue.reduce((sum, q) => sum + (q.bill?.status === "PAID" ? (q.bill?.total || 0) : 0), 0),
+    totalDiscount: queue.reduce((sum, q) => sum + (q.bill?.status === "PAID" ? (q.bill?.discount || 0) : 0), 0),
   };
 
   const SORT_OPTIONS = [
@@ -1284,28 +1285,23 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
       <style>{BQ_CSS}</style>
       <div className="bq-wrap">
         {/* Stats Bar */}
-        <div className="bq-stats">
-          <div className="bq-stat-card bq-stat-blue">
-            <div className="bq-stat-icon"><Receipt size={20} /></div>
-            <div>
-              <div className="bq-stat-value">{stats.queueCount}</div>
-              <div className="bq-stat-label">In Queue</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+          {[
+            { label: "In Queue", value: stats.queueCount, icon: Receipt, color: "#0E898F", bg: "#E6F4F4" },
+            { label: "Pending Collection", value: fmtCur(stats.totalPending), icon: Clock, color: "#f59e0b", bg: "#fffbeb" },
+            { label: "Collected Today", value: fmtCur(stats.totalCollected), icon: CheckCircle2, color: "#10b981", bg: "#f0fdf4" },
+            { label: "Discount Given", value: fmtCur(stats.totalDiscount), icon: Tag, color: "#8b5cf6", bg: "#f5f3ff" },
+          ].map(i => (
+            <div key={i.label} style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, padding: "16px 18px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 12, background: i.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <i.icon size={20} color={i.color} strokeWidth={2} />
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5 }}>{i.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: i.color, lineHeight: 1 }}>{i.value}</div>
+              </div>
             </div>
-          </div>
-          <div className="bq-stat-card bq-stat-amber">
-            <div className="bq-stat-icon"><Clock size={20} /></div>
-            <div>
-              <div className="bq-stat-value">{fmtCur(stats.totalPending)}</div>
-              <div className="bq-stat-label">Pending Collection</div>
-            </div>
-          </div>
-          <div className="bq-stat-card bq-stat-green">
-            <div className="bq-stat-icon"><CheckCircle2 size={20} /></div>
-            <div>
-              <div className="bq-stat-value">{fmtCur(stats.totalCollected)}</div>
-              <div className="bq-stat-label">Collected Today</div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Filters */}
@@ -1415,7 +1411,6 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                       </td>
                       <td>
                         <div className="bq-patient">
-                          <div className="bq-patient-avatar">{(item.patient.name || "?")[0].toUpperCase()}</div>
                           <div>
                             <div className="bq-patient-name">{item.patient.name}</div>
                             <div className="bq-patient-id">{item.patient.patientId}</div>
@@ -1434,15 +1429,15 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                       <td>
                         {(item as any).source === "lab_order" ? (
                           <span className="bq-badge" style={{ background: "#f0fdf4", color: "#047857", border: "1px solid #a7f3d0" }}>
-                            🧪 Lab Order
+                            Lab Order
                           </span>
                         ) : (item as any).source === "pharmacy_counter" ? (
                           <span className="bq-badge" style={{ background: "#E6F4F4", color: "#0b7075", border: "1px solid #b2d8da" }}>
-                            💊 Pharmacy Sale
+                            Pharmacy Sale
                           </span>
                         ) : (item as any).source === "pharmacy" ? (
                           <span className="bq-badge" style={{ background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
-                            🏥 Pharmacy Rx
+                            Pharmacy Rx
                           </span>
                         ) : item.subDepartment ? (
                           <span className="bq-badge" style={{ background: "#f0f9ff", color: "#0369a1", border: "1px solid #bae6fd" }}>
@@ -1476,15 +1471,33 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                                 {sendingEmail === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Send size={14} />}
                               </button>
                               {item.bill.status !== "PAID" ? (
-                                <button className="bq-action-btn bq-action-collect" onClick={() => handleCollect(item)} title="Collect & Generate Bill">
+                                <button 
+                                  className="bq-action-btn bq-action-collect" 
+                                  onClick={() => {
+                                    if (scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
+                                      showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be collected at the main billing desk.");
+                                      return;
+                                    }
+                                    handleCollect(item);
+                                  }} 
+                                  title={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? "Contains non-pharmacy charges. Collect at main desk." : "Collect & Generate Bill"}
+                                  style={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? { opacity: 0.5, cursor: "not-allowed", filter: "grayscale(100%)" } : {}}
+                                >
                                   <CreditCard size={14} />
                                 </button>
                               ) : (
                                 <button
                                   className="bq-action-btn bq-action-regenerate"
-                                  onClick={() => handleRegenerate(item)}
+                                  onClick={() => {
+                                    if (scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
+                                      showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be modified at the main billing desk.");
+                                      return;
+                                    }
+                                    handleRegenerate(item);
+                                  }}
                                   disabled={reverting === item.bill.id}
-                                  title="Regenerate Bill"
+                                  title={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? "Contains non-pharmacy charges. Modify at main desk." : "Regenerate Bill"}
+                                  style={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? { opacity: 0.5, cursor: "not-allowed", filter: "grayscale(100%)" } : {}}
                                 >
                                   {reverting === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <RefreshCw size={14} />}
                                 </button>
@@ -1517,16 +1530,22 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                 <h3>Bill Details - {selectedItem.bill?.billNo}</h3>
                 <div style={{display: "flex", gap: 8}}>
                   {selectedItem.bill?.status === "PAID" && (
-                    <button
-                      className="bq-btn-secondary"
-                      style={{padding:"6px 12px",fontSize:12}}
-                      onClick={() => handleRegenerate(selectedItem)}
-                      disabled={reverting === selectedItem.bill?.id}
-                      title="Regenerate Bill"
-                    >
-                      {reverting === selectedItem.bill?.id ? <Loader2 size={14} style={{animation:"spin .7s linear infinite"}}/> : <RefreshCw size={14}/>}
-                      <span style={{marginLeft:4}}>Regenerate</span>
-                    </button>
+                      <button
+                        className="bq-btn-secondary"
+                        style={scope === "pharmacy" && selectedItem.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? {padding:"6px 12px",fontSize:12, opacity: 0.5, cursor: "not-allowed"} : {padding:"6px 12px",fontSize:12}}
+                        onClick={() => {
+                          if (scope === "pharmacy" && selectedItem.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
+                            showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be modified at the main billing desk.");
+                            return;
+                          }
+                          handleRegenerate(selectedItem);
+                        }}
+                        disabled={reverting === selectedItem.bill?.id}
+                        title={scope === "pharmacy" && selectedItem.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? "Contains non-pharmacy charges. Modify at main desk." : "Regenerate Bill"}
+                      >
+                        {reverting === selectedItem.bill?.id ? <Loader2 size={14} style={{animation:"spin .7s linear infinite"}}/> : <RefreshCw size={14}/>}
+                        <span style={{marginLeft:4}}>Regenerate</span>
+                      </button>
                   )}
                   <button className="bq-btn-icon" onClick={() => handleDownloadBillPDF(selectedItem)} title="Download PDF">
                     <Download size={16} />
@@ -1860,6 +1879,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                       })()}
 
                       {/* Add extra charge form */}
+                      {scope !== "pharmacy" && scope !== "lab" && (
                       <div className="cm-add-charge">
                         <div className="cm-section-title" style={{marginBottom:10}}><Plus size={14}/>Add Extra Charge</div>
                         <div className="cm-add-charge-row">
@@ -1891,6 +1911,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                           </button>
                         </div>
                       </div>
+                      )}
 
                       {/* GST */}
                       <div className="cm-section-title" style={{marginTop:16}}><PercentIcon size={14}/>Tax &amp; GST</div>

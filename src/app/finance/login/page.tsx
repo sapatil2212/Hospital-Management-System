@@ -43,28 +43,28 @@ export default function FinanceLoginPage() {
           <div style={{ width: 64, height: 64, borderRadius: 20, background: "linear-gradient(135deg,#f59e0b,#b45309)", display: "inline-flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 28px rgba(245,158,11,.35)", marginBottom: 14 }}>
             <IndianRupee size={30} color="#fff" />
           </div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", letterSpacing: "-.5px" }}>Finance Portal</div>
-          <div style={{ fontSize: 13, color: "#78350f", marginTop: 4, fontWeight: 500 }}>Sign in to access billing & financial management</div>
+          <div style={{ fontSize:22, fontWeight: 800, color: "#1e293b", letterSpacing: "-.5px" }}>Finance Portal</div>
+          <div style={{ fontSize:12, color: "#78350f", marginTop: 4, fontWeight: 500 }}>Sign in to access billing & financial management</div>
         </div>
 
         {/* Card */}
         <div style={{ background: "#fff", borderRadius: 20, padding: 32, boxShadow: "0 20px 60px rgba(245,158,11,.15)", border: "1px solid #fde68a" }}>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 18 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }}>Email Address</label>
+              <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }}>Email Address</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="finance@hospital.com"
                 autoComplete="email"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${error ? "#fecaca" : "#e2e8f0"}`, fontSize: 14, outline: "none", color: "#1e293b", background: "#f8fafc", transition: "border-color .2s" }}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${error ? "#fecaca" : "#e2e8f0"}`, fontSize:13, outline: "none", color: "#1e293b", background: "#f8fafc", transition: "border-color .2s" }}
                 onFocus={e => (e.target.style.borderColor = "#fcd34d")}
                 onBlur={e => (e.target.style.borderColor = error ? "#fecaca" : "#e2e8f0")}
               />
             </div>
             <div style={{ marginBottom: 22 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }}>Password</label>
+              <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }}>Password</label>
               <div style={{ position: "relative" }}>
                 <input
                   type={showPw ? "text" : "password"}
@@ -72,7 +72,7 @@ export default function FinanceLoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   autoComplete="current-password"
-                  style={{ width: "100%", padding: "12px 42px 12px 14px", borderRadius: 10, border: `1.5px solid ${error ? "#fecaca" : "#e2e8f0"}`, fontSize: 14, outline: "none", color: "#1e293b", background: "#f8fafc" }}
+                  style={{ width: "100%", padding: "12px 42px 12px 14px", borderRadius: 10, border: `1.5px solid ${error ? "#fecaca" : "#e2e8f0"}`, fontSize:13, outline: "none", color: "#1e293b", background: "#f8fafc" }}
                   onFocus={e => (e.target.style.borderColor = "#fcd34d")}
                   onBlur={e => (e.target.style.borderColor = error ? "#fecaca" : "#e2e8f0")}
                 />
@@ -85,14 +85,14 @@ export default function FinanceLoginPage() {
             {error && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 9, background: "#fff5f5", border: "1px solid #fecaca", marginBottom: 18 }}>
                 <AlertCircle size={14} color="#ef4444" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: "#ef4444", fontWeight: 500 }}>{error}</span>
+                <span style={{ fontSize:12, color: "#ef4444", fontWeight: 500 }}>{error}</span>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              style={{ width: "100%", padding: "13px", borderRadius: 11, border: "none", background: loading ? "#fde68a" : "linear-gradient(135deg,#f59e0b,#b45309)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 14px rgba(245,158,11,.35)", transition: "opacity .2s" }}
+              style={{ width: "100%", padding: "13px", borderRadius: 11, border: "none", background: loading ? "#fde68a" : "linear-gradient(135deg,#f59e0b,#b45309)", color: "#fff", fontSize:13, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 14px rgba(245,158,11,.35)", transition: "opacity .2s" }}
             >
               {loading ? <Loader2 size={16} style={{ animation: "spin .7s linear infinite" }} /> : <ShieldCheck size={16} />}
               {loading ? "Signing in…" : "Sign In"}
@@ -100,13 +100,13 @@ export default function FinanceLoginPage() {
           </form>
 
           <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid #fef3c7", textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#94a3b8" }}>
+            <div style={{ fontSize:11, color: "#94a3b8" }}>
               Login credentials are sent by the Hospital Admin.<br />Contact admin if you need access.
             </div>
           </div>
         </div>
 
-        <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#b45309", opacity: .7 }}>
+        <div style={{ textAlign: "center", marginTop: 16, fontSize:11, color: "#b45309", opacity: .7 }}>
           Hospital Management System · Finance Department
         </div>
       </div>

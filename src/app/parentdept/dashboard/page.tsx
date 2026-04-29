@@ -170,52 +170,81 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
       <div className="hd-pg-title">{deptProfile?.name || "Pharmacy"} — Overview</div>
 
       {/* Stats Cards */}
-      <div className="hd-stats">
-        <div className="hd-sc">
-          <div className="hd-sc-icon" style={{ background: "linear-gradient(135deg,#0E898F,#07595D)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
+        <div
+          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(14,137,143,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+        >
+          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#0E898F,#07595D)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Building2 size={20} color="#fff" />
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="hd-sc-lbl">Sub-Departments</div>
-            <div className="hd-sc-val">{loadingData ? "—" : activeSubDepts}</div>
-            <div className="hd-sc-sub">Active units</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{loadingData ? "—" : activeSubDepts}</div>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "#0E898F", background: "#E6F4F4", padding: "2px 6px", borderRadius: 10, border: "1px solid #B3E0E0" }}>ACTIVE</span>
+            </div>
+            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Sub-Departments</div>
           </div>
         </div>
 
-        <div className="hd-sc">
-          <div className="hd-sc-icon" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
+        <div
+          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+        >
+          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <ClipboardList size={20} color="#fff" />
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="hd-sc-lbl">Prescriptions Today</div>
-            <div className="hd-sc-val">{pharmStats?.todayRxCount ?? "—"}</div>
-            <div className="hd-sc-sub">{pharmStats?.pendingCount ?? 0} pending</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{pharmStats?.todayRxCount ?? "—"}</div>
+              {pharmStats?.pendingCount > 0 && (
+                <span style={{ fontSize: 8, fontWeight: 700, color: "#ea580c", background: "#fff3e6", padding: "2px 6px", borderRadius: 10, border: "1px solid #fed7aa", display: "flex", alignItems: "center", gap: 2 }}>
+                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#ea580c", display: "inline-block", animation: "ph-pulse 1.5s ease-in-out infinite" }} />
+                  {pharmStats.pendingCount}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Prescriptions Today</div>
           </div>
         </div>
 
-        <div className="hd-sc">
-          <div className="hd-sc-icon" style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}>
+        <div
+          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+        >
+          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#3b82f6,#2563eb)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Package size={20} color="#fff" />
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="hd-sc-lbl">Inventory Items</div>
-            <div className="hd-sc-val">{pharmStats?.totalItems ?? "—"}</div>
-            <div className="hd-sc-sub">
-              {pharmStats?.lowStockCount > 0
-                ? <span style={{ color: "#ef4444" }}>{pharmStats.lowStockCount} low stock</span>
-                : "All stocked"}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{pharmStats?.totalItems ?? "—"}</div>
+              {pharmStats?.lowStockCount > 0 && (
+                <span style={{ fontSize: 8, fontWeight: 700, color: "#ef4444", background: "#fff5f5", padding: "2px 6px", borderRadius: 10, border: "1px solid #fecaca" }}>
+                  {pharmStats.lowStockCount} LOW
+                </span>
+              )}
             </div>
+            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Inventory Items</div>
           </div>
         </div>
 
-        <div className="hd-sc">
-          <div className="hd-sc-icon" style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}>
-            <TrendingUp size={20} color="#fff" />
+        <div
+          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(16,185,129,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+        >
+          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#10b981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <IndianRupee size={20} color="#fff" />
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="hd-sc-lbl">Today&apos;s Revenue</div>
-            <div className="hd-sc-val">₹{pharmStats?.todayRevenue?.toLocaleString() ?? "0"}</div>
-            <div className="hd-sc-sub">₹{pharmStats?.totalRevenue?.toLocaleString() ?? "0"} total</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>₹{pharmStats?.todayRevenue?.toLocaleString() ?? "0"}</div>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", padding: "2px 6px", borderRadius: 10, border: "1px solid #bbf7d0" }}>TODAY</span>
+            </div>
+            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Revenue</div>
           </div>
         </div>
       </div>
@@ -224,13 +253,13 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
       {pharmStats && (pharmStats.lowStockCount > 0 || pharmStats.expiringCount > 0) && (
         <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
           {pharmStats.lowStockCount > 0 && (
-            <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", fontSize: 13, fontWeight: 500 }}>
+            <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", fontSize:12, fontWeight: 500 }}>
               <AlertTriangle size={16} />
               <span><strong>{pharmStats.lowStockCount}</strong> item{pharmStats.lowStockCount !== 1 ? "s" : ""} below minimum stock</span>
             </div>
           )}
           {pharmStats.expiringCount > 0 && (
-            <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "#fff5f5", border: "1px solid #fecaca", color: "#991b1b", fontSize: 13, fontWeight: 500 }}>
+            <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "#fff5f5", border: "1px solid #fecaca", color: "#991b1b", fontSize:12, fontWeight: 500 }}>
               <Clock size={16} />
               <span><strong>{pharmStats.expiringCount}</strong> item{pharmStats.expiringCount !== 1 ? "s" : ""} expiring within 30 days</span>
             </div>
@@ -255,8 +284,8 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
           </div>
           {deptProfile?.description && (
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Description</div>
-              <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>{deptProfile.description}</div>
+              <div style={{ fontSize:10, fontWeight: 600, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Description</div>
+              <div style={{ fontSize:11, color: "#64748b", lineHeight: 1.6 }}>{deptProfile.description}</div>
             </div>
           )}
         </div>
@@ -267,8 +296,8 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Sub-Departments</div>
-              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{subDepts.length} unit{subDepts.length !== 1 ? "s" : ""} — click to view dashboard</div>
+              <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b" }}>Sub-Departments</div>
+              <div style={{ fontSize:10, color: "#94a3b8", marginTop: 2 }}>{subDepts.length} unit{subDepts.length !== 1 ? "s" : ""} — click to view dashboard</div>
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
@@ -292,23 +321,23 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
                       <DI size={18} color="#fff" />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
-                      <div style={{ fontSize: 10, color: m.accent, fontWeight: 600 }}>{sd.type?.replace(/_/g, " ")}</div>
+                      <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
+                      <div style={{ fontSize:10, color: m.accent, fontWeight: 600 }}>{sd.type?.replace(/_/g, " ")}</div>
                     </div>
                     <ChevronRight size={16} color="#94a3b8" />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <div style={{ background: m.lightBg, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: m.accent }}>{sd._count?.procedures || 0}</div>
-                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 500 }}>Procedures</div>
+                      <div style={{ fontSize:15, fontWeight: 800, color: m.accent }}>{sd._count?.procedures || 0}</div>
+                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 500 }}>Procedures</div>
                     </div>
                     <div style={{ background: m.lightBg, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: m.accent }}>{sd._count?.procedureRecords || 0}</div>
-                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 500 }}>Records</div>
+                      <div style={{ fontSize:15, fontWeight: 800, color: m.accent }}>{sd._count?.procedureRecords || 0}</div>
+                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 500 }}>Records</div>
                     </div>
                   </div>
                   {sd.hodStaffName && (
-                    <div style={{ marginTop: 10, fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ marginTop: 10, fontSize:10, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
                       <Users size={12} color="#94a3b8" /> HOD: {sd.hodStaffName}
                     </div>
                   )}
@@ -356,9 +385,9 @@ function SubDeptsTab({ onOpenSubDept }: { onOpenSubDept: (id: string) => void })
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
         <div>
           <div className="hd-pg-title" style={{ marginBottom: 0 }}>Sub-Departments</div>
-          <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>Click any card to view the sub-department&apos;s live dashboard</div>
+          <div style={{ fontSize:11, color: "#94a3b8", marginTop: 2 }}>Click any card to view the sub-department&apos;s live dashboard</div>
         </div>
-        <button className="hd-btn-primary" onClick={load} style={{ gap: 6, fontSize: 12 }}>
+        <button className="hd-btn-primary" onClick={load} style={{ gap: 6, fontSize:11 }}>
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
@@ -370,8 +399,8 @@ function SubDeptsTab({ onOpenSubDept }: { onOpenSubDept: (id: string) => void })
       ) : subDepts.length === 0 ? (
         <div style={{ padding: 60, textAlign: "center", color: "#94a3b8" }}>
           <Building2 size={40} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
-          <div style={{ fontSize: 15, fontWeight: 600 }}>No sub-departments found</div>
-          <div style={{ fontSize: 12, marginTop: 4 }}>Contact the hospital admin to add sub-departments</div>
+          <div style={{ fontSize:14, fontWeight: 600 }}>No sub-departments found</div>
+          <div style={{ fontSize:11, marginTop: 4 }}>Contact the hospital admin to add sub-departments</div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
@@ -409,10 +438,10 @@ function SubDeptsTab({ onOpenSubDept }: { onOpenSubDept: (id: string) => void })
                       <DI size={20} color={isInactive ? "#94a3b8" : "#fff"} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: isInactive ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize:14, fontWeight: 700, color: isInactive ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {sd.name}
                       </div>
-                      <div style={{ fontSize: 11, color: isInactive ? "#cbd5e1" : m.accent, fontWeight: 600, marginTop: 1 }}>
+                      <div style={{ fontSize:10, color: isInactive ? "#cbd5e1" : m.accent, fontWeight: 600, marginTop: 1 }}>
                         {sd.code ? `${sd.code} · ` : ""}{sd.type?.replace(/_/g, " ")}
                       </div>
                     </div>
@@ -431,7 +460,7 @@ function SubDeptsTab({ onOpenSubDept }: { onOpenSubDept: (id: string) => void })
 
                   {/* Description */}
                   {sd.description && (
-                    <div style={{ fontSize: 12, color: "#64748b", marginBottom: 14, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    <div style={{ fontSize:11, color: "#64748b", marginBottom: 14, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                       {sd.description}
                     </div>
                   )}
@@ -439,30 +468,30 @@ function SubDeptsTab({ onOpenSubDept }: { onOpenSubDept: (id: string) => void })
                   {/* Stats grid */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
                     <div style={{ background: m.lightBg, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: m.accent }}>{sd._count?.procedures || 0}</div>
-                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>Procedures</div>
+                      <div style={{ fontSize:17, fontWeight: 800, color: m.accent }}>{sd._count?.procedures || 0}</div>
+                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>Procedures</div>
                     </div>
                     <div style={{ background: m.lightBg, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: m.accent }}>{sd._count?.procedureRecords || 0}</div>
-                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>Records</div>
+                      <div style={{ fontSize:17, fontWeight: 800, color: m.accent }}>{sd._count?.procedureRecords || 0}</div>
+                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>Records</div>
                     </div>
                     <div style={{ background: m.lightBg, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: m.accent }}>{sd._count?.appointments || 0}</div>
-                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>Referrals</div>
+                      <div style={{ fontSize:17, fontWeight: 800, color: m.accent }}>{sd._count?.appointments || 0}</div>
+                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>Referrals</div>
                     </div>
                   </div>
 
                   {/* Footer */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
                     {sd.hodStaffName ? (
-                      <div style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ fontSize:10, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
                         <Users size={12} color="#94a3b8" /> {sd.hodStaffName}
                       </div>
                     ) : (
-                      <div style={{ fontSize: 11, color: "#cbd5e1" }}>No HOD assigned</div>
+                      <div style={{ fontSize:10, color: "#cbd5e1" }}>No HOD assigned</div>
                     )}
                     {sd.isActive && (
-                      <div style={{ fontSize: 11, fontWeight: 600, color: m.accent, display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ fontSize:10, fontWeight: 600, color: m.accent, display: "flex", alignItems: "center", gap: 4 }}>
                         View Dashboard <ChevronRight size={13} />
                       </div>
                     )}
@@ -510,13 +539,13 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
   if (loading) return (
     <div style={{ padding: 60, textAlign: "center" }}>
       <Loader2 size={24} color="#0E898F" style={{ animation: "spin .7s linear infinite", margin: "0 auto 12px", display: "block" }} />
-      <div style={{ fontSize: 13, color: "#94a3b8" }}>Loading sub-department dashboard…</div>
+      <div style={{ fontSize:12, color: "#94a3b8" }}>Loading sub-department dashboard…</div>
     </div>
   );
 
   if (error || !data) return (
     <div style={{ padding: 40, textAlign: "center" }}>
-      <div style={{ fontSize: 14, color: "#ef4444", marginBottom: 12 }}>{error || "Failed to load dashboard"}</div>
+      <div style={{ fontSize:13, color: "#ef4444", marginBottom: 12 }}>{error || "Failed to load dashboard"}</div>
       <button onClick={onBack} className="hd-btn-primary">← Back to Sub-Departments</button>
     </div>
   );
@@ -541,7 +570,7 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
         onClick={onBack}
         style={{
           display: "flex", alignItems: "center", gap: 6, background: "none", border: "none",
-          cursor: "pointer", color: "#64748b", fontSize: 13, fontWeight: 500, marginBottom: 16,
+          cursor: "pointer", color: "#64748b", fontSize:12, fontWeight: 500, marginBottom: 16,
           padding: "6px 0", transition: "color .15s",
         }}
         onMouseEnter={e => { e.currentTarget.style.color = m.accent; }}
@@ -559,9 +588,9 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
             <DI size={26} color="#fff" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", opacity: .75, marginBottom: 3 }}>{profile.type?.replace(/_/g, " ")} Sub-Department</div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 3, lineHeight: 1.2 }}>{profile.name}</h2>
-            {profile.description && <p style={{ fontSize: 12, opacity: .8, maxWidth: 480, margin: 0 }}>{profile.description}</p>}
+            <div style={{ fontSize:10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", opacity: .75, marginBottom: 3 }}>{profile.type?.replace(/_/g, " ")} Sub-Department</div>
+            <h2 style={{ fontSize:20, fontWeight: 800, marginBottom: 3, lineHeight: 1.2 }}>{profile.name}</h2>
+            {profile.description && <p style={{ fontSize:11, opacity: .8, maxWidth: 480, margin: 0 }}>{profile.description}</p>}
           </div>
           <div style={{ flexShrink: 0, display: "flex", gap: 8 }}>
             <button
@@ -569,7 +598,7 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
               disabled={refreshing}
               style={{
                 background: "rgba(255,255,255,.2)", padding: "8px 16px", borderRadius: 10,
-                fontSize: 12, fontWeight: 600, border: "1px solid rgba(255,255,255,.3)",
+                fontSize:11, fontWeight: 600, border: "1px solid rgba(255,255,255,.3)",
                 color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
               }}
             >
@@ -582,7 +611,7 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
           <div style={{ marginTop: 14, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
             {profile.flow.split("→").map((step: string, i: number, arr: string[]) => (
               <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ background: "rgba(255,255,255,.15)", padding: "3px 10px", borderRadius: 8, fontSize: 10, fontWeight: 600, whiteSpace: "nowrap" }}>{step.trim()}</span>
+                <span style={{ background: "rgba(255,255,255,.15)", padding: "3px 10px", borderRadius: 8, fontSize:10, fontWeight: 600, whiteSpace: "nowrap" }}>{step.trim()}</span>
                 {i < arr.length - 1 && <ChevronRight size={11} color="rgba(255,255,255,.6)" />}
               </span>
             ))}
@@ -591,24 +620,29 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
       </div>
 
       {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 18 }}>
         {[
-          { label: "Pending Queue", value: stats.pendingQueue, Icon: UserCheck, color: "#f59e0b", bg: "#fffbeb" },
-          { label: "Today Referrals", value: stats.todayReferrals, Icon: ClipboardList, color: m.accent, bg: m.lightBg },
-          { label: "Completed Today", value: stats.completedToday, Icon: Activity, color: "#10b981", bg: "#f0fdf4" },
-          { label: "Active Procedures", value: stats.activeProcedures, Icon: Layers, color: "#6366f1", bg: "#eef2ff" },
-          { label: "Today Revenue", value: `₹${(stats.todayRevenue || 0).toLocaleString("en-IN")}`, Icon: IndianRupee, color: "#059669", bg: "#f0fdf4" },
-          { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString("en-IN")}`, Icon: TrendingUp, color: m.accent, bg: m.lightBg },
+          { label: "Pending Queue", value: stats.pendingQueue, Icon: UserCheck, color: "#f59e0b", bg: "#fffbeb", gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "Today Referrals", value: stats.todayReferrals, Icon: ClipboardList, color: m.accent, bg: m.lightBg, gradient: m.gradient },
+          { label: "Completed Today", value: stats.completedToday, Icon: Activity, color: "#10b981", bg: "#f0fdf4", gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "Active Procedures", value: stats.activeProcedures, Icon: Layers, color: "#6366f1", bg: "#eef2ff", gradient: "linear-gradient(135deg,#6366f1,#4338ca)" },
+          { label: "Today Revenue", value: `₹${(stats.todayRevenue || 0).toLocaleString("en-IN")}`, Icon: IndianRupee, color: "#059669", bg: "#f0fdf4", gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString("en-IN")}`, Icon: TrendingUp, color: m.accent, bg: m.lightBg, gradient: m.gradient },
         ].map((s, i) => {
           const SI = s.Icon;
           return (
-            <div key={i} className="hd-sc" style={{ padding: 14, gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 9, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <SI size={16} color={s.color} />
+            <div
+              key={i}
+              style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 16px ${s.color}20`; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 11, background: s.gradient, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <SI size={20} color="#fff" />
               </div>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>{s.value}</div>
-                <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>{s.label}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", lineHeight: 1, marginBottom: 2 }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>{s.label}</div>
               </div>
             </div>
           );
@@ -627,7 +661,7 @@ function SubDeptDetailView({ subDeptId, onBack }: { subDeptId: string; onBack: (
               borderColor: activeSection === s.id ? m.accent : "#e2e8f0",
               background: activeSection === s.id ? m.lightBg : "#fff",
               color: activeSection === s.id ? m.accent : "#64748b",
-              fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .15s",
+              fontSize:11, fontWeight: 600, cursor: "pointer", transition: "all .15s",
             }}
           >
             {s.icon} {s.label}
@@ -666,7 +700,7 @@ function SubDeptOverview({ data, meta }: { data: any; meta: DeptMeta }) {
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
               {trend.map((d: any, i: number) => (
                 <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#1e293b" }}>{d.count || ""}</div>
+                  <div style={{ fontSize:9, fontWeight: 700, color: "#1e293b" }}>{d.count || ""}</div>
                   <div
                     style={{
                       width: "100%", minHeight: 4, borderRadius: "4px 4px 0 0",
@@ -676,7 +710,7 @@ function SubDeptOverview({ data, meta }: { data: any; meta: DeptMeta }) {
                     }}
                     title={`${d.label}: ${d.count} records, ₹${d.revenue.toLocaleString("en-IN")}`}
                   />
-                  <div style={{ fontSize: 8, color: "#94a3b8", whiteSpace: "nowrap" }}>{d.label}</div>
+                  <div style={{ fontSize:9, color: "#94a3b8", whiteSpace: "nowrap" }}>{d.label}</div>
                 </div>
               ))}
             </div>
@@ -718,7 +752,7 @@ function SubDeptOverview({ data, meta }: { data: any; meta: DeptMeta }) {
               <thead>
                 <tr style={{ background: "#f8fafc" }}>
                   {["Patient", "Procedure", "Amount", "Status", "Date"].map(h => (
-                    <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
+                    <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -726,20 +760,20 @@ function SubDeptOverview({ data, meta }: { data: any; meta: DeptMeta }) {
                 {data.recentRecords.slice(0, 10).map((r: any) => (
                   <tr key={r.id} style={{ borderBottom: "1px solid #f8fafc" }}>
                     <td style={{ padding: "10px 14px" }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{r.patientName}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{r.patientId}</div>
+                      <div style={{ fontSize:11, fontWeight: 600, color: "#1e293b" }}>{r.patientName}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>{r.patientId}</div>
                     </td>
                     <td style={{ padding: "10px 14px" }}>
-                      <div style={{ fontSize: 12, color: "#1e293b" }}>{r.procedureName}</div>
-                      <div style={{ fontSize: 10, color: meta.accent }}>{r.procedureType}</div>
+                      <div style={{ fontSize:11, color: "#1e293b" }}>{r.procedureName}</div>
+                      <div style={{ fontSize:10, color: meta.accent }}>{r.procedureType}</div>
                     </td>
-                    <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "#059669" }}>₹{(r.amount || 0).toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "10px 14px", fontSize:12, fontWeight: 700, color: "#059669" }}>₹{(r.amount || 0).toLocaleString("en-IN")}</td>
                     <td style={{ padding: "10px 14px" }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: r.status === "COMPLETED" ? "#d1fae5" : "#fef3c7", color: r.status === "COMPLETED" ? "#059669" : "#92400e" }}>
+                      <span style={{ fontSize:10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: r.status === "COMPLETED" ? "#d1fae5" : "#fef3c7", color: r.status === "COMPLETED" ? "#059669" : "#92400e" }}>
                         {r.status?.replace(/_/g, " ")}
                       </span>
                     </td>
-                    <td style={{ padding: "10px 14px", fontSize: 11, color: "#64748b" }}>
+                    <td style={{ padding: "10px 14px", fontSize:10, color: "#64748b" }}>
                       {new Date(r.performedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     </td>
                   </tr>
@@ -759,8 +793,8 @@ function SubDeptQueue({ queue, meta }: { queue: any[]; meta: DeptMeta }) {
     <div className="hd-card">
       <div className="hd-card-body" style={{ padding: 40, textAlign: "center" }}>
         <UserCheck size={32} color="#94a3b8" style={{ margin: "0 auto 12px", opacity: 0.3 }} />
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8" }}>No pending referrals</div>
-        <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>All referred patients have been attended to</div>
+        <div style={{ fontSize:13, fontWeight: 600, color: "#94a3b8" }}>No pending referrals</div>
+        <div style={{ fontSize:11, color: "#cbd5e1", marginTop: 4 }}>All referred patients have been attended to</div>
       </div>
     </div>
   );
@@ -778,33 +812,33 @@ function SubDeptQueue({ queue, meta }: { queue: any[]; meta: DeptMeta }) {
           <thead>
             <tr style={{ background: "#f8fafc" }}>
               {["#", "Patient", "Referred By", "Date", "Referral Note", "Fee"].map(h => (
-                <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
+                <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {queue.map((q: any, i: number) => (
               <tr key={q.id} style={{ borderBottom: "1px solid #f8fafc", background: i % 2 === 0 ? "#fff" : "#fafbfc" }}>
-                <td style={{ padding: "10px 14px", fontSize: 12, fontWeight: 700, color: meta.accent }}>{q.tokenNumber || i + 1}</td>
+                <td style={{ padding: "10px 14px", fontSize:11, fontWeight: 700, color: meta.accent }}>{q.tokenNumber || i + 1}</td>
                 <td style={{ padding: "10px 14px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{q.patient?.name}</div>
-                  <div style={{ fontSize: 10, color: "#94a3b8" }}>{q.patient?.patientId} · {q.patient?.gender}</div>
+                  <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{q.patient?.name}</div>
+                  <div style={{ fontSize:10, color: "#94a3b8" }}>{q.patient?.patientId} · {q.patient?.gender}</div>
                 </td>
                 <td style={{ padding: "10px 14px" }}>
-                  <div style={{ fontSize: 12, color: "#1e293b" }}>{q.doctor?.name}</div>
-                  <div style={{ fontSize: 10, color: "#94a3b8" }}>{q.doctor?.specialization}</div>
+                  <div style={{ fontSize:11, color: "#1e293b" }}>{q.doctor?.name}</div>
+                  <div style={{ fontSize:10, color: "#94a3b8" }}>{q.doctor?.specialization}</div>
                 </td>
-                <td style={{ padding: "10px 14px", fontSize: 11, color: "#64748b" }}>
+                <td style={{ padding: "10px 14px", fontSize:10, color: "#64748b" }}>
                   {q.appointmentDate ? new Date(q.appointmentDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
                 </td>
                 <td style={{ padding: "10px 14px" }}>
                   {q.subDeptNote ? (
-                    <div style={{ fontSize: 11, color: "#047857", background: "#f0fdf4", padding: "4px 8px", borderRadius: 6, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize:10, color: "#047857", background: "#f0fdf4", padding: "4px 8px", borderRadius: 6, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {q.subDeptNote}
                     </div>
-                  ) : <span style={{ color: "#cbd5e1", fontSize: 11 }}>—</span>}
+                  ) : <span style={{ color: "#cbd5e1", fontSize:10 }}>—</span>}
                 </td>
-                <td style={{ padding: "10px 14px", fontSize: 12, fontWeight: 600, color: "#1e293b" }}>₹{q.consultationFee || "—"}</td>
+                <td style={{ padding: "10px 14px", fontSize:11, fontWeight: 600, color: "#1e293b" }}>₹{q.consultationFee || "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -820,7 +854,7 @@ function SubDeptCompleted({ list, meta }: { list: any[]; meta: DeptMeta }) {
     <div className="hd-card">
       <div className="hd-card-body" style={{ padding: 40, textAlign: "center" }}>
         <Activity size={32} color="#94a3b8" style={{ margin: "0 auto 12px", opacity: 0.3 }} />
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8" }}>No completed referrals yet</div>
+        <div style={{ fontSize:13, fontWeight: 600, color: "#94a3b8" }}>No completed referrals yet</div>
       </div>
     </div>
   );
@@ -838,7 +872,7 @@ function SubDeptCompleted({ list, meta }: { list: any[]; meta: DeptMeta }) {
           <thead>
             <tr style={{ background: "#f8fafc" }}>
               {["Patient", "Doctor", "Procedure", "Amount", "Performed By", "Date"].map(h => (
-                <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
+                <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -848,17 +882,17 @@ function SubDeptCompleted({ list, meta }: { list: any[]; meta: DeptMeta }) {
               return (
                 <tr key={c.id} style={{ borderBottom: "1px solid #f8fafc" }}>
                   <td style={{ padding: "10px 14px" }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{c.patient?.name}</div>
-                    <div style={{ fontSize: 10, color: "#94a3b8" }}>{c.patient?.patientId}</div>
+                    <div style={{ fontSize:11, fontWeight: 600, color: "#1e293b" }}>{c.patient?.name}</div>
+                    <div style={{ fontSize:10, color: "#94a3b8" }}>{c.patient?.patientId}</div>
                   </td>
-                  <td style={{ padding: "10px 14px", fontSize: 12, color: "#64748b" }}>{c.doctor?.name || "—"}</td>
+                  <td style={{ padding: "10px 14px", fontSize:11, color: "#64748b" }}>{c.doctor?.name || "—"}</td>
                   <td style={{ padding: "10px 14px" }}>
-                    <div style={{ fontSize: 12, color: "#1e293b" }}>{pr?.procedureName || "—"}</div>
-                    <div style={{ fontSize: 10, color: meta.accent }}>{pr?.procedureType}</div>
+                    <div style={{ fontSize:11, color: "#1e293b" }}>{pr?.procedureName || "—"}</div>
+                    <div style={{ fontSize:10, color: meta.accent }}>{pr?.procedureType}</div>
                   </td>
-                  <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "#059669" }}>₹{(pr?.amount || 0).toLocaleString("en-IN")}</td>
-                  <td style={{ padding: "10px 14px", fontSize: 12, color: "#64748b" }}>{pr?.performedBy || "—"}</td>
-                  <td style={{ padding: "10px 14px", fontSize: 11, color: "#64748b" }}>
+                  <td style={{ padding: "10px 14px", fontSize:12, fontWeight: 700, color: "#059669" }}>₹{(pr?.amount || 0).toLocaleString("en-IN")}</td>
+                  <td style={{ padding: "10px 14px", fontSize:11, color: "#64748b" }}>{pr?.performedBy || "—"}</td>
+                  <td style={{ padding: "10px 14px", fontSize:10, color: "#64748b" }}>
                     {pr?.performedAt ? new Date(pr.performedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
                   </td>
                 </tr>
@@ -882,7 +916,7 @@ function SubDeptProcedures({ procedures, meta }: { procedures: any[]; meta: Dept
     <div className="hd-card">
       <div className="hd-card-body" style={{ padding: 40, textAlign: "center" }}>
         <ClipboardList size={32} color="#94a3b8" style={{ margin: "0 auto 12px", opacity: 0.3 }} />
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8" }}>No procedures configured</div>
+        <div style={{ fontSize:13, fontWeight: 600, color: "#94a3b8" }}>No procedures configured</div>
       </div>
     </div>
   );
@@ -903,31 +937,31 @@ function SubDeptProcedures({ procedures, meta }: { procedures: any[]; meta: Dept
           <thead>
             <tr style={{ background: "#f8fafc" }}>
               {["#", "Name", "Type", "Fee", "Duration", "Status"].map(h => (
-                <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
+                <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {procedures.map((p: any, i: number) => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f8fafc", opacity: p.isActive ? 1 : 0.55 }}>
-                <td style={{ padding: "10px 14px", fontSize: 12, fontWeight: 600, color: "#94a3b8" }}>{i + 1}</td>
+                <td style={{ padding: "10px 14px", fontSize:11, fontWeight: 600, color: "#94a3b8" }}>{i + 1}</td>
                 <td style={{ padding: "10px 14px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{p.name}</div>
-                  {p.description && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{p.description}</div>}
+                  <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{p.name}</div>
+                  {p.description && <div style={{ fontSize:10, color: "#94a3b8", marginTop: 2 }}>{p.description}</div>}
                 </td>
                 <td style={{ padding: "10px 14px" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: `${PROC_TYPE_COLOR[p.type] || "#94a3b8"}15`, color: PROC_TYPE_COLOR[p.type] || "#94a3b8" }}>
+                  <span style={{ fontSize:10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: `${PROC_TYPE_COLOR[p.type] || "#94a3b8"}15`, color: PROC_TYPE_COLOR[p.type] || "#94a3b8" }}>
                     {p.type}
                   </span>
                 </td>
-                <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
+                <td style={{ padding: "10px 14px", fontSize:12, fontWeight: 700, color: "#1e293b" }}>
                   {p.fee != null ? `₹${p.fee.toLocaleString("en-IN")}` : "—"}
                 </td>
-                <td style={{ padding: "10px 14px", fontSize: 12, color: "#64748b" }}>
+                <td style={{ padding: "10px 14px", fontSize:11, color: "#64748b" }}>
                   {p.duration ? `${p.duration} min` : "—"}
                 </td>
                 <td style={{ padding: "10px 14px" }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: p.isActive ? "#d1fae5" : "#fee2e2", color: p.isActive ? "#059669" : "#dc2626" }}>
+                  <span style={{ fontSize:10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: p.isActive ? "#d1fae5" : "#fee2e2", color: p.isActive ? "#059669" : "#dc2626" }}>
                     {p.isActive ? "Active" : "Inactive"}
                   </span>
                 </td>
@@ -953,8 +987,8 @@ function SubDeptRecords({ records, stats, meta }: { records: any[]; stats: any; 
           { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString("en-IN")}`, color: "#0E898F" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{s.label}</div>
+            <div style={{ fontSize:19, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize:10, color: "#94a3b8", marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -964,7 +998,7 @@ function SubDeptRecords({ records, stats, meta }: { records: any[]; stats: any; 
         <div className="hd-card">
           <div className="hd-card-body" style={{ padding: 40, textAlign: "center" }}>
             <IndianRupee size={32} color="#94a3b8" style={{ margin: "0 auto 12px", opacity: 0.3 }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8" }}>No procedure records found</div>
+            <div style={{ fontSize:13, fontWeight: 600, color: "#94a3b8" }}>No procedure records found</div>
           </div>
         </div>
       ) : (
@@ -980,7 +1014,7 @@ function SubDeptRecords({ records, stats, meta }: { records: any[]; stats: any; 
               <thead>
                 <tr style={{ background: "#f8fafc" }}>
                   {["Patient", "Procedure", "Amount", "Performed By", "Status", "Date"].map(h => (
-                    <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
+                    <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".04em", borderBottom: "1px solid #f1f5f9" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -988,21 +1022,21 @@ function SubDeptRecords({ records, stats, meta }: { records: any[]; stats: any; 
                 {records.map((r: any) => (
                   <tr key={r.id} style={{ borderBottom: "1px solid #f8fafc" }}>
                     <td style={{ padding: "10px 14px" }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{r.patientName}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{r.patientId}</div>
+                      <div style={{ fontSize:11, fontWeight: 600, color: "#1e293b" }}>{r.patientName}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>{r.patientId}</div>
                     </td>
                     <td style={{ padding: "10px 14px" }}>
-                      <div style={{ fontSize: 12, color: "#1e293b" }}>{r.procedureName}</div>
-                      <div style={{ fontSize: 10, color: meta.accent }}>{r.procedureType}</div>
+                      <div style={{ fontSize:11, color: "#1e293b" }}>{r.procedureName}</div>
+                      <div style={{ fontSize:10, color: meta.accent }}>{r.procedureType}</div>
                     </td>
-                    <td style={{ padding: "10px 14px", fontSize: 13, fontWeight: 700, color: "#059669" }}>₹{(r.amount || 0).toLocaleString("en-IN")}</td>
-                    <td style={{ padding: "10px 14px", fontSize: 12, color: "#64748b" }}>{r.performedBy}</td>
+                    <td style={{ padding: "10px 14px", fontSize:12, fontWeight: 700, color: "#059669" }}>₹{(r.amount || 0).toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "10px 14px", fontSize:11, color: "#64748b" }}>{r.performedBy}</td>
                     <td style={{ padding: "10px 14px" }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: r.status === "COMPLETED" ? "#d1fae5" : "#fef3c7", color: r.status === "COMPLETED" ? "#059669" : "#92400e" }}>
+                      <span style={{ fontSize:10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: r.status === "COMPLETED" ? "#d1fae5" : "#fef3c7", color: r.status === "COMPLETED" ? "#059669" : "#92400e" }}>
                         {r.status?.replace(/_/g, " ")}
                       </span>
                     </td>
-                    <td style={{ padding: "10px 14px", fontSize: 11, color: "#64748b" }}>
+                    <td style={{ padding: "10px 14px", fontSize:10, color: "#64748b" }}>
                       {new Date(r.performedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </td>
                   </tr>
@@ -1020,8 +1054,8 @@ function SubDeptRecords({ records, stats, meta }: { records: any[]; stats: any; 
 function InfoRow({ label, value, valueColor }: { label: string; value?: string | null; valueColor?: string }) {
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: valueColor || "#1e293b" }}>{value || "—"}</div>
+      <div style={{ fontSize:10, fontWeight: 600, color: "#94a3b8", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+      <div style={{ fontSize:12, fontWeight: 600, color: valueColor || "#1e293b" }}>{value || "—"}</div>
     </div>
   );
 }

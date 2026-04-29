@@ -362,9 +362,28 @@ export default function ScheduleBuilder({ doctorId, doctorName, accent = "#0E898
           <div className="sb-title">Schedule Management</div>
           <div className="sb-subtitle">{doctorName}</div>
         </div>
-        <button className="sb-btn sb-btn-ghost" onClick={() => { loadSchedule(); if (step === 3) loadOverrides(fmtMonth(calMonth)); if (step === 2) loadOverrides(undefined, String(applyYear)); }}>
-          <RefreshCw size={13} /> Reload
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <button className="sb-btn" style={{ background: "#eef2ff", color: "#4f46e5", border: "1px solid #c7d2fe" }} onClick={() => {
+            const today = new Date();
+            setStep(3);
+            setCalMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+            openDateEditor(today);
+          }}>
+            <Zap size={14} /> Manage Today
+          </button>
+          <button className="sb-btn" style={{ background: "#fdf4ff", color: "#c026d3", border: "1px solid #f5d0fe" }} onClick={() => {
+            const tmrw = new Date();
+            tmrw.setDate(tmrw.getDate() + 1);
+            setStep(3);
+            setCalMonth(new Date(tmrw.getFullYear(), tmrw.getMonth(), 1));
+            openDateEditor(tmrw);
+          }}>
+            <Zap size={14} /> Manage Tomorrow
+          </button>
+          <button className="sb-btn sb-btn-ghost" onClick={() => { loadSchedule(); if (step === 3) loadOverrides(fmtMonth(calMonth)); if (step === 2) loadOverrides(undefined, String(applyYear)); }}>
+            <RefreshCw size={13} /> Reload
+          </button>
+        </div>
       </div>
 
       {/* Step Indicator */}

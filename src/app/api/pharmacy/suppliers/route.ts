@@ -114,3 +114,27 @@ export async function PUT(req: NextRequest) {
     return errorResponse(error.message || "Failed to update supplier", 500);
   }
 }
+
+/**
+ * DELETE /api/pharmacy/suppliers?id=
+ * Soft-delete a supplier — SUB_DEPT_HEAD or HOSPITAL_ADMIN
+ */
+export async function DELETE(req: NextRequest) {
+  const auth = await requireRole(req, [Role.SUB_DEPT_HEAD, Role.HOSPITAL_ADMIN]);
+  if (auth.error) return auth.error;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("id is required", 400);
+
+    const existing = await px.supplier.findFirst({ where: { id, hospitalId: auth.hospitalId } });
+    if (!existing) return errorResponse("Supplier not found", 404);
+
+    await px.supplier.update({ where: { id }, data: { isActive: false } });
+
+    return successResponse(null, "Supplier deleted");
+  } catch (error: any) {
+    return errorResponse(error.message || "Failed to delete supplier", 500);
+  }
+}

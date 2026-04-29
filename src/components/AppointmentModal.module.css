@@ -715,11 +715,11 @@
 }
 
 .timeChipDisabled {
-  opacity: 0.4;
   cursor: not-allowed;
-  background: var(--gray-100);
-  color: var(--gray-400);
-  text-decoration: line-through;
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+  opacity: 1;
 }
 
 .submitError {
@@ -766,6 +766,6 @@
   }
 
   .timeGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }

@@ -453,20 +453,21 @@
 }
 
 /* ── Mobile ── */
-@media (max-width: 480px) {
-  .container { right: 12px; bottom: 90px; }
+@media (max-width: 768px) {
+  .container { right: 12px; bottom: 108px; }
 
   .chatWindow {
     width: calc(100vw - 24px);
-    height: 70vh;
+    height: 65vh;
     position: fixed;
-    bottom: 140px;
+    bottom: 160px;
     right: 12px;
     border-radius: 16px;
     margin-bottom: 0;
   }
 
-  .trigger { width: 50px; height: 50px; }
+  .trigger { width: 44px; height: 44px; }
+  .trigger svg { width: 20px; height: 20px; }
 
   .bubble { font-size: 12px; }
 

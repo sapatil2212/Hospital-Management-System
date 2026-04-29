@@ -116,48 +116,48 @@ function RescheduleModal({ appt, onClose, onConfirm }: { appt: any; onClose: () 
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 3 }}>Reschedule Appointment</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>{appt.patient?.name} &nbsp;·&nbsp; {appt.doctor?.name}</div>
+            <div style={{ fontSize:16, fontWeight: 800, color: "#1e293b", marginBottom: 3 }}>Reschedule Appointment</div>
+            <div style={{ fontSize:11, color: "#64748b" }}>{appt.patient?.name} &nbsp;·&nbsp; {appt.doctor?.name}</div>
           </div>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}><X size={14} /></button>
         </div>
 
         {/* Current appointment info */}
         <div style={{ background: TEAL_LIGHT, borderRadius: 12, padding: "12px 14px", marginBottom: 20, border: `1px solid #B3E0E0` }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: TEAL2, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Current Appointment</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEAL2 }}>
+          <div style={{ fontSize:10, fontWeight: 700, color: TEAL2, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Current Appointment</div>
+          <div style={{ fontSize:12, fontWeight: 600, color: TEAL2 }}>
             {appt.appointmentDate ? new Date(appt.appointmentDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—"} &nbsp;at&nbsp; {fmt12(appt.timeSlot || "00:00")}
           </div>
         </div>
 
         {/* Date picker */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Select New Date</label>
+          <label style={{ display: "block", fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Select New Date</label>
           <input type="date" value={newDate} min={toLocalDateStr(new Date())}
             onChange={e => { setNewDate(e.target.value); setErr(""); }}
-            style={{ width: "100%", padding: "10px 13px", borderRadius: 10, border: `1.5px solid #B3E0E0`, background: "#f8fafc", fontSize: 14, color: "#334155", outline: "none", boxSizing: "border-box", cursor: "pointer" }}
+            style={{ width: "100%", padding: "10px 13px", borderRadius: 10, border: `1.5px solid #B3E0E0`, background: "#f8fafc", fontSize:13, color: "#334155", outline: "none", boxSizing: "border-box", cursor: "pointer" }}
           />
         </div>
 
         {/* Slots */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Available Time Slots</label>
+            <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em" }}>Available Time Slots</label>
             {!slotsLoading && allSlots.length > 0 && (
-              <span style={{ fontSize: 10, color: TEAL, fontWeight: 600, background: TEAL_LIGHT, padding: "2px 8px", borderRadius: 100, border: "1px solid #B3E0E0" }}>
+              <span style={{ fontSize:10, color: TEAL, fontWeight: 600, background: TEAL_LIGHT, padding: "2px 8px", borderRadius: 100, border: "1px solid #B3E0E0" }}>
                 {availableSlots.length} available
               </span>
             )}
           </div>
 
           {slotsLoading ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "18px 0", color: "#94a3b8", fontSize:12 }}>
               <Loader2 size={16} style={{ animation: "cl-spin .7s linear infinite" }} /> Loading doctor schedule…
             </div>
           ) : slotErr ? (
-            <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 600, padding: "12px", background: "#fff5f5", borderRadius: 9, border: "1px solid #fecaca" }}>{slotErr}</div>
+            <div style={{ fontSize:11, color: "#ef4444", fontWeight: 600, padding: "12px", background: "#fff5f5", borderRadius: 9, border: "1px solid #fecaca" }}>{slotErr}</div>
           ) : noAvailability ? (
-            <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 600, padding: "14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a", textAlign: "center" }}>
+            <div style={{ fontSize:12, color: "#f59e0b", fontWeight: 600, padding: "14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a", textAlign: "center" }}>
               Doctor is not available on this day. Please choose another date.
             </div>
           ) : allSlots.length > 0 ? (
@@ -173,14 +173,14 @@ function RescheduleModal({ appt, onClose, onConfirm }: { appt: any; onClose: () 
                       border: isSelected ? `2px solid ${TEAL}` : isBooked ? "1px solid #e2e8f0" : "1.5px solid #B3E0E0",
                       background: isSelected ? TEAL : isBooked ? "#f1f5f9" : TEAL_LIGHT,
                       color: isSelected ? "#fff" : isBooked ? "#cbd5e1" : TEAL2,
-                      fontSize: 12, fontWeight: 700,
+                      fontSize:11, fontWeight: 700,
                       cursor: isBooked ? "not-allowed" : "pointer",
                       textDecoration: isBooked ? "line-through" : "none",
                       transition: "all .15s",
                     }}>
                     {slot}
                     {isBooked && (
-                      <span style={{ position: "absolute", top: -6, right: -4, fontSize: 8, background: "#ef4444", color: "#fff", borderRadius: 100, padding: "1px 4px", fontWeight: 700 }}>Full</span>
+                      <span style={{ position: "absolute", top: -6, right: -4, fontSize:9, background: "#ef4444", color: "#fff", borderRadius: 100, padding: "1px 4px", fontWeight: 700 }}>Full</span>
                     )}
                   </button>
                 );
@@ -189,21 +189,21 @@ function RescheduleModal({ appt, onClose, onConfirm }: { appt: any; onClose: () 
           ) : null}
 
           {selectedTime && (
-            <div style={{ marginTop: 10, fontSize: 12, color: "#059669", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ marginTop: 10, fontSize:11, color: "#059669", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
               <CheckCircle size={13} /> Selected: {fmt12(selectedTime)}
             </div>
           )}
         </div>
 
-        {err && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 12, fontWeight: 600 }}>{err}</div>}
+        {err && <div style={{ fontSize:11, color: "#ef4444", marginBottom: 12, fontWeight: 600 }}>{err}</div>}
 
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onClose} disabled={saving}
-            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: `2px solid ${TEAL}`, background: "#fff", color: TEAL, fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: `2px solid ${TEAL}`, background: "#fff", color: TEAL, fontSize:12, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
             Cancel
           </button>
           <button onClick={handleConfirm} disabled={saving || !selectedTime}
-            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: saving || !selectedTime ? "#94a3b8" : TEAL, color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving || !selectedTime ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            style={{ flex: 1, padding: "11px 0", borderRadius: 11, border: "none", background: saving || !selectedTime ? "#94a3b8" : TEAL, color: "#fff", fontSize:12, fontWeight: 700, cursor: saving || !selectedTime ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {saving
               ? <><Loader2 size={13} style={{ animation: "cl-spin .7s linear infinite" }} /> Saving…</>
               : <><RefreshCw size={13} /> Confirm Reschedule</>}
@@ -388,7 +388,7 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
               <div className="cl-card-title">7-Day Appointment Trend</div>
               <div className="cl-card-sub">Booked vs Completed vs Cancelled</div>
             </div>
-            <button className="cl-btn-ghost" style={{ fontSize: 11, padding: "5px 10px" }} onClick={() => onNavTo("appointments")}>
+            <button className="cl-btn-ghost" style={{ fontSize:10, padding: "5px 10px" }} onClick={() => onNavTo("appointments")}>
               View All <ChevronRight size={12} />
             </button>
           </div>
@@ -396,13 +396,13 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weekData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <XAxis dataKey="day" tick={{ fontSize:10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize:10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}
+                  contentStyle={{ fontSize:10, borderRadius: 10, border: "1px solid #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}
                   labelStyle={{ fontWeight: 700, color: "#1e293b" }}
                 />
-                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                <Legend wrapperStyle={{ fontSize:10, paddingTop: 8 }} />
                 <Bar dataKey="booked"    name="Booked"    fill={TEAL}      radius={[4, 4, 0, 0]} maxBarSize={28} />
                 <Bar dataKey="completed" name="Completed" fill="#10b981"   radius={[4, 4, 0, 0]} maxBarSize={28} />
                 <Bar dataKey="cancelled" name="Cancelled" fill="#f87171"   radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -435,12 +435,12 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
                     <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #e2e8f0" }} />
+                <Tooltip contentStyle={{ fontSize:10, borderRadius: 10, border: "1px solid #e2e8f0" }} />
               </PieChart>
             </ResponsiveContainer>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", justifyContent: "center", marginTop: 4 }}>
               {pieData.filter(d => d.name !== "No data").map((d: any, i: number) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize:10, color: "#64748b" }}>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
                   {d.name}
                 </div>
@@ -465,9 +465,9 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
                   <div key={st} style={{ flex: "1 1 130px", background: "#f8fafc", borderRadius: 12, padding: "14px 16px", border: "1px solid #e2e8f0" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span className={`cl-badge ${m.cls}`}>{m.label}</span>
-                      <span style={{ fontSize: 11, color: "#94a3b8" }}>{pct}%</span>
+                      <span style={{ fontSize:10, color: "#94a3b8" }}>{pct}%</span>
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b" }}>{count}</div>
+                    <div style={{ fontSize:20, fontWeight: 800, color: "#1e293b" }}>{count}</div>
                     <div style={{ height: 4, background: "#e2e8f0", borderRadius: 4, marginTop: 10, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: TEAL, borderRadius: 4, transition: "width 1s ease" }} />
                     </div>
@@ -485,7 +485,7 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
           <div className="cl-section-title">
             <div className="cl-section-title-dot" />
             Sub-Departments
-            <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400 }}>({activeSD} active)</span>
+            <span style={{ fontSize:10, color: "#94a3b8", fontWeight: 400 }}>({activeSD} active)</span>
           </div>
           <div className="cl-sd-grid">
             {subDepts.filter(s => s.isActive).map(sd => {
@@ -520,7 +520,7 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
                       </div>
                     </div>
                     {sd.hodStaffName && (
-                      <div style={{ marginTop: 10, fontSize: 10, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ marginTop: 10, fontSize:10, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
                         <UserCheck size={10} color="#94a3b8" /> {sd.hodStaffName}
                       </div>
                     )}
@@ -536,7 +536,7 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
       <div className="cl-section-title">
         <div className="cl-section-title-dot" />
         Recent Appointments
-        <button className="cl-btn-ghost" style={{ marginLeft: "auto", fontSize: 11, padding: "4px 10px" }} onClick={() => onNavTo("appointments")}>
+        <button className="cl-btn-ghost" style={{ marginLeft: "auto", fontSize:10, padding: "4px 10px" }} onClick={() => onNavTo("appointments")}>
           View All <ChevronRight size={11} />
         </button>
       </div>
@@ -565,7 +565,7 @@ function OverviewTab({ deptProfile, onNavTo }: { deptProfile: any; onNavTo: (t: 
                 const sm = STATUS_META[a.status] || { label: a.status, cls: "cl-badge-gray" };
                 return (
                   <tr key={a.id}>
-                    <td><span className="cl-td-name">{a.patient?.name || "—"}</span><div style={{ fontSize: 10, color: "#94a3b8" }}>{a.patient?.patientId}</div></td>
+                    <td><span className="cl-td-name">{a.patient?.name || "—"}</span><div style={{ fontSize:10, color: "#94a3b8" }}>{a.patient?.patientId}</div></td>
                     <td>{a.doctor?.name || "—"}</td>
                     <td>{a.appointmentDate ? fmt(a.appointmentDate) : "—"}</td>
                     <td>{fmtTime(a.timeSlot)}</td>
@@ -821,24 +821,24 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
               border: `1.5px solid ${filter === f ? TEAL : "#e2e8f0"}`,
               background: filter === f ? TEAL_LIGHT : "#fff",
               color: filter === f ? TEAL2 : "#64748b",
-              fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+              fontSize:10, fontWeight: 600, cursor: "pointer" }}>
             {f === "ALL" ? `All (${appts.length})` : `${f[0]+f.slice(1).toLowerCase()} (${appts.filter(a => a.status === f).length})`}
           </button>
         ))}
         <div style={{ position: "relative", marginLeft: "auto" }}>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Patient / doctor / ID…"
-            style={{ padding: "7px 12px 7px 28px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none", width: 190 }}
+            style={{ padding: "7px 12px 7px 28px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize:11, outline: "none", width: 190 }}
             onFocus={e => (e.target.style.borderColor = TEAL)}
             onBlur={e  => (e.target.style.borderColor = "#e2e8f0")} />
           <Users size={11} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
         </div>
         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          style={{ padding: "6px 8px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none" }}
+          style={{ padding: "6px 8px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize:11, outline: "none" }}
           onFocus={e => (e.target.style.borderColor = TEAL)} onBlur={e => (e.target.style.borderColor = "#e2e8f0")} />
-        <span style={{ fontSize: 11, color: "#94a3b8" }}>–</span>
+        <span style={{ fontSize:10, color: "#94a3b8" }}>–</span>
         <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          style={{ padding: "6px 8px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none" }}
+          style={{ padding: "6px 8px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize:11, outline: "none" }}
           onFocus={e => (e.target.style.borderColor = TEAL)} onBlur={e => (e.target.style.borderColor = "#e2e8f0")} />
         {(dateFrom || dateTo) && (
           <button className="cl-btn-ghost" style={{ padding: "5px 7px" }} onClick={() => { setDateFrom(""); setDateTo(""); }}>
@@ -891,18 +891,18 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
                       <input type="checkbox" checked={selected.has(a.id)} onChange={() => toggleOne(a.id)} style={{ accentColor: TEAL, width: 14, height: 14 }} />
                     </td>
                     <td>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{a.appointmentDate ? fmt(a.appointmentDate) : "—"}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{fmtTime(a.timeSlot)}</div>
+                      <div style={{ fontSize:11, fontWeight: 600, color: "#1e293b" }}>{a.appointmentDate ? fmt(a.appointmentDate) : "—"}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>{fmtTime(a.timeSlot)}</div>
                     </td>
                     <td>
                       <div className="cl-td-name">{a.patient?.name || "—"}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{a.patient?.patientId}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>{a.patient?.patientId}</div>
                     </td>
-                    <td style={{ fontSize: 12, color: "#475569" }}>{a.doctor?.name || "—"}</td>
-                    <td><span className="cl-badge cl-badge-gray" style={{ fontSize: 10 }}>{a.type?.replace(/_/g, " ") || "—"}</span></td>
+                    <td style={{ fontSize:11, color: "#475569" }}>{a.doctor?.name || "—"}</td>
+                    <td><span className="cl-badge cl-badge-gray" style={{ fontSize:10 }}>{a.type?.replace(/_/g, " ") || "—"}</span></td>
                     <td><span className={`cl-badge ${sm.cls}`}>{sm.label}</span></td>
                     <td style={{ fontWeight: 600, color: "#1e293b" }}>{a.consultationFee ? `₹${a.consultationFee}` : "—"}</td>
-                    <td style={{ color: "#94a3b8", fontSize: 12 }}>#{a.tokenNumber || "—"}</td>
+                    <td style={{ color: "#94a3b8", fontSize:11 }}>#{a.tokenNumber || "—"}</td>
                     <td>
                       <div style={{ display: "flex", gap: 2, justifyContent: "center" }}>
                         <button title="View" onClick={() => setViewAppt(a)}
@@ -945,7 +945,7 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div style={{ padding: "9px 18px", borderTop: "1px solid #f1f5f9", fontSize: 11, color: "#94a3b8", display: "flex", justifyContent: "space-between" }}>
+          <div style={{ padding: "9px 18px", borderTop: "1px solid #f1f5f9", fontSize:10, color: "#94a3b8", display: "flex", justifyContent: "space-between" }}>
             <span>Showing {filtered.length} of {appts.length} appointments</span>
             {selected.size > 0 && <span style={{ color: TEAL, fontWeight: 600 }}>{selected.size} selected</span>}
           </div>
@@ -959,7 +959,7 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
           <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 440, maxHeight: "80vh", overflowY: "auto" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Appointment Details</div>
+              <div style={{ fontSize:14, fontWeight: 700, color: "#1e293b" }}>Appointment Details</div>
               <button onClick={() => setViewAppt(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={18} /></button>
             </div>
             {([
@@ -975,8 +975,8 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
               ["Notes", viewAppt.notes],
             ] as [string, string | null | undefined][]).map(([k, v]) => v ? (
               <div key={k} style={{ display: "flex", padding: "9px 0", borderBottom: "1px solid #f1f5f9" }}>
-                <div style={{ width: 100, fontSize: 11, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em", flexShrink: 0, paddingTop: 1 }}>{k}</div>
-                <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{v}</div>
+                <div style={{ width: 100, fontSize:10, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em", flexShrink: 0, paddingTop: 1 }}>{k}</div>
+                <div style={{ fontSize:12, color: "#1e293b", fontWeight: 500 }}>{v}</div>
               </div>
             ) : null)}
           </div>
@@ -989,7 +989,7 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
           {rescheduleAlert.ok
             ? <CheckCircle size={16} color="#16a34a" style={{ flexShrink: 0 }} />
             : <AlertTriangle size={16} color="#ef4444" style={{ flexShrink: 0 }} />}
-          <span style={{ fontSize: 13, fontWeight: 600, color: rescheduleAlert.ok ? "#15803d" : "#dc2626" }}>{rescheduleAlert.text}</span>
+          <span style={{ fontSize:12, fontWeight: 600, color: rescheduleAlert.ok ? "#15803d" : "#dc2626" }}>{rescheduleAlert.text}</span>
           <button onClick={() => setRescheduleAlert(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", marginLeft: "auto", padding: 2, flexShrink: 0 }}><X size={13} /></button>
         </div>
       )}
@@ -1017,8 +1017,8 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
 
             {/* Heading */}
             <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 6 }}>Delete Appointment?</div>
-              <div style={{ fontSize: 12.5, color: "#64748b", lineHeight: 1.65 }}>
+              <div style={{ fontSize:16, fontWeight: 800, color: "#1e293b", marginBottom: 6 }}>Delete Appointment?</div>
+              <div style={{ fontSize:11.5, color: "#64748b", lineHeight: 1.65 }}>
                 This will <strong>permanently remove</strong> this booking from all dashboards.<br />
                 This action <strong style={{ color: "#ef4444" }}>cannot be undone</strong>.
               </div>
@@ -1036,8 +1036,8 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
                 ["Status",     deleteTarget.status],
               ] as [string, string | null | undefined][]).filter(([, v]) => v).map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #f1f5f9" }}>
-                  <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em" }}>{k}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{v}</span>
+                  <span style={{ fontSize:10, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em" }}>{k}</span>
+                  <span style={{ fontSize:11, fontWeight: 600, color: "#1e293b" }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -1047,13 +1047,13 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
               <button
                 onClick={() => setDeleteTarget(null)}
                 disabled={hardDeleting}
-                style={{ padding: "9px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", fontSize: 13, fontWeight: 600, color: "#64748b", cursor: "pointer" }}>
+                style={{ padding: "9px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", fontSize:12, fontWeight: 600, color: "#64748b", cursor: "pointer" }}>
                 Keep Appointment
               </button>
               <button
                 onClick={hardDeleteOne}
                 disabled={hardDeleting}
-                style={{ padding: "9px 22px", borderRadius: 9, border: "none", background: hardDeleting ? "#fca5a5" : "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: hardDeleting ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                style={{ padding: "9px 22px", borderRadius: 9, border: "none", background: hardDeleting ? "#fca5a5" : "#ef4444", color: "#fff", fontSize:12, fontWeight: 700, cursor: hardDeleting ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 {hardDeleting
                   ? <><Loader2 size={13} style={{ animation: "cl-spin .7s linear infinite" }} /> Deleting…</>
                   : <><Trash2 size={13} /> Delete Permanently</>}
@@ -1069,12 +1069,12 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
           onClick={() => setEditAppt(null)}>
           <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 360 }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Change Status</div>
-            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 18 }}>
+            <div style={{ fontSize:14, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>Change Status</div>
+            <div style={{ fontSize:11, color: "#64748b", marginBottom: 18 }}>
               {editAppt.patient?.name} — {editAppt.appointmentDate ? fmt(editAppt.appointmentDate) : "—"}
             </div>
             <select value={editStatus} onChange={e => setEditStatus(e.target.value)}
-              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", marginBottom: 18, background: "#fff", cursor: "pointer" }}>
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", marginBottom: 18, background: "#fff", cursor: "pointer" }}>
               {["SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"].map(s => (
                 <option key={s} value={s}>{s[0] + s.slice(1).toLowerCase().replace(/_/g, " ")}</option>
               ))}
@@ -1082,7 +1082,7 @@ function AppointmentsTab({ deptProfile }: { deptProfile: any }) {
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button className="cl-btn-ghost" onClick={() => setEditAppt(null)}>Cancel</button>
               <button onClick={saveStatus} disabled={saving}
-                style={{ padding: "8px 20px", borderRadius: 9, background: TEAL, color: "#fff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                style={{ padding: "8px 20px", borderRadius: 9, background: TEAL, color: "#fff", border: "none", fontSize:12, fontWeight: 600, cursor: "pointer" }}>
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
@@ -1173,7 +1173,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
           <div className="cl-section-title" style={{ marginBottom: 4 }}>
             <div className="cl-section-title-dot" />Today&apos;s Patient Queue
           </div>
-          <div style={{ fontSize: 11, color: "#94a3b8", paddingLeft: 14 }}>{today}</div>
+          <div style={{ fontSize:10, color: "#94a3b8", paddingLeft: 14 }}>{today}</div>
         </div>
         <button className="cl-btn-ghost" onClick={() => deptId && load(deptId)}>
           <RefreshCw size={12} style={loading ? { animation: "cl-spin .7s linear infinite" } : {}} /> Refresh
@@ -1203,7 +1203,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
                 border: `1.5px solid ${view === v ? TEAL : "#e2e8f0"}`,
                 background: view === v ? TEAL_LIGHT : "#fff",
                 color: view === v ? TEAL2 : "#64748b",
-                fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                fontSize:10, fontWeight: 600, cursor: "pointer" }}>
               {label}
             </button>
           );
@@ -1211,7 +1211,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
         <div style={{ position: "relative", marginLeft: "auto" }}>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Patient / token / doctor…"
-            style={{ padding: "7px 12px 7px 28px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none", width: 200 }}
+            style={{ padding: "7px 12px 7px 28px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize:11, outline: "none", width: 200 }}
             onFocus={e => (e.target.style.borderColor = TEAL)}
             onBlur={e  => (e.target.style.borderColor = "#e2e8f0")} />
           <Users size={11} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
@@ -1242,7 +1242,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
                 <tr><td colSpan={7}>
                   <div style={{ textAlign: "center", padding: "40px 0" }}>
                     <CheckCircle2 size={36} color={TEAL} style={{ display: "block", margin: "0 auto 10px" }} />
-                    <div style={{ fontSize: 13, color: "#64748b" }}>
+                    <div style={{ fontSize:12, color: "#64748b" }}>
                       {view === "pending" ? "Queue is clear — no pending patients" : "No records for this filter"}
                     </div>
                   </div>
@@ -1257,39 +1257,39 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
                       <div style={{ width: 34, height: 34, borderRadius: 8,
                         background: isFirst ? `linear-gradient(135deg,${TEAL},${TEAL2})` : TEAL_LIGHT,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 13, fontWeight: 800, color: isFirst ? "#fff" : TEAL }}>
+                        fontSize:12, fontWeight: 800, color: isFirst ? "#fff" : TEAL }}>
                         {a.tokenNumber || "—"}
                       </div>
                     </td>
                     <td>
                       <div className="cl-td-name">{a.patient?.name || "—"}</div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{a.patient?.patientId}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>{a.patient?.patientId}</div>
                     </td>
-                    <td style={{ fontSize: 12, color: "#475569" }}>Dr. {a.doctor?.name || "—"}</td>
-                    <td style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{fmtTime(a.timeSlot)}</td>
-                    <td><span className="cl-badge cl-badge-gray" style={{ fontSize: 10 }}>{a.type?.replace(/_/g, " ") || "—"}</span></td>
+                    <td style={{ fontSize:11, color: "#475569" }}>Dr. {a.doctor?.name || "—"}</td>
+                    <td style={{ fontSize:11, fontWeight: 600, color: "#1e293b" }}>{fmtTime(a.timeSlot)}</td>
+                    <td><span className="cl-badge cl-badge-gray" style={{ fontSize:10 }}>{a.type?.replace(/_/g, " ") || "—"}</span></td>
                     <td><span className={`cl-badge ${sm.cls}`}>{sm.label}</span></td>
                     <td>
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                         {a.status === "SCHEDULED" && (
                           <button onClick={() => updateStatus(a.id, "CONFIRMED")} disabled={!!updating[a.id]}
-                            style={{ padding: "4px 10px", borderRadius: 6, background: TEAL_LIGHT, color: TEAL2, border: `1px solid #B3E0E0`, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                            style={{ padding: "4px 10px", borderRadius: 6, background: TEAL_LIGHT, color: TEAL2, border: `1px solid #B3E0E0`, fontSize:10, fontWeight: 600, cursor: "pointer" }}>
                             {updating[a.id] === "CONFIRMED" ? <Loader2 size={10} style={{ animation: "cl-spin .7s linear infinite", verticalAlign: "middle" }} /> : "Confirm"}
                           </button>
                         )}
                         {isPending && (
                           <>
                             <button onClick={() => updateStatus(a.id, "COMPLETED")} disabled={!!updating[a.id]}
-                              style={{ padding: "4px 10px", borderRadius: 6, background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                              style={{ padding: "4px 10px", borderRadius: 6, background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", fontSize:10, fontWeight: 600, cursor: "pointer" }}>
                               {updating[a.id] === "COMPLETED" ? <Loader2 size={10} style={{ animation: "cl-spin .7s linear infinite", verticalAlign: "middle" }} /> : "Complete"}
                             </button>
                             <button onClick={() => updateStatus(a.id, "NO_SHOW")} disabled={!!updating[a.id]}
-                              style={{ padding: "4px 10px", borderRadius: 6, background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                              style={{ padding: "4px 10px", borderRadius: 6, background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", fontSize:10, fontWeight: 600, cursor: "pointer" }}>
                               No-Show
                             </button>
                           </>
                         )}
-                        {!isPending && <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>—</span>}
+                        {!isPending && <span style={{ fontSize:10, color: "#94a3b8", fontStyle: "italic" }}>—</span>}
                       </div>
                     </td>
                   </tr>
@@ -1299,7 +1299,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
           </table>
         </div>
         {all.length > 0 && (
-          <div style={{ padding: "9px 18px", borderTop: "1px solid #f1f5f9", fontSize: 11, color: "#94a3b8" }}>
+          <div style={{ padding: "9px 18px", borderTop: "1px solid #f1f5f9", fontSize:10, color: "#94a3b8" }}>
             Showing {filtered.length} of {all.length} appointments today
           </div>
         )}
@@ -1356,7 +1356,7 @@ function PatientsTab() {
         ))}
         <div className="cl-card" style={{ display: "flex", flexDirection: "column" }}>
           <div className="cl-card-head" style={{ paddingBottom: 8 }}>
-            <div className="cl-card-title" style={{ fontSize: 12 }}>Gender Distribution</div>
+            <div className="cl-card-title" style={{ fontSize:11 }}>Gender Distribution</div>
           </div>
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 0" }}>
             {genderData.length > 0 ? (
@@ -1365,11 +1365,11 @@ function PatientsTab() {
                   <Pie data={genderData} cx="50%" cy="50%" outerRadius={38} dataKey="value" paddingAngle={3}>
                     {genderData.map((_: any, i: number) => <Cell key={i} fill={[TEAL, "#8b5cf6", "#f59e0b"][i]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                  <Tooltip contentStyle={{ fontSize:10, borderRadius: 8 }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>No data</div>
+              <div style={{ fontSize:10, color: "#94a3b8" }}>No data</div>
             )}
           </div>
         </div>
@@ -1381,7 +1381,7 @@ function PatientsTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name or patient ID…"
-          style={{ padding: "8px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 12, outline: "none", width: 280 }}
+          style={{ padding: "8px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:11, outline: "none", width: 280 }}
           onFocus={e => e.target.style.borderColor = TEAL}
           onBlur={e => e.target.style.borderColor = "#e2e8f0"}
         />
@@ -1399,7 +1399,7 @@ function PatientsTab() {
                 <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "#94a3b8" }}>No patients found</td></tr>
               ) : filtered.map(p => (
                 <tr key={p.id}>
-                  <td><span style={{ fontSize: 11, fontWeight: 700, color: TEAL, background: TEAL_LIGHT, padding: "2px 7px", borderRadius: 6 }}>{p.patientId}</span></td>
+                  <td><span style={{ fontSize:10, fontWeight: 700, color: TEAL, background: TEAL_LIGHT, padding: "2px 7px", borderRadius: 6 }}>{p.patientId}</span></td>
                   <td><span className="cl-td-name">{p.name}</span></td>
                   <td style={{ color: "#64748b" }}>{p.phone || "—"}</td>
                   <td><span className="cl-badge cl-badge-gray">{p.gender || "—"}</span></td>
@@ -1450,7 +1450,7 @@ function SubDeptsTab({ onView }: { onView: (id: string) => void }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div className="cl-section-title" style={{ marginBottom: 0 }}>
           <div className="cl-section-title-dot" />Sub-Departments
-          <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400 }}>({subDepts.filter(s => s.isActive).length} active)</span>
+          <span style={{ fontSize:10, color: "#94a3b8", fontWeight: 400 }}>({subDepts.filter(s => s.isActive).length} active)</span>
         </div>
         <button className="cl-btn-ghost" onClick={load}>
           <RefreshCw size={13} style={loading ? { animation: "cl-spin .7s linear infinite" } : {}} /> Refresh
@@ -1462,8 +1462,8 @@ function SubDeptsTab({ onView }: { onView: (id: string) => void }) {
       ) : subDepts.length === 0 ? (
         <div className="cl-empty">
           <Building2 size={40} className="cl-empty-icon" />
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b", marginTop: 8 }}>No sub-departments</div>
-          <div style={{ fontSize: 12, marginTop: 4 }}>Ask hospital admin to create sub-departments under this department</div>
+          <div style={{ fontSize:13, fontWeight: 600, color: "#1e293b", marginTop: 8 }}>No sub-departments</div>
+          <div style={{ fontSize:11, marginTop: 4 }}>Ask hospital admin to create sub-departments under this department</div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 }}>
@@ -1484,8 +1484,8 @@ function SubDeptsTab({ onView }: { onView: (id: string) => void }) {
                       <Stethoscope size={20} color={off ? "#94a3b8" : "#fff"} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: off ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
-                      <div style={{ fontSize: 11, color: off ? "#cbd5e1" : m.accent, fontWeight: 600, marginTop: 1 }}>{sd.code ? `${sd.code} · ` : ""}{sd.type?.replace(/_/g, " ")}</div>
+                      <div style={{ fontSize:14, fontWeight: 700, color: off ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
+                      <div style={{ fontSize:10, color: off ? "#cbd5e1" : m.accent, fontWeight: 600, marginTop: 1 }}>{sd.code ? `${sd.code} · ` : ""}{sd.type?.replace(/_/g, " ")}</div>
                     </div>
                     <button onClick={e => toggle(e, sd)} disabled={toggling === sd.id}
                       style={{ background: "none", border: "none", cursor: "pointer", color: sd.isActive ? m.accent : "#94a3b8", padding: 4, flexShrink: 0 }}>
@@ -1501,18 +1501,18 @@ function SubDeptsTab({ onView }: { onView: (id: string) => void }) {
                       { v: sd._count?.appointments || 0, l: "Referrals" },
                     ].map((s, i) => (
                       <div key={i} style={{ background: off ? "#f8fafc" : m.lightBg, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: off ? "#cbd5e1" : m.accent }}>{s.v}</div>
-                        <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>{s.l}</div>
+                        <div style={{ fontSize:17, fontWeight: 800, color: off ? "#cbd5e1" : m.accent }}>{s.v}</div>
+                        <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>{s.l}</div>
                       </div>
                     ))}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
                     {sd.hodStaffName ? (
-                      <div style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ fontSize:10, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
                         <UserCheck size={12} color="#94a3b8" /> {sd.hodStaffName}
                       </div>
-                    ) : <div style={{ fontSize: 11, color: "#cbd5e1" }}>No HOD</div>}
-                    {sd.isActive && <div style={{ fontSize: 11, fontWeight: 600, color: m.accent, display: "flex", alignItems: "center", gap: 4 }}>View <ChevronRight size={13} /></div>}
+                    ) : <div style={{ fontSize:10, color: "#cbd5e1" }}>No HOD</div>}
+                    {sd.isActive && <div style={{ fontSize:10, fontWeight: 600, color: m.accent, display: "flex", alignItems: "center", gap: 4 }}>View <ChevronRight size={13} /></div>}
                   </div>
                 </div>
               </div>
@@ -1549,7 +1549,7 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
     return () => clearInterval(iv);
   }, [load]);
 
-  if (loading) return <div className="cl-empty"><Loader2 size={24} className="cl-spin cl-empty-icon" style={{ display: "block" }} /><div style={{ marginTop: 12, fontSize: 13, color: "#94a3b8" }}>Loading…</div></div>;
+  if (loading) return <div className="cl-empty"><Loader2 size={24} className="cl-spin cl-empty-icon" style={{ display: "block" }} /><div style={{ marginTop: 12, fontSize:12, color: "#94a3b8" }}>Loading…</div></div>;
   if (error || !data) return <div style={{ padding: 40, textAlign: "center" }}><div style={{ color: "#ef4444", marginBottom: 12 }}>{error}</div><button className="cl-btn-primary" onClick={onBack}>← Back</button></div>;
 
   const { profile, stats, queue = [], completedList = [] } = data;
@@ -1564,7 +1564,7 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
 
   return (
     <>
-      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 13, fontWeight: 500, marginBottom: 16, padding: "6px 0" }}
+      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize:12, fontWeight: 500, marginBottom: 16, padding: "6px 0" }}
         onMouseEnter={e => { e.currentTarget.style.color = m.accent; }}
         onMouseLeave={e => { e.currentTarget.style.color = "#64748b"; }}>
         <ArrowLeft size={16} /> Back to Sub-Departments
@@ -1578,11 +1578,11 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
             <Stethoscope size={24} color="#fff" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", opacity: .75, marginBottom: 3 }}>{profile.type?.replace(/_/g, " ")} Sub-Dept</div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.2 }}>{profile.name}</h2>
-            {profile.description && <p style={{ fontSize: 12, opacity: .8, marginTop: 4 }}>{profile.description}</p>}
+            <div style={{ fontSize:10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", opacity: .75, marginBottom: 3 }}>{profile.type?.replace(/_/g, " ")} Sub-Dept</div>
+            <h2 style={{ fontSize:19, fontWeight: 800, lineHeight: 1.2 }}>{profile.name}</h2>
+            {profile.description && <p style={{ fontSize:11, opacity: .8, marginTop: 4 }}>{profile.description}</p>}
           </div>
-          <button onClick={() => load(true)} style={{ background: "rgba(255,255,255,.2)", padding: "7px 14px", borderRadius: 9, fontSize: 12, fontWeight: 600, border: "1px solid rgba(255,255,255,.3)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={() => load(true)} style={{ background: "rgba(255,255,255,.2)", padding: "7px 14px", borderRadius: 9, fontSize:11, fontWeight: 600, border: "1px solid rgba(255,255,255,.3)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             <RefreshCw size={13} /> Refresh
           </button>
         </div>
@@ -1601,7 +1601,7 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Activity size={15} color={s.color} />
             </div>
-            <div><div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>{s.v}</div><div style={{ fontSize: 9, color: "#94a3b8" }}>{s.l}</div></div>
+            <div><div style={{ fontSize:15, fontWeight: 800, color: "#1e293b" }}>{s.v}</div><div style={{ fontSize:9, color: "#94a3b8" }}>{s.l}</div></div>
           </div>
         ))}
       </div>
@@ -1610,7 +1610,7 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
         {SECS.map(s => (
           <button key={s.id} onClick={() => setSection(s.id as any)}
-            style={{ padding: "7px 14px", borderRadius: 10, border: `1.5px solid ${section === s.id ? m.accent : "#e2e8f0"}`, background: section === s.id ? m.lightBg : "#fff", color: section === s.id ? m.accent : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .15s" }}>
+            style={{ padding: "7px 14px", borderRadius: 10, border: `1.5px solid ${section === s.id ? m.accent : "#e2e8f0"}`, background: section === s.id ? m.lightBg : "#fff", color: section === s.id ? m.accent : "#64748b", fontSize:11, fontWeight: 600, cursor: "pointer", transition: "all .15s" }}>
             {s.label}
           </button>
         ))}
@@ -1623,8 +1623,8 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {[["Name", profile.name], ["Type", profile.type], ["Code", profile.code || "—"], ["HOD", profile.hodStaffName || "Not assigned"], ["Status", profile.isActive ? "Active" : "Inactive"], ["Login Email", profile.loginEmail || "—"]].map(([k, v]) => (
                 <div key={k}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{k}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{v}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{k}</div>
+                  <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{v}</div>
                 </div>
               ))}
             </div>
@@ -1633,13 +1633,13 @@ function SubDeptDetail({ subDeptId, onBack }: { subDeptId: string; onBack: () =>
       )}
       {section === "queue" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {queue.length === 0 ? <div className="cl-empty"><CheckCircle2 size={32} className="cl-empty-icon" color={m.accent} /><div style={{ marginTop: 8, fontSize: 13, color: "#94a3b8" }}>Queue is clear</div></div>
+          {queue.length === 0 ? <div className="cl-empty"><CheckCircle2 size={32} className="cl-empty-icon" color={m.accent} /><div style={{ marginTop: 8, fontSize:12, color: "#94a3b8" }}>Queue is clear</div></div>
           : queue.map((q: any, i: number) => (
             <div key={q.id} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 9, background: m.lightBg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: m.accent, flexShrink: 0 }}>{i + 1}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, color: "#1e293b" }}>{q.patient?.name || "—"}</div>
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Dr. {q.doctor?.name || "—"} · {q.subDeptNote ? "Referral note attached" : "No note"}</div>
+                <div style={{ fontSize:10, color: "#64748b", marginTop: 2 }}>Dr. {q.doctor?.name || "—"} · {q.subDeptNote ? "Referral note attached" : "No note"}</div>
               </div>
               <span className="cl-badge cl-badge-teal">{q.status}</span>
             </div>
@@ -1713,8 +1713,8 @@ function DeptInfoTab({ deptProfile }: { deptProfile: any }) {
         {icon}
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: ".06em", marginBottom: 3 }}>{label}</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: value ? "#1e293b" : "#cbd5e1" }}>{value || "Not set"}</div>
+        <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: ".06em", marginBottom: 3 }}>{label}</div>
+        <div style={{ fontSize:12, fontWeight: 600, color: value ? "#1e293b" : "#cbd5e1" }}>{value || "Not set"}</div>
       </div>
     </div>
   );
@@ -1728,7 +1728,7 @@ function DeptInfoTab({ deptProfile }: { deptProfile: any }) {
       {!p ? (
         <div className="cl-empty">
           <Loader2 size={24} style={{ animation: "cl-spin .7s linear infinite", display: "block", margin: "0 auto" }} />
-          <div style={{ marginTop: 12, fontSize: 13 }}>Loading…</div>
+          <div style={{ marginTop: 12, fontSize:12 }}>Loading…</div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -1753,8 +1753,8 @@ function DeptInfoTab({ deptProfile }: { deptProfile: any }) {
               </div>
               {p.description && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f1f5f9" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Description</div>
-                  <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.7 }}>{p.description}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Description</div>
+                  <div style={{ fontSize:12, color: "#475569", lineHeight: 1.7 }}>{p.description}</div>
                 </div>
               )}
             </div>
@@ -1791,10 +1791,10 @@ function DeptInfoTab({ deptProfile }: { deptProfile: any }) {
                   <Mail size={16} color={p.credentialsSent ? "#16a34a" : "#b45309"} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: p.credentialsSent ? "#15803d" : "#92400e" }}>
+                  <div style={{ fontSize:12, fontWeight: 600, color: p.credentialsSent ? "#15803d" : "#92400e" }}>
                     {p.credentialsSent ? "Login credentials have been sent to HOD" : "Login credentials not yet sent"}
                   </div>
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                  <div style={{ fontSize:10, color: "#64748b", marginTop: 2 }}>
                     {p.loginEmail ? `Login email: ${p.loginEmail}` : "No login email configured"}
                   </div>
                 </div>

@@ -162,8 +162,8 @@ export default function ProfilePage() {
             <div style={{ maxWidth: 700, margin: "0 auto" }}>
               {/* Page Header */}
               <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>My Profile</h1>
-                <p style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>Manage your account settings and personal information</p>
+                <h1 style={{ fontSize:20, fontWeight: 800, color: "#0f172a" }}>My Profile</h1>
+                <p style={{ fontSize:12, color: "#64748b", marginTop: 4 }}>Manage your account settings and personal information</p>
               </div>
 
               {/* User Info Card */}
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 28,
+                      fontSize:26,
                       fontWeight: 700,
                       color: "#fff",
                       cursor: uploading ? "default" : "pointer",
@@ -217,14 +217,14 @@ export default function ProfilePage() {
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
                   <div>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{user?.name}</h2>
-                    <p style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>{user?.email}</p>
-                    <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{uploading ? "Uploading to Cloudinary..." : "Click avatar to upload photo"}</p>
+                    <h2 style={{ fontSize:17, fontWeight: 700, color: "#1e293b" }}>{user?.name}</h2>
+                    <p style={{ fontSize:12, color: "#64748b", marginTop: 2 }}>{user?.email}</p>
+                    <p style={{ fontSize:10, color: "#94a3b8", marginTop: 4 }}>{uploading ? "Uploading to Cloudinary..." : "Click avatar to upload photo"}</p>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#E6F4F4", color: "#0E898F", fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#E6F4F4", color: "#0E898F", fontSize:10, fontWeight: 600 }}>
                         <Shield size={12} />{user?.role?.replace("_", " ")}
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#f0fdf4", color: "#10b981", fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 14, background: "#f0fdf4", color: "#10b981", fontSize:10, fontWeight: 600 }}>
                         <Building2 size={12} />{user?.hospital?.name || "Hospital"}
                       </span>
                     </div>
@@ -234,12 +234,12 @@ export default function ProfilePage() {
 
               {/* Edit Form */}
               <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", padding: 28 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                <h3 style={{ fontSize:14, fontWeight: 700, color: "#1e293b", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
                   <User size={16} color="#0E898F" />Account Settings
                 </h3>
 
                 {message && (
-                  <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, background: message.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${message.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: message.type === "success" ? "#16a34a" : "#dc2626", fontSize: 12, fontWeight: 500 }}>
+                  <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, background: message.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${message.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: message.type === "success" ? "#16a34a" : "#dc2626", fontSize:11, fontWeight: 500 }}>
                     {message.type === "success" ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                     {message.text}
                   </div>
@@ -248,22 +248,22 @@ export default function ProfilePage() {
                 <form onSubmit={handleSubmit}>
                   <div style={{ display: "grid", gap: 16 }}>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Full Name</label>
+                      <label style={{ display: "block", fontSize:10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Full Name</label>
                       <div style={{ position: "relative" }}>
                         <User size={16} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
-                        <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 40px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#1e293b", outline: "none" }} placeholder="Enter your full name" required />
+                        <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 40px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize:12, color: "#1e293b", outline: "none" }} placeholder="Enter your full name" required />
                       </div>
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Email Address</label>
+                      <label style={{ display: "block", fontSize:10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Email Address</label>
                       <div style={{ position: "relative" }}>
                         <Mail size={16} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
-                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 40px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#1e293b", outline: "none" }} placeholder="Enter your email address" required />
+                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} style={{ width: "100%", padding: "10px 10px 10px 40px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize:12, color: "#1e293b", outline: "none" }} placeholder="Enter your email address" required />
                       </div>
                     </div>
                   </div>
                   <div style={{ marginTop: 20 }}>
-                    <button type="submit" disabled={saving} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(59,130,246,0.25)" }}>
+                    <button type="submit" disabled={saving} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#0E898F", color: "#fff", fontSize:12, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(59,130,246,0.25)" }}>
                       {saving ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Saving...</> : <><Save size={16} />Save Changes</>}
                     </button>
                   </div>
@@ -272,13 +272,13 @@ export default function ProfilePage() {
 
               {/* Change Password Section */}
               <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", padding: 28, marginTop: 20 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                <h3 style={{ fontSize:14, fontWeight: 700, color: "#1e293b", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
                   <Key size={16} color="#f59e0b" />Change Password
                 </h3>
-                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>Update your account password. Choose a strong, unique password.</p>
+                <p style={{ fontSize:12, color: "#64748b", marginBottom: 20 }}>Update your account password. Choose a strong, unique password.</p>
 
                 {cpMessage && (
-                  <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, background: cpMessage.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${cpMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: cpMessage.type === "success" ? "#16a34a" : "#dc2626", fontSize: 12, fontWeight: 500 }}>
+                  <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, display: "flex", alignItems: "center", gap: 8, background: cpMessage.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${cpMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: cpMessage.type === "success" ? "#16a34a" : "#dc2626", fontSize:11, fontWeight: 500 }}>
                     {cpMessage.type === "success" ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                     {cpMessage.text}
                   </div>
@@ -288,7 +288,7 @@ export default function ProfilePage() {
                   <div style={{ display: "grid", gap: 14 }}>
                     {/* Current Password */}
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Current Password</label>
+                      <label style={{ display: "block", fontSize:10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Current Password</label>
                       <div style={{ position: "relative" }}>
                         <Lock size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
                         <input
@@ -296,7 +296,7 @@ export default function ProfilePage() {
                           value={cpOld}
                           onChange={(e) => setCpOld(e.target.value)}
                           placeholder="Enter current password"
-                          style={{ width: "100%", padding: "10px 40px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#1e293b", outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "10px 40px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize:12, color: "#1e293b", outline: "none", boxSizing: "border-box" }}
                         />
                         <button type="button" onClick={() => setCpShowOld(!cpShowOld)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
                           {cpShowOld ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -305,7 +305,7 @@ export default function ProfilePage() {
                     </div>
                     {/* New Password */}
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>New Password</label>
+                      <label style={{ display: "block", fontSize:10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>New Password</label>
                       <div style={{ position: "relative" }}>
                         <Lock size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
                         <input
@@ -313,7 +313,7 @@ export default function ProfilePage() {
                           value={cpNew}
                           onChange={(e) => setCpNew(e.target.value)}
                           placeholder="Choose a strong password"
-                          style={{ width: "100%", padding: "10px 40px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#1e293b", outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "10px 40px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize:12, color: "#1e293b", outline: "none", boxSizing: "border-box" }}
                         />
                         <button type="button" onClick={() => setCpShowNew(!cpShowNew)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
                           {cpShowNew ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -322,13 +322,13 @@ export default function ProfilePage() {
                       {cpNew && (() => { const s = getPasswordStrength(cpNew); return (
                         <div style={{ marginTop: 8 }}>
                           <div style={{ display: "flex", gap: 3, marginBottom: 4 }}>{[1,2,3,4,5].map(i => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= s.score ? s.color : "#e2e8f0" }} />)}</div>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: s.color }}>{s.label}</span>
+                          <span style={{ fontSize:10, fontWeight: 600, color: s.color }}>{s.label}</span>
                         </div>
                       )})()}
                     </div>
                     {/* Confirm Password */}
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Confirm New Password</label>
+                      <label style={{ display: "block", fontSize:10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Confirm New Password</label>
                       <div style={{ position: "relative" }}>
                         <Lock size={15} color="#94a3b8" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
                         <input
@@ -336,17 +336,17 @@ export default function ProfilePage() {
                           value={cpConfirm}
                           onChange={(e) => setCpConfirm(e.target.value)}
                           placeholder="Repeat your new password"
-                          style={{ width: "100%", padding: "10px 40px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#1e293b", outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "10px 40px 10px 38px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize:12, color: "#1e293b", outline: "none", boxSizing: "border-box" }}
                         />
                         <button type="button" onClick={() => setCpShowConfirm(!cpShowConfirm)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
                           {cpShowConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                       </div>
-                      {cpConfirm && cpNew && cpConfirm === cpNew && <span style={{ fontSize: 11, color: "#10b981", fontWeight: 600, marginTop: 4, display: "block" }}>âœ“ Passwords match</span>}
+                      {cpConfirm && cpNew && cpConfirm === cpNew && <span style={{ fontSize:10, color: "#10b981", fontWeight: 600, marginTop: 4, display: "block" }}>âœ“ Passwords match</span>}
                     </div>
                   </div>
                   <div style={{ marginTop: 18 }}>
-                    <button type="submit" disabled={cpSaving} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: cpSaving ? "not-allowed" : "pointer", opacity: cpSaving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(245,158,11,0.25)" }}>
+                    <button type="submit" disabled={cpSaving} style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize:12, fontWeight: 600, cursor: cpSaving ? "not-allowed" : "pointer", opacity: cpSaving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(245,158,11,0.25)" }}>
                       {cpSaving ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Updating...</> : <><Shield size={16} />Update Password</>}
                     </button>
                   </div>

@@ -245,7 +245,7 @@ export default function SuperAdminLogin() {
           border-radius: 100px;
           padding: 4px 12px;
           margin-bottom: 24px;
-          font-size: 11px;
+          font-size:10px;
           font-weight: 600;
           letter-spacing: 0.12em;
           text-transform: uppercase;
@@ -267,7 +267,7 @@ export default function SuperAdminLogin() {
         }
 
         .sa-title {
-          font-size: 28px;
+          font-size:26px;
           font-weight: 800;
           color: var(--title-color);
           line-height: 1.2;
@@ -283,7 +283,7 @@ export default function SuperAdminLogin() {
         }
 
         .sa-subtitle {
-          font-size: 14px;
+          font-size:13px;
           color: var(--subtitle-color);
           margin-bottom: 36px;
           font-weight: 400;
@@ -306,7 +306,7 @@ export default function SuperAdminLogin() {
           padding: 14px 16px;
           margin-bottom: 24px;
           color: var(--error-color);
-          font-size: 13px;
+          font-size:12px;
           line-height: 1.5;
           animation: shake 0.3s ease;
         }
@@ -331,7 +331,7 @@ export default function SuperAdminLogin() {
 
         .sa-label {
           display: block;
-          font-size: 12px;
+          font-size:11px;
           font-weight: 600;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -349,7 +349,7 @@ export default function SuperAdminLogin() {
           border: 1px solid var(--input-border);
           border-radius: 12px;
           padding: 14px 44px 14px 16px;
-          font-size: 14px;
+          font-size:13px;
           color: var(--input-color);
           font-family: 'Inter', sans-serif;
           outline: none;
@@ -392,7 +392,7 @@ export default function SuperAdminLogin() {
           padding: 15px;
           border: none;
           border-radius: 12px;
-          font-size: 15px;
+          font-size:14px;
           font-weight: 700;
           font-family: 'Inter', sans-serif;
           cursor: pointer;
@@ -459,7 +459,7 @@ export default function SuperAdminLogin() {
           margin-top: 32px;
           padding-top: 24px;
           border-top: 1px solid var(--footer-border);
-          font-size: 12px;
+          font-size:11px;
           color: var(--footer-color);
           line-height: 1.6;
         }
@@ -480,7 +480,7 @@ export default function SuperAdminLogin() {
           border-radius: 10px;
           padding: 10px 14px;
           margin-bottom: 28px;
-          font-size: 12px;
+          font-size:11px;
           color: var(--warning-color);
           line-height: 1.4;
         }

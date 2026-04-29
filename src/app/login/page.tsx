@@ -399,17 +399,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="lp-divider">
-              <div className="lp-divider-line"/>
-              <span className="lp-divider-text">Super Admin?</span>
-              <div className="lp-divider-line"/>
-            </div>
-
-            <Link href="/superadmin/login" className="lp-sa">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              Access Super Admin Portal
-            </Link>
-
             <p className="lp-footer">
               New hospital? <Link href="/signup">Register Here</Link> · <Link href="/">Back to Home</Link>
             </p>

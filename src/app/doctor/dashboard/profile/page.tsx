@@ -49,9 +49,9 @@ function DocUploadField({ label, value, fieldKey, uploadType, accept = "image/*,
 
   return (
     <div>
-      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>{label}</label>
+      <label style={{ display: "block", fontSize:10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>{label}</label>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <div style={{ flex: 1, padding: "9px 12px", borderRadius: 8, border: `1.5px solid ${value ? accent + "60" : "#e2e8f0"}`, background: value ? accent + "08" : "#f8fafc", fontSize: 12, color: value ? "#1e293b" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ flex: 1, padding: "9px 12px", borderRadius: 8, border: `1.5px solid ${value ? accent + "60" : "#e2e8f0"}`, background: value ? accent + "08" : "#f8fafc", fontSize:11, color: value ? "#1e293b" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {value ? (isImg ? "Image uploaded ✓" : "Document uploaded ✓") : "No file uploaded"}
         </div>
         {value && (
@@ -63,7 +63,7 @@ function DocUploadField({ label, value, fieldKey, uploadType, accept = "image/*,
           type="button"
           onClick={() => ref.current?.click()}
           disabled={isUploading}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 12px", borderRadius: 8, border: `1.5px solid ${accent}`, background: "#fff", color: accent, fontSize: 12, fontWeight: 600, cursor: isUploading ? "default" : "pointer", whiteSpace: "nowrap" }}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 12px", borderRadius: 8, border: `1.5px solid ${accent}`, background: "#fff", color: accent, fontSize:11, fontWeight: 600, cursor: isUploading ? "default" : "pointer", whiteSpace: "nowrap" }}
         >
           {isUploading ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={13} />}
           {isUploading ? "Uploading..." : value ? "Replace" : "Upload"}
@@ -237,7 +237,7 @@ export default function DoctorProfilePage() {
 
   const inputStyle = (ac = accent): React.CSSProperties => ({
     width: "100%", padding: "10px 12px", borderRadius: 8,
-    border: `1.5px solid ${ac}30`, fontSize: 13, color: "#1e293b",
+    border: `1.5px solid ${ac}30`, fontSize:12, color: "#1e293b",
     outline: "none", boxSizing: "border-box", background: "#fafafa",
   });
 
@@ -247,7 +247,7 @@ export default function DoctorProfilePage() {
   });
 
   const labelStyle: React.CSSProperties = {
-    display: "block", fontSize: 11, fontWeight: 600, color: "#64748b",
+    display: "block", fontSize:10, fontWeight: 600, color: "#64748b",
     textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6,
   };
 
@@ -259,14 +259,14 @@ export default function DoctorProfilePage() {
       <style suppressHydrationWarning>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: 0 }}>My Profile</h2>
-        <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>View and update your professional information</p>
+        <h2 style={{ fontSize:20, fontWeight: 800, color: "#1e293b", margin: 0 }}>My Profile</h2>
+        <p style={{ fontSize:12, color: "#64748b", margin: "4px 0 0" }}>View and update your professional information</p>
       </div>
 
       {message && (
         <div style={{ padding: "12px 16px", borderRadius: 10, marginBottom: 20, display: "flex", alignItems: "center", gap: 10, background: message.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${message.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: message.type === "success" ? "#059669" : "#dc2626" }}>
           {message.type === "success" ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-          <span style={{ fontSize: 13, fontWeight: 500 }}>{message.text}</span>
+          <span style={{ fontSize:12, fontWeight: 500 }}>{message.text}</span>
         </div>
       )}
 
@@ -278,7 +278,7 @@ export default function DoctorProfilePage() {
               <div style={{ background: `linear-gradient(135deg,${accent},#0ea5e9)`, padding: "28px 20px", textAlign: "center" }}>
                 <div
                   onClick={!isUploadingPhoto ? () => photoRef.current?.click() : undefined}
-                  style={{ width: 80, height: 80, borderRadius: 20, margin: "0 auto 12px", cursor: isUploadingPhoto ? "default" : "pointer", position: "relative", overflow: "hidden", background: form.profileImage ? "transparent" : "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, color: "#fff" }}
+                  style={{ width: 80, height: 80, borderRadius: 20, margin: "0 auto 12px", cursor: isUploadingPhoto ? "default" : "pointer", position: "relative", overflow: "hidden", background: form.profileImage ? "transparent" : "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize:26, fontWeight: 800, color: "#fff" }}
                 >
                   {form.profileImage
                     ? <img src={form.profileImage} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -294,12 +294,12 @@ export default function DoctorProfilePage() {
                   </div>
                 </div>
                 <input ref={photoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleProfilePhotoChange} />
-                <div style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>Dr. {form.name || doctorName}</div>
-                <div style={{ fontSize: 12, color: "#bae6fd", marginTop: 3 }}>{deptName}</div>
-                {form.specialization && <div style={{ fontSize: 11, color: "#7dd3fc", marginTop: 2 }}>{form.specialization}</div>}
+                <div style={{ fontWeight: 800, fontSize:15, color: "#fff" }}>Dr. {form.name || doctorName}</div>
+                <div style={{ fontSize:11, color: "#bae6fd", marginTop: 3 }}>{deptName}</div>
+                {form.specialization && <div style={{ fontSize:10, color: "#7dd3fc", marginTop: 2 }}>{form.specialization}</div>}
               </div>
               <div style={{ padding: "14px 16px" }}>
-                <p style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", margin: "0 0 12px" }}>
+                <p style={{ fontSize:10, color: "#94a3b8", textAlign: "center", margin: "0 0 12px" }}>
                   {isUploadingPhoto ? "Uploading..." : "Click avatar to change photo"}
                 </p>
                 {/* Quick Info */}
@@ -310,14 +310,14 @@ export default function DoctorProfilePage() {
                     { icon: <BadgeCheck size={12} />, val: `${form.experience || 0} yrs experience` },
                     { icon: <CreditCard size={12} />, val: form.consultationFee ? `₹${form.consultationFee} fee` : "—" },
                   ].map((item, i) => item.val ? (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#64748b" }}>
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize:10, color: "#64748b" }}>
                       <span style={{ color: accent }}>{item.icon}</span>{item.val}
                     </div>
                   ) : null)}
                 </div>
                 {/* Availability Toggle */}
                 <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>Available for appointments</span>
+                  <span style={{ fontSize:11, fontWeight: 600, color: "#64748b" }}>Available for appointments</span>
                   <div
                     onClick={() => setForm(f => ({ ...f, isAvailable: !f.isAvailable }))}
                     style={{ width: 38, height: 22, borderRadius: 11, background: form.isAvailable ? accent : "#e2e8f0", cursor: "pointer", position: "relative", transition: "background 0.2s" }}
@@ -330,7 +330,7 @@ export default function DoctorProfilePage() {
 
             {/* Read-only Info */}
             <div style={sectionCard(accent + "20")}>
-              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>System Info</h4>
+              <h4 style={{ fontSize:11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>System Info</h4>
               {[
                 { label: "Doctor ID", val: doctor?.doctorCode || "Not assigned" },
                 { label: "User ID", val: doctor?.user?.userCode || (doctor?.userId ? "Not assigned" : "Not linked") },
@@ -339,9 +339,9 @@ export default function DoctorProfilePage() {
                 { label: "Joined", val: doctor?.createdAt ? new Date(doctor.createdAt).toLocaleDateString("en-IN") : "—" },
               ].map(({ label, val }) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{label}</span>
+                  <span style={{ fontSize:10, color: "#94a3b8" }}>{label}</span>
                   <span style={{
-                    fontSize: 11, fontWeight: 700,
+                    fontSize:10, fontWeight: 700,
                     color: (label === "Doctor ID" || label === "User ID") && val && val !== "Not assigned" && val !== "Not linked"
                       ? accent : "#475569",
                     background: (label === "Doctor ID" || label === "User ID") && val && val !== "Not assigned" && val !== "Not linked"
@@ -359,7 +359,7 @@ export default function DoctorProfilePage() {
           <div>
             {/* Personal Information */}
             <div style={sectionCard(accent + "30")}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
                 <User size={15} color={accent} />Personal Information
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -400,7 +400,7 @@ export default function DoctorProfilePage() {
 
             {/* Professional Information */}
             <div style={sectionCard(accent + "30")}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
                 <Stethoscope size={15} color={accent} />Professional Information
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -445,7 +445,7 @@ export default function DoctorProfilePage() {
 
             {/* Documents & Credentials */}
             <div style={sectionCard(accent + "30")}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
                 <FileText size={15} color={accent} />Documents & Credentials
               </h3>
               <div style={{ display: "grid", gap: 14 }}>
@@ -507,7 +507,7 @@ export default function DoctorProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                style={{ padding: "11px 28px", borderRadius: 10, border: "none", background: accent, color: "#fff", fontSize: 14, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.75 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 14px ${accent}40` }}
+                style={{ padding: "11px 28px", borderRadius: 10, border: "none", background: accent, color: "#fff", fontSize:13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.75 : 1, display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 14px ${accent}40` }}
               >
                 {saving ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />Saving...</> : <><Save size={16} />Save Profile</>}
               </button>
@@ -515,13 +515,13 @@ export default function DoctorProfilePage() {
 
             {/* Change Password */}
             <div style={sectionCard("#fef3c710")}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
                 <Key size={15} color="#f59e0b" />Change Password
               </h3>
-              <p style={{ fontSize: 12, color: "#64748b", marginBottom: 18 }}>Update your login password.</p>
+              <p style={{ fontSize:11, color: "#64748b", marginBottom: 18 }}>Update your login password.</p>
 
               {cpMessage && (
-                <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, display: "flex", alignItems: "center", gap: 8, background: cpMessage.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${cpMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: cpMessage.type === "success" ? "#16a34a" : "#dc2626", fontSize: 12, fontWeight: 500 }}>
+                <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, display: "flex", alignItems: "center", gap: 8, background: cpMessage.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${cpMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`, color: cpMessage.type === "success" ? "#16a34a" : "#dc2626", fontSize:11, fontWeight: 500 }}>
                   {cpMessage.type === "success" ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                   {cpMessage.text}
                 </div>
@@ -543,7 +543,7 @@ export default function DoctorProfilePage() {
                           value={val}
                           onChange={(e) => set(e.target.value)}
                           placeholder="••••••••"
-                          style={{ width: "100%", padding: "10px 36px 10px 32px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, color: "#1e293b", outline: "none", boxSizing: "border-box", background: "#fafafa" }}
+                          style={{ width: "100%", padding: "10px 36px 10px 32px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize:12, color: "#1e293b", outline: "none", boxSizing: "border-box", background: "#fafafa" }}
                         />
                         <button type="button" onClick={() => toggleShow(!show)} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
                           {show ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -557,12 +557,12 @@ export default function DoctorProfilePage() {
                     {[1, 2, 3, 4, 5].map(i => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= pw.score ? pw.color : "#e2e8f0" }} />)}
                   </div>
                 )}
-                {cpConfirm && cpNew && cpConfirm === cpNew && <p style={{ fontSize: 11, color: "#10b981", fontWeight: 600, margin: "6px 0 0" }}>✓ Passwords match</p>}
+                {cpConfirm && cpNew && cpConfirm === cpNew && <p style={{ fontSize:10, color: "#10b981", fontWeight: 600, margin: "6px 0 0" }}>✓ Passwords match</p>}
                 <div style={{ marginTop: 14 }}>
                   <button
                     type="submit"
                     disabled={cpSaving}
-                    style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: cpSaving ? "not-allowed" : "pointer", opacity: cpSaving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 7, boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}
+                    style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize:12, fontWeight: 600, cursor: cpSaving ? "not-allowed" : "pointer", opacity: cpSaving ? 0.7 : 1, display: "flex", alignItems: "center", gap: 7, boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}
                   >
                     {cpSaving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />Updating...</> : <><Shield size={14} />Update Password</>}
                   </button>

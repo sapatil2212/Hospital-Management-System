@@ -1,9 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import styles from "./whatsapp-widget.module.css";
 
 export default function WhatsAppWidget() {
+  const pathname = usePathname();
+  const isDashboard = pathname?.match(/^\/(administrative|clinical|diagnostic|doctor|finance|hospitaladmin|nursingadmin|parentdept|receptionist|staff|subdept|superadmin|support|login|signup)/);
+
+  if (isDashboard) return null;
   const phoneNumber = "+919059053938";
   const message = "Hello Celeb Aesthetica, I would like to inquire about your treatments.";
   const whatsappUrl = `https://wa.me/${phoneNumber.replace("+", "")}?text=${encodeURIComponent(message)}`;

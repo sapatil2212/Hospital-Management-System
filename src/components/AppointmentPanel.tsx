@@ -6,13 +6,14 @@ import {
   Building2, CheckCircle, XCircle, AlertCircle, RefreshCw, Hash,
   Phone, Mail, ChevronRight, Eye, ClipboardList, CalendarCheck,
   Edit, Trash2, FileText, AlertTriangle, Download, Bell,
-  ArrowLeft, Zap, Sun, Sunset, Moon, FileSpreadsheet, FileType,
+  ArrowLeft, Zap, Sun, Sunset, Moon, FileSpreadsheet, FileType, Activity,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Document as DocxDocument, Packer, Paragraph, Table as DocxTable, TableRow, TableCell, WidthType, TextRun, HeadingLevel, BorderStyle, AlignmentType } from "docx";
+import AdminRescheduleModal from "./AdminRescheduleModal";
 
 const toLocalDateStr = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -900,6 +901,11 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   const [deleteAlert, setDeleteAlert] = useState<{ ok: boolean; text: string } | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
 
+  // ── Reschedule Alert (when doctor reschedules, show popup to admin/reception) ──
+  const [rescheduledAlertAppt, setRescheduledAlertAppt] = useState<Appointment | null>(null);
+  const [dismissedRescheduledIds, setDismissedRescheduledIds] = useState<Set<string>>(new Set());
+  const [adminRescheduleTarget, setAdminRescheduleTarget] = useState<Appointment | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: "15" });
@@ -912,6 +918,21 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
   }, [page, search, statusFilter, dateFilter, showAll, onRefresh]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Poll for RESCHEDULED appointments and show alert ──
+  useEffect(() => {
+    const check = () => {
+      const found = appointments.find((a: Appointment) =>
+        a.status === "RESCHEDULED" && !dismissedRescheduledIds.has(a.id)
+      );
+      if (found && !rescheduledAlertAppt && !adminRescheduleTarget) {
+        setRescheduledAlertAppt(found);
+      }
+    };
+    check();
+    const iv = setInterval(check, 30000);
+    return () => clearInterval(iv);
+  }, [appointments, dismissedRescheduledIds, rescheduledAlertAppt, adminRescheduleTarget]);
 
   const updateStatus = async (id: string, status: string, appt?: Appointment) => {
     if (status === "RESCHEDULED" && appt) {
@@ -999,6 +1020,47 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
       load();
     } else {
       alert(d.message || "Failed to update appointment");
+    }
+  };
+
+  // ── Reschedule Alert handlers ──
+  const handleAlertConfirm = async (id: string) => {
+    const d = await api(`/api/appointments/${id}`, "PUT", { status: "CONFIRMED" });
+    if (d.success) {
+      setRescheduledAlertAppt(null);
+      setDismissedRescheduledIds(prev => new Set(prev).add(id));
+      load();
+    } else {
+      setDeleteAlert({ ok: false, text: d.message || "Failed to confirm" });
+      setTimeout(() => setDeleteAlert(null), 5000);
+    }
+  };
+  const handleAlertCancel = async (id: string) => {
+    const d = await api(`/api/appointments/${id}`, "PUT", { status: "CANCELLED" });
+    if (d.success) {
+      setRescheduledAlertAppt(null);
+      setDismissedRescheduledIds(prev => new Set(prev).add(id));
+      load();
+    } else {
+      setDeleteAlert({ ok: false, text: d.message || "Failed to cancel" });
+      setTimeout(() => setDeleteAlert(null), 5000);
+    }
+  };
+  const handleAdminRescheduleConfirm = async (id: string, payload: { doctorId: string; departmentId: string; appointmentDate: string; timeSlot: string }) => {
+    const d = await api(`/api/appointments/${id}`, "PUT", {
+      ...payload,
+      status: "SCHEDULED",
+    });
+    if (d.success) {
+      setAdminRescheduleTarget(null);
+      setRescheduledAlertAppt(null);
+      setDismissedRescheduledIds(prev => new Set(prev).add(id));
+      // Fire-and-forget email notification
+      api("/api/appointments/reschedule-email", "POST", { appointmentId: id }).catch(() => { });
+      load();
+    } else {
+      setDeleteAlert({ ok: false, text: d.message || "Failed to reschedule" });
+      setTimeout(() => setDeleteAlert(null), 5000);
     }
   };
 
@@ -1158,7 +1220,7 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
           <div style={{ fontSize: 12, marginTop: 4 }}>Try adjusting the date or filters</div>
         </div>
       ) : (
-        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+        <div style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8fafc" }}>
@@ -1543,29 +1605,34 @@ function AppointmentTable({ onRefresh, onViewPatient }: { onRefresh: number; onV
 function StatsBar() {
   const [stats, setStats] = useState<any>(null);
   useEffect(() => {
-    Promise.all([
-      api("/api/appointments?stats=true"),
-      api("/api/patients?stats=true"),
-    ]).then(([a, p]) => {
-      setStats({ ...a.data, patientTotal: p.data?.total || 0 });
-    });
+    api("/api/appointments?stats=true").then(a => setStats(a.data || {}));
   }, []);
 
   if (!stats) return null;
+  const remaining = Math.max(0, (stats.today || 0) - (stats.completed || 0));
   const items = [
-    { label: "Today's Appointments", value: stats.today, color: "#0A6B70", bg: "#E6F4F4" },
-    { label: "Scheduled", value: stats.scheduled, color: "#d97706", bg: "#fffbeb" },
-    { label: "Completed", value: stats.completed, color: "#059669", bg: "#f0fdf4" },
-    { label: "Total Patients", value: stats.patientTotal, color: "#7c3aed", bg: "#f5f3ff" },
+    { label: "Today's Appointments", value: stats.today ?? 0,     color: "#0E898F", iconBg: "#E6F4F4", Icon: CalendarCheck },
+    { label: "Completed",            value: stats.completed ?? 0,  color: "#0E898F", iconBg: "#E6F4F4", Icon: CheckCircle },
+    { label: "Remaining",            value: remaining,              color: "#d97706", iconBg: "#fffbeb", Icon: Clock },
+    { label: "Total Appointments",   value: stats.total ?? 0,       color: "#7c3aed", iconBg: "#f5f3ff", Icon: ClipboardList },
+    { label: "Cancelled",            value: stats.cancelled ?? 0,   color: "#ef4444", iconBg: "#fff5f5", Icon: XCircle },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
-      {items.map(i => (
-        <div key={i.label} style={{ background: "#fff", borderRadius: 14, padding: "16px 20px", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{i.label}</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: i.color }}>{i.value ?? "—"}</div>
-        </div>
-      ))}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 24 }}>
+      {items.map(i => {
+        const Icon = i.Icon;
+        return (
+          <div key={i.label} style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, padding: "16px 18px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 46, height: 46, borderRadius: 12, background: i.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon size={20} color={i.color} strokeWidth={2} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5 }}>{i.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: i.color, lineHeight: 1 }}>{i.value}</div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -75,52 +75,26 @@ export async function POST(req: NextRequest) {
     if (loginHour > 9 || (loginHour === 9 && loginMinute > 30)) status = "LATE";
     if (loginHour >= 12) status = "HALF_DAY";
 
-    // Check if attendance record already exists for today
-    const existingAttendance = await (prisma as any).doctorAttendance.findFirst({
+    // Use upsert to prevent P2002 race conditions during simultaneous requests
+    const attendance = await (prisma as any).doctorAttendance.upsert({
       where: {
+        doctorId_date: {
+          doctorId: doctor.id,
+          date: today,
+        },
+      },
+      update: {
+        loginTime: now,
+        status,
+      },
+      create: {
         doctorId: doctor.id,
+        hospitalId: doctor.hospitalId,
         date: today,
+        loginTime: now,
+        status,
       },
     });
-
-    let attendance;
-    if (existingAttendance) {
-      // Update existing record
-      attendance = await (prisma as any).doctorAttendance.update({
-        where: { id: existingAttendance.id },
-        data: { loginTime: now, status },
-      });
-    } else {
-      // Create new record
-      try {
-        attendance = await (prisma as any).doctorAttendance.create({
-          data: {
-            doctorId: doctor.id,
-            hospitalId: doctor.hospitalId,
-            date: today,
-            loginTime: now,
-            status,
-          },
-        });
-      } catch (createErr: any) {
-        // Handle race condition: if record was created between findFirst and create
-        if (createErr?.code === "P2002") {
-          const retry = await (prisma as any).doctorAttendance.findFirst({
-            where: { doctorId: doctor.id, date: today },
-          });
-          if (retry) {
-            attendance = await (prisma as any).doctorAttendance.update({
-              where: { id: retry.id },
-              data: { loginTime: now, status },
-            });
-          } else {
-            throw createErr;
-          }
-        } else {
-          throw createErr;
-        }
-      }
-    }
 
     return successResponse(attendance, "Attendance marked successfully");
   } catch (e: any) {

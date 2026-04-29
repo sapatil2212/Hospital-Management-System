@@ -138,9 +138,13 @@
 .ctaPrimary,
 .ctaSecondary {
   position: relative;
+  flex: 1;
   min-width: 160px;
   box-shadow: none !important;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ctaPrimary:hover,

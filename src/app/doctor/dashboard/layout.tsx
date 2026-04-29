@@ -18,6 +18,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const isProfilePage = pathname === "/doctor/dashboard/profile";
   const currentTab = searchParams.get("tab") || "schedule";
@@ -25,6 +26,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const navItems = [
     { id: "schedule", path: "/doctor/dashboard", label: "Today's Schedule", icon: <CalendarDays size={16} /> },
     { id: "patients", path: "/doctor/dashboard?tab=patients", label: "My Patients", icon: <UserRound size={16} /> },
+    { id: "rx", path: "/doctor/dashboard?tab=rx", label: "Rx", icon: <FileText size={16} /> },
     { id: "prescription-settings", path: "/doctor/dashboard?tab=prescription-settings", label: "Prescription Setting", icon: <FileText size={16} /> },
     { id: "treatment-plans", path: "/doctor/dashboard?tab=treatment-plans", label: "Treatment Plans", icon: <Activity size={16} /> },
     { id: "attendance", path: "/doctor/dashboard?tab=attendance", label: "My Attendance", icon: <ClipboardCheck size={16} /> },
@@ -59,7 +61,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-logo-ic{width:52px;height:52px;background:linear-gradient(135deg,#10b981,#059669);border-radius:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);flex-shrink:0}
         .doc-nav{flex:1;padding:12px 12px;overflow-y:auto}
         .doc-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:12px 0 6px}
-        .doc-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
+        .doc-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
         .doc-nb:hover{background:#f0fdf4;color:#047857}
         .doc-nb.on{background:var(--dept-bg,#d1fae5);color:var(--dept-accent,#059669);font-weight:600}
         .doc-nb-dot{display:none;width:3px;height:20px;background:#10b981;border-radius:4px;position:absolute;left:0}
@@ -68,27 +70,27 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         .doc-nb.on svg{color:var(--dept-accent,#059669)}
         .doc-sb-foot{padding:14px 16px 18px;border-top:1px solid #ecfdf5}
         .doc-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;margin-bottom:10px}
-        .doc-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-        .doc-uname{font-size:12px;font-weight:600;color:#1e293b}
+        .doc-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+        .doc-uname{font-size:11px;font-weight:600;color:#1e293b}
         .doc-urole{font-size:10px;font-weight:500;color:#059669}
-        .doc-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+        .doc-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
         .doc-logout:hover{background:#fee2e2}
         .doc-main{margin-left:220px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
         .doc-topbar{height:64px;background:#fff;border-bottom:1px solid #d1fae5;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(16,185,129,0.06)}
         .doc-search-wrap{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:10px;padding:8px 14px;width:280px}
         .doc-search-wrap:focus-within{border-color:#6ee7b7}
-        .doc-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
+        .doc-search{background:none;border:none;outline:none;font-size:12px;color:#334155;width:100%}
         .doc-search::placeholder{color:#94a3b8}
         .doc-tb-right{display:flex;align-items:center;gap:12px}
         .doc-notif{width:36px;height:36px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
         .doc-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#10b981;border:1.5px solid #fff}
         .doc-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f0fdf4;border:1px solid #d1fae5;cursor:pointer}
-        .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
-        .doc-profile-name{font-size:12px;font-weight:600;color:#1e293b}
+        .doc-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#10b981,#0E898F);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+        .doc-profile-name{font-size:11px;font-weight:600;color:#1e293b}
         .doc-profile-role{font-size:10px;color:#059669}
-        .doc-body{display:grid;grid-template-columns:1fr;flex:1;padding-top:0}
+        .doc-body{display:grid;grid-template-columns:1fr;flex:1;padding-top:0;min-height:0}
         .doc-center{padding:22px 20px;overflow-y:auto}
-        .doc-pg-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
+        .doc-pg-title{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
         @media(max-width:900px){
           .doc-sb{transform:translateX(-100%)}
           .doc-sb.open{transform:translateX(0)}
@@ -164,13 +166,25 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <button className="doc-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
               {sidebarOpen ? <X size={18} color="#10b981" /> : <Menu size={18} color="#64748b" />}
             </button>
-            <div className="doc-search-wrap"><Search size={14} color="#94a3b8" /><input className="doc-search" placeholder="Search patients, prescriptions..." /></div>
+            <div className="doc-search-wrap">
+              <input
+                className="doc-search"
+                placeholder="Search patients, prescriptions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    router.push(`/doctor/dashboard?tab=patients&q=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }}
+              />
+            </div>
             <div className="doc-tb-right">
               <NotificationBell
                 accentColor={accent}
                 bgColor="#f0fdf4"
                 borderColor="#d1fae5"
-                types={["APPOINTMENT_BOOKED","APPOINTMENT_UPDATED","FOLLOW_UP_SCHEDULED","PROCEDURE_COMPLETED","TREATMENT_PLAN_CREATED","TREATMENT_SESSION_COMPLETED","TREATMENT_PLAN_COMPLETED"]}
+                types={["APPOINTMENT_BOOKED", "APPOINTMENT_UPDATED", "FOLLOW_UP_SCHEDULED", "PROCEDURE_COMPLETED", "TREATMENT_PLAN_CREATED", "TREATMENT_SESSION_COMPLETED", "TREATMENT_PLAN_COMPLETED"]}
               />
               <div className="doc-profile" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ position: "relative", cursor: "pointer" }}>
                 {doctor?.profileImage
@@ -200,8 +214,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                       overflow: "hidden",
                     }}>
                       <div style={{ padding: 16, borderBottom: "1px solid #f0fdf4" }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>Dr. {doctorName}</div>
-                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{doctor?.email || doctor?.user?.email}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Dr. {doctorName}</div>
+                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{doctor?.email || doctor?.user?.email}</div>
                       </div>
                       <div style={{ padding: 8 }}>
                         <button
@@ -213,7 +227,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                             border: "none",
                             background: "transparent",
                             color: "#475569",
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: 500,
                             cursor: "pointer",
                             display: "flex",
@@ -236,7 +250,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                             border: "none",
                             background: "transparent",
                             color: "#ef4444",
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: 500,
                             cursor: "pointer",
                             display: "flex",

@@ -99,7 +99,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex: 1;
+  flex: 1 1;
   position: relative;
 }
 
@@ -128,7 +128,7 @@
 }
 
 .AppointmentModal_stepLine__CDlTA {
-  flex: 1;
+  flex: 1 1;
   height: 2px;
   background: var(--gray-200);
   margin: 0 var(--space-2);
@@ -162,7 +162,7 @@
 
 /* ─── Step Body (scrollable) ─── */
 .AppointmentModal_stepBody__VSpBd {
-  flex: 1;
+  flex: 1 1;
   overflow-y: auto;
   padding: var(--space-6) var(--space-8);
 }
@@ -185,6 +185,7 @@
 .AppointmentModal_formRow__1eprd {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-4);
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
@@ -243,16 +244,11 @@
 }
 
 .AppointmentModal_input__soHVO {
-  flex: 1;
+  flex: 1 1;
   padding: 6px var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--gray-800);
   background: transparent;
-}
-
-.AppointmentModal_input__soHVO::-moz-placeholder {
-  color: var(--gray-400);
-  font-size: 11px;
 }
 
 .AppointmentModal_input__soHVO::placeholder {
@@ -284,7 +280,7 @@
 }
 
 .AppointmentModal_selectValue__rYtB1 {
-  flex: 1;
+  flex: 1 1;
   padding: 6px var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--gray-800);
@@ -366,7 +362,7 @@
 }
 
 .AppointmentModal_optionLabel__zgrxT {
-  flex: 1;
+  flex: 1 1;
 }
 
 .AppointmentModal_optionDesc__hgOwG {
@@ -438,6 +434,7 @@
 .AppointmentModal_calGrid__HeCOh {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-gap: 2px;
   gap: 2px;
 }
 
@@ -507,6 +504,7 @@
 .AppointmentModal_timeGrid__Lum9X {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-gap: var(--space-2);
   gap: var(--space-2);
 }
 
@@ -554,7 +552,7 @@
 }
 
 .AppointmentModal_customTimeInput__2Dihw {
-  flex: 1;
+  flex: 1 1;
   padding: 6px var(--space-3);
   border: 2px solid var(--gray-200);
   border-radius: var(--radius-md);
@@ -599,7 +597,7 @@
 }
 
 .AppointmentModal_footerSpacer__tXVsk {
-  flex: 1;
+  flex: 1 1;
 }
 
 .AppointmentModal_footerBtn__A8Dqp {
@@ -657,7 +655,7 @@
 }
 
 .AppointmentModal_summarySectionHeader__VDD6s span {
-  flex: 1;
+  flex: 1 1;
 }
 
 .AppointmentModal_editBtn__WJ_I0 {
@@ -681,6 +679,7 @@
 .AppointmentModal_summaryGrid__zADZf {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-gap: var(--space-2) var(--space-4);
   gap: var(--space-2) var(--space-4);
 }
 
@@ -725,11 +724,11 @@
 }
 
 .AppointmentModal_timeChipDisabled__ewUJJ {
-  opacity: 0.4;
   cursor: not-allowed;
-  background: var(--gray-100);
-  color: var(--gray-400);
-  text-decoration: line-through;
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+  opacity: 1;
 }
 
 .AppointmentModal_submitError__eLG9F {
@@ -776,7 +775,7 @@
   }
 
   .AppointmentModal_timeGrid__Lum9X {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -835,6 +834,7 @@
 
 /* Navbar */
 .Navbar_navbar__fk_p7 {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -891,8 +891,7 @@
 .Navbar_logoImage__yr2dQ {
   height: 48px;
   width: auto;
-  -o-object-fit: contain;
-     object-fit: contain;
+  object-fit: contain;
 }
 
 /* Desktop Nav */
@@ -995,7 +994,7 @@
 
 /* Links Column */
 .Navbar_dropdownLinks__CvJuH {
-  flex: 1;
+  flex: 1 1;
   display: flex;
   flex-direction: column;
   min-width: 200px;
@@ -1100,8 +1099,7 @@
 .Navbar_dropdownImg__O9P5N {
   width: 100%;
   height: 100%;
-  -o-object-fit: cover;
-     object-fit: cover;
+  object-fit: cover;
   border-radius: var(--radius-xl);
 }
 
@@ -1310,7 +1308,7 @@
 }
 
 .Navbar_mobileCta__4yeJ_ {
-  flex: 1;
+  flex: 1 1;
   justify-content: center;
   padding: var(--space-2) var(--space-2);
   font-size: 12px;
@@ -1391,6 +1389,7 @@
 .Footer_footerContent__nZq4z {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  grid-gap: var(--space-10);
   gap: var(--space-10);
   padding: var(--space-20) 0 var(--space-12);
 }
@@ -1431,8 +1430,7 @@
 .Footer_footerLogoImage__FicoW {
   height: 42px;
   width: auto;
-  -o-object-fit: contain;
-     object-fit: contain;
+  object-fit: contain;
 }
 
 .Footer_footerAbout__6fEFt {
@@ -2054,7 +2052,7 @@
   color: var(--primary);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 /* Heading */
@@ -2064,15 +2062,15 @@
   color: var(--white);
   line-height: 1.1;
   letter-spacing: -0.03em;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 /* Description */
 .AboutHero_heroDescription__4NrfC {
   font-size: var(--font-size-sm);
   color: rgba(255, 255, 255, 0.9);
-  line-height: 1.7;
-  margin-bottom: var(--space-4);
+  line-height: 1.6;
+  margin-bottom: var(--space-3);
   max-width: 700px;
 }
 
@@ -3061,57 +3059,61 @@
   .about_infraGrid__3isST { grid-template-columns: 1fr; }
   .about_section__iIVqi { padding: var(--space-16) 0; }
 
-  /* Keep half-image / half-content row layout on mobile */
+  /* Change to column layout on mobile to make images bigger */
   .about_doctorCard__x6d0L {
-    flex-direction: row;
-    min-height: 220px;
+    flex-direction: column;
+    min-height: auto;
   }
   .about_doctorImageWrapper___8VCV {
-    width: 38%;
-    min-width: 110px;
-    height: auto;
-    min-height: 220px;
-    padding: var(--space-3) var(--space-2) 0;
+    width: 100%;
+    min-width: 100%;
+    height: 320px;
+    min-height: 320px;
+    padding: var(--space-4) var(--space-4) 0;
     flex-shrink: 0;
   }
   .about_doctorImage__9w4Vy {
     max-height: 100%;
-    width: 100%;
+    width: auto;
     object-fit: contain;
     object-position: bottom;
   }
   .about_doctorContent__xE9Bx {
-    padding: var(--space-3) var(--space-3);
+    padding: var(--space-6) var(--space-5);
     flex: 1 1;
-    overflow: hidden;
+    text-align: center;
+    align-items: center;
   }
   .about_doctorName__JSEWg {
-    font-size: 13px;
-    margin-bottom: 2px;
+    font-size: var(--font-size-lg);
+    margin-bottom: 4px;
   }
   .about_doctorSpecialty__484CB {
-    font-size: 10px;
-    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
   }
   .about_doctorMeta__2BhMg {
-    gap: var(--space-1);
-    margin-bottom: var(--space-2);
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    justify-content: center;
   }
   .about_experienceBadge__RgYlc {
-    font-size: 9px;
-    padding: 2px 5px;
+    font-size: 11px;
+    padding: 3px 8px;
   }
   .about_qualificationBadge__SQiCt {
-    font-size: 9px;
-    padding: 2px 5px;
+    font-size: 11px;
+    padding: 3px 8px;
   }
   .about_expertiseList__c5QBP {
-    gap: 3px;
+    gap: 5px;
+    text-align: left;
+    width: 100%;
   }
   .about_expertiseItem__Eo9Ba {
-    font-size: 10px;
-    gap: 4px;
-    line-height: 1.3;
+    font-size: 11px;
+    gap: 6px;
+    line-height: 1.4;
   }
   .about_expertiseItem__Eo9Ba svg {
     width: 11px;

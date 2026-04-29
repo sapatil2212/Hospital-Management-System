@@ -103,39 +103,39 @@ export default function HospitalAdminChangePasswordPage() {
         .cp-card { background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.10); padding: 40px; width: 100%; max-width: 460px; }
         .cp-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; text-decoration: none; }
         .cp-logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0E898F, #07595D); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(59,130,246,0.35); }
-        .cp-logo-text { font-size: 20px; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; }
+        .cp-logo-text { font-size:19px; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; }
         .cp-logo-accent { color: #0E898F; }
-        .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(59,130,246,0.1); color: #0A6B70; border: 1px solid rgba(59,130,246,0.25); margin-bottom: 12px; }
-        .cp-heading { font-size: 26px; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; margin-bottom: 6px; }
-        .cp-sub { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
-        .cp-err { display: flex; align-items: flex-start; gap: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px; color: #dc2626; line-height: 1.5; }
-        .cp-suc { display: flex; align-items: center; gap: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px; color: #059669; font-weight: 600; }
+        .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px; font-size:10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(59,130,246,0.1); color: #0A6B70; border: 1px solid rgba(59,130,246,0.25); margin-bottom: 12px; }
+        .cp-heading { font-size:24px; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; margin-bottom: 6px; }
+        .cp-sub { font-size:13px; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
+        .cp-err { display: flex; align-items: flex-start; gap: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size:12px; color: #dc2626; line-height: 1.5; }
+        .cp-suc { display: flex; align-items: center; gap: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; font-size:12px; color: #059669; font-weight: 600; }
         .cp-field { margin-bottom: 16px; }
-        .cp-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; display: block; margin-bottom: 7px; }
+        .cp-label { font-size:10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; display: block; margin-bottom: 7px; }
         .cp-wrap { position: relative; }
-        .cp-input { width: 100%; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 11px; padding: 13px 42px 13px 14px; font-size: 14px; color: #111827; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+        .cp-input { width: 100%; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 11px; padding: 13px 42px 13px 14px; font-size:13px; color: #111827; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
         .cp-input::placeholder { color: #9ca3af; }
         .cp-input:focus { border-color: #0E898F; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
         .cp-input.err { border-color: #ef4444; }
         .cp-eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9ca3af; display: flex; align-items: center; padding: 0; transition: color 0.2s; }
         .cp-eye:hover { color: #374151; }
-        .cp-ferr { font-size: 12px; color: #dc2626; margin-top: 5px; display: block; }
+        .cp-ferr { font-size:11px; color: #dc2626; margin-top: 5px; display: block; }
         .cp-strength-bar { display: flex; gap: 4px; margin-top: 8px; }
         .cp-strength-seg { flex: 1; height: 4px; border-radius: 2px; background: #e5e7eb; transition: background 0.3s; }
-        .cp-strength-label { font-size: 11px; font-weight: 600; margin-top: 4px; }
+        .cp-strength-label { font-size:10px; font-weight: 600; margin-top: 4px; }
         .cp-requirements { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
-        .cp-req { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; }
+        .cp-req { display: flex; align-items: center; gap: 6px; font-size:11px; color: #94a3b8; }
         .cp-req.met { color: #10b981; }
         .cp-req-dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; flex-shrink: 0; }
         .cp-req.met .cp-req-dot { background: #10b981; }
-        .cp-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0E898F, #07595D); color: #fff; box-shadow: 0 4px 18px rgba(59,130,246,0.3); margin-top: 8px; }
+        .cp-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size:14px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.15s, box-shadow 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0E898F, #07595D); color: #fff; box-shadow: 0 4px 18px rgba(59,130,246,0.3); margin-top: 8px; }
         .cp-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(59,130,246,0.42); }
         .cp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
         .cp-btn-shine { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%); background-size: 200% 100%; animation: cp-shine 3s infinite; }
         @keyframes cp-shine { 0%{background-position:200% center} 100%{background-position:-200% center} }
         .cp-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: cp-spin 0.7s linear infinite; }
         @keyframes cp-spin { to{ transform: rotate(360deg); } }
-        .cp-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280; }
+        .cp-footer { text-align: center; margin-top: 20px; font-size:12px; color: #6b7280; }
         .cp-footer a { color: #0E898F; text-decoration: none; font-weight: 600; }
         .cp-footer a:hover { opacity: 0.8; }
         .cp-divider { height: 1px; background: #f1f5f9; margin: 20px 0; }
@@ -205,7 +205,7 @@ export default function HospitalAdminChangePasswordPage() {
               <input type={showConfirm ? "text" : "password"} className={`cp-input${fieldErrors.confirmPassword ? " err" : ""}`} placeholder="Repeat your new password" value={confirmPassword} onChange={e => { setConfirmPassword(e.target.value); setFieldErrors(f => ({...f, confirmPassword: ""})); }} autoComplete="new-password" />
               <button type="button" className="cp-eye" onClick={() => setShowConfirm(!showConfirm)}><EyeIcon show={showConfirm} /></button>
             </div>
-            {confirmPassword && newPassword && confirmPassword === newPassword && <span style={{ fontSize: 12, color: "#10b981", marginTop: 4, display: "block", fontWeight: 600 }}>✓ Passwords match</span>}
+            {confirmPassword && newPassword && confirmPassword === newPassword && <span style={{ fontSize:11, color: "#10b981", marginTop: 4, display: "block", fontWeight: 600 }}>✓ Passwords match</span>}
             {fieldErrors.confirmPassword && <span className="cp-ferr">{fieldErrors.confirmPassword}</span>}
           </div>
 

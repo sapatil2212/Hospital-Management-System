@@ -656,6 +656,9 @@ export default function AIChatbot() {
     dept: "4/6 Dept", doctor: "5/6 Doctor", date: "6/6 Date", time: "6/6 Time", confirm: "Confirm",
   };
 
+  const isDashboard = pathname?.match(/^\/(administrative|clinical|diagnostic|doctor|finance|hospitaladmin|nursingadmin|parentdept|receptionist|staff|subdept|superadmin|support|login|signup)/);
+  if (isDashboard) return null;
+
   return (
     <div className={styles.container}>
 

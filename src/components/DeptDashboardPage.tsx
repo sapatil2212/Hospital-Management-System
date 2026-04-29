@@ -34,7 +34,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   RESCHEDULED: { label: "Rescheduled", cls: "dd-badge-gray"  },
 };
 
-const PIE_COLORS = ["#2563eb","#059669","#ea580c","#8b5cf6","#f59e0b","#10b981"];
+const PIE_COLORS = ["#2563eb","#059669","#0E898F","#8b5cf6","#6366f1","#10b981"];
 
 const fmt = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 const fmtTime = (t?: string) => t ? t.slice(0, 5) : "—";
@@ -160,14 +160,23 @@ function OverviewTab({ deptProfile, cfg, onNavTo }: { deptProfile: any; cfg: Dep
       </div>
 
       {/* Stat cards */}
-      <div className="dd-stats" style={{ marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
         {STAT_CARDS.map((s, i) => (
-          <div key={i} className="dd-sc">
-            <div className="dd-sc-ic" style={{ background: cfg.accentLight }}><s.Icon size={20} color={cfg.accent} /></div>
-            <div style={{ flex: 1 }}>
-              <div className="dd-sc-lbl">{s.label}</div>
-              <div className="dd-sc-val">{s.value}</div>
-              <div className="dd-sc-sub">{s.sub}</div>
+          <div
+            key={i}
+            style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 12, transition: "box-shadow .2s, transform .15s", cursor: "default" }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 16px ${cfg.accent}20`; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 11, background: `linear-gradient(135deg,${cfg.accent},${cfg.accent2})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <s.Icon size={20} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{s.value}</div>
+              </div>
+              <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>{s.label}</div>
+              {s.sub && <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>{s.sub}</div>}
             </div>
           </div>
         ))}
@@ -633,11 +642,21 @@ function AppointmentsTab({ deptProfile, cfg }: { deptProfile: any; cfg: DeptDash
         </div>
       </div>
 
-      <div className="dd-stats" style={{ marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 18 }}>
         {STAT_CARDS.map((s, i) => (
-          <div key={i} className="dd-sc">
-            <div className="dd-sc-ic" style={{ background: s.bg }}><s.Icon size={16} color={s.color} /></div>
-            <div><div className="dd-sc-lbl">{s.label}</div><div className="dd-sc-val">{loading ? "—" : s.value}</div></div>
+          <div
+            key={i}
+            style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 12, transition: "box-shadow .2s, transform .15s", cursor: "default" }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 16px ${s.color}22`; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 11, background: `linear-gradient(135deg,${s.color},${s.color}cc)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <s.Icon size={20} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1, marginBottom: 2 }}>{loading ? "—" : s.value}</div>
+              <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -844,15 +863,15 @@ function QueueTab({ deptProfile, cfg }: { deptProfile: any; cfg: DeptDashCfg }) 
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   const STAT_CARDS = [
-    { label: "Waiting",   value: waiting,   bg: "#fffbeb", color: "#b45309",  icon: <ClipboardList size={16} color="#b45309" /> },
-    { label: "Confirmed", value: confirmed, bg: cfg.accentLight, color: cfg.accent2, icon: <CheckCircle2 size={16} color={cfg.accent2} /> },
-    { label: "Completed", value: completed, bg: "#f0fdf4", color: "#16a34a",  icon: <CheckCircle2 size={16} color="#16a34a" /> },
-    { label: "No-Show",   value: noShow,    bg: "#fef2f2", color: "#ef4444",  icon: <X size={16} color="#ef4444" /> },
+    { label: "Waiting",   value: waiting,   gradient: `linear-gradient(135deg,${cfg.accent},${cfg.accent2})`,      Icon: ClipboardList, color: cfg.accent },
+    { label: "Confirmed", value: confirmed, gradient: `linear-gradient(135deg,${cfg.accent},${cfg.accent2})`,      Icon: CheckCircle2,  color: cfg.accent },
+    { label: "Completed", value: completed, gradient: "linear-gradient(135deg,#10b981,#059669)",                   Icon: CheckCircle2,  color: "#059669"  },
+    { label: "No-Show",   value: noShow,    gradient: "linear-gradient(135deg,#ef4444,#dc2626)",                   Icon: X,             color: "#dc2626"  },
   ];
 
   return (
     <>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
           <div className="dd-section-title" style={{ marginBottom: 4 }}>
             <div className="dd-section-dot" />Today&apos;s Patient Queue
@@ -864,11 +883,21 @@ function QueueTab({ deptProfile, cfg }: { deptProfile: any; cfg: DeptDashCfg }) 
         </button>
       </div>
 
-      <div className="dd-stats" style={{ marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 18 }}>
         {STAT_CARDS.map((s, i) => (
-          <div key={i} className="dd-sc">
-            <div className="dd-sc-ic" style={{ background: s.bg }}>{s.icon}</div>
-            <div><div className="dd-sc-lbl">{s.label}</div><div className="dd-sc-val" style={{ color: s.color }}>{loading ? "—" : s.value}</div></div>
+          <div
+            key={i}
+            style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 12, transition: "box-shadow .2s, transform .15s", cursor: "default" }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 16px ${s.color}22`; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 11, background: s.gradient, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <s.Icon size={20} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1, marginBottom: 2 }}>{loading ? "—" : s.value}</div>
+              <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -940,7 +969,7 @@ function QueueTab({ deptProfile, cfg }: { deptProfile: any; cfg: DeptDashCfg }) 
                               {updating[a.id]==="COMPLETED" ? <Loader2 size={10} style={{ animation: "dd-spin .7s linear infinite", verticalAlign: "middle" }} /> : "Complete"}
                             </button>
                             <button onClick={() => updateStatus(a.id,"NO_SHOW")} disabled={!!updating[a.id]}
-                              style={{ padding: "4px 10px", borderRadius: 6, background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                              style={{ padding: "4px 10px", borderRadius: 6, background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                               No-Show
                             </button>
                           </>
@@ -1076,7 +1105,7 @@ export function getDeptDashCSS(cfg: DeptDashCfg): string {
     .dd-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700}
     .dd-badge-green{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
     .dd-badge-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-    .dd-badge-amber{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+    .dd-badge-amber{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
     .dd-badge-red{background:#fff5f5;color:#dc2626;border:1px solid #fecaca}
     .dd-badge-teal{background:${cfg.accentLight};color:${cfg.accent2};border:1px solid ${cfg.accentBorder}}
     .dd-badge-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}

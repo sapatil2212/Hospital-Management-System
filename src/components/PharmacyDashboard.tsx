@@ -8,12 +8,15 @@ import {
   Layers, Activity, Plus, Trash2, Edit2, Boxes, Truck, Bell,
   ClipboardList, Calendar, User, Phone, Stethoscope, Receipt,
   ArrowRight, Ban, PlayCircle, Archive, ShieldCheck, CreditCard,
-  Banknote, Wallet, Hash, BadgeAlert, CircleDot, Zap, Info, History, Send,
-  FileSpreadsheet, FileType, Table
+  Banknote, Wallet, Hash, BadgeAlert, CircleDot, Zap, Info, History, Send, Smartphone, UserCheck,
+  FileSpreadsheet, FileType, Table, TrendingDown
 } from "lucide-react";
-import PharmacyInventoryPanel from "./PharmacyInventoryPanel";
+import AdminInventoryPanel from "./AdminInventoryPanel";
+import PharmacyCounterSellPanel from "./PharmacyCounterSellPanel";
+import PharmacyFinancePanel from "./PharmacyFinancePanel";
+import CounterSaleModal from "./CounterSaleModal";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface QueueItem {
   id: string;
@@ -42,7 +45,12 @@ interface Stats {
   expiringCount: number;
   totalItems: number;
   todayRevenue: number;
+  yesterdayRevenue: number;
   totalRevenue: number;
+  weekRevenue: number;
+  prevWeekRevenue: number;
+  revenueGrowth: number | null;
+  stockHealthPct: number;
   chartData: { date: string; label: string; count: number; revenue: number }[];
   topMedicines: { name: string; category: string; qty: number; revenue: number }[];
 }
@@ -97,7 +105,7 @@ interface PharmacyBill {
   createdAt: string;
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ACCENT = "#0E898F";
 const LIGHT_BG = "#E6F4F4";
@@ -111,11 +119,11 @@ const api = async (url: string, method = "GET", body?: any) => {
 };
 
 const calcAge = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : null;
-const fmtCurrency = (n: number) => `₹${(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 0 })}`;
+const fmtCurrency = (n: number) => "\u20B9" + (n || 0).toLocaleString("en-IN", { minimumFractionDigits: 0 });
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 const fmtTime = (d: string) => new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
-// ─── Export Helpers ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Export Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const exportToCSV = (data: any[], filename: string) => {
   if (data.length === 0) return;
   const headers = Object.keys(data[0]);
@@ -199,21 +207,22 @@ const PRIORITY_MAP: Record<string, { label: string; color: string; bg: string }>
   URGENT: { label: "Urgent", color: "#ea580c", bg: "#fff7ed" },
 };
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function PharmacyDashboard({ profile, user, activeTab }: { profile: any; user: any; activeTab?: string }) {
-  const [tab, setTab] = useState<"overview" | "queue" | "inventory" | "billing" | "reports">("overview");
-  // Internal sub-tab for inventory section
-  const [inventoryTab, setInventoryTab] = useState<"medicines" | "purchases" | "suppliers" | "deptStock">("deptStock");
+  const [tab, setTab] = useState<"overview" | "queue" | "inventory" | "billing" | "reports" | "counter-sell" | "revenue">("overview");
 
   // Sync external activeTab into internal state
   React.useEffect(() => {
-    if (activeTab && ["overview","queue","inventory","billing","reports"].includes(activeTab)) {
+    if (activeTab && ["overview","queue","inventory","billing","reports","counter-sell","revenue"].includes(activeTab)) {
       setTab(activeTab as any);
     }
   }, [activeTab]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [refreshCountdown, setRefreshCountdown] = useState(30);
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
 
   // Queue
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -238,12 +247,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [rxActionNotes, setRxActionNotes] = useState("");
   const [rxActioning, setRxActioning] = useState(false);
   const [rxDeleteRemark, setRxDeleteRemark] = useState("");
-  // Bill view for queue items
-  const [rxBillModal, setRxBillModal] = useState<{ rx: any; bill: any | null } | null>(null);
-  const [rxBillLoading, setRxBillLoading] = useState<string | null>(null);
   // Manual Rx creation
   const [rxCreateModal, setRxCreateModal] = useState(false);
-  const [rxCreateForm, setRxCreateForm] = useState({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none" as "collect"|"send_to_billing"|"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", billingSubdeptId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
+  const [rxCreateForm, setRxCreateForm] = useState({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none" as "collect"|"send_to_billing"|"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
   const [rxCreateSaving, setRxCreateSaving] = useState(false);
   const [rxCreateError, setRxCreateError] = useState("");
   const [rxCreatePatientSearch, setRxCreatePatientSearch] = useState("");
@@ -256,7 +262,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [dispenseModalItem, setDispenseModalItem] = useState<QueueItem | null>(null);
   // Counter Sale modal
   const [counterSaleModal, setCounterSaleModal] = useState(false);
-  const [csItems, setCsItems] = useState<{ inventoryItemId: string; name: string; quantity: string; unitPrice: string; availableStock: number }[]>([{ inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", availableStock: 0 }]);
+  const [csItems, setCsItems] = useState<{ inventoryItemId: string; name: string; quantity: string; unitPrice: string; gst: string; availableStock: number }[]>([{ inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", gst: "0", availableStock: 0 }]);
   const [csPatientId, setCsPatientId] = useState("");
   const [csPatientSearch, setCsPatientSearch] = useState("");
   const [csPatients, setCsPatients] = useState<any[]>([]);
@@ -265,9 +271,11 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [csPaymentMethod, setCsPaymentMethod] = useState("CASH");
   const [csDiscount, setCsDiscount] = useState("0");
   const [csRemarks, setCsRemarks] = useState("");
+  const [csTaxPct, setCsTaxPct] = useState("0");
   const [csTransactionId, setCsTransactionId] = useState("");
   const [csSaving, setCsSaving] = useState(false);
   const [csError, setCsError] = useState("");
+  const [csSuccessMsg, setCsSuccessMsg] = useState("");
   const [csManualPatient, setCsManualPatient] = useState(false);
   const [csManualForm, setCsManualForm] = useState({ name: "", phone: "", gender: "MALE" });
   // Counter Sale History
@@ -384,16 +392,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [billsLoading, setBillsLoading] = useState(false);
   const [billSearch, setBillSearch] = useState("");
   const [billFilter, setBillFilter] = useState<"all" | "PENDING" | "PAID" | "PARTIALLY_PAID">("all");
-  const [billSort, setBillSort] = useState<"newest"|"oldest"|"name_asc"|"name_desc"|"total_high"|"total_low"|"status_paid"|"status_pending">("newest");
-  const [billSortOpen, setBillSortOpen] = useState(false);
-  const billSortRef = useRef<HTMLDivElement>(null);
   const [paymentModal, setPaymentModal] = useState<PharmacyBill | null>(null);
   const [paymentForm, setPaymentForm] = useState({ amount: "", method: "CASH", transactionId: "", notes: "" });
   const [payingBill, setPayingBill] = useState(false);
-  const [billViewModal, setBillViewModal] = useState<any>(null);
-  const [billInvoiceModal, setBillInvoiceModal] = useState<any>(null);
-  const billPrintRef = useRef<HTMLDivElement>(null);
-  const [hospitalInfo, setHospitalInfo] = useState<{name:string;address?:string;phone?:string;email?:string;logo?:string;gstNumber?:string}>({ name: "Pharmacy" });
 
   // Dispense Form & Transfer
   const [subDepts, setSubDepts] = useState<any[]>([]);
@@ -406,7 +407,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     });
   }, []);
 
-  // ── Load Stats ──
+  // â”€â”€ Load Stats â”€â”€
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
     const res = await api("/api/pharmacy/stats");
@@ -414,7 +415,23 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setStatsLoading(false);
   }, []);
 
-  // ── Load Queue ──
+  // Auto-refresh every 30 seconds on overview tab
+  useEffect(() => {
+    if (tab !== "overview") return;
+    const tick = setInterval(() => {
+      setRefreshCountdown(prev => {
+        if (prev <= 1) {
+          loadStats();
+          setLastRefresh(new Date());
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [tab, loadStats]);
+
+  // â”€â”€ Load Queue â”€â”€
   const loadQueue = useCallback(async () => {
     setQueueLoading(true);
     const statusParam = queueFilter === "all" ? "all" : queueFilter === "dispensed" ? "COMPLETED" : queueFilter === "HOLD" ? "HOLD" : queueFilter === "SKIPPED" ? "SKIPPED" : "";
@@ -426,7 +443,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setQueueLoading(false);
   }, [queueFilter, queueSearch, queueDate]);
 
-  // ── Skip / Hold / Resume Rx ──
+  // â”€â”€ Skip / Hold / Resume Rx â”€â”€
   const handleRxAction = async () => {
     if (!rxActionTarget) return;
     setRxActioning(true);
@@ -444,7 +461,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Create Manual Rx ──
+  // â”€â”€ Create Manual Rx â”€â”€
   const handleCreateRx = async () => {
     setRxCreateError("");
     let patientId = rxCreateForm.patientId;
@@ -482,13 +499,12 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       discount: rxCreateForm.discount,
       billingNote: rxCreateForm.billingNote,
       transactionId: rxCreateForm.transactionId,
-      billingSubdeptId: rxCreateForm.billingSubdeptId || undefined,
       medications: validMeds.map(m => ({ name: m.name, dosage: m.dosage, frequency: m.frequency, duration: m.duration, quantity: parseInt(m.quantity) || 1, price: parseFloat(m.price) || 0, instructions: m.instructions })),
     });
     setRxCreateSaving(false);
     if (res.success) {
       setRxCreateModal(false);
-      setRxCreateForm({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", billingSubdeptId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
+      setRxCreateForm({ patientId:"", patientName:"", doctorId:"", diagnosis:"", notes:"", paymentAction:"none", paymentMethod:"CASH", discount:"0", billingNote:"", transactionId:"", medications:[{ name:"", dosage:"", frequency:"", duration:"", quantity:"1", price:"0", instructions:"" }] });
       setRxCreatePatients([]);
       setRxCreatePatientSearch("");
       setRxCreateManualPatient(false);
@@ -500,12 +516,12 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Patient search for Walk-in Rx (useEffect-based) ──
+  // â”€â”€ Patient search for Walk-in Rx (useEffect-based) â”€â”€
   // Loads recent patients on modal open, then searches as user types
   useEffect(() => {
     if (!rxCreateModal || rxCreateManualPatient || rxCreateForm.patientId) return;
     const query = rxCreatePatientSearch.trim();
-    // If search is empty → load recent patients; if < 2 chars → clear
+    // If search is empty â†’ load recent patients; if < 2 chars â†’ clear
     if (!query) {
       // Load recent patients when modal first opens
       setRxPatientSearching(true);
@@ -546,7 +562,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     return () => { clearTimeout(timer); controller.abort(); };
   }, [rxCreatePatientSearch, rxCreateModal, rxCreateManualPatient, rxCreateForm.patientId]);
 
-  // ── Counter Sale: patient search (useEffect-based) ──
+  // â”€â”€ Counter Sale: patient search (useEffect-based) â”€â”€
   useEffect(() => {
     if (!counterSaleModal || csManualPatient || csPatientId) return;
     const query = csPatientSearch.trim();
@@ -577,7 +593,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     return () => { clearTimeout(timer); controller.abort(); };
   }, [csPatientSearch, counterSaleModal, csManualPatient, csPatientId]);
 
-  // ── Counter Sale: submit ──
+  // â”€â”€ Counter Sale: submit â”€â”€
   const handleCounterSale = async () => {
     setCsError("");
     let patientId = csPatientId;
@@ -597,7 +613,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     const validItems = csItems.filter(i => i.inventoryItemId && i.name.trim());
     if (validItems.length === 0) { setCsError("Add at least one item from inventory"); return; }
 
-    // Validate stock availability — account for combined quantities of same item across rows
+    // Validate stock availability â€” account for combined quantities of same item across rows
     const combinedQty: Record<string, number> = {};
     validItems.forEach(i => {
       combinedQty[i.inventoryItemId] = (combinedQty[i.inventoryItemId] || 0) + (parseInt(i.quantity) || 0);
@@ -624,27 +640,38 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       paymentMethod: csPaymentMethod,
       transactionId: csTransactionId || null,
       discount: parseFloat(csDiscount) || 0,
+      taxPercent: parseFloat(csTaxPct) || 0,
       remarks: csRemarks || null,
       notifyAdmin: true,
       notifyReception: true,
     });
     setCsSaving(false);
     if (res.success) {
-      setCounterSaleModal(false);
-      setCsItems([{ inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", availableStock: 0 }]);
-      setCsPatientId(""); setCsPatientSearch(""); setCsPatients([]); setCsSearchNoResults(false);
-      setCsPaymentMethod("CASH"); setCsDiscount("0"); setCsRemarks(""); setCsTransactionId("");
-      setCsManualPatient(false); setCsManualForm({ name: "", phone: "", gender: "MALE" });
-      loadStats();
-      loadBills();
-      loadInventory();
-      setSuccessModal({ open: true, title: "Counter Sale Completed!", message: `Bill: ${res.data?.billNo || ""} — ₹${res.data?.total || 0}`, details: ["Notification sent to Hospital Admin", "Notification sent to Reception Billing"] });
+      setCsSuccessMsg("Sale complete - " + (res.data?.billNo || "") + " - Rs." + (res.data?.total || 0));
+      loadStats(); loadBills(); loadInventory();
+      setTimeout(() => {
+        setCounterSaleModal(false); setCsSuccessMsg("");
+        setCsItems([{ inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", gst: "0", availableStock: 0 }]);
+        setCsPatientId(""); setCsPatientSearch(""); setCsPatients([]); setCsSearchNoResults(false);
+        setCsPaymentMethod("CASH"); setCsDiscount("0"); setCsTaxPct("0"); setCsRemarks(""); setCsTransactionId("");
+        setCsManualPatient(false); setCsManualForm({ name: "", phone: "", gender: "MALE" });
+        setCsError(""); setCsItemSearch({}); setCsItemSearchFocused({});
+      }, 1800);
     } else {
       setCsError(res.message || "Failed to process counter sale");
     }
   };
 
-  // ── Load Counter Sale History ──
+  // â”€â”€ Reset CS Modal â”€â”€
+  const resetCsModal = () => {
+    setCsItems([{ inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", gst: "0", availableStock: 0 }]);
+    setCsPatientId(""); setCsPatientSearch(""); setCsPatients([]); setCsSearchNoResults(false);
+    setCsPaymentMethod("CASH"); setCsDiscount("0"); setCsTaxPct("0"); setCsRemarks(""); setCsTransactionId("");
+    setCsManualPatient(false); setCsManualForm({ name: "", phone: "", gender: "MALE" });
+    setCsError(""); setCsItemSearch({}); setCsItemSearchFocused({});
+  };
+
+  // â”€â”€ Load Counter Sale History â”€â”€
   const loadCsHistory = useCallback(async () => {
     setCsHistoryLoading(true);
     const res = await api("/api/pharmacy/counter-sale/history?limit=50");
@@ -652,7 +679,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setCsHistoryLoading(false);
   }, []);
 
-  // ── Create Purchase Request from Counter Sale ──
+  // â”€â”€ Create Purchase Request from Counter Sale â”€â”€
   const handleCreatePurchaseRequest = async (itemName: string, quantity: number, supplierId?: string) => {
     const res = await api("/api/subdept/inventory/purchase-request", "POST", {
       itemName,
@@ -670,16 +697,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Fetch Bill for a Queue Item ──
-  const fetchRxBill = async (item: any) => {
-    setRxBillLoading(item.id);
-    const res = await api(`/api/billing?prescriptionId=${item.id}&limit=1`);
-    setRxBillLoading(null);
-    const bills = res.success ? (res.data?.bills || res.data?.data || []) : [];
-    setRxBillModal({ rx: item, bill: bills[0] || null });
-  };
-
-  // ── Delete Rx from Queue ──
+  // â”€â”€ Delete Rx from Queue â”€â”€
   const handleDeleteRx = async () => {
     if (!rxDeleteTarget) return;
     if (!rxDeleteRemark.trim()) {
@@ -697,7 +715,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Search Substitute Inventory ──
+  // â”€â”€ Search Substitute Inventory â”€â”€
   const openSubstitute = useCallback(async (medName: string, rxId: string, medIdx: number) => {
     setSubstituteModal({ itemId: "", name: medName, rxId, medIdx });
     setSubstituteLoading(true);
@@ -708,7 +726,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setSubstituteLoading(false);
   }, []);
 
-  // ── Load Department Stock (from Central Store transfers) ──
+  // â”€â”€ Load Department Stock (from Central Store transfers) â”€â”€
   const loadDeptStock = useCallback(async () => {
     setDeptStockLoading(true);
     const res = await api("/api/dept-inventory");
@@ -716,7 +734,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setDeptStockLoading(false);
   }, []);
 
-  // ── Load Inventory ──
+  // â”€â”€ Load Inventory â”€â”€
   const loadInventory = useCallback(async () => {
     setInvLoading(true);
     const res = await api(`/api/subdept/inventory?search=${encodeURIComponent(invSearch)}&limit=200`);
@@ -727,13 +745,13 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setInvLoading(false);
   }, [invSearch]);
 
-  // ── Load Suppliers ──
+  // â”€â”€ Load Suppliers â”€â”€
   const loadSuppliers = useCallback(async () => {
     const res = await api("/api/subdept/inventory/supplier");
     if (res.success) setSuppliers(res.data || []);
   }, []);
 
-  // ── Inventory CRUD ──
+  // â”€â”€ Inventory CRUD â”€â”€
   const openInvModal = (item?: InventoryItem) => {
     if (item) {
       setInvEditing(item);
@@ -823,7 +841,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Purchase CRUD ──
+  // â”€â”€ Purchase CRUD â”€â”€
   const openPurchaseModal = () => {
     const today = new Date().toISOString().split('T')[0];
     setPurchaseForm({
@@ -908,7 +926,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Supplier CRUD ──
+  // â”€â”€ Supplier CRUD â”€â”€
   const openSupplierModal = (supplier?: any) => {
     if (supplier) {
       setSupplierEditing(supplier);
@@ -951,7 +969,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Load Purchases ──
+  // â”€â”€ Load Purchases â”€â”€
   const loadPurchases = useCallback(async () => {
     setPurchasesLoading(true);
     const [pRes, sRes] = await Promise.all([
@@ -963,7 +981,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setPurchasesLoading(false);
   }, []);
 
-  // ── Load Appointments ──
+  // â”€â”€ Load Appointments â”€â”€
   const loadAppointments = useCallback(async () => {
     setApptLoading(true);
     const params = new URLSearchParams({ limit: "50", page: String(apptPage), sortBy: "appointmentDate", sortOrder: "desc" });
@@ -978,20 +996,20 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setApptLoading(false);
   }, [apptSearch, apptStatusFilter, apptDateFilter, apptPage]);
 
-  // ── Load Doctors (for booking form) ──
+  // â”€â”€ Load Doctors (for booking form) â”€â”€
   const loadApptDoctors = useCallback(async () => {
     const res = await api("/api/config/doctors?simple=true");
     if (res.success) setApptDoctors(Array.isArray(res.data) ? res.data : res.data?.data || []);
   }, []);
 
-  // ── Search Patients (for booking form) ──
+  // â”€â”€ Search Patients (for booking form) â”€â”€
   const searchApptPatients = useCallback(async (q: string) => {
     if (!q || q.length < 2) { setApptPatients([]); return; }
     const res = await api(`/api/patients?q=${encodeURIComponent(q)}`);
     if (res.success) setApptPatients(Array.isArray(res.data) ? res.data : res.data?.data || []);
   }, []);
 
-  // ── Load Time Slots ──
+  // â”€â”€ Load Time Slots â”€â”€
   const loadApptSlots = useCallback(async (doctorId: string, date: string) => {
     if (!doctorId || !date) return;
     setApptSlotsLoading(true);
@@ -1000,7 +1018,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setApptSlotsLoading(false);
   }, []);
 
-  // ── Book Appointment ──
+  // â”€â”€ Book Appointment â”€â”€
   const handleBookAppointment = async () => {
     setApptBookError("");
     if (!apptBookForm.patientId) { setApptBookError("Please select a patient"); return; }
@@ -1030,7 +1048,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Update Appointment ──
+  // â”€â”€ Update Appointment â”€â”€
   const handleUpdateAppointment = async () => {
     if (!apptEditModal) return;
     setApptEditSaving(true);
@@ -1048,7 +1066,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Cancel Appointment ──
+  // â”€â”€ Cancel Appointment â”€â”€
   const handleCancelAppointment = async () => {
     if (!apptCancelTarget) return;
     setApptCancelling(true);
@@ -1060,27 +1078,25 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // ── Load Bills ──
+  // â”€â”€ Load Bills â”€â”€
   const loadBills = useCallback(async () => {
     setBillsLoading(true);
-    const res = await api("/api/billing?limit=200&pharmacyOnly=true");
+    const res = await api("/api/billing?limit=100");
     if (res.success) {
-      const allBills = Array.isArray(res.data?.bills) ? res.data.bills
-        : Array.isArray(res.data?.data) ? res.data.data
-        : Array.isArray(res.data) ? res.data : [];
+      const allBills = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+      // Filter pharmacy-related bills (those with PHARMACY bill items or linked to pharmacy prescriptions)
       setBills(allBills);
     }
     setBillsLoading(false);
   }, []);
 
-  // ── Auto-load on tab change ──
+  // â”€â”€ Auto-load on tab change â”€â”€
   useEffect(() => { loadStats(); }, [loadStats]);
   useEffect(() => { if (tab === "queue") { loadQueue(); if (inventory.length === 0) loadInventory(); } }, [tab, loadQueue]);
-  useEffect(() => { if (tab === "inventory") { loadDeptStock(); loadInventory(); loadPurchases(); loadSuppliers(); } }, [tab, loadInventory, loadPurchases, loadSuppliers, loadDeptStock]);
   useEffect(() => { if (tab === "billing") loadBills(); }, [tab, loadBills]);
   useEffect(() => { if (tab === "reports" && inventory.length === 0) loadInventory(); }, [tab]);
 
-  // ── Real-time Prescription Notifications (SSE) ──
+  // â”€â”€ Real-time Prescription Notifications (SSE) â”€â”€
   useEffect(() => {
     const connectSSE = () => {
       const es = new EventSource("/api/pharmacy/notifications/stream", { withCredentials: true });
@@ -1117,7 +1133,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     };
   }, [loadQueue, loadStats, rxNotificationSound]);
 
-  // ── Sync csItems availableStock when inventory data refreshes ──
+  // â”€â”€ Sync csItems availableStock when inventory data refreshes â”€â”€
   useEffect(() => {
     if (!counterSaleModal || inventory.length === 0) return;
     setCsItems(prev => prev.map(item => {
@@ -1129,7 +1145,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }));
   }, [inventory, counterSaleModal]);
 
-  // ── Dispense Handler (partial dispense supported) ──
+  // â”€â”€ Dispense Handler â”€â”€
   const handleDispense = async (item: QueueItem) => {
     setDispensingId(item.id);
 
@@ -1140,34 +1156,35 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         price: parseFloat(m.price) || m.amount || 0
       })) || [];
 
-    // Separate dispensable vs unavailable items
-    const dispensableItems = formItems.filter((m: any) => {
-      if (!m.inventoryItemId) return false;
-      const inv = inventory.find((i: any) => i.id === m.inventoryItemId);
-      if (!inv) return false;
-      const available = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
-      return (m.quantity || 1) <= available;
-    });
+    // Validate all items have inventoryItemId and sufficient stock
+    const invalidItems = formItems.filter((m: any) => !m.inventoryItemId);
+    if (invalidItems.length > 0) {
+      setSuccessModal({ open: true, title: "Missing Inventory Items", message: `Please select inventory items for all medications. ${invalidItems.length} item(s) missing.`, details: [] });
+      setDispensingId(null);
+      return;
+    }
 
-    const unavailableItems = formItems.filter((m: any) => {
-      if (!m.inventoryItemId) return true;
+    // Check stock availability
+    const stockIssues = formItems.filter((m: any) => {
       const inv = inventory.find((i: any) => i.id === m.inventoryItemId);
       if (!inv) return true;
-      const available = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
-      return (m.quantity || 1) > available;
+      const availableStock = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
+      return m.quantity > availableStock;
     });
+    
+    if (stockIssues.length > 0) {
+      setSuccessModal({ open: true, title: "Insufficient Stock", message: `Insufficient stock for ${stockIssues.length} item(s). Please adjust quantities.`, details: [] });
+      setDispensingId(null);
+      return;
+    }
 
-    const unavailableNote = unavailableItems.length > 0
-      ? ` | Not dispensed (stock unavailable): ${unavailableItems.map((m: any) => m.name || "item").join(", ")}`
-      : "";
-
-    const totalCharge = dispensableItems.reduce((sum: number, m: any) => sum + ((parseFloat(m.price) || 0) * (parseInt(m.quantity) || 1)), 0);
+    const totalCharge = formItems.reduce((sum: number, m: any) => sum + ((parseFloat(m.price) || 0) * (parseInt(m.quantity) || 1)), 0);
 
     const res = await api("/api/pharmacy/queue", "PATCH", {
       prescriptionId: item.id,
       workflowId: item.workflowId,
-      notes: (dispenseNotes || "Dispensed from pharmacy") + unavailableNote,
-      dispensedItems: dispensableItems,
+      notes: dispenseNotes || "Dispensed from pharmacy",
+      dispensedItems: formItems,
       totalCharge,
     });
 
@@ -1194,36 +1211,10 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       loadQueue();
       loadStats();
       loadInventory();
-      if (unavailableItems.length > 0) {
-        setSuccessModal({
-          open: true,
-          title: unavailableItems.length === formItems.length ? "Items Not Available" : "Partially Dispensed",
-          message: unavailableItems.length === formItems.length
-            ? `All ${unavailableItems.length} item(s) are out of stock — marked as not dispensed yet.`
-            : `${dispensableItems.length} item(s) dispensed. ${unavailableItems.length} item(s) unavailable — marked as not dispensed yet.`,
-          details: unavailableItems.map((m: any) => `${m.name || "Unknown"}: not in stock`),
-        });
-      }
     }
   };
 
-  // ── Hospital Info ──
-  useEffect(() => {
-    api("/api/hospital/details").then(r => {
-      if (r.success && r.data) {
-        setHospitalInfo({ name: r.data.name || "Pharmacy", address: r.data.address, phone: r.data.phone, email: r.data.email, logo: r.data.logo, gstNumber: r.data.gstNumber });
-      }
-    }).catch(() => {});
-  }, []);
-
-  // Close sort dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => { if (billSortRef.current && !billSortRef.current.contains(e.target as Node)) setBillSortOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // ── Payment Handler ──
+  // â”€â”€ Payment Handler â”€â”€
   const handlePayment = async () => {
     if (!paymentModal || !paymentForm.amount) return;
     setPayingBill(true);
@@ -1235,112 +1226,14 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     });
     setPayingBill(false);
     if (res.success) {
-      const paidBill = { ...paymentModal, status: "PAID", paidAmount: parseFloat(paymentForm.amount), paymentMethod: paymentForm.method };
       setPaymentModal(null);
-      setBillInvoiceModal({ bill: paidBill, method: paymentForm.method, transactionId: paymentForm.transactionId });
       setPaymentForm({ amount: "", method: "CASH", transactionId: "", notes: "" });
       loadBills();
       loadStats();
     }
   };
 
-  // ── CSV Export ──
-  const handleExportCSV = () => {
-    const rows = [["Bill No","Patient","Patient ID","Items","Subtotal","Discount","Tax","Total","Paid","Status","Date"]];
-    filteredBills.forEach((b: any) => {
-      rows.push([
-        b.billNo, b.patient?.name||"", b.patient?.patientId||"",
-        String(b.billItems?.length||0),
-        String(b.subtotal||0), String(b.discount||0), String(b.tax||0),
-        String(b.total||0), String(b.paidAmount||0), b.status,
-        b.createdAt ? new Date(b.createdAt).toLocaleDateString("en-IN") : "",
-      ]);
-    });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `pharmacy-bills-${new Date().toISOString().slice(0,10)}.csv`; a.click();
-  };
-
-  // ── Print Invoice ──
-  const handlePrintInvoice = () => {
-    if (!billPrintRef.current) return;
-    const w = window.open("", "_blank", "width=800,height=900");
-    if (!w) return;
-    w.document.write(`<html><head><title>Invoice</title><style>
-      body{font-family:Arial,sans-serif;font-size:12px;color:#1e293b;margin:0;padding:20px}
-      table{width:100%;border-collapse:collapse;margin:12px 0}
-      th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#475569}
-      td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
-      .right{text-align:right} .center{text-align:center}
-    </style></head><body>${billPrintRef.current.innerHTML}</body></html>`);
-    w.document.close(); w.focus(); setTimeout(() => { w.print(); w.close(); }, 400);
-  };
-
-  // ── Download PDF ──
-  const handleDownloadInvoicePDF = async (bill: any) => {
-    try {
-      const { jsPDF } = await import("jspdf");
-      const autoTable = (await import("jspdf-autotable")).default;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = doc.internal.pageSize.getWidth();
-      const fmtC = (v: number) => `Rs.${Number(v||0).toFixed(2)}`;
-      doc.setFillColor(16, 185, 129); doc.rect(0, 0, pageW, 28, "F");
-      doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont("helvetica", "bold");
-      doc.text(hospitalInfo.name || "Pharmacy", 14, 12);
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      if (hospitalInfo.address) doc.text(hospitalInfo.address, 14, 18);
-      if (hospitalInfo.phone) doc.text(`Phone: ${hospitalInfo.phone}`, 14, 23);
-      doc.setFontSize(11); doc.setFont("helvetica", "bold");
-      doc.text("PHARMACY INVOICE", pageW - 14, 12, { align: "right" });
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text(bill.billNo, pageW - 14, 18, { align: "right" });
-      doc.text(bill.createdAt ? new Date(bill.createdAt).toLocaleDateString("en-IN") : "", pageW - 14, 23, { align: "right" });
-      doc.setTextColor(30, 41, 59);
-      let y = 38;
-      doc.setFillColor(248, 250, 252); doc.roundedRect(14, y, pageW - 28, 22, 2, 2, "F");
-      doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text("Patient Details", 18, y + 6);
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text(`Name: ${bill.patient?.name || "—"}`, 18, y + 12);
-      doc.text(`ID: ${bill.patient?.patientId || "—"}`, 18, y + 17);
-      doc.text(`Phone: ${bill.patient?.phone || "—"}`, pageW / 2, y + 12);
-      y += 28;
-      const billItemRows = (bill.billItems || []).map((it: any, i: number) => [
-        String(i + 1), it.name, String(it.quantity), fmtC(it.unitPrice), fmtC(it.amount),
-      ]);
-      autoTable(doc, {
-        head: [["#", "Item / Medicine", "Qty", "Unit Price", "Amount"]],
-        body: billItemRows.length > 0 ? billItemRows : [["—", "No items", "—", "—", "—"]],
-        startY: y, margin: { left: 14, right: 14 },
-        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold", fontSize: 9 },
-        bodyStyles: { fontSize: 9 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-      const summaryX = pageW - 80;
-      doc.setFillColor(248, 250, 252); doc.roundedRect(summaryX, y, 66, 34, 2, 2, "F");
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text("Subtotal:", summaryX + 4, y + 7); doc.text(fmtC(bill.subtotal), summaryX + 62, y + 7, { align: "right" });
-      if ((bill.discount || 0) > 0) { doc.text("Discount:", summaryX + 4, y + 13); doc.text(`-${fmtC(bill.discount)}`, summaryX + 62, y + 13, { align: "right" }); }
-      if ((bill.tax || 0) > 0) { doc.text("Tax:", summaryX + 4, y + 19); doc.text(fmtC(bill.tax), summaryX + 62, y + 19, { align: "right" }); }
-      doc.setFillColor(16, 185, 129); doc.roundedRect(summaryX, y + 26, 66, 8, 1, 1, "F");
-      doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-      doc.text("TOTAL:", summaryX + 4, y + 32); doc.text(fmtC(bill.total), summaryX + 62, y + 32, { align: "right" });
-      doc.setTextColor(30, 41, 59);
-      y += 42;
-      if (bill.status === "PAID") { doc.setFillColor(220, 252, 231); } else { doc.setFillColor(255, 247, 237); }
-      doc.roundedRect(14, y, pageW - 28, 12, 2, 2, "F");
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text(`Status: ${bill.status}`, 18, y + 8);
-      doc.text(`Method: ${bill.paymentMethod || bill.payments?.[0]?.method || "—"}`, 70, y + 8);
-      doc.text(`Paid: ${fmtC(bill.paidAmount || 0)}`, 130, y + 8);
-      doc.setFontSize(8); doc.setTextColor(148, 163, 184);
-      doc.text("Thank you for choosing " + (hospitalInfo.name || "Pharmacy") + " · Computer-generated invoice", pageW / 2, 285, { align: "center" });
-      doc.save(`${bill.billNo || "invoice"}.pdf`);
-    } catch (e) { console.error("PDF error", e); }
-  };
-
-  // ── Filter logic ──
+  // â”€â”€ Filter logic â”€â”€
   const filteredQueue = queue.filter(q => {
     if (queueFilter === "pending" && q.dispensed) return false;
     if (queueFilter === "dispensed" && !q.dispensed) return false;
@@ -1359,30 +1252,16 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     return true;
   });
 
-  const filteredBills = (() => {
-    let arr = (Array.isArray(bills) ? bills : []).filter((b: any) => {
-      if (billFilter !== "all" && b.status !== billFilter) return false;
-      if (billSearch) {
-        const s = billSearch.toLowerCase();
-        return b.billNo?.toLowerCase().includes(s) || b.patient?.name?.toLowerCase().includes(s) || b.patient?.patientId?.toLowerCase().includes(s);
-      }
-      return true;
-    });
-    const sorted = [...arr];
-    switch (billSort) {
-      case "newest":      sorted.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
-      case "oldest":      sorted.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); break;
-      case "name_asc":    sorted.sort((a: any, b: any) => (a.patient?.name||"").localeCompare(b.patient?.name||"")); break;
-      case "name_desc":   sorted.sort((a: any, b: any) => (b.patient?.name||"").localeCompare(a.patient?.name||"")); break;
-      case "total_high":  sorted.sort((a: any, b: any) => (b.total||0) - (a.total||0)); break;
-      case "total_low":   sorted.sort((a: any, b: any) => (a.total||0) - (b.total||0)); break;
-      case "status_paid":    sorted.sort((a: any, b: any) => (a.status === "PAID" ? -1 : 1) - (b.status === "PAID" ? -1 : 1)); break;
-      case "status_pending": sorted.sort((a: any, b: any) => (a.status === "PENDING" ? -1 : 1) - (b.status === "PENDING" ? -1 : 1)); break;
+  const filteredBills = (Array.isArray(bills) ? bills : []).filter(b => {
+    if (billFilter !== "all" && b.status !== billFilter) return false;
+    if (billSearch) {
+      const s = billSearch.toLowerCase();
+      return b.billNo?.toLowerCase().includes(s) || b.patient?.name?.toLowerCase().includes(s) || b.patient?.patientId?.toLowerCase().includes(s);
     }
-    return sorted;
-  })();
+    return true;
+  });
 
-  // ── Inventory helpers ──
+  // â”€â”€ Inventory helpers â”€â”€
   const getStockStatus = (item: InventoryItem) => {
     const total = item.totalStock || item.batches?.reduce((s, b) => s + b.remainingQty, 0) || 0;
     if (total === 0) return { label: "Out of Stock", color: "#dc2626", bg: "#fef2f2", border: "#fecaca" };
@@ -1392,159 +1271,347 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
 
   const deptName = profile?.name || "Pharmacy";
 
-  // ─── RENDER ────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   return (
     <>
       <style>{pharmacyStyles}</style>
 
-      {/* ── Overview Tab ── */}
+      {/* â”€â”€ Overview Tab â”€â”€ */}
       {tab === "overview" && (
-        <div className="ph-section">
-          {statsLoading ? (
-            <div className="ph-loading"><Loader2 size={20} className="ph-spin" /> Loading stats...</div>
+        <div className="ph-section" style={{ background: "#f8fafc", padding: 24, minHeight: "100%", borderRadius: 16 }}>
+          {statsLoading && !stats ? (
+            <div className="ph-loading"><Loader2 size={20} className="ph-spin" /> Loading dashboard...</div>
           ) : stats ? (
             <>
-              {/* 6 Stats Widgets - Compact Single Row */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 16 }}>
-                <div className="ph-stat-card" style={{ padding: "14px 12px" }}>
-                  <div className="ph-stat-icon" style={{ background: LIGHT_BG, width: 36, height: 36 }}><Package size={16} color={ACCENT} /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value" style={{ fontSize: 20 }}>{stats.totalItems}</div>
-                    <div className="ph-stat-label" style={{ fontSize: 10 }}>Total Medicines</div>
+              {/* ── Header: title + live indicator + refresh countdown ── */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-.02em" }}>{deptName} Dashboard</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 3px #dcfce7", flexShrink: 0 }} />
+                    Live &middot; Updated {lastRefresh.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                   </div>
                 </div>
-                <div className="ph-stat-card" style={{ padding: "14px 12px", borderColor: stats.lowStockCount > 0 ? "#fde68a" : undefined }}>
-                  <div className="ph-stat-icon" style={{ background: "#fff5f5", width: 36, height: 36 }}><AlertTriangle size={16} color="#ef4444" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value" style={{ fontSize: 20, color: stats.lowStockCount > 0 ? "#ef4444" : undefined }}>{stats.lowStockCount}</div>
-                    <div className="ph-stat-label" style={{ fontSize: 10 }}>Low Stock</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 20, background: "#fff", border: "1px solid #e2e8f0", fontSize: 11, color: "#64748b" }}>
+                    <svg width="18" height="18" style={{ transform: "rotate(-90deg)", flexShrink: 0 }}>
+                      <circle cx="9" cy="9" r="7" fill="none" stroke="#e2e8f0" strokeWidth="2" />
+                      <circle cx="9" cy="9" r="7" fill="none" stroke={ACCENT} strokeWidth="2"
+                        strokeDasharray={`${(refreshCountdown / 30) * 44} 44`} strokeLinecap="round" style={{ transition: "stroke-dasharray .5s linear" }} />
+                    </svg>
+                    Refresh in {refreshCountdown}s
+                  </div>
+                  <button
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}
+                    onClick={() => { loadStats(); loadQueue(); setRefreshCountdown(30); setLastRefresh(new Date()); }}
+                  >
+                    <RefreshCw size={13} style={statsLoading ? { animation: "ph-spin-anim 1s linear infinite" } : {}} /> Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Row 1: 4 Main KPI Cards ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 12 }}>
+
+                {/* Dispensing Today */}
+                <div
+                  style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(14,137,143,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+                  onClick={() => setTab("queue")}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: `${ACCENT}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Pill size={20} color={ACCENT} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
+                        {stats.todayDispensed}
+                        <span style={{ fontSize: 12, fontWeight: 500, color: "#94a3b8", marginLeft: 3 }}>/ {stats.todayRxCount}</span>
+                      </div>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", padding: "2px 6px", borderRadius: 10, border: "1px solid #bbf7d0" }}>TODAY</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Prescriptions Dispensed</div>
                   </div>
                 </div>
-                <div className="ph-stat-card" style={{ padding: "14px 12px", borderColor: stats.expiringCount > 0 ? "#fed7aa" : undefined }}>
-                  <div className="ph-stat-icon" style={{ background: "#fff7ed", width: 36, height: 36 }}><Clock size={16} color="#ea580c" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value" style={{ fontSize: 20, color: stats.expiringCount > 0 ? "#ea580c" : undefined }}>{stats.expiringCount}</div>
-                    <div className="ph-stat-label" style={{ fontSize: 10 }}>Expiring Soon</div>
+
+                {/* Pending Queue */}
+                <div
+                  style={{ background: stats.pendingCount > 0 ? "#fff7ed" : "#fff", borderRadius: 12, padding: 12, border: `1px solid ${stats.pendingCount > 0 ? "#fed7aa" : "#e2e8f0"}`, cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(234,88,12,.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+                  onClick={() => setTab("queue")}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: stats.pendingCount > 0 ? "#fff3e6" : "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <ClipboardList size={20} color={stats.pendingCount > 0 ? "#ea580c" : "#94a3b8"} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: stats.pendingCount > 0 ? "#ea580c" : "#0f172a", lineHeight: 1 }}>{stats.pendingCount}</div>
+                      {stats.pendingCount > 0 ? (
+                        <span style={{ fontSize: 8, fontWeight: 700, color: "#ea580c", background: "#fff3e6", padding: "2px 6px", borderRadius: 10, border: "1px solid #fed7aa", display: "flex", alignItems: "center", gap: 2 }}>
+                          <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#ea580c", display: "inline-block", animation: "ph-pulse 1.5s ease-in-out infinite" }} />
+                          URGENT
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 8, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", padding: "2px 6px", borderRadius: 10, border: "1px solid #bbf7d0" }}>CLEAR</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Pending Prescriptions</div>
                   </div>
                 </div>
-                <div className="ph-stat-card" style={{ padding: "14px 12px" }}>
-                  <div className="ph-stat-icon" style={{ background: "#f0fdf4", width: 36, height: 36 }}><IndianRupee size={16} color="#16a34a" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value" style={{ fontSize: 18 }}>{fmtCurrency(stats.todayRevenue)}</div>
-                    <div className="ph-stat-label" style={{ fontSize: 10 }}>Today&apos;s Sales</div>
+
+                {/* Today's Revenue */}
+                <div
+                  style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(22,163,74,.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+                  onClick={() => setTab("billing")}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <IndianRupee size={20} color="#16a34a" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{fmtCurrency(stats.todayRevenue)}</div>
+                      {stats.yesterdayRevenue > 0 ? (
+                        <span style={{ fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", gap: 2, padding: "2px 6px", borderRadius: 10, border: "1px solid", color: stats.todayRevenue >= stats.yesterdayRevenue ? "#16a34a" : "#ef4444", background: stats.todayRevenue >= stats.yesterdayRevenue ? "#f0fdf4" : "#fff5f5", borderColor: stats.todayRevenue >= stats.yesterdayRevenue ? "#bbf7d0" : "#fecaca" }}>
+                          {stats.todayRevenue >= stats.yesterdayRevenue ? <TrendingUp size={8} /> : <TrendingDown size={8} />}
+                          {Math.abs(Math.round((stats.todayRevenue - stats.yesterdayRevenue) / Math.max(stats.yesterdayRevenue, 1) * 100))}%
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 8, fontWeight: 700, color: "#64748b", background: "#f8fafc", padding: "2px 6px", borderRadius: 10, border: "1px solid #e2e8f0" }}>TODAY</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Today&apos;s Revenue</div>
                   </div>
                 </div>
-                <div className="ph-stat-card" style={{ padding: "14px 12px", borderColor: stats.pendingCount > 0 ? BORDER : undefined }}>
-                  <div className="ph-stat-icon" style={{ background: "#eff6ff", width: 36, height: 36 }}><ClipboardList size={16} color="#2563eb" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value" style={{ fontSize: 20 }}>{stats.pendingCount}</div>
-                    <div className="ph-stat-label" style={{ fontSize: 10 }}>Pending Rx</div>
+
+                {/* Inventory Health */}
+                <div
+                  style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+                  onClick={() => setTab("inventory")}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Package size={20} color="#2563eb" />
                   </div>
-                </div>
-                <div className="ph-stat-card" style={{ padding: "14px 12px" }}>
-                  <div className="ph-stat-icon" style={{ background: "#faf5ff", width: 36, height: 36 }}><TrendingUp size={16} color="#9333ea" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value" style={{ fontSize: 18 }}>{fmtCurrency(stats.totalRevenue)}</div>
-                    <div className="ph-stat-label" style={{ fontSize: 10 }}>Total Revenue</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
+                        {stats.stockHealthPct}<span style={{ fontSize: 13, color: "#94a3b8" }}>%</span>
+                      </div>
+                      <span style={{ fontSize: 8, fontWeight: 700, padding: "2px 6px", borderRadius: 10, border: "1px solid", color: stats.stockHealthPct >= 90 ? "#16a34a" : stats.stockHealthPct >= 70 ? "#ea580c" : "#ef4444", background: stats.stockHealthPct >= 90 ? "#f0fdf4" : stats.stockHealthPct >= 70 ? "#fff7ed" : "#fff5f5", borderColor: stats.stockHealthPct >= 90 ? "#bbf7d0" : stats.stockHealthPct >= 70 ? "#fed7aa" : "#fecaca" }}>
+                        {stats.stockHealthPct >= 90 ? "HEALTHY" : stats.stockHealthPct >= 70 ? "MODERATE" : "CRITICAL"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Inventory Health</div>
                   </div>
                 </div>
               </div>
 
-              {/* Alert Cards */}
-              <div className="ph-alerts-row">
-                {stats.lowStockCount > 0 && (
-                  <div className="ph-alert-card warn">
-                    <AlertTriangle size={16} />
-                    <span><strong>{stats.lowStockCount}</strong> item{stats.lowStockCount !== 1 ? "s" : ""} below minimum stock level</span>
-                    <button className="ph-alert-action" onClick={() => { setTab("inventory"); setInvFilter("low"); }}>View Items</button>
+              {/* ── Row 2: 4 Secondary Stat Chips ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 14 }}>
+                {[
+                  { icon: <ClipboardList size={16} color={ACCENT} />, value: stats.todayRxCount, label: "Prescriptions Today", bg: `${ACCENT}10`, action: () => setTab("queue") },
+                  { icon: <AlertTriangle size={16} color={stats.lowStockCount > 0 ? "#ea580c" : "#94a3b8"} />, value: stats.lowStockCount, label: "Low Stock", bg: stats.lowStockCount > 0 ? "#fff7ed" : "#f8fafc", action: () => { setTab("inventory"); setInvFilter("low"); }, urgent: stats.lowStockCount > 0 },
+                  { icon: <Clock size={16} color={stats.expiringCount > 0 ? "#ef4444" : "#94a3b8"} />, value: stats.expiringCount, label: "Expiring Soon", bg: stats.expiringCount > 0 ? "#fff5f5" : "#f8fafc", action: () => { setTab("inventory"); setInvFilter("expiring"); }, urgent: stats.expiringCount > 0 },
+                  { icon: <TrendingUp size={16} color="#9333ea" />, value: fmtCurrency(stats.totalRevenue), label: "All-time Revenue", bg: "#faf5ff", action: () => setTab("revenue") },
+                ].map((chip, i) => (
+                  <div key={i}
+                    style={{ background: chip.bg, borderRadius: 12, padding: "12px 16px", border: `1px solid ${(chip as any).urgent ? "#fed7aa" : "#e2e8f0"}`, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "all .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,.06)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                    onClick={chip.action}
+                  >
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>{chip.icon}</div>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1.2 }}>{chip.value}</div>
+                      <div style={{ fontSize: 11, color: "#64748b" }}>{chip.label}</div>
+                    </div>
                   </div>
-                )}
-                {stats.expiringCount > 0 && (
-                  <div className="ph-alert-card danger">
-                    <AlertCircle size={16} />
-                    <span><strong>{stats.expiringCount}</strong> item{stats.expiringCount !== 1 ? "s" : ""} expiring within 30 days</span>
-                    <button className="ph-alert-action" onClick={() => { setTab("inventory"); setInvFilter("expiring"); }}>View Items</button>
-                  </div>
-                )}
-                {stats.pendingCount > 0 && (
-                  <div className="ph-alert-card info">
-                    <Pill size={16} />
-                    <span><strong>{stats.pendingCount}</strong> prescription{stats.pendingCount !== 1 ? "s" : ""} waiting to be dispensed</span>
-                    <button className="ph-alert-action" onClick={() => setTab("queue")}>Go to Queue</button>
-                  </div>
-                )}
+                ))}
               </div>
 
-              {/* Charts Row */}
-              <div className="ph-charts-row">
-                <div className="ph-chart-card">
-                  <div className="ph-chart-header">
-                    <div className="ph-chart-title">Weekly Dispensing</div>
-                    <div className="ph-chart-subtitle">Last 7 days</div>
+              {/* ── Row 3: Charts (3fr + 2fr) ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 14, marginBottom: 14 }}>
+
+                {/* 7-Day Revenue + Dispensing Chart */}
+                <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid #e2e8f0" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>7-Day Performance</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Revenue trend &middot; hover bars for details</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
+                        <span style={{ width: 10, height: 10, borderRadius: 2, background: ACCENT, display: "inline-block" }} /> Revenue
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
+                        <span style={{ width: 10, height: 10, borderRadius: 2, background: "#cbd5e1", display: "inline-block" }} /> Units
+                      </div>
+                    </div>
                   </div>
-                  <div className="ph-bar-chart">
+                  {/* Chart area */}
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 150, position: "relative", paddingBottom: 26, marginTop: 12 }}>
+                    {/* Grid lines */}
+                    {[0, 33, 66, 100].map(pct => (
+                      <div key={pct} style={{ position: "absolute", left: 0, right: 0, bottom: `calc(26px + ${pct / 100} * 124px)`, borderTop: `1px dashed ${pct === 0 ? "#e2e8f0" : "#f1f5f9"}`, zIndex: 0 }} />
+                    ))}
                     {stats.chartData.map((d, i) => {
-                      const maxCount = Math.max(...stats.chartData.map(x => x.count), 1);
-                      const pct = (d.count / maxCount) * 100;
+                      const maxRev = Math.max(...stats.chartData.map(x => x.revenue), 1);
+                      const maxCnt = Math.max(...stats.chartData.map(x => x.count), 1);
+                      const revH = Math.max((d.revenue / maxRev) * 124, 4);
+                      const cntH = Math.max((d.count / maxCnt) * 124, 3);
+                      const isToday = d.date === new Date().toISOString().slice(0, 10);
+                      const isHov = hoveredBar === i;
                       return (
-                        <div key={i} className="ph-bar-col">
-                          <div className="ph-bar-value">{d.count}</div>
-                          <div className="ph-bar-track">
-                            <div className="ph-bar-fill" style={{ height: `${Math.max(pct, 4)}%` }} />
+                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", position: "relative", zIndex: 1, cursor: "pointer" }}
+                          onMouseEnter={() => setHoveredBar(i)} onMouseLeave={() => setHoveredBar(null)}>
+                          {/* Tooltip */}
+                          {isHov && (
+                            <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", background: "#1e293b", color: "#fff", borderRadius: 8, padding: "8px 12px", fontSize: 11, whiteSpace: "nowrap", zIndex: 20, boxShadow: "0 4px 16px rgba(0,0,0,.2)", pointerEvents: "none" }}>
+                              <div style={{ fontWeight: 700, marginBottom: 3, color: "#e2e8f0" }}>{d.label}</div>
+                              <div style={{ color: "#4ade80" }}>{fmtCurrency(d.revenue)}</div>
+                              <div style={{ color: "#94a3b8", fontSize: 10, marginTop: 2 }}>{d.count} units dispensed</div>
+                              <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", border: "5px solid transparent", borderTopColor: "#1e293b" }} />
+                            </div>
+                          )}
+                          {/* Stacked bars: revenue (solid) + count (ghost) */}
+                          <div style={{ width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 2, height: 124 }}>
+                            <div style={{ width: "42%", borderRadius: "4px 4px 0 0", background: isToday ? ACCENT : isHov ? `${ACCENT}cc` : `${ACCENT}70`, height: revH, transition: "all .2s", minHeight: 3 }} />
+                            <div style={{ width: "30%", borderRadius: "4px 4px 0 0", background: isToday ? "#cbd5e1" : isHov ? "#94a3b8" : "#e2e8f0", height: cntH, transition: "all .2s", minHeight: 2 }} />
                           </div>
-                          <div className="ph-bar-label">{d.label}</div>
+                          {/* Day label */}
+                          <div style={{ position: "absolute", bottom: 0, fontSize: 9, color: isToday ? ACCENT : "#94a3b8", fontWeight: isToday ? 700 : 400, textAlign: "center", width: "100%" }}>{d.label}</div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-                <div className="ph-chart-card">
-                  <div className="ph-chart-header">
-                    <div className="ph-chart-title">Top Dispensed Medicines</div>
-                    <div className="ph-chart-subtitle">Last 30 days</div>
-                  </div>
-                  <div className="ph-top-list">
-                    {stats.topMedicines.length === 0 ? (
-                      <div className="ph-empty-sm">No dispensing data yet</div>
-                    ) : (
-                      stats.topMedicines.slice(0, 6).map((m, i) => (
-                        <div key={i} className="ph-top-item">
-                          <div className="ph-top-rank">#{i + 1}</div>
-                          <div className="ph-top-info">
-                            <div className="ph-top-name">{m.name}</div>
-                            <div className="ph-top-meta">{m.category} &middot; {m.qty} units</div>
-                          </div>
-                          <div className="ph-top-revenue">{fmtCurrency(m.revenue)}</div>
-                        </div>
-                      ))
+                  {/* Summary footer */}
+                  <div style={{ marginTop: 4, paddingTop: 12, borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "#64748b" }}>7-day total: <strong style={{ color: "#0f172a" }}>{fmtCurrency(stats.weekRevenue)}</strong></span>
+                    {stats.revenueGrowth !== null && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: (stats.revenueGrowth ?? 0) >= 0 ? "#16a34a" : "#ef4444", display: "flex", alignItems: "center", gap: 4 }}>
+                        {(stats.revenueGrowth ?? 0) >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                        {(stats.revenueGrowth ?? 0) >= 0 ? "+" : ""}{stats.revenueGrowth}% vs prev week
+                      </span>
                     )}
                   </div>
                 </div>
+
+                {/* Top Medicines Horizontal Bar Chart */}
+                <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid #e2e8f0" }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Top Medicines</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Last 30 days &middot; by quantity</div>
+                  </div>
+                  {stats.topMedicines.length === 0 ? (
+                    <div className="ph-empty-sm" style={{ height: 160 }}>No dispensing data yet</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+                      {stats.topMedicines.slice(0, 6).map((m, i) => {
+                        const colors = [ACCENT, "#2563eb", "#9333ea", "#ea580c", "#16a34a", "#0891b2"];
+                        const pct = (m.qty / stats.topMedicines[0].qty) * 100;
+                        return (
+                          <div key={i}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: colors[i], width: 18, flexShrink: 0 }}>#{i + 1}</span>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={m.name}>{m.name}</span>
+                              </div>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "#475569", flexShrink: 0 }}>{m.qty} <span style={{ fontSize: 9, color: "#94a3b8", fontWeight: 400 }}>units</span></span>
+                            </div>
+                            <div style={{ height: 6, borderRadius: 3, background: "#f1f5f9", overflow: "hidden" }}>
+                              <div style={{ height: "100%", borderRadius: 3, background: colors[i], width: `${pct}%`, transition: "width .7s ease" }} />
+                            </div>
+                            <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 2, textAlign: "right" }}>{fmtCurrency(m.revenue)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="ph-quick-actions">
-                <div className="ph-quick-title">Quick Actions</div>
-                <div className="ph-quick-grid">
-                  <button className="ph-quick-btn" onClick={() => setTab("queue")}>
-                    <ClipboardList size={20} color={ACCENT} />
-                    <span>Prescription Queue</span>
-                    {stats.pendingCount > 0 && <span className="ph-quick-badge">{stats.pendingCount}</span>}
-                  </button>
-                  <button className="ph-quick-btn" onClick={() => { setTab("inventory"); setInvFilter("low"); }}>
-                    <AlertTriangle size={20} color="#ea580c" />
-                    <span>Low Stock Items</span>
-                    {stats.lowStockCount > 0 && <span className="ph-quick-badge warn">{stats.lowStockCount}</span>}
-                  </button>
-                  <button className="ph-quick-btn" onClick={() => setTab("billing")}>
-                    <CreditCard size={20} color="#6366f1" />
-                    <span>Pharmacy Billing</span>
-                  </button>
-                  <button className="ph-quick-btn" onClick={() => setTab("reports")}>
-                    <BarChart2 size={20} color="#10b981" />
-                    <span>View Reports</span>
-                  </button>
+              {/* ── Row 4: Alerts + Quick Actions ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+                {/* Alerts */}
+                <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 14 }}>Alerts &amp; Notifications</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {stats.lowStockCount === 0 && stats.expiringCount === 0 && stats.pendingCount === 0 ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#f0fdf4", borderRadius: 12, border: "1px solid #bbf7d0" }}>
+                        <CheckCircle2 size={18} color="#16a34a" />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#15803d" }}>All clear! No active alerts.</span>
+                      </div>
+                    ) : (
+                      <>
+                        {stats.pendingCount > 0 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fff7ed", borderRadius: 12, border: "1px solid #fed7aa", cursor: "pointer" }} onClick={() => setTab("queue")}>
+                            <ClipboardList size={16} color="#ea580c" style={{ flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "#c2410c" }}>{stats.pendingCount} prescription{stats.pendingCount !== 1 ? "s" : ""} waiting</div>
+                              <div style={{ fontSize: 11, color: "#9a3412" }}>Click to open queue</div>
+                            </div>
+                            <ChevronRight size={14} color="#ea580c" />
+                          </div>
+                        )}
+                        {stats.lowStockCount > 0 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fffbeb", borderRadius: 12, border: "1px solid #fde68a", cursor: "pointer" }} onClick={() => { setTab("inventory"); setInvFilter("low"); }}>
+                            <AlertTriangle size={16} color="#d97706" style={{ flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e" }}>{stats.lowStockCount} item{stats.lowStockCount !== 1 ? "s" : ""} below minimum stock</div>
+                              <div style={{ fontSize: 11, color: "#78350f" }}>Click to review inventory</div>
+                            </div>
+                            <ChevronRight size={14} color="#d97706" />
+                          </div>
+                        )}
+                        {stats.expiringCount > 0 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fff5f5", borderRadius: 12, border: "1px solid #fecaca", cursor: "pointer" }} onClick={() => { setTab("inventory"); setInvFilter("expiring"); }}>
+                            <AlertCircle size={16} color="#ef4444" style={{ flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "#b91c1c" }}>{stats.expiringCount} item{stats.expiringCount !== 1 ? "s" : ""} expiring within 30 days</div>
+                              <div style={{ fontSize: 11, color: "#991b1b" }}>Click to review items</div>
+                            </div>
+                            <ChevronRight size={14} color="#ef4444" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 14 }}>Quick Actions</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {([
+                      { icon: <ClipboardList size={17} color={ACCENT} />, label: "Rx Queue", sub: `${stats.pendingCount} pending`, action: () => setTab("queue"), bg: `${ACCENT}10`, urgent: stats.pendingCount > 0 },
+                      { icon: <ShoppingCart size={17} color="#ea580c" />, label: "Counter Sale", sub: "Walk-in", action: () => setCounterSaleModal(true), bg: "#fff3e6", urgent: false },
+                      { icon: <Package size={17} color="#2563eb" />, label: "Inventory", sub: `${stats.totalItems} items`, action: () => setTab("inventory"), bg: "#eff6ff", urgent: false },
+                      { icon: <AlertTriangle size={17} color={stats.lowStockCount > 0 ? "#ea580c" : "#94a3b8"} />, label: "Low Stock", sub: `${stats.lowStockCount} items`, action: () => { setTab("inventory"); setInvFilter("low"); }, bg: stats.lowStockCount > 0 ? "#fff7ed" : "#f8fafc", urgent: stats.lowStockCount > 0 },
+                      { icon: <Receipt size={17} color="#6366f1" />, label: "Billing", sub: "View & collect", action: () => setTab("billing"), bg: "#eef2ff", urgent: false },
+                      { icon: <BarChart2 size={17} color="#10b981" />, label: "Reports", sub: "Analytics", action: () => setTab("reports"), bg: "#ecfdf5", urgent: false },
+                    ] as const).map((qa, i) => (
+                      <button key={i}
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, border: `1.5px solid ${qa.urgent ? "#fed7aa" : "#f1f5f9"}`, background: qa.bg, cursor: "pointer", textAlign: "left", transition: "all .15s", position: "relative", overflow: "hidden" }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,.08)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                        onClick={qa.action}
+                      >
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>{qa.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{qa.label}</div>
+                          <div style={{ fontSize: 10, color: "#64748b" }}>{qa.sub}</div>
+                        </div>
+                        {qa.urgent && <span style={{ position: "absolute", top: 7, right: 7, width: 8, height: 8, borderRadius: "50%", background: "#ea580c", animation: "ph-pulse 1.5s ease-in-out infinite" }} />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </>
@@ -1554,10 +1621,10 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Rx Queue Tab ── */}
+      {/* â”€â”€ Rx Queue Tab â”€â”€ */}
       {tab === "queue" && (
         <div className="ph-section">
-          {/* Queue Header — Row 1: Search/Date left, Action buttons right */}
+          {/* Queue Header â€” Row 1: Search/Date left, Action buttons right */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div className="ph-search-wrap">
@@ -1582,7 +1649,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
             </div>
           </div>
 
-          {/* Row 2: Filter pills — status + source in one horizontal row */}
+          {/* Row 2: Filter pills â€” status + source in one horizontal row */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
             <div className="ph-filter-pills">
               {(["pending", "dispensed", "HOLD", "SKIPPED", "all"] as const).map(f => (
@@ -1856,9 +1923,6 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                   <Trash2 size={13} />
                                 </button>
                               )}
-                              <button className="ph-tbl-action" title="Get Bill" onClick={e => { e.stopPropagation(); fetchRxBill(item); }}>
-                                {rxBillLoading === item.id ? <Loader2 size={13} className="ph-spin" /> : <Receipt size={13} color="#0ea5e9" />}
-                              </button>
                               <button className="ph-tbl-action" title={isExpanded ? "Collapse" : "Expand"} onClick={e => { e.stopPropagation(); setExpandedRx(isExpanded ? null : item.id); }}>
                                 {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                               </button>
@@ -1957,7 +2021,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Queue: Dispense & Bill Modal ── */}
+      {/* â”€â”€ Queue: Dispense & Bill Modal â”€â”€ */}
       {dispenseModalItem && (() => {
         const dItem = dispenseModalItem;
         const dMeds: any[] = (() => { try { return typeof dItem.medications === "string" ? JSON.parse(dItem.medications) : dItem.medications || []; } catch { return []; } })();
@@ -2007,8 +2071,8 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     <Pill size={18} color={ACCENT} /> Dispense & Bill
                   </div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    {dItem.prescriptionNo} · {dItem.patient?.name} ({dItem.patient?.patientId})
-                    {dItem.doctor ? ` · Dr. ${dItem.doctor.name}` : " · Walk-in"}
+                    {dItem.prescriptionNo} &middot; {dItem.patient?.name} ({dItem.patient?.patientId})
+                    {dItem.doctor ? ` - Dr. ${dItem.doctor.name}` : " - Walk-in"}
                   </div>
                 </div>
                 <button className="ph-icon-btn-sm" onClick={() => setDispenseModalItem(null)}><X size={16} /></button>
@@ -2018,9 +2082,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 {/* Patient & Rx Info Strip */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
                   {[
-                    { label: "Patient", value: dItem.patient?.name || "—", sub: dItem.patient?.patientId },
+                    { label: "Patient", value: dItem.patient?.name || "-", sub: dItem.patient?.patientId },
                     { label: "Doctor", value: dItem.doctor ? `Dr. ${dItem.doctor.name}` : "Walk-in", sub: dItem.doctor?.specialization || "" },
-                    { label: "Diagnosis", value: dItem.diagnosis || "—", sub: dItem.appointment?.type || "" },
+                    { label: "Diagnosis", value: dItem.diagnosis || "-", sub: dItem.appointment?.type || "" },
                   ].map((info, i) => (
                     <div key={i} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
                       <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>{info.label}</div>
@@ -2030,16 +2094,16 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   ))}
                 </div>
 
-                {/* Stock Status Alert — informational, not blocking */}
+                {/* Stock Status Alert */}
                 {hasStockIssues && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, marginBottom: 16 }}>
-                    <AlertTriangle size={20} color="#d97706" />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, marginBottom: 16 }}>
+                    <AlertCircle size={20} color="#dc2626" />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>Partial Stock Available</div>
-                      <div style={{ fontSize: 11, color: "#78350f" }}>
-                        {outOfStockCount > 0 && `${outOfStockCount} item(s) not in inventory. `}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626" }}>Stock Issues Detected</div>
+                      <div style={{ fontSize: 11, color: "#7f1d1d" }}>
+                        {outOfStockCount > 0 && `${outOfStockCount} item(s) not available in inventory. `}
                         {exceedsStockCount > 0 && `${exceedsStockCount} item(s) exceed available stock. `}
-                        Available items will be dispensed; unavailable items will be marked as “not dispensed yet”.
+                        Please select available inventory items and adjust quantities.
                       </div>
                     </div>
                   </div>
@@ -2055,8 +2119,8 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                       <tr>
                         <th style={{ minWidth: 220 }}>Inventory Item <span style={{ color: "#ef4444" }}>*</span></th>
                         <th style={{ width: 70 }}>Qty</th>
-                        <th style={{ width: 100 }}>Unit Price (₹)</th>
-                        <th style={{ width: 90 }}>Total (₹)</th>
+                        <th style={{ width: 100 }}>Unit Price (Rs.)</th>
+                        <th style={{ width: 90 }}>Total (Rs.)</th>
                         <th style={{ width: 120 }}>Stock Status</th>
                         <th style={{ width: 80 }}>Action</th>
                       </tr>
@@ -2100,7 +2164,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                 ))}
                               </select>
                               {matchedInv && <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>SKU: {matchedInv.sku || "N/A"} | {matchedInv.category}</div>}
-                              {!matchedInv && med.inventoryItemId && <div style={{ fontSize: 9, color: "#dc2626", marginTop: 2 }}>⚠️ Not found in inventory</div>}
+                              {!matchedInv && med.inventoryItemId && <div style={{ fontSize: 9, color: "#dc2626", marginTop: 2 }}>âš ï¸ Not found in inventory</div>}
                             </td>
                             <td>
                               <input 
@@ -2145,7 +2209,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                     {hasExpiring && <span style={{ fontSize: 9, fontWeight: 600, color: "#ea580c", display: "flex", alignItems: "center", gap: 3 }}><Clock size={9} /> Near expiry</span>}
                                   </>
                                 ) : (
-                                  <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>⚠️ Select inventory item</span>
+                                  <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>âš ï¸ Select inventory item</span>
                                 )}
                               </div>
                             </td>
@@ -2195,12 +2259,12 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <button className="ph-btn-ghost" onClick={() => setDispenseModalItem(null)}>Cancel</button>
                 <button 
                   className="ph-btn-primary" 
-                  style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, borderRadius: 10, ...(hasStockIssues ? { background: "#d97706", borderColor: "#d97706" } : {}) }}
-                  disabled={dispensingId === dItem.id}
+                  style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, borderRadius: 10 }}
+                  disabled={dispensingId === dItem.id || hasStockIssues || formMeds.some((m: any) => !m.inventoryItemId)}
                   onClick={() => { handleDispense(dItem); setDispenseModalItem(null); }}
                 >
-                  {dispensingId === dItem.id ? <Loader2 size={14} className="ph-spin" /> : hasStockIssues ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
-                  {hasStockIssues ? "Dispense Available Items" : transferTo ? "Dispense & Transfer" : "Complete Dispensing"}
+                  {dispensingId === dItem.id ? <Loader2 size={14} className="ph-spin" /> : <CheckCircle2 size={14} />}
+                  {hasStockIssues ? "Resolve Stock Issues" : transferTo ? "Dispense & Transfer" : "Complete Dispensing"}
                 </button>
               </div>
             </div>
@@ -2208,126 +2272,42 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         );
       })()}
 
-      {/* ── Bill View Modal ── */}
-      {rxBillModal && (
-        <div className="ph-modal-overlay" onClick={() => setRxBillModal(null)}>
-          <div className="ph-modal" style={{ width: 560 }} onClick={e => e.stopPropagation()}>
-            <div className="ph-modal-header" style={{ background: `linear-gradient(135deg, #0ea5e920, #0ea5e908)`, borderBottom: "1px solid #0ea5e930" }}>
-              <div>
-                <div className="ph-modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Receipt size={16} color="#0ea5e9" /> Bill — {rxBillModal.rx.prescriptionNo}
-                </div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{rxBillModal.rx.patient?.name} ({rxBillModal.rx.patient?.patientId})</div>
-              </div>
-              <button className="ph-icon-btn-sm" onClick={() => setRxBillModal(null)}><X size={16} /></button>
-            </div>
-            <div className="ph-modal-body">
-              {!rxBillModal.bill ? (
-                <div style={{ padding: "32px 24px", textAlign: "center" }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                    <Receipt size={24} color="#94a3b8" />
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#475569", marginBottom: 6 }}>No Bill Created Yet</div>
-                  <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                    This prescription was added to queue only (no billing at entry).<br />
-                    Payment will be collected when items are dispensed.
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-                    {[
-                      { l: "Bill No", v: rxBillModal.bill.billNo || "—" },
-                      { l: "Status", v: rxBillModal.bill.status || "—", colored: true },
-                      { l: "Date", v: rxBillModal.bill.createdAt ? new Date(rxBillModal.bill.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
-                    ].map((k, i) => (
-                      <div key={i} style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
-                        <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>{k.l}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: k.colored ? (rxBillModal.bill.status === "PAID" ? "#16a34a" : "#d97706") : "#1e293b" }}>{k.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {(rxBillModal.bill.billItems || []).length > 0 && (
-                    <div className="ph-tbl-wrap" style={{ marginBottom: 12 }}>
-                      <table className="ph-tbl">
-                        <thead><tr><th>#</th><th>Item</th><th style={{ textAlign: "right" }}>Qty</th><th style={{ textAlign: "right" }}>Unit Price</th><th style={{ textAlign: "right" }}>Amount</th></tr></thead>
-                        <tbody>
-                          {(rxBillModal.bill.billItems || []).map((bi: any, i: number) => (
-                            <tr key={bi.id || i}>
-                              <td>{i + 1}</td>
-                              <td><strong>{bi.name || "—"}</strong></td>
-                              <td style={{ textAlign: "right" }}>{bi.quantity}</td>
-                              <td style={{ textAlign: "right" }}>{fmtCurrency(bi.unitPrice || 0)}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700 }}>{fmtCurrency(bi.amount || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginBottom: 16 }}>
-                    {(rxBillModal.bill.discount || 0) > 0 && (
-                      <div style={{ fontSize: 12, color: "#64748b" }}>Discount: <strong style={{ color: "#16a34a" }}>-{fmtCurrency(rxBillModal.bill.discount || 0)}</strong></div>
-                    )}
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b" }}>Total: <span style={{ color: ACCENT }}>{fmtCurrency(rxBillModal.bill.total || 0)}</span></div>
-                    {(rxBillModal.bill.paidAmount || 0) > 0 && (
-                      <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 600 }}>Paid: {fmtCurrency(rxBillModal.bill.paidAmount || 0)}</div>
-                    )}
-                    {rxBillModal.bill.status !== "PAID" && (rxBillModal.bill.total || 0) > (rxBillModal.bill.paidAmount || 0) && (
-                      <div style={{ fontSize: 13, color: "#d97706", fontWeight: 700 }}>Due: {fmtCurrency((rxBillModal.bill.total || 0) - (rxBillModal.bill.paidAmount || 0))}</div>
-                    )}
-                  </div>
-                  {rxBillModal.bill.status !== "PAID" && (
-                    <div style={{ padding: "12px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                      <div style={{ fontSize: 12, color: "#92400e", display: "flex", alignItems: "center", gap: 6 }}><Clock size={13} /> Payment pending</div>
-                      <button
-                        className="ph-btn-primary"
-                        style={{ fontSize: 11, padding: "6px 14px", background: "#16a34a", display: "flex", alignItems: "center", gap: 6 }}
-                        onClick={() => { const b = rxBillModal.bill; setRxBillModal(null); setPaymentModal(b); setPaymentForm({ amount: String((b.total || 0) - (b.paidAmount || 0)), method: "CASH", transactionId: "", notes: "" }); }}
-                      >
-                        <Banknote size={12} /> Collect Payment
-                      </button>
-                    </div>
-                  )}
-                  {rxBillModal.bill.status === "PAID" && (
-                    <div style={{ padding: "10px 14px", background: "#f0fdf4", border: "1px solid #a7f3d0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                      <ShieldCheck size={16} color="#16a34a" />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#16a34a" }}>Fully Paid</span>
-                      {rxBillModal.bill.paymentMethod && <span style={{ fontSize: 11, color: "#64748b" }}>via {rxBillModal.bill.paymentMethod.replace(/_/g, " ")}</span>}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-            <div className="ph-modal-footer">
-              <button className="ph-btn-ghost" onClick={() => setRxBillModal(null)}>Close</button>
-            </div>
-          </div>
+      {/* ── Counter Sell Tab ── */}
+      {tab === "counter-sell" && (
+        <div className="ph-section">
+          <PharmacyCounterSellPanel profile={profile} user={user} />
         </div>
       )}
 
-      {/* ── Queue: View Rx Detail Modal ── */}
+      {/* ── Revenue / Finance Tab ── */}
+      {tab === "revenue" && (
+        <div className="ph-section">
+          <PharmacyFinancePanel />
+        </div>
+      )}
+
+      {/* â”€â”€ Queue: View Rx Detail Modal â”€â”€ */}
       {queueViewModal && (
         <div className="ph-modal-overlay" onClick={() => setQueueViewModal(null)}>
           <div className="ph-modal" style={{ width: 620 }} onClick={e => e.stopPropagation()}>
             <div className="ph-modal-header">
               <div>
-                <div className="ph-modal-title">Prescription Detail — {queueViewModal.prescriptionNo}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>{queueViewModal.patient?.name} · Dr. {queueViewModal.doctor?.name || "Walk-in"}</div>
+                <div className="ph-modal-title">Prescription Detail - {queueViewModal.prescriptionNo}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>{queueViewModal.patient?.name} &middot; Dr. {queueViewModal.doctor?.name || "Walk-in"}</div>
               </div>
               <button className="ph-icon-btn-sm" onClick={() => setQueueViewModal(null)}><X size={16} /></button>
             </div>
             <div className="ph-modal-body">
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
                 {[
-                  { label: "Patient", value: `${queueViewModal.patient?.name || "—"} (${queueViewModal.patient?.patientId || ""})` },
-                  { label: "Phone", value: queueViewModal.patient?.phone || "—" },
+                  { label: "Patient", value: `${queueViewModal.patient?.name || "-"} (${queueViewModal.patient?.patientId || ""})` },
+                  { label: "Phone", value: queueViewModal.patient?.phone || "-" },
                   { label: "Doctor", value: queueViewModal.doctor ? `Dr. ${queueViewModal.doctor.name}` : "Walk-in / Manual" },
-                  { label: "Appointment Type", value: queueViewModal.appointment?.type || "—" },
-                  { label: "Diagnosis", value: queueViewModal.diagnosis || "—" },
-                  { label: "Chief Complaint", value: queueViewModal.chiefComplaint || "—" },
-                  { label: "Status", value: queueViewModal.workflowStatus || queueViewModal.status || "—" },
-                  { label: "Total Charge", value: queueViewModal.totalCharge ? fmtCurrency(queueViewModal.totalCharge) : "—" },
+                  { label: "Appointment Type", value: queueViewModal.appointment?.type || "-" },
+                  { label: "Diagnosis", value: queueViewModal.diagnosis || "-" },
+                  { label: "Chief Complaint", value: queueViewModal.chiefComplaint || "-" },
+                  { label: "Status", value: queueViewModal.workflowStatus || queueViewModal.status || "-" },
+                  { label: "Total Charge", value: queueViewModal.totalCharge ? fmtCurrency(queueViewModal.totalCharge) : "-" },
                 ].map((row, i) => (
                   <div key={i} style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
                     <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>{row.label}</div>
@@ -2348,12 +2328,12 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                       {(queueViewModal.medications || []).map((m: any, i: number) => (
                         <tr key={i}>
                           <td>{i + 1}</td>
-                          <td><strong>{m.name || m.medicine || "—"}</strong>{m.genericName && <div style={{ fontSize: 10, color: "#94a3b8" }}>{m.genericName}</div>}</td>
-                          <td>{m.dosage || m.dose || "—"}</td>
-                          <td>{m.frequency || "—"}</td>
-                          <td>{m.duration || "—"}</td>
-                          <td><strong>{m.quantity || "—"}</strong></td>
-                          <td>{m.instructions || m.notes || "—"}</td>
+                          <td><strong>{m.name || m.medicine || "\u2014"}</strong>{m.genericName && <div style={{ fontSize: 10, color: "#94a3b8" }}>{m.genericName}</div>}</td>
+                          <td>{m.dosage || m.dose || "\u2014"}</td>
+                          <td>{m.frequency || "\u2014"}</td>
+                          <td>{m.duration || "\u2014"}</td>
+                          <td><strong>{m.quantity || "\u2014"}</strong></td>
+                          <td>{m.instructions || m.notes || "\u2014"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2373,7 +2353,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Queue: Skip / Hold / Resume Confirm Modal ── */}
+      {/* â”€â”€ Queue: Skip / Hold / Resume Confirm Modal â”€â”€ */}
       {rxActionTarget && (
         <div className="ph-modal-overlay" onClick={() => setRxActionTarget(null)}>
           <div className="ph-modal" style={{ width: 440 }} onClick={e => e.stopPropagation()}>
@@ -2386,7 +2366,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
             <div className="ph-modal-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ padding: "12px 14px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 13 }}>
                 <div style={{ fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>{rxActionTarget.patient?.name}</div>
-                <div style={{ color: "#64748b" }}>Rx: {rxActionTarget.prescriptionNo} · Dr. {rxActionTarget.doctor?.name || "Walk-in"}</div>
+                <div style={{ color: "#64748b" }}>Rx: {rxActionTarget.prescriptionNo} &middot; Dr. {rxActionTarget.doctor?.name || "Walk-in"}</div>
                 {rxActionTarget.diagnosis && <div style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>Diagnosis: {rxActionTarget.diagnosis}</div>}
               </div>
               <div>
@@ -2405,8 +2385,17 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Counter Sale Modal ── */}
+      {/* â”€â”€ Counter Sale Modal (New Design) â”€â”€ */}
       {counterSaleModal && (
+        <CounterSaleModal
+          onClose={() => setCounterSaleModal(false)}
+          user={user}
+          onSuccess={() => { loadStats(); loadBills(); loadInventory(); loadQueue(); }}
+        />
+      )}
+
+      {/* â”€â”€ Old Counter Sale Modal (disabled) â”€â”€ */}
+      {false && (
         <div className="ph-modal-overlay" onClick={() => setCounterSaleModal(false)}>
           <div className="ph-modal" style={{ width: 720, maxHeight: "90vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
             <div className="ph-modal-header" style={{ background: "linear-gradient(135deg, #ea580c12, #ea580c06)", borderBottom: "1px solid #ea580c25" }}>
@@ -2414,7 +2403,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <div className="ph-modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <ShoppingCart size={18} color="#ea580c" /> Pharmacy Counter Sale
                 </div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Direct sale — bill is sent to Hospital Admin & Reception billing</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Direct sale â€” bill is sent to Hospital Admin & Reception billing</div>
               </div>
               <button className="ph-icon-btn-sm" onClick={() => setCounterSaleModal(false)}><X size={16} /></button>
             </div>
@@ -2426,7 +2415,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
               <div style={{ padding: "14px 16px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0" }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Patient</div>
 
-                {/* ── Selected patient confirmed ── */}
+                {/* â”€â”€ Selected patient confirmed â”€â”€ */}
                 {csPatientId && !csManualPatient ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10 }}>
                     <CheckCircle2 size={16} color="#16a34a" />
@@ -2435,10 +2424,10 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   </div>
 
                 ) : csManualPatient ? (
-                  /* ── Manual new-patient form ── */
+                  /* â”€â”€ Manual new-patient form â”€â”€ */
                   <div>
                     <div style={{ fontSize: 11, color: "#ea580c", fontWeight: 600, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                      <Plus size={12} /> New patient — not found in records
+                      <Plus size={12} /> New patient â€” not found in records
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                       <input className="ph-input" placeholder="Full Name *" value={csManualForm.name} onChange={e => setCsManualForm({ ...csManualForm, name: e.target.value })} style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px solid #ea580c55", fontSize: 13 }} />
@@ -2453,7 +2442,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   </div>
 
                 ) : (
-                  /* ── Search mode ── */
+                  /* â”€â”€ Search mode â”€â”€ */
                   <div style={{ position: "relative" }}>
                     <input
                       className="ph-input"
@@ -2542,13 +2531,13 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     <button className="ph-btn-ghost" style={{ fontSize: 11, padding: "3px 10px" }} onClick={() => { setCsHistoryModal(true); loadCsHistory(); }}>
                       <Clock size={11} /> History
                     </button>
-                    <button className="ph-btn-ghost" style={{ fontSize: 11, padding: "3px 10px" }} onClick={() => setCsItems([...csItems, { inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", availableStock: 0 }])}>
+                    <button className="ph-btn-ghost" style={{ fontSize: 11, padding: "3px 10px" }} onClick={() => setCsItems([...csItems, { inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", gst: "0", availableStock: 0 }])}>
                       <Plus size={11} /> Add Item
                     </button>
                   </div>
                 </div>
                 
-                {/* Stock Issues Alert — accounts for combined quantities of duplicate items */}
+                {/* Stock Issues Alert â€” accounts for combined quantities of duplicate items */}
                 {(() => {
                   const combined: Record<string, number> = {};
                   csItems.filter(i => i.inventoryItemId).forEach(item => {
@@ -2569,7 +2558,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                         <div style={{ fontSize: 11, color: "#7f1d1d", lineHeight: 1.5 }}>
                           {outOfStock.length > 0 && <div>{outOfStock.length} item(s) out of stock.</div>}
                           {issues.length > 0 && <div>Combined quantity exceeds stock for: {issues.map(([itemId]) => csItems.find(i => i.inventoryItemId === itemId)?.name || itemId).join(", ")}.</div>}
-                          {duplicates.length > 0 && <div style={{ color: "#b45309" }}>Same item added multiple times — quantities are combined for stock check.</div>}
+                          {duplicates.length > 0 && <div style={{ color: "#b45309" }}>Same item added multiple times â€” quantities are combined for stock check.</div>}
                           Adjust quantities or request purchase.
                         </div>
                       </div>
@@ -2577,14 +2566,14 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   );
                 })()}
 
-                <div className="ph-tbl-wrap" style={{ overflow: "visible" }}>
+                <div className="ph-tbl-wrap">
                   <table className="ph-tbl">
                     <thead>
                       <tr>
                         <th style={{ minWidth: 220 }}>Inventory Item <span style={{ color: "#ef4444" }}>*</span></th>
                         <th style={{ width: 70 }}>Qty</th>
-                        <th style={{ width: 90 }}>Unit Price (₹)</th>
-                        <th style={{ width: 80 }}>Amount (₹)</th>
+                        <th style={{ width: 90 }}>Unit Price (Rs.)</th>
+                        <th style={{ width: 80 }}>Amount (Rs.)</th>
                         <th style={{ width: 100 }}>Stock Status</th>
                         <th style={{ width: 50 }}></th>
                       </tr>
@@ -2638,7 +2627,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                     />
                                     {/* Dropdown results */}
                                     {csItemSearchFocused[idx] && (csItemSearch[idx] || "").trim().length > 0 && (
-                                      <div style={{ position: "absolute", zIndex: 9999, top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, maxHeight: 240, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,.12)", marginTop: 2 }}>
+                                      <div style={{ position: "absolute", zIndex: 50, top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, maxHeight: 240, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,.12)", marginTop: 2 }}>
                                         {(() => {
                                           const query = (csItemSearch[idx] || "").toLowerCase().trim();
                                           if (!query) return null;
@@ -2717,15 +2706,15 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                                   </div>
                                                   <div style={{ fontSize: 10, color: "#94a3b8" }}>
                                                     {inv.genericName && <span>{inv.genericName}</span>}
-                                                    {inv.brandName && <span> · {inv.brandName}</span>}
-                                                    {inv.sku && <span> · SKU: {inv.sku}</span>}
+                                                    {inv.brandName && <span> &middot; {inv.brandName}</span>}
+                                                    {inv.sku && <span> &middot; SKU: {inv.sku}</span>}
                                                   </div>
                                                 </div>
                                                 <div style={{ flexShrink: 0, textAlign: "right" }}>
                                                   {isInStock ? (
                                                     <>
                                                       <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a" }}>{stock} {inv.unit}</div>
-                                                      <div style={{ fontSize: 9, color: "#64748b" }}>₹{inv.sellingPrice || 0}</div>
+                                                      <div style={{ fontSize: 9, color: "#64748b" }}>{fmtCurrency(inv.sellingPrice || 0)}</div>
                                                     </>
                                                   ) : (
                                                     <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626", padding: "2px 6px", background: "#fef2f2", borderRadius: 4 }}>OUT OF STOCK</span>
@@ -2832,15 +2821,20 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     </div>
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Discount (₹)</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Discount (Rs.)</label>
                     <input type="number" min="0" className="ph-input" value={csDiscount} onChange={e => setCsDiscount(e.target.value)}
                       style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13 }} />
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Tax % (optional)</label>
+                    <input type="number" min="0" max="100" className="ph-input" placeholder="0" value={csTaxPct} onChange={e => setCsTaxPct(e.target.value)}
+                      style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13 }} />
+                  </div>
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Transaction ID (optional)</label>
-                    <input className="ph-input" placeholder="e.g. UPI ref / Card auth" value={csTransactionId} onChange={e => setCsTransactionId(e.target.value)}
+                    <input className="ph-input" placeholder="UPI ref / Card auth" value={csTransactionId} onChange={e => setCsTransactionId(e.target.value)}
                       style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13 }} />
                   </div>
                   <div>
@@ -2864,7 +2858,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Counter Sale History Modal ── */}
+      {/* â”€â”€ Counter Sale History Modal â”€â”€ */}
       {csHistoryModal && (
         <div className="ph-modal-overlay" onClick={() => setCsHistoryModal(false)}>
           <div className="ph-modal" style={{ width: 900, maxHeight: "85vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
@@ -2913,7 +2907,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                           <td>
                             <div style={{ fontSize: 11 }}>
                               {sale.items?.slice(0, 2).map((it: any, i: number) => (
-                                <div key={i} style={{ color: "#475569" }}>{it.name} × {it.quantity}</div>
+                                <div key={i} style={{ color: "#475569" }}>{it.name} x {it.quantity}</div>
                               ))}
                               {sale.items?.length > 2 && <div style={{ color: "#94a3b8" }}>+{sale.items.length - 2} more</div>}
                             </div>
@@ -2922,7 +2916,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                             <span className="ph-badge blue">{sale.paymentMethod}</span>
                             {sale.transactionId && <div style={{ fontSize: 9, color: "#94a3b8" }}>{sale.transactionId}</div>}
                           </td>
-                          <td style={{ fontWeight: 700, color: ACCENT }}>₹{(sale.total || 0).toLocaleString("en-IN")}</td>
+                          <td style={{ fontWeight: 700, color: ACCENT }}>{fmtCurrency(sale.total || 0)}</td>
                           <td>
                             <span className={`ph-badge ${sale.status === "PAID" ? "green" : sale.status === "PENDING" ? "yellow" : "gray"}`}>
                               {sale.status}
@@ -2943,7 +2937,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Counter Sale Purchase Request Modal ── */}
+      {/* â”€â”€ Counter Sale Purchase Request Modal â”€â”€ */}
       {csPurchaseRequestModal && csPurchaseRequestItem && (
         <div className="ph-modal-overlay" onClick={() => setCsPurchaseRequestModal(false)}>
           <div className="ph-modal" style={{ width: 480 }} onClick={e => e.stopPropagation()}>
@@ -3017,7 +3011,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Success Modal (replaces alert()) ── */}
+      {/* â”€â”€ Success Modal (replaces alert()) â”€â”€ */}
       {successModal.open && (
         <div className="ph-modal-overlay" onClick={() => setSuccessModal({ open: false, title: "", message: "", details: [] })} style={{ zIndex: 9999 }}>
           <div className="ph-modal" style={{ width: 420 }} onClick={e => e.stopPropagation()}>
@@ -3048,7 +3042,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Queue: Create Manual (Walk-in) Rx Modal ── */}
+      {/* â”€â”€ Queue: Create Manual (Walk-in) Rx Modal â”€â”€ */}
       {rxCreateModal && (
         <div className="ph-modal-overlay" onClick={() => { setRxCreateModal(false); setRxCreateManualPatient(false); }}>
           <div className="ph-modal" style={{ width: 680 }} onClick={e => e.stopPropagation()}>
@@ -3065,7 +3059,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   <AlertCircle size={14} style={{ flexShrink: 0 }} /> {rxCreateError}
                 </div>
               )}
-              {/* Patient — toggle between Search and Manual */}
+              {/* Patient â€” toggle between Search and Manual */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>Patient <span style={{ color: "#ef4444" }}>*</span></label>
@@ -3077,14 +3071,14 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   )}
                 </div>
 
-                {/* ── Patient selected ── */}
+                {/* â”€â”€ Patient selected â”€â”€ */}
                 {rxCreateForm.patientId ? (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10 }}>
                     <div><div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{rxCreateForm.patientName}</div><div style={{ fontSize: 11, color: "#16a34a" }}>Patient selected</div></div>
                     <button className="ph-icon-btn-sm" onClick={() => setRxCreateForm(f => ({ ...f, patientId: "", patientName: "" }))}><X size={14} /></button>
                   </div>
 
-                /* ── Manual entry mode ── */
+                /* â”€â”€ Manual entry mode â”€â”€ */
                 ) : rxCreateManualPatient ? (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px", gap: 10, padding: "12px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12 }}>
                     <div>
@@ -3106,7 +3100,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     </div>
                   </div>
 
-                /* ── Search mode ── */
+                /* â”€â”€ Search mode â”€â”€ */
                 ) : (
                   <div style={{ position: "relative" }}>
                     <div className="ph-search-wrap" style={{ width: "100%" }}>
@@ -3172,7 +3166,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 </div>
                 <div className="ph-tbl-wrap">
                   <table className="ph-tbl">
-                    <thead><tr><th>Medicine Name</th><th>Dosage</th><th>Freq</th><th>Qty</th><th>Price (₹)</th><th>Amount</th><th></th></tr></thead>
+                    <thead><tr><th>Medicine Name</th><th>Dosage</th><th>Freq</th><th>Qty</th><th>Price (Rs.)</th><th>Amount</th><th></th></tr></thead>
                     <tbody>
                       {rxCreateForm.medications.map((m, idx) => {
                         const amt = (parseFloat(m.price) || 0) * (parseInt(m.quantity) || 1);
@@ -3183,7 +3177,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                           <td><input className="ph-modal-input" style={{ width: 70, padding: "5px 8px" }} placeholder="1-0-1" value={m.frequency} onChange={e => { const meds = [...rxCreateForm.medications]; meds[idx] = { ...meds[idx], frequency: e.target.value }; setRxCreateForm(f => ({ ...f, medications: meds })); }} /></td>
                           <td><input type="number" min="1" className="ph-modal-input" style={{ width: 50, padding: "5px 8px" }} value={m.quantity} onChange={e => { const meds = [...rxCreateForm.medications]; meds[idx] = { ...meds[idx], quantity: e.target.value }; setRxCreateForm(f => ({ ...f, medications: meds })); }} /></td>
                           <td><input type="number" min="0" step="0.01" className="ph-modal-input" style={{ width: 75, padding: "5px 8px" }} placeholder="0" value={m.price} onChange={e => { const meds = [...rxCreateForm.medications]; meds[idx] = { ...meds[idx], price: e.target.value }; setRxCreateForm(f => ({ ...f, medications: meds })); }} /></td>
-                          <td style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textAlign: "right", whiteSpace: "nowrap" }}>₹{amt.toFixed(2)}</td>
+                          <td style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textAlign: "right", whiteSpace: "nowrap" }}>{fmtCurrency(amt)}</td>
                           <td><button className="ph-icon-btn-sm" style={{ color: "#ef4444" }} onClick={() => setRxCreateForm(f => ({ ...f, medications: f.medications.filter((_, i) => i !== idx) }))} disabled={rxCreateForm.medications.length === 1}><Trash2 size={13} /></button></td>
                         </tr>
                         );
@@ -3198,9 +3192,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   const grand = Math.max(0, sub - disc);
                   return (
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 16, marginTop: 8, fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      <span>Subtotal: <strong style={{ color: "#1e293b" }}>₹{sub.toFixed(2)}</strong></span>
-                      {disc > 0 && <span>Discount: <strong style={{ color: "#ef4444" }}>-₹{disc.toFixed(2)}</strong></span>}
-                      <span>Total: <strong style={{ color: ACCENT, fontSize: 14 }}>₹{grand.toFixed(2)}</strong></span>
+                      <span>Subtotal: <strong style={{ color: "#1e293b" }}>{fmtCurrency(sub)}</strong></span>
+                      {disc > 0 && <span>Discount: <strong style={{ color: "#ef4444" }}>-{fmtCurrency(disc)}</strong></span>}
+                      <span>Total: <strong style={{ color: ACCENT, fontSize: 14 }}>{fmtCurrency(grand)}</strong></span>
                     </div>
                   );
                 })()}
@@ -3212,7 +3206,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <input className="ph-modal-input" placeholder="Pharmacist notes..." value={rxCreateForm.notes} onChange={e => setRxCreateForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
 
-              {/* ── Payment / Billing Section ── */}
+              {/* â”€â”€ Payment / Billing Section â”€â”€ */}
               <div style={{ padding: "12px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 8 }}>Payment Action</label>
                 <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -3241,7 +3235,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                       </select>
                     </div>
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Discount (₹)</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Discount (Rs.)</div>
                       <input type="number" min="0" className="ph-modal-input" placeholder="0" value={rxCreateForm.discount} onChange={e => setRxCreateForm(f => ({ ...f, discount: e.target.value }))} />
                     </div>
                     <div>
@@ -3253,18 +3247,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
 
                 {/* Send to billing fields */}
                 {rxCreateForm.paymentAction === "send_to_billing" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Bill To Department</div>
-                      <select className="ph-modal-input" value={rxCreateForm.billingSubdeptId} onChange={e => setRxCreateForm(f => ({ ...f, billingSubdeptId: e.target.value }))}>
-                        <option value="">— Select sub-department —</option>
-                        {subDepts.map((d: any) => (
-                          <option key={d.id} value={d.id}>{d.name}{d.type ? ` (${d.type})` : ""}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Discount (₹)</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase", marginBottom: 3 }}>Discount (Rs.)</div>
                       <input type="number" min="0" className="ph-modal-input" placeholder="0" value={rxCreateForm.discount} onChange={e => setRxCreateForm(f => ({ ...f, discount: e.target.value }))} />
                     </div>
                     <div>
@@ -3286,7 +3271,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Queue: Substitute Medicine Modal ── */}
+      {/* â”€â”€ Queue: Substitute Medicine Modal â”€â”€ */}
       {substituteModal && (
         <div className="ph-modal-overlay" onClick={() => setSubstituteModal(null)}>
           <div className="ph-modal" style={{ width: 560 }} onClick={e => e.stopPropagation()}>
@@ -3316,8 +3301,8 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{item.name}</div>
                           <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                            {item.genericName && <span>{item.genericName} · </span>}
-                            {item.category && <span>{item.category} · </span>}
+                            {item.genericName && <span>{item.genericName} &middot; </span>}
+                            {item.category && <span>{item.category} &middot; </span>}
                             {item.strength || ""}
                           </div>
                         </div>
@@ -3352,7 +3337,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Queue: Delete / Remove Confirm Modal ── */}
+      {/* â”€â”€ Queue: Delete / Remove Confirm Modal â”€â”€ */}
       {rxDeleteTarget && (
         <div className="ph-modal-overlay" onClick={() => { setRxDeleteTarget(null); setRxDeleteRemark(""); }}>
           <div className="ph-modal" style={{ width: 420 }} onClick={e => e.stopPropagation()}>
@@ -3377,8 +3362,8 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
               <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{rxDeleteTarget.patient?.name}</div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                  Rx: {rxDeleteTarget.prescriptionNo} · {rxDeleteTarget.medications?.length || 0} medication{rxDeleteTarget.medications?.length !== 1 ? "s" : ""}
-                  {rxDeleteTarget.doctor?.name && ` · Dr. ${rxDeleteTarget.doctor.name}`}
+                  Rx: {rxDeleteTarget.prescriptionNo} &middot; {rxDeleteTarget.medications?.length || 0} medication{rxDeleteTarget.medications?.length !== 1 ? "s" : ""}
+                  {rxDeleteTarget.doctor?.name && ` - Dr. ${rxDeleteTarget.doctor.name}`}
                 </div>
               </div>
               
@@ -3416,7 +3401,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Queue: Bulk Delete Confirm Modal ── */}
+      {/* â”€â”€ Queue: Bulk Delete Confirm Modal â”€â”€ */}
       {bulkDeleteModalOpen && (
         <div className="ph-modal-overlay" onClick={() => setBulkDeleteModalOpen(false)}>
           <div className="ph-modal" style={{ width: 480 }} onClick={e => e.stopPropagation()}>
@@ -3506,59 +3491,33 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       )}
 
       {/* ── Inventory Tab ── */}
-      {tab === "inventory" && <PharmacyInventoryPanel />}
+      {tab === "inventory" && <AdminInventoryPanel allowDeptTransfers={false} />}
+
 
       {/* ── Billing Tab ── */}
       {tab === "billing" && (
         <div className="ph-section">
           {/* Billing Toolbar */}
-          <div className="ph-toolbar" style={{flexWrap:"wrap",gap:8}}>
-            <div className="ph-toolbar-left" style={{flexWrap:"wrap",gap:8}}>
+          <div className="ph-toolbar">
+            <div className="ph-toolbar-left">
               <div className="ph-search-wrap">
                 <Search size={14} color="#94a3b8" />
-                <input className="ph-search-input" placeholder="Search bill no, patient name..." value={billSearch} onChange={e => setBillSearch(e.target.value)} />
+                <input className="ph-search-input" placeholder="Search bill no, patient..." value={billSearch} onChange={e => setBillSearch(e.target.value)} />
                 {billSearch && <button className="ph-icon-btn-sm" onClick={() => setBillSearch("")}><X size={12} /></button>}
               </div>
               <div className="ph-filter-pills">
-                {(["all","PENDING","PAID","PARTIALLY_PAID"] as const).map(f => (
+                {(["all", "PENDING", "PAID", "PARTIALLY_PAID"] as const).map(f => (
                   <button key={f} className={`ph-pill${billFilter === f ? " on" : ""}`} onClick={() => setBillFilter(f)}>
-                    {f === "all" && <Layers size={12} />}{f === "PENDING" && <Clock size={12} />}
-                    {f === "PAID" && <CheckCircle2 size={12} />}{f === "PARTIALLY_PAID" && <DollarSign size={12} />}
+                    {f === "all" && <Layers size={12} />}
+                    {f === "PENDING" && <Clock size={12} />}
+                    {f === "PAID" && <CheckCircle2 size={12} />}
+                    {f === "PARTIALLY_PAID" && <DollarSign size={12} />}
                     {f === "all" ? "All" : f === "PARTIALLY_PAID" ? "Partial" : f.charAt(0) + f.slice(1).toLowerCase()}
                   </button>
                 ))}
               </div>
-              {/* Sort Dropdown */}
-              <div ref={billSortRef} style={{position:"relative"}}>
-                <button onClick={() => setBillSortOpen(o => !o)} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",fontSize:12,fontWeight:600,color:"#475569",cursor:"pointer"}}>
-                  <ArrowUpDown size={13}/>{[
-                    {v:"newest",l:"Newest First"},{v:"oldest",l:"Oldest First"},{v:"name_asc",l:"Name A-Z"},{v:"name_desc",l:"Name Z-A"},
-                    {v:"total_high",l:"Amount ↓"},{v:"total_low",l:"Amount ↑"},{v:"status_paid",l:"Paid First"},{v:"status_pending",l:"Pending First"},
-                  ].find(o => o.v === billSort)?.l || "Sort"}<ChevronDown size={12}/>
-                </button>
-                {billSortOpen && (
-                  <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,boxShadow:"0 8px 24px rgba(0,0,0,.12)",zIndex:100,minWidth:170,overflow:"hidden"}}>
-                    {[
-                      {v:"newest",l:"Newest First"},{v:"oldest",l:"Oldest First"},
-                      {v:"name_asc",l:"Name A–Z"},{v:"name_desc",l:"Name Z–A"},
-                      {v:"total_high",l:"Amount: High → Low"},{v:"total_low",l:"Amount: Low → High"},
-                      {v:"status_paid",l:"Paid First"},{v:"status_pending",l:"Pending First"},
-                    ].map(opt => (
-                      <button key={opt.v} onClick={() => { setBillSort(opt.v as any); setBillSortOpen(false); }} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"8px 14px",background:billSort===opt.v?"#f0fdf4":"transparent",border:"none",cursor:"pointer",fontSize:12,color:billSort===opt.v?ACCENT:"#475569",fontWeight:billSort===opt.v?700:400}}>
-                        {opt.l}{billSort===opt.v && <CheckCircle2 size={13} color={ACCENT}/>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
-            <div style={{display:"flex",gap:6,alignItems:"center"}}>
-              <button className="ph-btn-ghost" onClick={handleExportCSV} title="Export as CSV" style={{gap:5}}><FileSpreadsheet size={13}/> CSV</button>
-              <button className="ph-btn-ghost" onClick={loadBills} title="Refresh" style={{gap:5}}><RefreshCw size={13}/> Refresh</button>
-              {(billSearch || billFilter !== "all") && (
-                <button className="ph-btn-ghost" onClick={() => { setBillSearch(""); setBillFilter("all"); setBillSort("newest"); }} style={{gap:5,color:"#ef4444",borderColor:"#fecaca"}}><X size={13}/> Clear</button>
-              )}
-            </div>
+            <button className="ph-btn-ghost" onClick={loadBills}><RefreshCw size={13} /> Refresh</button>
           </div>
 
           {/* Billing Stats Bar */}
@@ -3597,14 +3556,15 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   <tr>
                     <th>Bill No</th>
                     <th>Patient</th>
-                    <th style={{textAlign:"center"}}>Items</th>
-                    <th style={{textAlign:"right"}}>Subtotal</th>
-                    <th style={{textAlign:"right"}}>Discount</th>
-                    <th style={{textAlign:"right"}}>Total</th>
-                    <th style={{textAlign:"right"}}>Paid</th>
-                    <th style={{textAlign:"center"}}>Status</th>
+                    <th>Items</th>
+                    <th>Subtotal</th>
+                    <th>Discount</th>
+                    <th>Tax</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Status</th>
                     <th>Date</th>
-                    <th style={{textAlign:"center"}}>Actions</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3613,32 +3573,41 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     const due = bill.total - bill.paidAmount;
                     return (
                       <tr key={bill.id}>
-                        <td><strong style={{color:ACCENT,fontSize:12}}>{bill.billNo}</strong></td>
+                        <td><strong>{bill.billNo}</strong></td>
                         <td>
-                          <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{bill.patient?.name||"—"}</div>
-                          <div style={{fontSize:10,color:"#94a3b8"}}>{bill.patient?.patientId||""}</div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{bill.patient?.name || "-"}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8" }}>{bill.patient?.patientId || ""}</div>
                         </td>
-                        <td style={{textAlign:"center"}}><span style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:11,fontWeight:600,color:"#475569"}}><Package size={11}/>{bill.billItems?.length||billItems.length||0}</span></td>
-                        <td style={{textAlign:"right",fontSize:12}}>{fmtCurrency(bill.subtotal)}</td>
-                        <td style={{textAlign:"right",color:bill.discount>0?"#ea580c":"#94a3b8",fontSize:12}}>{bill.discount>0?`-${fmtCurrency(bill.discount)}`:"—"}</td>
-                        <td style={{textAlign:"right"}}><strong style={{fontSize:13}}>{fmtCurrency(bill.total)}</strong></td>
-                        <td style={{textAlign:"right",color:bill.paidAmount>=bill.total?"#16a34a":"#ea580c",fontWeight:700,fontSize:12}}>{fmtCurrency(bill.paidAmount)}</td>
-                        <td style={{textAlign:"center"}}>
-                          <span className={`ph-badge ${bill.status==="PAID"?"green":bill.status==="PARTIALLY_PAID"?"blue":"orange"}`}>
-                            {bill.status==="PARTIALLY_PAID"?"Partial":bill.status}
+                        <td>{bill.billItems?.length || billItems.length || 0}</td>
+                        <td>{fmtCurrency(bill.subtotal)}</td>
+                        <td style={{ color: bill.discount > 0 ? "#ea580c" : "#94a3b8" }}>{bill.discount > 0 ? `-${fmtCurrency(bill.discount)}` : "-"}</td>
+                        <td>
+                          {bill.isGst ? (
+                            <span style={{ fontSize: 10, color: "#64748b" }}>
+                              {fmtCurrency(bill.tax)}
+                              <br /><span style={{ color: "#94a3b8" }}>CGST {bill.cgst}% + SGST {bill.sgst}%</span>
+                            </span>
+                          ) : (
+                            <span style={{ color: "#94a3b8" }}>-</span>
+                          )}
+                        </td>
+                        <td><strong>{fmtCurrency(bill.total)}</strong></td>
+                        <td style={{ color: bill.paidAmount >= bill.total ? "#16a34a" : "#ea580c", fontWeight: 700 }}>{fmtCurrency(bill.paidAmount)}</td>
+                        <td>
+                          <span className={`ph-badge ${bill.status === "PAID" ? "green" : bill.status === "PARTIALLY_PAID" ? "blue" : "orange"}`}>
+                            {bill.status === "PARTIALLY_PAID" ? "Partial" : bill.status}
                           </span>
                         </td>
-                        <td style={{fontSize:11,color:"#64748b"}}>{fmtDate(bill.createdAt)}</td>
+                        <td style={{ fontSize: 11, color: "#64748b" }}>{fmtDate(bill.createdAt)}</td>
                         <td>
-                          <div style={{display:"flex",gap:4,justifyContent:"center"}}>
-                            <button title="View Bill" onClick={()=>setBillViewModal(bill)} style={{width:30,height:30,borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#475569"}}><Eye size={13}/></button>
-                            <button title="Download PDF Invoice" onClick={()=>handleDownloadInvoicePDF(bill)} style={{width:30,height:30,borderRadius:7,border:"1px solid #bfdbfe",background:"#eff6ff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#2563eb"}}><Download size={13}/></button>
-                            {bill.status==="PAID" ? (
-                              <button title="View Invoice/Receipt" onClick={()=>setBillInvoiceModal({bill,method:bill.payments?.[0]?.method||bill.paymentMethod||"CASH",transactionId:bill.payments?.[0]?.transactionId||""})} style={{width:30,height:30,borderRadius:7,border:"1px solid #bbf7d0",background:"#f0fdf4",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#16a34a"}}><Receipt size={13}/></button>
-                            ) : bill.status!=="CANCELLED" ? (
-                              <button title="Collect Payment" onClick={()=>{ setPaymentModal(bill); setPaymentForm({amount:String(due>0?due:bill.total),method:"CASH",transactionId:"",notes:""}); }} style={{width:30,height:30,borderRadius:7,border:`1px solid ${ACCENT}44`,background:LIGHT_BG,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:ACCENT}}><CreditCard size={13}/></button>
-                            ) : null}
-                          </div>
+                          {bill.status !== "PAID" && bill.status !== "CANCELLED" && (
+                            <button className="ph-btn-primary" style={{ padding: "5px 10px", fontSize: 11 }} onClick={() => {
+                              setPaymentModal(bill);
+                              setPaymentForm({ amount: String(due > 0 ? due : bill.total), method: "CASH", transactionId: "", notes: "" });
+                            }}>
+                              <Wallet size={12} /> Collect
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -3664,7 +3633,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Payment Modal ── */}
+      {/* â”€â”€ Payment Modal â”€â”€ */}
       {paymentModal && (
         <div className="ph-modal-overlay" onClick={() => setPaymentModal(null)}>
           <div className="ph-modal" onClick={e => e.stopPropagation()}>
@@ -3687,7 +3656,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
               {/* Payment Form */}
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Amount (₹)</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Amount (Rs.)</label>
                   <input type="number" className="ph-modal-input" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} min="0" step="0.01" />
                 </div>
                 <div>
@@ -3722,189 +3691,14 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
               <button className="ph-btn-ghost" onClick={() => setPaymentModal(null)}>Cancel</button>
               <button className="ph-btn-primary" onClick={handlePayment} disabled={payingBill || !paymentForm.amount || parseFloat(paymentForm.amount) <= 0}>
                 {payingBill ? <Loader2 size={14} className="ph-spin" /> : <CheckCircle2 size={14} />}
-                Record Payment — {fmtCurrency(parseFloat(paymentForm.amount) || 0)}
+                Record Payment - {fmtCurrency(parseFloat(paymentForm.amount) || 0)}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── View Bill Modal ── */}
-      {billViewModal && (
-        <div className="ph-modal-overlay" onClick={()=>setBillViewModal(null)}>
-          <div className="ph-modal" style={{maxWidth:620}} onClick={e=>e.stopPropagation()}>
-            <div className="ph-modal-header">
-              <div>
-                <div className="ph-modal-title" style={{display:"flex",alignItems:"center",gap:8}}><Receipt size={16} color={ACCENT}/>{billViewModal.billNo}</div>
-                <div style={{fontSize:12,color:"#64748b"}}>{billViewModal.patient?.name} · {fmtDate(billViewModal.createdAt)}</div>
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>handleDownloadInvoicePDF(billViewModal)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:7,border:"1px solid #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:600,cursor:"pointer"}}><Download size={12}/>PDF</button>
-                <button className="ph-icon-btn-sm" onClick={()=>setBillViewModal(null)}><X size={16}/></button>
-              </div>
-            </div>
-            <div className="ph-modal-body" style={{maxHeight:"70vh",overflowY:"auto"}}>
-              {/* Patient strip */}
-              <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:LIGHT_BG,borderRadius:10,border:`1px solid ${BORDER}`,marginBottom:14}}>
-                <div style={{width:40,height:40,borderRadius:10,background:ACCENT,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:15,color:"#fff",flexShrink:0}}>{(billViewModal.patient?.name||"?")[0].toUpperCase()}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:"#1e293b"}}>{billViewModal.patient?.name||"—"}</div>
-                  <div style={{fontSize:11,color:"#94a3b8"}}>{billViewModal.patient?.patientId} {billViewModal.patient?.phone ? `· ${billViewModal.patient.phone}` : ""}</div>
-                </div>
-                <span className={`ph-badge ${billViewModal.status==="PAID"?"green":billViewModal.status==="PARTIALLY_PAID"?"blue":"orange"}`} style={{fontSize:11}}>{billViewModal.status}</span>
-              </div>
-              {/* Items table */}
-              <div style={{fontSize:12,fontWeight:700,color:"#475569",marginBottom:6,display:"flex",alignItems:"center",gap:6}}><Package size={13} color={ACCENT}/>Medicine / Items</div>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:14}}>
-                <thead><tr style={{background:"#f8fafc"}}>
-                  <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10}}>#</th>
-                  <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10}}>Item</th>
-                  <th style={{padding:"7px 10px",textAlign:"center",fontWeight:700,color:"#64748b",fontSize:10}}>Qty</th>
-                  <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:"#64748b",fontSize:10}}>Unit Price</th>
-                  <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:"#64748b",fontSize:10}}>Amount</th>
-                </tr></thead>
-                <tbody>
-                  {(billViewModal.billItems||[]).map((it:any,i:number)=>(
-                    <tr key={i} style={{borderBottom:"1px solid #f1f5f9"}}>
-                      <td style={{padding:"7px 10px",color:"#94a3b8"}}>{i+1}</td>
-                      <td style={{padding:"7px 10px",fontWeight:600,color:"#1e293b"}}>{it.name}<span style={{display:"block",fontSize:10,color:"#94a3b8",fontWeight:400}}>{it.type}</span></td>
-                      <td style={{padding:"7px 10px",textAlign:"center"}}>{it.quantity}</td>
-                      <td style={{padding:"7px 10px",textAlign:"right"}}>{fmtCurrency(it.unitPrice)}</td>
-                      <td style={{padding:"7px 10px",textAlign:"right",fontWeight:700}}>{fmtCurrency(it.amount)}</td>
-                    </tr>
-                  ))}
-                  {(billViewModal.billItems||[]).length===0 && <tr><td colSpan={5} style={{padding:"16px",textAlign:"center",color:"#94a3b8"}}>No items</td></tr>}
-                </tbody>
-              </table>
-              {/* Summary */}
-              <div style={{display:"flex",justifyContent:"flex-end"}}>
-                <div style={{width:220,background:"#f8fafc",borderRadius:10,padding:"12px 14px",border:"1px solid #e2e8f0"}}>
-                  {[["Subtotal",fmtCurrency(billViewModal.subtotal)],billViewModal.discount>0&&["Discount",`-${fmtCurrency(billViewModal.discount)}`],billViewModal.tax>0&&["Tax",fmtCurrency(billViewModal.tax)]].filter(Boolean).map((row:any,i:number)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12,color:"#64748b"}}><span>{row[0]}</span><span>{row[1]}</span></div>
-                  ))}
-                  <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 0",borderTop:"1.5px solid #e2e8f0",marginTop:6,fontWeight:800,fontSize:14,color:"#1e293b"}}><span>Total</span><span style={{color:ACCENT}}>{fmtCurrency(billViewModal.total)}</span></div>
-                  <div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12,color:billViewModal.paidAmount>=billViewModal.total?"#16a34a":"#ef4444",fontWeight:700}}><span>Paid</span><span>{fmtCurrency(billViewModal.paidAmount)}</span></div>
-                  {(billViewModal.total-billViewModal.paidAmount)>0 && <div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12,color:"#ef4444",fontWeight:700}}><span>Due</span><span>{fmtCurrency(billViewModal.total-billViewModal.paidAmount)}</span></div>}
-                </div>
-              </div>
-              {/* Payment history */}
-              {billViewModal.payments?.length>0 && (
-                <div style={{marginTop:14}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#475569",marginBottom:6,display:"flex",alignItems:"center",gap:6}}><CreditCard size={13} color={ACCENT}/>Payment History</div>
-                  {billViewModal.payments.map((p:any,i:number)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0",marginBottom:4}}>
-                      <div style={{fontSize:12,fontWeight:600,color:"#15803d"}}>{fmtCurrency(p.amount)}</div>
-                      <div style={{fontSize:11,color:"#64748b"}}>{p.method} {p.transactionId?`· ${p.transactionId}`:""}</div>
-                      <div style={{fontSize:10,color:"#94a3b8"}}>{fmtDate(p.paidAt)}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="ph-modal-footer">
-              {billViewModal.status!=="PAID" && billViewModal.status!=="CANCELLED" && (
-                <button className="ph-btn-primary" onClick={()=>{ const due=billViewModal.total-billViewModal.paidAmount; setPaymentModal(billViewModal); setPaymentForm({amount:String(due>0?due:billViewModal.total),method:"CASH",transactionId:"",notes:""}); setBillViewModal(null); }}><CreditCard size={13}/>Collect Payment</button>
-              )}
-              <button className="ph-btn-ghost" onClick={()=>setBillViewModal(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Invoice / Receipt Modal ── */}
-      {billInvoiceModal && (
-        <div className="ph-modal-overlay" onClick={()=>setBillInvoiceModal(null)}>
-          <div className="ph-modal" style={{maxWidth:680,padding:0,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-            <div className="ph-modal-header" style={{background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",borderBottom:"1px solid #bbf7d0"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:36,height:36,borderRadius:10,background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center"}}><CheckCircle2 size={18} color="#fff"/></div>
-                <div>
-                  <div style={{fontSize:14,fontWeight:700,color:"#166534"}}>Invoice — {billInvoiceModal.bill?.billNo}</div>
-                  <div style={{fontSize:11,color:"#64748b"}}>Payment received · {fmtCurrency(billInvoiceModal.bill?.paidAmount||billInvoiceModal.bill?.total||0)}</div>
-                </div>
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>handleDownloadInvoicePDF(billInvoiceModal.bill)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:7,border:"1px solid #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:600,cursor:"pointer"}}><Download size={12}/>PDF</button>
-                <button onClick={handlePrintInvoice} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:7,border:"1px solid #e2e8f0",background:"#fff",color:"#475569",fontSize:11,fontWeight:600,cursor:"pointer"}}><FileText size={12}/>Print</button>
-                <button className="ph-icon-btn-sm" onClick={()=>setBillInvoiceModal(null)}><X size={16}/></button>
-              </div>
-            </div>
-            <div className="ph-modal-body" style={{maxHeight:"72vh",overflowY:"auto",padding:0}}>
-              {/* Printable invoice area */}
-              <div ref={billPrintRef} style={{padding:"24px 28px",fontFamily:"Arial,sans-serif",color:"#1e293b"}}>
-                {/* Hospital header */}
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",paddingBottom:16,borderBottom:"2px solid #e2e8f0",marginBottom:16}}>
-                  <div>
-                    {hospitalInfo.logo && <img src={hospitalInfo.logo} alt="" style={{maxHeight:48,maxWidth:120,objectFit:"contain",marginBottom:6,display:"block"}}/>}
-                    <div style={{fontSize:18,fontWeight:800,color:"#1e293b"}}>{hospitalInfo.name||"Pharmacy"}</div>
-                    {hospitalInfo.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{hospitalInfo.address}</div>}
-                    {hospitalInfo.phone && <div style={{fontSize:11,color:"#64748b"}}>{hospitalInfo.phone}</div>}
-                    {hospitalInfo.email && <div style={{fontSize:11,color:"#64748b"}}>{hospitalInfo.email}</div>}
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#10b981",letterSpacing:".1em",textTransform:"uppercase",background:"#f0fdf4",padding:"4px 12px",borderRadius:6,border:"1px solid #bbf7d0",display:"inline-block"}}>PHARMACY INVOICE</div>
-                    <div style={{fontSize:18,fontWeight:800,color:"#1e293b",marginTop:6}}>{billInvoiceModal.bill?.billNo}</div>
-                    <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{fmtDate(billInvoiceModal.bill?.createdAt||new Date().toISOString())}</div>
-                  </div>
-                </div>
-                {/* Patient info */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,background:"#f8fafc",borderRadius:10,padding:"12px 14px",marginBottom:16,border:"1px solid #e2e8f0",fontSize:12}}>
-                  <div><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Patient</span><div style={{fontWeight:700,color:"#1e293b",marginTop:2}}>{billInvoiceModal.bill?.patient?.name||"—"}</div></div>
-                  <div><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Patient ID</span><div style={{fontWeight:600,color:"#1e293b",marginTop:2}}>{billInvoiceModal.bill?.patient?.patientId||"—"}</div></div>
-                  <div><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Phone</span><div style={{fontWeight:600,color:"#1e293b",marginTop:2}}>{billInvoiceModal.bill?.patient?.phone||"—"}</div></div>
-                  <div><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Date</span><div style={{fontWeight:600,color:"#1e293b",marginTop:2}}>{fmtDate(billInvoiceModal.bill?.createdAt||new Date().toISOString())}</div></div>
-                </div>
-                {/* Items */}
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:16}}>
-                  <thead><tr style={{background:"#f1f5f9"}}>
-                    <th style={{padding:"8px 10px",textAlign:"left",fontWeight:700,color:"#475569",fontSize:10}}>#</th>
-                    <th style={{padding:"8px 10px",textAlign:"left",fontWeight:700,color:"#475569",fontSize:10}}>Medicine / Item</th>
-                    <th style={{padding:"8px 10px",textAlign:"center",fontWeight:700,color:"#475569",fontSize:10}}>Qty</th>
-                    <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:"#475569",fontSize:10}}>Unit Price</th>
-                    <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700,color:"#475569",fontSize:10}}>Amount</th>
-                  </tr></thead>
-                  <tbody>
-                    {(billInvoiceModal.bill?.billItems||[]).map((it:any,i:number)=>(
-                      <tr key={i} style={{borderBottom:"1px solid #f1f5f9"}}>
-                        <td style={{padding:"8px 10px",color:"#94a3b8"}}>{i+1}</td>
-                        <td style={{padding:"8px 10px",fontWeight:600,color:"#1e293b"}}>{it.name}</td>
-                        <td style={{padding:"8px 10px",textAlign:"center"}}>{it.quantity}</td>
-                        <td style={{padding:"8px 10px",textAlign:"right"}}>{fmtCurrency(it.unitPrice)}</td>
-                        <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>{fmtCurrency(it.amount)}</td>
-                      </tr>
-                    ))}
-                    {(billInvoiceModal.bill?.billItems||[]).length===0 && <tr><td colSpan={5} style={{padding:"12px",textAlign:"center",color:"#94a3b8",fontSize:11}}>No itemised details</td></tr>}
-                  </tbody>
-                </table>
-                {/* Summary box */}
-                <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-                  <div style={{width:230,border:"1px solid #e2e8f0",borderRadius:10,overflow:"hidden"}}>
-                    {[["Subtotal",fmtCurrency(billInvoiceModal.bill?.subtotal||0)],billInvoiceModal.bill?.discount>0&&["Discount",`-${fmtCurrency(billInvoiceModal.bill?.discount)}`],billInvoiceModal.bill?.tax>0&&["Tax",fmtCurrency(billInvoiceModal.bill?.tax)]].filter(Boolean).map((row:any,i:number)=>(
-                      <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 12px",borderBottom:"1px solid #f1f5f9",fontSize:12,color:"#64748b"}}><span>{row[0]}</span><span>{row[1]}</span></div>
-                    ))}
-                    <div style={{display:"flex",justifyContent:"space-between",padding:"10px 12px",background:"#10b981",color:"#fff",fontWeight:800,fontSize:14}}><span>TOTAL</span><span>{fmtCurrency(billInvoiceModal.bill?.total||0)}</span></div>
-                  </div>
-                </div>
-                {/* Payment strip */}
-                <div style={{display:"flex",gap:8,padding:"10px 14px",background:"#f0fdf4",borderRadius:10,border:"1px solid #bbf7d0",fontSize:12,flexWrap:"wrap"}}>
-                  <div style={{flex:1}}><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Payment Method</span><div style={{fontWeight:700,color:"#16a34a",marginTop:1}}>{billInvoiceModal.method||"CASH"}</div></div>
-                  <div style={{flex:1}}><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Amount Paid</span><div style={{fontWeight:700,color:"#16a34a",marginTop:1}}>{fmtCurrency(billInvoiceModal.bill?.paidAmount||billInvoiceModal.bill?.total||0)}</div></div>
-                  <div style={{flex:1}}><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Status</span><div style={{fontWeight:800,color:"#16a34a",marginTop:1}}>✓ PAID</div></div>
-                  {billInvoiceModal.transactionId && <div style={{flex:1}}><span style={{color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase"}}>Txn ID</span><div style={{fontWeight:600,color:"#475569",marginTop:1}}>{billInvoiceModal.transactionId}</div></div>}
-                </div>
-                {/* Footer */}
-                <div style={{textAlign:"center",marginTop:16,paddingTop:12,borderTop:"1px solid #f1f5f9",color:"#94a3b8",fontSize:10}}>
-                  Thank you for choosing {hospitalInfo.name||"Pharmacy"} · This is a computer-generated invoice. No signature required.
-                </div>
-              </div>
-            </div>
-            <div className="ph-modal-footer">
-              <button className="ph-btn-ghost" onClick={()=>setBillInvoiceModal(null)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
       {tab === "reports" && (
         <div className="ph-section">
           <div className="ph-chart-header">
@@ -4014,7 +3808,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                             </div>
                             <div className="ph-top-info">
                               <div className="ph-top-name">{item.name}</div>
-                              <div className="ph-top-meta">Buy: {fmtCurrency(item.purchasePrice)} → Sell: {fmtCurrency(item.sellingPrice)} &middot; Stock: {totalStock}</div>
+                              <div className="ph-top-meta">Buy: {fmtCurrency(item.purchasePrice)} â†’ Sell: {fmtCurrency(item.sellingPrice)} &middot; Stock: {totalStock}</div>
                             </div>
                             <div className="ph-top-revenue">{fmtCurrency((item.sellingPrice - item.purchasePrice) * totalStock)}</div>
                           </div>
@@ -4034,7 +3828,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     const thirtyDays = new Date(); thirtyDays.setDate(thirtyDays.getDate() + 30);
                     const expiringItems = inventory.flatMap(item =>
                       (item.batches || []).filter(b => b.expiryDate && new Date(b.expiryDate) <= thirtyDays && b.remainingQty > 0).map(b => ({
-                        name: item.name, batch: b.batchNumber || "—", qty: b.remainingQty,
+                        name: item.name, batch: b.batchNumber || "â€”", qty: b.remainingQty,
                         expiry: b.expiryDate!, lossValue: b.remainingQty * (b.purchasePrice || item.purchasePrice),
                         isExpired: new Date(b.expiryDate!) <= new Date(),
                       }))
@@ -4138,7 +3932,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ═══════════════════ INVENTORY MODALS ═══════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• INVENTORY MODALS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
 
       {/* Add/Edit Medicine Modal */}
       {invModalOpen && (
@@ -4206,17 +4000,17 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Purchase Price (₹)</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Purchase Price (Rs.)</label>
                     <input className="ph-modal-input" type="number" step="0.01" placeholder="0.00" value={invForm.purchasePrice} onChange={e => setInvForm((f: any) => ({ ...f, purchasePrice: parseFloat(e.target.value) || 0 }))} />
                     <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Cost price from supplier</div>
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>MRP (₹)</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>MRP (Rs.)</label>
                     <input className="ph-modal-input" type="number" step="0.01" placeholder="0.00" value={invForm.mrp} onChange={e => setInvForm((f: any) => ({ ...f, mrp: parseFloat(e.target.value) || 0 }))} />
                     <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Maximum Retail Price</div>
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Selling Price (₹)</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Selling Price (Rs.)</label>
                     <input className="ph-modal-input" type="number" step="0.01" placeholder="0.00" value={invForm.sellingPrice} onChange={e => setInvForm((f: any) => ({ ...f, sellingPrice: parseFloat(e.target.value) || 0 }))} />
                     <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Your selling price</div>
                   </div>
@@ -4292,8 +4086,8 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Temperature Requirement</label>
                     <select className="ph-modal-input" value={invForm.tempRequirement} onChange={e => setInvForm((f: any) => ({ ...f, tempRequirement: e.target.value }))}>
-                      <option value="Room Temp">Room Temperature (15-25°C)</option>
-                      <option value="Refrigerated">Refrigerated (2-8°C)</option>
+                      <option value="Room Temp">Room Temperature (15-25Â°C)</option>
+                      <option value="Refrigerated">Refrigerated (2-8Â°C)</option>
                     </select>
                   </div>
                 </div>
@@ -4387,7 +4181,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ═══════════════════ PURCHASE MODALS ═══════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PURCHASE MODALS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
 
       {/* Create Purchase Order Modal */}
       {purchaseModalOpen && (
@@ -4488,7 +4282,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                       <input className="ph-modal-input" type="number" min={0} placeholder="0" value={purchaseForm.taxPercent} onChange={e => setPurchaseForm((f: any) => ({ ...f, taxPercent: parseFloat(e.target.value) || 0 }))} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Shipping (₹)</label>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>Shipping (Rs.)</label>
                       <input className="ph-modal-input" type="number" min={0} placeholder="0" value={purchaseForm.shippingCharges} onChange={e => setPurchaseForm((f: any) => ({ ...f, shippingCharges: parseFloat(e.target.value) || 0 }))} />
                     </div>
                   </div>
@@ -4542,7 +4336,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ═══════════════════ SUPPLIER MODALS ═══════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SUPPLIER MODALS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
 
       {/* Add/Edit Supplier Modal */}
       {supplierModalOpen && (
@@ -4631,7 +4425,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* ── Real-time New Prescription Notification Modal ── */}
+      {/* â”€â”€ Real-time New Prescription Notification Modal â”€â”€ */}
       {newRxNotification && (
         <div className="ph-modal-overlay" style={{ zIndex: 10000 }} onClick={e => e.stopPropagation()}>
           <div className="ph-modal" style={{ width: 600, maxHeight: "90vh", animation: "phSlideIn .3s ease" }}>
@@ -4643,7 +4437,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <div>
                   <div className="ph-modal-title" style={{ color: "#fff", fontSize: 18 }}>New Prescription Received!</div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,.8)", marginTop: 2 }}>
-                    From Dr. {newRxNotification.doctor?.name} · {newRxNotification.prescriptionNo}
+                    From Dr. {newRxNotification.doctor?.name} &middot; {newRxNotification.prescriptionNo}
                   </div>
                 </div>
               </div>
@@ -4664,7 +4458,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{newRxNotification.patient?.name}</div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    {newRxNotification.patient?.patientId} · {newRxNotification.patient?.phone || "No phone"}
+                    {newRxNotification.patient?.patientId} &middot; {newRxNotification.patient?.phone || "No phone"}
                   </div>
                   {newRxNotification.appointment?.tokenNumber && (
                     <div style={{ marginTop: 6 }}>
@@ -4703,12 +4497,12 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{med.name || med.medicine}</div>
                           <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                            {med.dosage || med.dose} · {med.frequency} · {med.duration}
+                            {med.dosage || med.dose} &middot; {med.frequency} &middot; {med.duration}
                           </div>
                         </div>
                         <div style={{ textAlign: "right" }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70" }}>
-                            ₹{((parseFloat(med.price) || 0) * (parseInt(med.quantity) || 1)).toLocaleString("en-IN")}
+                            {fmtCurrency((parseFloat(med.price) || 0) * (parseInt(med.quantity) || 1))}
                           </div>
                           <div style={{ fontSize: 10, color: "#94a3b8" }}>Qty: {med.quantity}</div>
                         </div>
@@ -4723,17 +4517,17 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>Billing Summary</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: "#64748b" }}>Medicines Subtotal</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>₹{newRxNotification.billing?.subtotal?.toLocaleString("en-IN") || "0"}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{fmtCurrency(newRxNotification.billing?.subtotal || 0)}</span>
                 </div>
                 {newRxNotification.billing?.charges?.length > 0 && newRxNotification.billing.charges.map((charge: any, idx: number) => (
                   <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 12, color: "#64748b" }}>{charge.name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>₹{(charge.amount || 0).toLocaleString("en-IN")}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{fmtCurrency(charge.amount || 0)}</span>
                   </div>
                 ))}
                 <div style={{ borderTop: `1px solid ${BORDER}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Total Amount</span>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: ACCENT }}>₹{newRxNotification.billing?.total?.toLocaleString("en-IN") || "0"}</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: ACCENT }}>{fmtCurrency(newRxNotification.billing?.total || 0)}</span>
                 </div>
               </div>
             </div>
@@ -4796,7 +4590,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const pharmacyStyles = `
   /* Navigation */
@@ -4806,7 +4600,8 @@ const pharmacyStyles = `
   .ph-nav-btn.on{color:${ACCENT};border-bottom-color:${ACCENT};background:${LIGHT_BG}}
 
   /* Section */
-  .ph-section{animation:phFadeIn .2s ease}
+  .ph-section{animation:phFadeIn .2s ease; padding: 24px;}
+  @media(max-width:600px){.ph-section{padding: 16px 12px;}}
   @keyframes phFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
   /* Stats Grid */

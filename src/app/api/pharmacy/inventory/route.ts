@@ -124,3 +124,74 @@ export async function POST(req: NextRequest) {
     return errorResponse(error.message || "Failed to create item", 500);
   }
 }
+
+/**
+ * PUT /api/pharmacy/inventory
+ * Update an existing inventory item — SUB_DEPT_HEAD or HOSPITAL_ADMIN
+ * Body: { id, ...fields }
+ */
+export async function PUT(req: NextRequest) {
+  const auth = await requireRole(req, [Role.SUB_DEPT_HEAD, Role.HOSPITAL_ADMIN]);
+  if (auth.error) return auth.error;
+
+  try {
+    const body = await req.json();
+    const { id, name, category, unit, purchasePrice, mrp, sellingPrice, gst, minStock,
+      genericName, brandName, subCategory, description, hsnCode, barcode, supplierName, isActive } = body;
+
+    if (!id) return errorResponse("id is required", 400);
+
+    const existing = await px.inventoryItem.findFirst({ where: { id, hospitalId: auth.hospitalId } });
+    if (!existing) return errorResponse("Item not found", 404);
+
+    const updated = await px.inventoryItem.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(category !== undefined && { category }),
+        ...(unit !== undefined && { unit }),
+        ...(purchasePrice !== undefined && { purchasePrice }),
+        ...(mrp !== undefined && { mrp }),
+        ...(sellingPrice !== undefined && { sellingPrice }),
+        ...(gst !== undefined && { gst }),
+        ...(minStock !== undefined && { minStock }),
+        ...(genericName !== undefined && { genericName: genericName || null }),
+        ...(brandName !== undefined && { brandName: brandName || null }),
+        ...(subCategory !== undefined && { subCategory: subCategory || null }),
+        ...(description !== undefined && { description: description || null }),
+        ...(hsnCode !== undefined && { hsnCode: hsnCode || null }),
+        ...(barcode !== undefined && { barcode: barcode || null }),
+        ...(supplierName !== undefined && { supplierName: supplierName || null }),
+        ...(isActive !== undefined && { isActive }),
+      },
+    });
+
+    return successResponse(updated, "Item updated");
+  } catch (error: any) {
+    return errorResponse(error.message || "Failed to update item", 500);
+  }
+}
+
+/**
+ * DELETE /api/pharmacy/inventory?id=
+ * Soft-delete an inventory item — SUB_DEPT_HEAD or HOSPITAL_ADMIN
+ */
+export async function DELETE(req: NextRequest) {
+  const auth = await requireRole(req, [Role.SUB_DEPT_HEAD, Role.HOSPITAL_ADMIN]);
+  if (auth.error) return auth.error;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("id is required", 400);
+
+    const existing = await px.inventoryItem.findFirst({ where: { id, hospitalId: auth.hospitalId } });
+    if (!existing) return errorResponse("Item not found", 404);
+
+    await px.inventoryItem.update({ where: { id }, data: { isActive: false } });
+
+    return successResponse(null, "Item deleted");
+  } catch (error: any) {
+    return errorResponse(error.message || "Failed to delete item", 500);
+  }
+}

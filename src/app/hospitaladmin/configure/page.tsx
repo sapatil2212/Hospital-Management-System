@@ -57,7 +57,7 @@ function SectionCard({icon,title,desc,children}:{icon:React.ReactNode;title:stri
     <div style={{background:"#fff",border:"1px solid #e8edf2",borderRadius:16,overflow:"hidden",marginBottom:18}}>
       <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 22px",borderBottom:"1px solid #f1f5f9",background:"#fafbfc"}}>
         <div style={{width:36,height:36,borderRadius:10,background:"#E6F4F4",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-        <div><div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{title}</div><div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{desc}</div></div>
+        <div><div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{title}</div><div style={{fontSize:10,color:"#94a3b8",marginTop:1}}>{desc}</div></div>
       </div>
       <div style={{padding:"20px 22px"}}>{children}</div>
     </div>
@@ -100,7 +100,7 @@ function QrCodeSection({ hospitalId }: { hospitalId: string }) {
             <img src={qrSrc} alt="Booking QR Code" width={160} height={160} style={{ display: "block", borderRadius: 8 }} />
           </div>
           <button type="button" onClick={downloadQr}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize:11, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
             onMouseOver={e => (e.currentTarget.style.borderColor = "#0E898F")}
             onMouseOut={e => (e.currentTarget.style.borderColor = "#e2e8f0")}>
             <Download size={12} /> Download QR
@@ -109,25 +109,25 @@ function QrCodeSection({ hospitalId }: { hospitalId: string }) {
 
         {/* URL + Actions */}
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Booking URL</div>
+          <div style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Booking URL</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
             <Link2 size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: "#475569", wordBreak: "break-all", flex: 1 }}>{bookingUrl}</span>
+            <span style={{ fontSize:11, color: "#475569", wordBreak: "break-all", flex: 1 }}>{bookingUrl}</span>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" onClick={copyUrl}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, border: "none", background: copied ? "#f0fdf4" : "#0E898F", color: copied ? "#16a34a" : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, border: "none", background: copied ? "#f0fdf4" : "#0E898F", color: copied ? "#16a34a" : "#fff", fontSize:11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? "Copied!" : "Copy URL"}
             </button>
             <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 700, textDecoration: "none", transition: "all 0.15s" }}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:11, fontWeight: 700, textDecoration: "none", transition: "all 0.15s" }}
               onMouseOver={e => (e.currentTarget.style.borderColor = "#0E898F")}
               onMouseOut={e => (e.currentTarget.style.borderColor = "#e2e8f0")}>
               <ExternalLink size={12} /> Preview Form
             </a>
           </div>
-          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 12, lineHeight: 1.6 }}>
+          <p style={{ fontSize:10, color: "#94a3b8", marginTop: 12, lineHeight: 1.6 }}>
             Print or display this QR at your reception. Patients scan it to access the appointment booking form and book directly.
           </p>
         </div>
@@ -253,8 +253,8 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
           <div className="cfg-field">
             <label className="cfg-lbl">Upload Letterhead</label>
             <input type="file" accept="image/*,application/pdf" className="cfg-input" onChange={handleUpload} disabled={uploading}/>
-            {uploading&&<span style={{fontSize:11,color:"#0E898F",marginTop:4,display:"block"}}>Uploading…</span>}
-            {f.letterhead&&<a href={f.letterhead} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#10b981",marginTop:4,display:"block"}}>View current</a>}
+            {uploading&&<span style={{fontSize:10,color:"#0E898F",marginTop:4,display:"block"}}>Uploading…</span>}
+            {f.letterhead&&<a href={f.letterhead} target="_blank" rel="noreferrer" style={{fontSize:10,color:"#10b981",marginTop:4,display:"block"}}>View current</a>}
             <span style={{fontSize:10,color:"#94a3b8",marginTop:3,display:"block"}}>Image or PDF accepted</span>
           </div>
           <div className="cfg-field">
@@ -267,7 +267,7 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
           </div>
           <div className="cfg-field">
             <label className="cfg-lbl">Format (auto-detected)</label>
-            <div style={{display:"flex",alignItems:"center",height:42,padding:"0 13px",background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:9,fontSize:13,color:"#94a3b8",gap:6}}>
+            <div style={{display:"flex",alignItems:"center",height:42,padding:"0 13px",background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:9,fontSize:12,color:"#94a3b8",gap:6}}>
               <Check size={13} color="#10b981"/>{f.letterheadType}
             </div>
           </div>
@@ -283,10 +283,10 @@ function SettingsPanel({hospitalId}:{hospitalId:string}){
           {saving?<Loader2 size={14} className="cfg-spin"/>:<Check size={14}/>}
           {saving?"Saving…":"Save Settings"}
         </button>
-        {msg&&<span style={{fontSize:13,fontWeight:600,color:msg.startsWith("✓")?"#10b981":"#ef4444",display:"flex",alignItems:"center",gap:6}}>
+        {msg&&<span style={{fontSize:12,fontWeight:600,color:msg.startsWith("✓")?"#10b981":"#ef4444",display:"flex",alignItems:"center",gap:6}}>
           {msg.startsWith("✓")?<Check size={13}/>:<AlertTriangle size={13}/>}{msg}
         </span>}
-        <span style={{marginLeft:"auto",fontSize:11,color:"#94a3b8"}}>Changes apply immediately across the platform</span>
+        <span style={{marginLeft:"auto",fontSize:10,color:"#94a3b8"}}>Changes apply immediately across the platform</span>
       </div>
 
     </form>
@@ -337,7 +337,7 @@ function CrudPanel({endpoint,columns,formFields,entityName,searchable=true}:{
 
   return(<div>
     <div className="cfg-toolbar">
-      {searchable&&<div className="cfg-search-wrap"><Search size={14} color="#94a3b8"/><input className="cfg-search-input" placeholder={`Search ${entityName}s...`} value={search} onChange={e=>setSearch(e.target.value)}/></div>}
+      {searchable&&<div className="cfg-search-wrap"><input className="cfg-search-input" placeholder={`Search ${entityName}s...`} value={search} onChange={e=>setSearch(e.target.value)}/></div>}
       <button className="cfg-btn-primary" onClick={openAdd}><Plus size={14}/>Add {entityName}</button>
     </div>
 
@@ -363,7 +363,7 @@ function CrudPanel({endpoint,columns,formFields,entityName,searchable=true}:{
             :<input className="cfg-input" type={f.type||"text"} placeholder={f.label} value={form[f.key]||""} onChange={e=>setForm((p:any)=>({...p,[f.key]:f.type==="number"?Number(e.target.value):e.target.value}))} required={f.required}/>}
           </div>
         ))}
-        {msg&&<div style={{gridColumn:"1/-1",fontSize:13,color:"#ef4444",fontWeight:600}}>{msg}</div>}
+        {msg&&<div style={{gridColumn:"1/-1",fontSize:12,color:"#ef4444",fontWeight:600}}>{msg}</div>}
         <div style={{gridColumn:"1/-1",display:"flex",gap:10,marginTop:4}}>
           <button type="button" className="cfg-btn-ghost" onClick={()=>setModal(false)}>Cancel</button>
           <button type="submit" className="cfg-btn-primary" disabled={saving}>{saving?<Loader2 size={14} className="cfg-spin"/>:null}{editItem?"Update":"Create"}</button>
@@ -475,27 +475,27 @@ function ConfigureContent(){
       .cfg-progress-bar{height:8px;background:#f1f5f9;border-radius:100px;overflow:hidden;margin-bottom:8px}
       .cfg-progress-fill{height:100%;background:linear-gradient(90deg,#0E898F,#10b981);border-radius:100px;transition:width .5s}
       .cfg-steps{display:flex;flex-wrap:wrap;gap:8px}
-      .cfg-step{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b}
+      .cfg-step{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:500;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b}
       .cfg-step.done{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
       .cfg-step-num{width:18px;height:18px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#94a3b8}
       .cfg-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
       .cfg-field{display:flex;flex-direction:column;gap:5px}
-      .cfg-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
-      .cfg-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
+      .cfg-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
+      .cfg-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:12px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
       .cfg-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
       .cfg-input::placeholder{color:#94a3b8}
-      .cfg-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
+      .cfg-btn-primary{padding:10px 20px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,.25);transition:all .15s;white-space:nowrap}
       .cfg-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
       .cfg-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
-      .cfg-btn-ghost{padding:10px 20px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer}
+      .cfg-btn-ghost{padding:10px 20px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:600;cursor:pointer}
       .cfg-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
       .cfg-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:280px}
-      .cfg-search-input{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
+      .cfg-search-input{background:none;border:none;outline:none;font-size:12px;color:#334155;width:100%}
       .cfg-search-input::placeholder{color:#94a3b8}
       .cfg-tbl-wrap{background:#fff;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
       .cfg-tbl{width:100%;border-collapse:collapse}
-      .cfg-tbl th{text-align:left;font-size:11px;font-weight:600;color:#94a3b8;padding:12px 14px;border-bottom:2px solid #f1f5f9;white-space:nowrap}
-      .cfg-tbl td{padding:12px 14px;font-size:13px;color:#475569;border-bottom:1px solid #f8fafc}
+      .cfg-tbl th{text-align:left;font-size:10px;font-weight:600;color:#94a3b8;padding:12px 14px;border-bottom:2px solid #f1f5f9;white-space:nowrap}
+      .cfg-tbl td{padding:12px 14px;font-size:12px;color:#475569;border-bottom:1px solid #f8fafc}
       .cfg-tbl tr:last-child td{border-bottom:none}
       .cfg-tbl tbody tr:hover td{background:#fafbfc}
       .cfg-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700}
@@ -508,10 +508,10 @@ function ConfigureContent(){
       .cfg-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
       .cfg-modal{background:#fff;border-radius:18px;padding:24px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.15);max-height:90vh;overflow-y:auto}
       .cfg-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-      .cfg-modal-title{font-size:17px;font-weight:800;color:#1e293b}
+      .cfg-modal-title{font-size:16px;font-weight:800;color:#1e293b}
       .cfg-modal-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-      .cfg-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:#94a3b8;font-size:14px}
-      .cfg-empty{text-align:center;padding:60px 20px;color:#94a3b8;font-size:14px;background:#fff;border-radius:14px;border:1px solid #e2e8f0}
+      .cfg-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:#94a3b8;font-size:13px}
+      .cfg-empty{text-align:center;padding:60px 20px;color:#94a3b8;font-size:13px;background:#fff;border-radius:14px;border:1px solid #e2e8f0}
     `}</style>
 
     <>
@@ -543,8 +543,8 @@ function ConfigureContent(){
           {tab==="staff"&&<StaffPanel/>}
           {tab==="wards"&&<WardBedPanel/>}
           {tab==="billing"&&(<>
-            <div style={{fontSize:16,fontWeight:800,color:"#1e293b",marginBottom:4}}>Charge Catalog</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>Define standard charges that will auto-populate bills</div>
+            <div style={{fontSize:15,fontWeight:800,color:"#1e293b",marginBottom:4}}>Charge Catalog</div>
+            <div style={{fontSize:11,color:"#94a3b8",marginBottom:16}}>Define standard charges that will auto-populate bills</div>
             <CrudPanel endpoint="/api/config/pricing" columns={billingColumns} formFields={billingFields} entityName="Charge"/>
           </>)}
           {tab==="inventory"&&(<>
@@ -552,11 +552,11 @@ function ConfigureContent(){
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <AlertTriangle size={16} color="#d97706"/>
-                  <span style={{fontSize:13,fontWeight:700,color:"#92400e"}}>{lowStockCount} item{lowStockCount>1?"s":""} at or below reorder level</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#92400e"}}>{lowStockCount} item{lowStockCount>1?"s":""} at or below reorder level</span>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  {stockAlertMsg && <span style={{fontSize:12,color:stockAlertMsg.startsWith("✓")?"#16a34a":"#ef4444",fontWeight:600}}>{stockAlertMsg}</span>}
-                  <button onClick={sendStockAlerts} disabled={sendingStockAlert} className="cfg-btn-primary" style={{padding:"7px 14px",fontSize:12}}>
+                  {stockAlertMsg && <span style={{fontSize:11,color:stockAlertMsg.startsWith("✓")?"#16a34a":"#ef4444",fontWeight:600}}>{stockAlertMsg}</span>}
+                  <button onClick={sendStockAlerts} disabled={sendingStockAlert} className="cfg-btn-primary" style={{padding:"7px 14px",fontSize:11}}>
                     {sendingStockAlert?<Loader2 size={12} className="cfg-spin"/>:<Bell size={12}/>}
                     {sendingStockAlert?"Sending...":"Send Stock Alerts"}
                   </button>
@@ -565,7 +565,7 @@ function ConfigureContent(){
             )}
             <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
               <a href="/api/export/inventory" download title="Export inventory as CSV"
-                style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,textDecoration:"none"}}>
+                style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:10,border:"1px solid #d1fae5",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,textDecoration:"none"}}>
                 <Download size={13}/>Export CSV
               </a>
             </div>

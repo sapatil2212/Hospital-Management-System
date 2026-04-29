@@ -20,15 +20,21 @@ const Newsletter: React.FC = () => {
             Book your consultation today and experience advanced, ethical, and personalized treatment designed for your health, confidence, and long-term results.
           </p>
           
-          <div className={styles.form}>
+          <div className={styles.ctaButtons}>
             <button 
               type="button" 
               className={styles.button}
               onClick={openAppointment}
             >
-              Book Appointment Now
+              Book Appointment
               <ArrowRight size={18} className={styles.buttonIcon} />
             </button>
+            <a 
+              href="/contact" 
+              className={styles.secondaryButton}
+            >
+              Contact Us
+            </a>
           </div>
         </div>
         

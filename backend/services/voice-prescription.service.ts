@@ -14,13 +14,31 @@ const VOICE_MODELS = [
   "microsoft/phi-3-mini-128k-instruct:free",
 ];
 
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
 async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string): Promise<string> {
   const key = getOpenRouterKey();
+  const geminiKey = getGeminiKey();
+
+  console.log(`[Voice AI] Keys — OpenRouter: ${!!key}, Gemini: ${!!geminiKey}`);
 
   if (key) {
-    for (const model of VOICE_MODELS) {
-      try {
-        const res = await fetch(OPENROUTER_URL, {
+    // Try first 3 models in parallel with a 7-second per-model timeout (fits Vercel 10s limit)
+    const tryModel = async (model: string): Promise<string> => {
+      const res = await fetchWithTimeout(
+        OPENROUTER_URL,
+        {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${key}`,
@@ -37,45 +55,49 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
             temperature: 0.3,
             max_tokens: 3000,
           }),
-        });
+        },
+        7000
+      );
+      if (!res.ok) throw new Error(`${model} HTTP ${res.status}`);
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content || "";
+      if (!text) throw new Error(`${model} returned empty content`);
+      console.log(`[Voice AI] Success with model: ${model}`);
+      return text;
+    };
 
-        if (!res.ok) {
-          const err = await res.text();
-          console.error(`Voice OpenRouter ${model} error (${res.status}):`, err.slice(0, 200));
-          continue;
-        }
-
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content || "";
-        if (!text) { console.error(`Voice OpenRouter ${model} returned empty`); continue; }
-        console.log(`Voice prescription used model: ${model}`);
-        return text;
-      } catch (err: any) {
-        console.error(`Voice OpenRouter ${model} threw:`, err.message);
-      }
+    try {
+      // Promise.any resolves with the first model that succeeds
+      const result = await Promise.any(VOICE_MODELS.slice(0, 3).map(tryModel));
+      return result;
+    } catch (err: any) {
+      console.error("[Voice AI] All OpenRouter parallel calls failed:", err.message || err);
     }
   }
 
-  // Gemini fallback
-  const geminiKey = getGeminiKey();
+  // Gemini fallback with 9-second timeout
   if (geminiKey) {
     try {
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
-      const res = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
-        }),
-      });
+      const res = await fetchWithTimeout(
+        geminiUrl,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
+          }),
+        },
+        9000
+      );
       if (res.ok) {
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        if (text) { console.log("Voice prescription used Gemini fallback"); return text; }
+        if (text) { console.log("[Voice AI] Success with Gemini fallback"); return text; }
       }
     } catch (err: any) {
-      console.error("Voice Gemini fallback failed:", err.message);
+      console.error("[Voice AI] Gemini fallback failed:", err.message);
     }
   }
 

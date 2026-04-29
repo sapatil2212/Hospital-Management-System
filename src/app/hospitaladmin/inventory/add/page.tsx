@@ -176,13 +176,13 @@ export default function AddInventoryPage() {
         .aip-topbar-left{display:flex;align-items:center;gap:14px}
         .aip-back{width:40px;height:40px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all .15s}
         .aip-back:hover{background:#f8fafc;color:#1e293b;border-color:#cbd5e1}
-        .aip-title{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.03em}
-        .aip-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+        .aip-title{font-size:19px;font-weight:800;color:#1e293b;letter-spacing:-.03em}
+        .aip-sub{font-size:10px;color:#94a3b8;margin-top:1px}
         .aip-card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);margin-bottom:20px;overflow:hidden}
         .aip-card-head{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid #f1f5f9}
         .aip-card-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .aip-card-title{font-size:14px;font-weight:700;color:#1e293b}
-        .aip-card-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+        .aip-card-title{font-size:13px;font-weight:700;color:#1e293b}
+        .aip-card-sub{font-size:10px;color:#94a3b8;margin-top:1px}
         .aip-card-body{padding:20px 24px}
         .aip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
         .aip-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
@@ -190,27 +190,27 @@ export default function AddInventoryPage() {
         .aip-field{margin-bottom:0}
         .aip-label{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:5px}
         .aip-label span{color:#ef4444}
-        .aip-input{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e293b;outline:none;transition:all .2s}
+        .aip-input{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:12px;color:#1e293b;outline:none;transition:all .2s}
         .aip-input:focus{border-color:#0E898F;background:#fff;box-shadow:0 0 0 3px rgba(14,137,143,0.08)}
         .aip-input::placeholder{color:#cbd5e1}
         .aip-input-money{padding-left:28px}
-        .aip-money-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px;font-weight:600}
+        .aip-money-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;font-weight:600}
         .aip-radio-row{display:flex;gap:6px;flex-wrap:wrap}
-        .aip-radio-pill{padding:7px 16px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+        .aip-radio-pill{padding:7px 16px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
         .aip-radio-pill:hover{border-color:#cbd5e1;background:#f8fafc}
         .aip-radio-pill.on{border-color:#0E898F;background:#E6F4F4;color:#0A6B70}
-        .aip-btn-primary{padding:11px 28px;border-radius:12px;border:none;background:#0E898F;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 4px 14px rgba(14,137,143,0.25)}
+        .aip-btn-primary{padding:11px 28px;border-radius:12px;border:none;background:#0E898F;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;box-shadow:0 4px 14px rgba(14,137,143,0.25)}
         .aip-btn-primary:hover{background:#0A6B70;transform:translateY(-1px)}
         .aip-btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
-        .aip-btn-ghost{padding:11px 20px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+        .aip-btn-ghost{padding:11px 20px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
         .aip-btn-ghost:hover{background:#f8fafc;color:#1e293b}
-        .aip-expand-btn{width:100%;padding:12px 24px;background:none;border:none;border-top:1px solid #f1f5f9;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:600;color:#64748b;transition:all .15s}
+        .aip-expand-btn{width:100%;padding:12px 24px;background:none;border:none;border-top:1px solid #f1f5f9;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;font-weight:600;color:#64748b;transition:all .15s}
         .aip-expand-btn:hover{background:#f8fafc;color:#0E898F}
         .aip-upload{border:2px dashed #e2e8f0;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s}
         .aip-upload:hover{border-color:#0E898F;background:#E6F4F4}
-        .aip-err{padding:12px 16px;background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;color:#dc2626;font-size:12px;font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-        .aip-success{padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;color:#166534;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-        .aip-margin-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+        .aip-err{padding:12px 16px;background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;color:#dc2626;font-size:11px;font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+        .aip-success{padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;color:#166534;font-size:12px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+        .aip-margin-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700}
         .aip-spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:aispin .7s linear infinite}
         @keyframes aispin{to{transform:rotate(360deg)}}
       `}</style>
@@ -332,7 +332,7 @@ export default function AddInventoryPage() {
                   <div style={{ display: "flex", gap: 6 }}>
                     {[0, 5, 12, 18, 28].map(g => (
                       <button key={g} type="button" className={`aip-radio-pill${parseFloat(String(form.gst)) === g ? " on" : ""}`}
-                        style={{ padding: "6px 12px", fontSize: 11 }}
+                        style={{ padding: "6px 12px", fontSize:10 }}
                         onClick={() => setForm({ ...form, gst: g })}>
                         {g}%
                       </button>
@@ -344,11 +344,11 @@ export default function AddInventoryPage() {
               {/* Margin indicator */}
               {margin() && (
                 <div style={{ marginBottom: 16, padding: "10px 14px", background: "#f0fdf4", borderRadius: 10, border: "1px solid #dcfce7", display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 11, color: "#6b7280" }}>Profit Margin:</span>
+                  <span style={{ fontSize:10, color: "#6b7280" }}>Profit Margin:</span>
                   <span className="aip-margin-badge" style={{ background: parseFloat(margin()!) > 20 ? "#dcfce7" : "#fef3c7", color: parseFloat(margin()!) > 20 ? "#166534" : "#92400e" }}>
                     {margin()}%
                   </span>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                  <span style={{ fontSize:10, color: "#94a3b8" }}>
                     (₹{(parseFloat(String(form.mrp)) - parseFloat(String(form.purchasePrice))).toFixed(2)} per unit)
                   </span>
                 </div>
@@ -392,7 +392,7 @@ export default function AddInventoryPage() {
             <button type="button" className="aip-expand-btn" onClick={() => setShowAdvanced(!showAdvanced)} style={{ borderTop: "none", padding: "16px 24px" }}>
               <ChevronDown size={16} style={{ transform: showAdvanced ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
               {showAdvanced ? "Hide" : "Show"} Advanced Details
-              <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 400 }}>(batch, storage, compliance, identifiers)</span>
+              <span style={{ fontSize:10, color: "#94a3b8", fontWeight: 400 }}>(batch, storage, compliance, identifiers)</span>
             </button>
 
             {showAdvanced && (
@@ -400,7 +400,7 @@ export default function AddInventoryPage() {
 
                 {/* Batch & Expiry */}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Batch & Expiry</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Batch & Expiry</div>
                   <div className="aip-grid">
                     <div>
                       <label className="aip-label">Batch Number</label>
@@ -419,7 +419,7 @@ export default function AddInventoryPage() {
 
                 {/* Identification */}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Identification</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Identification</div>
                   <div className="aip-grid">
                     <div>
                       <label className="aip-label">SKU Code</label>
@@ -438,7 +438,7 @@ export default function AddInventoryPage() {
 
                 {/* Storage */}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Storage</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Storage</div>
                   <div className="aip-grid">
                     <div>
                       <label className="aip-label">Storage Location</label>
@@ -459,7 +459,7 @@ export default function AddInventoryPage() {
 
                 {/* Packaging */}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Packaging</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Packaging</div>
                   <div className="aip-grid-2">
                     <div>
                       <label className="aip-label">Pack Size</label>
@@ -474,7 +474,7 @@ export default function AddInventoryPage() {
 
                 {/* Compliance & Flags */}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Compliance & Flags</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Compliance & Flags</div>
                   <div className="aip-grid">
                     <div>
                       <label className="aip-label">Drug Schedule</label>
@@ -503,7 +503,7 @@ export default function AddInventoryPage() {
 
                 {/* Billing & Status */}
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Billing & Status</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Billing & Status</div>
                   <div className="aip-grid">
                     <div>
                       <label className="aip-label">Billing Type</label>
@@ -534,7 +534,7 @@ export default function AddInventoryPage() {
 
                 {/* Notes & Image */}
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Notes & Image</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Notes & Image</div>
                   <div style={{ marginBottom: 14 }}>
                     <label className="aip-label">Description</label>
                     <textarea name="description" value={form.description} onChange={handleChange} rows={3} className="aip-input" style={{ resize: "none" }} placeholder="Optional notes about this item..." />
@@ -544,17 +544,17 @@ export default function AddInventoryPage() {
                     <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" style={{ display: "none" }} />
                     <div className="aip-upload" onClick={() => fileInputRef.current?.click()}>
                       {uploading ? (
-                        <div><Loader2 size={20} className="aip-spin" style={{ margin: "0 auto 8px", display: "block" }} /><div style={{ fontSize: 12, color: "#475569" }}>Uploading...</div></div>
+                        <div><Loader2 size={20} className="aip-spin" style={{ margin: "0 auto 8px", display: "block" }} /><div style={{ fontSize:11, color: "#475569" }}>Uploading...</div></div>
                       ) : form.image ? (
                         <div>
                           <img src={form.image} alt="Preview" style={{ height: 80, width: 80, objectFit: "cover", borderRadius: 12, border: "1px solid #e2e8f0", margin: "0 auto 8px", display: "block" }} />
-                          <div style={{ fontSize: 11, color: "#64748b" }}>Click to change</div>
+                          <div style={{ fontSize:10, color: "#64748b" }}>Click to change</div>
                         </div>
                       ) : (
                         <div>
                           <div style={{ width: 40, height: 40, background: "#f1f5f9", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", color: "#94a3b8" }}><Upload size={18} /></div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>Upload Image</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>PNG, JPG or WEBP (max 5MB)</div>
+                          <div style={{ fontSize:11, fontWeight: 600, color: "#475569" }}>Upload Image</div>
+                          <div style={{ fontSize:10, color: "#94a3b8", marginTop: 2 }}>PNG, JPG or WEBP (max 5MB)</div>
                         </div>
                       )}
                     </div>
@@ -566,7 +566,7 @@ export default function AddInventoryPage() {
 
           {/* ── Sticky Footer ── */}
           <div style={{ position: "sticky", bottom: 0, background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 -4px 20px rgba(0,0,0,0.06)", zIndex: 10 }}>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>
+            <div style={{ fontSize:10, color: "#94a3b8" }}>
               {form.name ? <span style={{ color: "#1e293b", fontWeight: 600 }}>{form.name}</span> : "Fill in item details"}
               {form.category && <span> · {form.category}</span>}
               {parseFloat(String(form.mrp)) > 0 && <span> · ₹{form.mrp}</span>}

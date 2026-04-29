@@ -415,7 +415,7 @@ export default function PatientProfilePanel({ patientId, onBack }: { patientId: 
 
       <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 20, alignItems: "start" }}>
         {/* Patient Card */}
-        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+        <div style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden" }}>
           <div style={{ background: "linear-gradient(135deg,#0ea5e9,#0369a1)", padding: "28px 24px", textAlign: "center" }}>
             <div style={{ width: 72, height: 72, borderRadius: 20, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, color: "#fff", margin: "0 auto 12px", backdropFilter: "blur(4px)" }}>
               {patient.name.charAt(0).toUpperCase()}
@@ -478,7 +478,7 @@ export default function PatientProfilePanel({ patientId, onBack }: { patientId: 
                 const sc = STATUS_COLORS[appt.status] || STATUS_COLORS.SCHEDULED;
                 const date = new Date(appt.appointmentDate);
                 return (
-                  <div key={appt.id} style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                  <div key={appt.id} style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, border: "1px solid #e2e8f0", padding: "16px 20px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -544,7 +544,7 @@ export default function PatientProfilePanel({ patientId, onBack }: { patientId: 
                 const fuDate = new Date(fu.followUpDate);
                 const isPast = fuDate < new Date() && fu.status === "PENDING";
                 return (
-                  <div key={fu.id} style={{ background: "#fff", borderRadius: 14, border: `1px solid ${isPast ? "#fecaca" : "#e2e8f0"}`, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+                  <div key={fu.id} style={{ background: isPast ? "linear-gradient(135deg, #ffffff, #fef2f2)" : "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, border: `1px solid ${isPast ? "#fecaca" : "#e2e8f0"}`, padding: "16px 20px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ width: 36, height: 36, borderRadius: 10, background: isPast ? "#fff5f5" : "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>

@@ -486,7 +486,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                     <div className={styles.field}>
                       <label className={styles.label}>Department *</label>
                       <SearchableSelect icon={Building2} placeholder="Select Department..." value={form.departmentId} error={errors.departmentId}
-                        options={departments.map(d => ({ id: d.id, label: d.name, sub: d.code }))}
+                        options={departments.map(d => ({ id: d.id, label: d.name }))}
                         onChange={v => { set("departmentId", v); set("doctorId", ""); set("timeSlot", ""); }} />
                       {errors.departmentId && <span className={styles.errorMsg}>{errors.departmentId}</span>}
                     </div>
@@ -564,8 +564,10 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                                     <button key={slot} type="button" disabled={disabled}
                                       onClick={() => !disabled && set("timeSlot", slot)}
                                       title={isPast ? "Time has passed" : isBooked ? "Already booked" : "Available"}
-                                      className={`${styles.timeChip} ${selected ? styles.timeChipSelected : ""} ${disabled ? styles.timeChipDisabled : ""}`}>
-                                      {fmt12(slot)}
+                                      className={`${styles.timeChip} ${selected ? styles.timeChipSelected : ""} ${disabled ? styles.timeChipDisabled : ""}`}
+                                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                                      <span>{fmt12(slot)}</span>
+                                      {disabled && <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{isBooked ? "Booked" : "Past"}</span>}
                                     </button>
                                   );
                                 })}

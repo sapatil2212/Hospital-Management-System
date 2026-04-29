@@ -41,3 +41,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return errorResponse(e.message, 500);
   }
 }
+
+// DELETE /api/prescriptions/[id]
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await requireRole(req, ["DOCTOR", "HOSPITAL_ADMIN"]);
+  if (auth.error) return auth.error;
+  try {
+    const { default: prisma } = await import("../../../../../backend/config/db");
+    const rx = await (prisma as any).prescription.findUnique({
+      where: { id: params.id },
+      select: { hospitalId: true },
+    });
+    if (!rx || rx.hospitalId !== auth.hospitalId) {
+      return errorResponse("Prescription not found", 404);
+    }
+    await (prisma as any).prescription.delete({
+      where: { id: params.id },
+    });
+    return successResponse(null, "Prescription deleted successfully");
+  } catch (e: any) {
+    return errorResponse(e.message, 500);
+  }
+}

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { processVoiceRecording } from "@/../../backend/services/voice-prescription.service";
 import { authMiddleware } from "@/../../backend/middlewares/auth.middleware";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const authResult = await authMiddleware(req);

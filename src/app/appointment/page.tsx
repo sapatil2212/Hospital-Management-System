@@ -452,7 +452,7 @@ function AppointmentForm() {
                         No available slots for this date. Doctor may be unavailable or fully booked.
                       </div>
                     ) : (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                         {slots.map(slot => {
                           const isBooked = bookedSlots.includes(slot);
                           const isPast = isSlotPassed(form.appointmentDate, slot);
@@ -463,16 +463,17 @@ function AppointmentForm() {
                               onClick={() => !disabled && set("timeSlot", slot)}
                               title={isPast ? "Time has passed" : isBooked ? "Already booked" : "Available"}
                               style={{
-                                padding: "7px 14px", borderRadius: 9,
-                                border: `1.5px solid ${selected ? "#0E898F" : disabled ? "#f1f5f9" : "#e2e8f0"}`,
-                                background: selected ? "#0E898F" : disabled ? "#f8fafc" : "#fff",
-                                color: selected ? "#fff" : disabled ? "#cbd5e1" : "#334155",
-                                fontSize: 12, fontWeight: selected ? 700 : 500,
+                                padding: "6px 4px", borderRadius: 9, textAlign: "center",
+                                border: `1.5px solid ${selected ? "#0E898F" : disabled ? "#fecaca" : "#e2e8f0"}`,
+                                background: selected ? "#0E898F" : disabled ? "#fef2f2" : "#fff",
+                                color: selected ? "#fff" : disabled ? "#ef4444" : "#334155",
+                                fontSize: 11, fontWeight: selected ? 700 : 500,
                                 cursor: disabled ? "not-allowed" : "pointer",
-                                textDecoration: disabled ? "line-through" : "none",
                                 transition: "all .15s",
+                                display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
                               }}>
-                              {fmt12(slot)}
+                              <span>{fmt12(slot)}</span>
+                              {disabled && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>{isBooked ? "Booked" : "Past"}</span>}
                             </button>
                           );
                         })}

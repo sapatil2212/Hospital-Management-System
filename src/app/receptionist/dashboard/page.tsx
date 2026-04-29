@@ -38,20 +38,20 @@ function MiniCalendar({ accent = "#eab308" }: { accent?: string }) {
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <span style={{fontSize:15,fontWeight:700,color:"#1e293b"}}>{MONTHS[cur.m]} {cur.y}</span>
+        <span style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{MONTHS[cur.m]} {cur.y}</span>
         <div style={{display:"flex",gap:4}}>
           {["‹","›"].map((a,i)=>(
             <button key={i} onClick={()=>setCur(c=>{const nm=c.m+(i?1:-1);return nm<0?{y:c.y-1,m:11}:nm>11?{y:c.y+1,m:0}:{...c,m:nm};})}
-              style={{width:26,height:26,borderRadius:8,border:"none",background:i?accent:"#e2e8f0",color:i?"#fff":"#64748b",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{a}</button>
+              style={{width:26,height:26,borderRadius:8,border:"none",background:i?accent:"#e2e8f0",color:i?"#fff":"#64748b",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{a}</button>
           ))}
         </div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:6}}>
-        {DAYS_H.map((d,i)=><div key={i} style={{textAlign:"center",fontSize:11,fontWeight:600,color:"#94a3b8",padding:"2px 0"}}>{d}</div>)}
+        {DAYS_H.map((d,i)=><div key={i} style={{textAlign:"center",fontSize:10,fontWeight:600,color:"#94a3b8",padding:"2px 0"}}>{d}</div>)}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
         {cells.map((d,i)=>(
-          <div key={i} style={{textAlign:"center",fontSize:12,fontWeight:isToday(d)?700:400,padding:"5px 0",borderRadius:8,cursor:d?"pointer":"default",background:isToday(d)?accent:"transparent",color:isToday(d)?"#fff":d?"#334155":"transparent"}}>{d||""}</div>
+          <div key={i} style={{textAlign:"center",fontSize:11,fontWeight:isToday(d)?700:400,padding:"5px 0",borderRadius:8,cursor:d?"pointer":"default",background:isToday(d)?accent:"transparent",color:isToday(d)?"#fff":d?"#334155":"transparent"}}>{d||""}</div>
         ))}
       </div>
     </div>
@@ -85,7 +85,7 @@ export default function ReceptionistDashboard() {
   const initials = (n:string) => n.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();
   const maxBar = Math.max(...barData.map(b=>b.val));
 
-  if(loading) return <div style={{minHeight:"100vh",background:"#fefce8",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",color:"#64748b",fontSize:14,gap:14}}>
+  if(loading) return <div style={{minHeight:"100vh",background:"#fefce8",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",color:"#64748b",fontSize:13,gap:14}}>
     <div style={{width:32,height:32,border:"3px solid #fef08a",borderTop:"3px solid #eab308",borderRadius:"50%",animation:"sp .8s linear infinite"}}/>
     <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>Loading Receptionist Portal...
   </div>;
@@ -109,11 +109,11 @@ export default function ReceptionistDashboard() {
       .rec-burger{display:none;width:36px;height:36px;border-radius:10px;background:#fefce8;border:1px solid #fef08a;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
       .rec-logo{padding:20px 20px 16px;border-bottom:1px solid #fefce8;display:flex;align-items:center;gap:10px}
       .rec-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#eab308,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(234,179,8,0.3)}
-      .rec-logo-tx{font-size:15px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
+      .rec-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
       .rec-logo-sub{font-size:10px;color:#94a3b8;margin-top:0px}
       .rec-nav{flex:1;padding:12px 12px;overflow-y:auto}
       .rec-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:12px 0 6px}
-      .rec-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
+      .rec-nb{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;border:none;background:none;color:#64748b;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;position:relative}
       .rec-nb:hover{background:#fefce8;color:#92400e}
       .rec-nb.on{background:#fef9c3;color:#854d0e;font-weight:600}
       .rec-nb-dot{display:none;width:3px;height:20px;background:#eab308;border-radius:4px;position:absolute;left:0}
@@ -122,48 +122,48 @@ export default function ReceptionistDashboard() {
       .rec-nb.on svg{color:#ca8a04}
       .rec-sb-foot{padding:14px 16px 18px;border-top:1px solid #fefce8}
       .rec-user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#fefce8;border:1px solid #fef08a;margin-bottom:10px}
-      .rec-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#eab308,#f97316);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-      .rec-uname{font-size:12px;font-weight:600;color:#1e293b}
+      .rec-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#eab308,#f97316);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+      .rec-uname{font-size:11px;font-weight:600;color:#1e293b}
       .rec-urole{font-size:10px;font-weight:500;color:#ca8a04}
-      .rec-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+      .rec-logout{width:100%;padding:8px;border-radius:9px;background:#fff5f5;border:1px solid #fee2e2;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
       .rec-logout:hover{background:#fee2e2}
       .rec-main{margin-left:220px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
       .rec-topbar{height:64px;background:#fff;border-bottom:1px solid #fef08a;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:40;flex-shrink:0;box-shadow:0 1px 4px rgba(234,179,8,0.07)}
       .rec-search-wrap{display:flex;align-items:center;gap:8px;background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:8px 14px;width:280px}
       .rec-search-wrap:focus-within{border-color:#fcd34d}
-      .rec-search{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
+      .rec-search{background:none;border:none;outline:none;font-size:12px;color:#334155;width:100%}
       .rec-search::placeholder{color:#94a3b8}
       .rec-tb-right{display:flex;align-items:center;gap:12px}
       .rec-notif{width:36px;height:36px;border-radius:10px;background:#fefce8;border:1px solid #fef08a;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
       .rec-notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#eab308;border:1.5px solid #fff}
       .rec-profile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#fefce8;border:1px solid #fef08a;cursor:pointer}
-      .rec-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
-      .rec-profile-name{font-size:12px;font-weight:600;color:#1e293b}
+      .rec-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+      .rec-profile-name{font-size:11px;font-weight:600;color:#1e293b}
       .rec-profile-role{font-size:10px;color:#ca8a04}
       .rec-body{display:grid;grid-template-columns:1fr 260px;flex:1;overflow:hidden}
       .rec-center{padding:22px 20px;overflow-y:auto}
       .rec-right{background:#fff;border-left:1px solid #fef08a;padding:22px 18px;overflow-y:auto}
-      .rec-pg-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
+      .rec-pg-title{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;margin-bottom:18px}
       .rec-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
       .rec-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #fef08a;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(234,179,8,0.07);transition:transform .2s,box-shadow .2s}
       .rec-sc:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
-      .rec-sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-      .rec-sc-lbl{font-size:11px;font-weight:500;color:#94a3b8;margin-bottom:2px}
-      .rec-sc-val{font-size:24px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
+      .rec-sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+      .rec-sc-lbl{font-size:10px;font-weight:500;color:#94a3b8;margin-bottom:2px}
+      .rec-sc-val{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
       .rec-sc-sub{font-size:10px;color:#94a3b8;margin-top:3px}
       .rec-mid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
       .rec-card{background:#fff;border-radius:14px;border:1px solid #fef08a;box-shadow:0 1px 4px rgba(234,179,8,0.06);overflow:hidden;margin-bottom:16px}
       .rec-card-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #fefce8}
-      .rec-card-title{font-size:14px;font-weight:700;color:#1e293b}
-      .rec-card-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+      .rec-card-title{font-size:13px;font-weight:700;color:#1e293b}
+      .rec-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}
       .rec-card-body{padding:16px 18px}
       .rec-tbl{width:100%;border-collapse:collapse}
-      .rec-tbl th{text-align:left;font-size:11px;font-weight:600;color:#94a3b8;padding:10px 12px;border-bottom:2px solid #fefce8}
-      .rec-tbl td{padding:11px 12px;font-size:13px;color:#475569;border-bottom:1px solid #fefdf0}
+      .rec-tbl th{text-align:left;font-size:10px;font-weight:600;color:#94a3b8;padding:10px 12px;border-bottom:2px solid #fefce8}
+      .rec-tbl td{padding:11px 12px;font-size:12px;color:#475569;border-bottom:1px solid #fefdf0}
       .rec-tbl tr:last-child td{border-bottom:none}
       .rec-tbl tbody tr:hover td{background:#fffdf0}
       .rec-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700}
-      .rec-action-btn{padding:4px 10px;border-radius:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:3px;transition:opacity .15s}
+      .rec-action-btn{padding:4px 10px;border-radius:7px;border:none;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:3px;transition:opacity .15s}
       .rec-action-btn:hover{opacity:.8}
       .rec-chart{display:flex;align-items:flex-end;gap:8px;height:120px}
       .rec-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1}
@@ -173,14 +173,14 @@ export default function ReceptionistDashboard() {
       .rec-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
       @media(max-width:700px){.rec-form{grid-template-columns:1fr}}
       .rec-field{display:flex;flex-direction:column;gap:6px}
-      .rec-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
-      .rec-input{background:#fefce8;border:1.5px solid #fef08a;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
+      .rec-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
+      .rec-input{background:#fefce8;border:1.5px solid #fef08a;border-radius:9px;padding:10px 13px;font-size:12px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
       .rec-input::placeholder{color:#94a3b8}
       .rec-input:focus{border-color:#fcd34d;box-shadow:0 0 0 3px rgba(252,211,77,0.25)}
-      .rec-submit{padding:12px 28px;border-radius:9px;border:none;background:linear-gradient(135deg,#eab308,#d97706);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(234,179,8,0.3);transition:all .15s}
+      .rec-submit{padding:12px 28px;border-radius:9px;border:none;background:linear-gradient(135deg,#eab308,#d97706);color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(234,179,8,0.3);transition:all .15s}
       .rec-submit:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(234,179,8,0.4)}
-      .rec-success{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:9px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:13px;color:#16a34a;font-weight:600;margin-top:10px}
-      .rec-right-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:12px}
+      .rec-success{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:9px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12px;color:#16a34a;font-weight:600;margin-top:10px}
+      .rec-right-title{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:12px}
       @media(max-width:900px){
         .rec-sb{transform:translateX(-100%)}
         .rec-sb.open{transform:translateX(0)}
@@ -231,7 +231,7 @@ export default function ReceptionistDashboard() {
           <button className="rec-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
             {sidebarOpen ? <X size={18} color="#eab308" /> : <Menu size={18} color="#64748b" />}
           </button>
-          <div className="rec-search-wrap"><Search size={14} color="#94a3b8"/><input className="rec-search" placeholder="Search appointments, patients..."/></div>
+          <div className="rec-search-wrap"><input className="rec-search" placeholder="Search appointments, patients..."/></div>
           <div className="rec-tb-right">
             <div className="rec-notif"><Bell size={16} color="#64748b"/><span className="rec-notif-dot"/></div>
             <div className="rec-profile">
@@ -247,7 +247,7 @@ export default function ReceptionistDashboard() {
               <div className="rec-pg-title" style={{marginBottom:0}}>
                 {tab==="queue"?"Today's Appointment Queue":tab==="book"?"Book New Appointment":"Patient Registry"}
               </div>
-              <span style={{fontSize:12,color:"#64748b",background:"#fefce8",border:"1px solid #fef08a",padding:"5px 12px",borderRadius:8,fontWeight:500}}>{new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long"})}</span>
+              <span style={{fontSize:11,color:"#64748b",background:"#fefce8",border:"1px solid #fef08a",padding:"5px 12px",borderRadius:8,fontWeight:500}}>{new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long"})}</span>
             </div>
 
             <div className="rec-stats">
@@ -268,7 +268,7 @@ export default function ReceptionistDashboard() {
               <div className="rec-card">
                 <div className="rec-card-head">
                   <div><div className="rec-card-title">Live Queue</div><div className="rec-card-sub">Click actions to update status</div></div>
-                  <button onClick={()=>setTab("book")} style={{padding:"7px 14px",borderRadius:9,border:"none",background:"#eab308",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 3px 10px rgba(234,179,8,0.3)"}}>+ New Appointment</button>
+                  <button onClick={()=>setTab("book")} style={{padding:"7px 14px",borderRadius:9,border:"none",background:"#eab308",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:"0 3px 10px rgba(234,179,8,0.3)"}}>+ New Appointment</button>
                 </div>
                 <div style={{overflowX:"auto"}}>
                   <table className="rec-tbl">
@@ -276,16 +276,16 @@ export default function ReceptionistDashboard() {
                     <tbody>
                       {queue.map(a=>(
                         <tr key={a.token}>
-                          <td style={{fontFamily:"monospace",color:"#94a3b8",fontSize:11}}>{a.token}</td>
+                          <td style={{fontFamily:"monospace",color:"#94a3b8",fontSize:10}}>{a.token}</td>
                           <td>
-                            <div style={{fontWeight:600,color:"#1e293b",fontSize:13}}>{a.name}</div>
-                            <div style={{fontSize:11,color:"#94a3b8"}}>{a.mobile}</div>
+                            <div style={{fontWeight:600,color:"#1e293b",fontSize:12}}>{a.name}</div>
+                            <div style={{fontSize:10,color:"#94a3b8"}}>{a.mobile}</div>
                           </td>
                           <td>
-                            <div style={{fontSize:12,fontWeight:600,color:"#334155"}}>{a.doctor}</div>
-                            <div style={{fontSize:11,color:"#94a3b8"}}>{a.dept}</div>
+                            <div style={{fontSize:11,fontWeight:600,color:"#334155"}}>{a.doctor}</div>
+                            <div style={{fontSize:10,color:"#94a3b8"}}>{a.dept}</div>
                           </td>
-                          <td style={{fontWeight:700,fontSize:12,color:"#334155"}}>{a.time}</td>
+                          <td style={{fontWeight:700,fontSize:11,color:"#334155"}}>{a.time}</td>
                           <td><span className="rec-badge" style={a.status==="in-progress"?{background:"#E6F4F4",color:"#0A6B70",border:"1px solid #B3E0E0"}:a.status==="waiting"?{background:"#fefce8",color:"#ca8a04",border:"1px solid #fde68a"}:a.status==="completed"?{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}:a.status==="cancelled"?{background:"#fff5f5",color:"#ef4444",border:"1px solid #fecaca"}:{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>{a.status.replace("-"," ")}</span></td>
                           <td>
                             <div style={{display:"flex",gap:6}}>
@@ -352,10 +352,10 @@ export default function ReceptionistDashboard() {
                   <tbody>
                     {recentPat.map(p=>(
                       <tr key={p.id}>
-                        <td style={{fontFamily:"monospace",color:"#94a3b8",fontSize:11}}>{p.id}</td>
+                        <td style={{fontFamily:"monospace",color:"#94a3b8",fontSize:10}}>{p.id}</td>
                         <td style={{fontWeight:600,color:"#1e293b"}}>{p.name}</td>
                         <td>{p.age}</td>
-                        <td style={{fontSize:12}}>{p.mobile}</td>
+                        <td style={{fontSize:11}}>{p.mobile}</td>
                         <td>{p.dept}</td>
                         <td><span className="rec-badge" style={{background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>{p.visited}</span></td>
                       </tr>
@@ -390,7 +390,7 @@ export default function ReceptionistDashboard() {
 
           <div className="rec-right">
             <div style={{marginBottom:22}}>
-              <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>
+              <div style={{fontSize:10,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Date</div>
               <MiniCalendar accent="#eab308"/>
             </div>
             <div>
@@ -403,10 +403,10 @@ export default function ReceptionistDashboard() {
               ].map((s,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px",borderRadius:10,background:"#fefce8",border:"1px solid #fef08a",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:16}}>{s.icon}</span>
-                    <span style={{fontSize:12,color:"#64748b"}}>{s.label}</span>
+                    <span style={{fontSize:15}}>{s.icon}</span>
+                    <span style={{fontSize:11,color:"#64748b"}}>{s.label}</span>
                   </div>
-                  <span style={{fontSize:14,fontWeight:700,color:"#854d0e"}}>{s.val}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"#854d0e"}}>{s.val}</span>
                 </div>
               ))}
             </div>

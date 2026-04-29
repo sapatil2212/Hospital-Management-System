@@ -118,6 +118,23 @@ export async function GET(req: NextRequest) {
       return sum + (m.quantity * (m.item?.sellingPrice || 0));
     }, 0);
 
+    // Stock health percentage
+    const stockHealthPct = totalItems > 0 ? Math.round(((totalItems - lowStockCount) / totalItems) * 100) : 100;
+
+    // Yesterday revenue
+    const yesterdayStart = new Date(today);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const yesterdayMovements = await px.stockMovement.findMany({
+      where: {
+        hospitalId: auth.hospitalId,
+        type: "OUT",
+        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
+        createdAt: { gte: yesterdayStart, lt: today },
+      },
+      include: { item: { select: { sellingPrice: true } } },
+    });
+    const yesterdayRevenue = yesterdayMovements.reduce((sum: number, m: any) => sum + (m.quantity * (m.item?.sellingPrice || 0)), 0);
+
     // Recent sales (last 7 days for chart)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -184,6 +201,25 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 10);
 
+    // Previous week revenue (days -14 to -7)
+    const prevWeekStart = new Date();
+    prevWeekStart.setDate(prevWeekStart.getDate() - 14);
+    prevWeekStart.setHours(0, 0, 0, 0);
+    const prevWeekMovements = await px.stockMovement.findMany({
+      where: {
+        hospitalId: auth.hospitalId,
+        type: "OUT",
+        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
+        createdAt: { gte: prevWeekStart, lt: sevenDaysAgo },
+      },
+      include: { item: { select: { sellingPrice: true } } },
+    });
+    const prevWeekRevenue = prevWeekMovements.reduce((sum: number, m: any) => sum + (m.quantity * (m.item?.sellingPrice || 0)), 0);
+    const weekRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
+    const revenueGrowth = prevWeekRevenue > 0
+      ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100)
+      : null;
+
     return successResponse({
       todayRxCount,
       todayDispensed,
@@ -192,7 +228,12 @@ export async function GET(req: NextRequest) {
       expiringCount,
       totalItems,
       todayRevenue,
+      yesterdayRevenue,
       totalRevenue,
+      weekRevenue,
+      prevWeekRevenue,
+      revenueGrowth,
+      stockHealthPct,
       chartData,
       topMedicines,
     }, "Pharmacy stats fetched");

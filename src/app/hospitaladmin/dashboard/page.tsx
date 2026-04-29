@@ -20,7 +20,7 @@ import EnquiryPanel from "@/components/EnquiryPanel";
 import BlogPanel from "@/components/BlogPanel";
 import AdminInventoryPanel from "@/components/AdminInventoryPanel";
 
-const AdminDepartmentsPanel = dynamic(() => import("@/components/AdminDepartmentsPanel"), { ssr: false });
+const AdminDepartmentsPanel = dynamic(() => import("@/components/AdminDepartmentsPanel"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Departments...</span></div> });
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -51,7 +51,7 @@ const mockAppointments = [
   { id: "A004", patient: "Kavita Singh", doctor: "Dr. Priya Sharma", dept: "Cardiology", time: "11:00 AM", status: "confirmed" },
   { id: "A005", patient: "Ankit Tiwari", doctor: "Dr. Rajan Mehta", dept: "Neurology", time: "11:30 AM", status: "cancelled" },
 ];
-const PatientsManagementPanelLazy = dynamic(() => import("@/app/subdept/dashboard/PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{padding:40,textAlign:"center"}}><span style={{fontSize:13,color:"#94a3b8"}}>Loading Patient Management...</span></div> });
+const PatientsManagementPanelLazy = dynamic(() => import("@/app/subdept/dashboard/PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Patient Management...</span></div> });
 const reports = [
   { icon: <Stethoscope size={14} />, msg: "Ventilator unit requires inspection in ICU", time: "5 minutes ago", highlight: true },
   { icon: <Settings size={14} />, msg: "Breakdown in elevator on 2nd floor", time: "18 minutes ago", highlight: false },
@@ -79,22 +79,22 @@ function MiniCalendar() {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{MONTHS[cur.m]} {cur.y}</span>
+        <span style={{ fontSize:15, fontWeight: 700, color: "#1e293b" }}>{MONTHS[cur.m]} {cur.y}</span>
         <div style={{ display: "flex", gap: 4 }}>
           {["‹", "›"].map((a, i) => (
             <button key={i} onClick={() => setCur(c => { const nm = c.m + (i ? 1 : -1); return nm < 0 ? { y: c.y - 1, m: 11 } : nm > 11 ? { y: c.y + 1, m: 0 } : { ...c, m: nm }; })}
-              style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: i ? "#0E898F" : "#e2e8f0", color: i ? "#fff" : "#64748b", cursor: "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: i ? "#0E898F" : "#e2e8f0", color: i ? "#fff" : "#64748b", cursor: "pointer", fontSize:13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {a}
             </button>
           ))}
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 6 }}>
-        {DAYS_H.map((d, i) => <div key={i} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: "#94a3b8", padding: "2px 0" }}>{d}</div>)}
+        {DAYS_H.map((d, i) => <div key={i} style={{ textAlign: "center", fontSize:10, fontWeight: 600, color: "#94a3b8", padding: "2px 0" }}>{d}</div>)}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
         {cells.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", fontSize: 12, fontWeight: isToday(d) ? 700 : 400, padding: "5px 0", borderRadius: 8, cursor: d ? "pointer" : "default", background: isToday(d) ? "#0E898F" : "transparent", color: isToday(d) ? "#fff" : d ? "#334155" : "transparent", transition: "background .15s" }}>
+          <div key={i} style={{ textAlign: "center", fontSize:11, fontWeight: isToday(d) ? 700 : 400, padding: "5px 0", borderRadius: 8, cursor: d ? "pointer" : "default", background: isToday(d) ? "#0E898F" : "transparent", color: isToday(d) ? "#fff" : d ? "#334155" : "transparent", transition: "background .15s" }}>
             {d || ""}
           </div>
         ))}
@@ -281,10 +281,10 @@ function DashboardContent() {
       <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "departments" || tab === "reports" || tab === "enquiries" || tab === "tourism" || tab === "blogs" || tab === "patients") ? { gridTemplateColumns: "1fr" } : undefined}>
     <div className="hd-center">
       {tab === "overview" && (<>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+        <div className="hd-page-header">
           <div>
             <div className="hd-pg-title" style={{ marginBottom: 2 }}>Dashboard</div>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>
+            <div style={{ fontSize:10, color: "#94a3b8" }}>
               {dashboardData ? `Last updated ${new Date(dashboardData.generatedAt).toLocaleTimeString()}` : "Loading real-time data..."}
             </div>
           </div>
@@ -310,7 +310,7 @@ function DashboardContent() {
 
         {/* Today's activity breakdown */}
         {dashboardData && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10, marginBottom: 18 }}>
+          <div className="hd-activity-grid">
             {[
               { label: "Scheduled", val: dashboardData.appointments?.scheduled ?? 0, color: "#3b82f6", bg: "#eff6ff" },
               { label: "Confirmed", val: dashboardData.appointments?.pending ?? 0, color: "#8b5cf6", bg: "#f5f3ff" },
@@ -321,8 +321,8 @@ function DashboardContent() {
               { label: "Plans Done", val: dashboardData.treatmentPlans?.completed ?? 0, color: "#059669", bg: "#f0fdf4" },
             ].map((item, i) => (
               <div key={i} style={{ background: item.bg, borderRadius: 12, padding: "12px 16px", border: `1px solid ${item.color}22` }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{item.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: item.color, lineHeight: 1 }}>{item.val}</div>
+                <div style={{ fontSize:10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize:20, fontWeight: 800, color: item.color, lineHeight: 1 }}>{item.val}</div>
               </div>
             ))}
           </div>
@@ -340,17 +340,17 @@ function DashboardContent() {
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: 3, background: "#0E898F" }} />
-                  <span style={{ fontSize: 10, color: "#64748b" }}>Appointments</span>
+                  <span style={{ fontSize:10, color: "#64748b" }}>Appointments</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: 3, background: "#10b981" }} />
-                  <span style={{ fontSize: 10, color: "#64748b" }}>New Patients</span>
+                  <span style={{ fontSize:10, color: "#64748b" }}>New Patients</span>
                 </div>
               </div>
             </div>
             <div className="hd-card-body" style={{ paddingTop: 8 }}>
               {dashboardLoading && !dashboardData ? (
-                <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>
+                <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize:11 }}>
                   <Loader2 size={18} className="hd-spin" style={{ marginRight: 8, borderColor: "#0E898F" }} /> Loading chart...
                 </div>
               ) : (
@@ -367,10 +367,10 @@ function DashboardContent() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <XAxis dataKey="label" tick={{ fontSize:10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip
-                      contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
+                      contentStyle={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, fontSize:11, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
                       labelStyle={{ fontWeight: 700, color: "#1e293b" }}
                     />
                     <Area type="monotone" dataKey="appointments" stroke="#0E898F" strokeWidth={2} fill="url(#apptGrad)" name="Appointments" dot={{ r: 3, fill: "#0E898F", strokeWidth: 0 }} activeDot={{ r: 5 }} />
@@ -389,7 +389,7 @@ function DashboardContent() {
             </div>
             <div className="hd-card-body" style={{ padding: "12px 14px" }}>
               {dashboardLoading && !dashboardData ? (
-                <div style={{ textAlign: "center", padding: 20, color: "#94a3b8", fontSize: 12 }}>Loading...</div>
+                <div style={{ textAlign: "center", padding: 20, color: "#94a3b8", fontSize:11 }}>Loading...</div>
               ) : (
                 <>
                   {(dashboardData?.inventory?.lowStockCount ?? 0) > 0 && (
@@ -439,7 +439,7 @@ function DashboardContent() {
                   {dashboardData && (dashboardData.inventory.lowStockCount === 0) && (dashboardData.finance.pendingBills === 0) && (dashboardData.followUps.pending === 0) && (
                     <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8" }}>
                       <CheckCircle size={24} style={{ margin: "0 auto 8px", opacity: .4, display: "block" }} />
-                      <div style={{ fontSize: 12 }}>All systems normal</div>
+                      <div style={{ fontSize:11 }}>All systems normal</div>
                     </div>
                   )}
                 </>
@@ -461,10 +461,10 @@ function DashboardContent() {
             {dashboardLoading && !dashboardData ? (
               <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8" }}>
                 <Loader2 size={20} className="hd-spin" style={{ margin: "0 auto 8px", borderColor: "#0E898F" }} />
-                <div style={{ fontSize: 12 }}>Loading patient data...</div>
+                <div style={{ fontSize:11 }}>Loading patient data...</div>
               </div>
             ) : (dashboardData?.recentPatients?.length ?? 0) === 0 ? (
-              <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>No patients registered yet</div>
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize:12 }}>No patients registered yet</div>
             ) : (
               <table className="hd-tbl">
                 <thead>
@@ -476,18 +476,18 @@ function DashboardContent() {
                     const regDate = new Date(p.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
                     return (
                       <tr key={p.id}>
-                        <td><span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "2px 6px", borderRadius: 5 }}>{p.patientId}</span></td>
-                        <td style={{ fontSize: 12, color: "#64748b" }}>{regDate}</td>
+                        <td><span style={{ fontSize:10, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "2px 6px", borderRadius: 5 }}>{p.patientId}</span></td>
+                        <td style={{ fontSize:11, color: "#64748b" }}>{regDate}</td>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0).toUpperCase()}</div>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#0ea5e9,#0369a1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize:10, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0).toUpperCase()}</div>
                             <span className="hd-td-name">{p.name}</span>
                           </div>
                         </td>
-                        <td style={{ fontSize: 11, color: "#64748b" }}>{p.phone}</td>
-                        <td><span style={{ color: "#ef4444", fontWeight: 700, fontSize: 12 }}>{p.bloodGroup || "-"}</span></td>
+                        <td style={{ fontSize:10, color: "#64748b" }}>{p.phone}</td>
+                        <td><span style={{ color: "#ef4444", fontWeight: 700, fontSize:11 }}>{p.bloodGroup || "-"}</span></td>
                         <td><span className="hd-badge" style={{ background: "#f1f5f9", color: "#64748b" }}>{p.gender ? p.gender.charAt(0) + p.gender.slice(1).toLowerCase() : "-"}{age !== null ? ` · ${age}y` : ""}</span></td>
-                        <td><span style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments ?? 0}</span></td>
+                        <td><span style={{ fontSize:11, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments ?? 0}</span></td>
                         <td>
                           <div style={{ display: "flex", gap: 5 }}>
                             <button className="hd-card-icon-btn" style={{ background: "#E6F4F4", color: "#0E898F", border: "none" }} onClick={() => router.push(`/hospitaladmin/appointments?patientId=${p.id}`)}><ChevronRight size={12} /></button>
@@ -503,7 +503,7 @@ function DashboardContent() {
         </div>
 
         {/* Quick Access - Configure & Treatment Plans */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
+        <div className="hd-quick-access">
           <div className="hd-card" style={{ cursor: "pointer" }} onClick={() => router.push("/hospitaladmin/configure?tab=overview")}>
             <div className="hd-card-head">
               <div>
@@ -512,14 +512,14 @@ function DashboardContent() {
               </div>
               <ChevronRight size={16} color="#94a3b8" />
             </div>
-            <div style={{ display: "flex", gap: 10, padding: "0 16px 14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "0 16px 14px" }}>
               {[
                 { label: "Service Packages", path: "services", color: "#0369a1", bg: "#e0f2fe" },
                 { label: "Treatment Plans", path: "treatments", color: "#16a34a", bg: "#f0fdf4" },
                 { label: "Permissions", path: "permissions", color: "#9333ea", bg: "#fdf4ff" },
               ].map(item => (
                 <button key={item.label} onClick={e => { e.stopPropagation(); router.push(`/hospitaladmin/configure?tab=${item.path}`); }}
-                  style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: item.bg, color: item.color, fontSize:10, fontWeight: 700, cursor: "pointer" }}>
                   {item.label}
                 </button>
               ))}
@@ -533,14 +533,14 @@ function DashboardContent() {
               </div>
               <ChevronRight size={16} color="#94a3b8" />
             </div>
-            <div style={{ display: "flex", gap: 10, padding: "0 16px 14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "0 16px 14px" }}>
               {[
                 { label: "Departments", path: "departments", color: "#0369a1", bg: "#e0f2fe" },
                 { label: "Sub-Depts", path: "subdepts", color: "#0f766e", bg: "#f0fdfa" },
                 { label: "Staff", path: "staff", color: "#475569", bg: "#f1f5f9" },
               ].map(item => (
                 <button key={item.label} onClick={e => { e.stopPropagation(); router.push(`/hospitaladmin/configure?tab=${item.path}`); }}
-                  style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: item.bg, color: item.color, fontSize:10, fontWeight: 700, cursor: "pointer" }}>
                   {item.label}
                 </button>
               ))}
@@ -551,16 +551,16 @@ function DashboardContent() {
 
       {tab === "appointments" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 16, padding: "28px 28px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="hd-banner">
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}><CalendarCheck size={24} />Appointment Management</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,.75)", maxWidth: 440 }}>Book appointments, manage follow-ups, and view your full patient registry in the dedicated module.</div>
+              <div style={{ fontSize:20, fontWeight: 800, marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}><CalendarCheck size={24} />Appointment Management</div>
+              <div style={{ fontSize:12, color: "rgba(255,255,255,.75)", maxWidth: 440 }}>Book appointments, manage follow-ups, and view your full patient registry in the dedicated module.</div>
             </div>
-            <button onClick={() => router.push("/hospitaladmin/appointments")} style={{ padding: "12px 24px", borderRadius: 12, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(4px)", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => router.push("/hospitaladmin/appointments")} style={{ padding: "12px 24px", borderRadius: 12, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", backdropFilter: "blur(4px)", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 8 }}>
               Open Module <ChevronRight size={16} />
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+          <div className="hd-appt-grid">
             {[
               { label: "Book Appointment", desc: "Search patient + pick doctor + select slot", color: "#0E898F", bg: "#E6F4F4", path: "/hospitaladmin/appointments", icon: <CalendarCheck size={18} /> },
               { label: "Follow-up Dashboard", desc: "Track pending, overdue and completed follow-ups", color: "#10b981", bg: "#f0fdf4", path: "/hospitaladmin/appointments", icon: <RefreshCw size={18} /> },
@@ -569,8 +569,8 @@ function DashboardContent() {
               <button key={card.label} onClick={() => router.push(card.path)}
                 style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "18px 20px", cursor: "pointer", textAlign: "left", transition: "all .15s" }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11, background: card.bg, display: "flex", alignItems: "center", justifyContent: "center", color: card.color, marginBottom: 12 }}>{card.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>{card.label}</div>
-                <div style={{ fontSize: 12, color: "#94a3b8" }}>{card.desc}</div>
+                <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>{card.label}</div>
+                <div style={{ fontSize:11, color: "#94a3b8" }}>{card.desc}</div>
               </button>
             ))}
           </div>
@@ -579,25 +579,25 @@ function DashboardContent() {
 
       {tab === "staff" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", borderRadius: 16, padding: "24px 28px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="hd-banner">
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, display: "flex", alignItems: "center", gap: 10 }}><Users size={22} />Staff & Doctors</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.75)" }}>
+              <div style={{ fontSize:19, fontWeight: 800, marginBottom: 4, display: "flex", alignItems: "center", gap: 10 }}><Users size={22} />Staff & Doctors</div>
+              <div style={{ fontSize:11, color: "rgba(255,255,255,.75)" }}>
                 {dashboardData ? `${dashboardData.staff.total} staff · ${dashboardData.staff.doctors} doctors · ${dashboardData.staff.activeDoctors} active` : "Loading..."}
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               <button onClick={() => router.push("/hospitaladmin/configure?tab=staff")}
-                style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize:11, fontWeight: 700, cursor: "pointer" }}>
                 Manage Staff
               </button>
               <button onClick={() => router.push("/hospitaladmin/configure?tab=doctors")}
-                style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "rgba(255,255,255,.15)", color: "#fff", fontSize:11, fontWeight: 700, cursor: "pointer" }}>
                 Manage Doctors
               </button>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+          <div className="hd-staff-grid">
             {[
               { label: "Total Staff", val: dashboardData?.staff?.total ?? "-", icon: <Users size={18} />, color: "#0E898F", bg: "#E6F4F4" },
               { label: "Active Staff", val: dashboardData?.staff?.active ?? "-", icon: <CheckCircle2 size={18} />, color: "#10b981", bg: "#f0fdf4" },
@@ -606,8 +606,8 @@ function DashboardContent() {
             ].map((item, i) => (
               <div key={i} style={{ background: item.bg, borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0" }}>
                 <div style={{ color: item.color, marginBottom: 8 }}>{item.icon}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", lineHeight: 1, marginBottom: 4 }}>{item.val}</div>
-                <div style={{ fontSize: 11, color: "#94a3b8" }}>{item.label}</div>
+                <div style={{ fontSize:20, fontWeight: 800, color: "#1e293b", lineHeight: 1, marginBottom: 4 }}>{item.val}</div>
+                <div style={{ fontSize:10, color: "#94a3b8" }}>{item.label}</div>
               </div>
             ))}
           </div>
@@ -618,7 +618,7 @@ function DashboardContent() {
             </div>
             <div className="hd-tbl-wrap">
               {(dashboardData?.doctorsOnDuty?.length ?? 0) === 0 ? (
-                <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize:12 }}>
                   <Stethoscope size={28} style={{ margin: "0 auto 10px", display: "block", opacity: .3 }} />
                   No doctors have appointments scheduled today
                 </div>
@@ -630,12 +630,12 @@ function DashboardContent() {
                       <tr key={d.id}>
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(d.name)}</div>
+                            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#0E898F,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize:10, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(d.name)}</div>
                             <span className="hd-td-name">{d.name}</span>
                           </div>
                         </td>
                         <td><span className="hd-badge" style={{ background: "#E6F4F4", color: "#0A6B70", border: "1px solid #B3E0E0" }}>{d.department || d.specialization}</span></td>
-                        <td style={{ fontSize: 12, color: "#64748b" }}>{d.firstSlot}{d.lastSlot !== d.firstSlot ? ` - ${d.lastSlot}` : ""}</td>
+                        <td style={{ fontSize:11, color: "#64748b" }}>{d.firstSlot}{d.lastSlot !== d.firstSlot ? ` - ${d.lastSlot}` : ""}</td>
                         <td><span style={{ fontWeight: 700, color: "#0E898F" }}>{d.appointmentCount}</span></td>
                       </tr>
                     ))}
@@ -687,11 +687,11 @@ function DashboardContent() {
         <div className="hd-card mb16">
           <div className="hd-card-head"><div className="hd-card-title">System Settings</div></div>
           <div className="hd-card-body">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="hd-settings-grid">
               {[["Hospital Name", user?.hospital?.name || "-"], ["Admin Email", user?.email || "-"], ["Timezone", "IST (UTC+5:30)"], ["Auth", "JWT + HTTP-only Cookies"], ["Session TTL", "7 Days"], ["DB", "MySQL - TiDB Cloud"]].map(([k, v]) => (
                 <div key={k} style={{ padding: "14px 16px", borderRadius: 11, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{k}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{v}</div>
+                  <div style={{ fontSize:10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{k}</div>
+                  <div style={{ fontSize:12, fontWeight: 600, color: "#334155" }}>{v}</div>
                 </div>
               ))}
             </div>
@@ -703,23 +703,23 @@ function DashboardContent() {
     {tab !== "inventory" && tab !== "billing" && tab !== "ipd" && tab !== "reports" && tab !== "enquiries" && tab !== "tourism" && tab !== "blogs" && tab !== "patients" && tab !== "departments" && (
       <div className="hd-right">
         <div className="hd-right-sec">
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>
+          <div style={{ fontSize:10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>Date</div>
           <MiniCalendar />
         </div>
         <div className="hd-right-sec" style={{ marginTop: 22 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div className="hd-right-title">Doctors on Duty Today</div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#0E898F", background: "#E6F4F4", padding: "2px 8px", borderRadius: 20 }}>
+            <span style={{ fontSize:10, fontWeight: 700, color: "#0E898F", background: "#E6F4F4", padding: "2px 8px", borderRadius: 20 }}>
               {dashboardData?.doctorsOnDuty?.length ?? 0}
             </span>
           </div>
           {dashboardLoading && !dashboardData ? (
-            <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 12 }}>
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize:11 }}>
               <Loader2 size={16} className="hd-spin" style={{ margin: "0 auto 6px", borderColor: "#0E898F" }} />
               Loading...
             </div>
           ) : (dashboardData?.doctorsOnDuty?.length ?? 0) === 0 ? (
-            <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize: 12 }}>
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#94a3b8", fontSize:11 }}>
               <Stethoscope size={22} style={{ margin: "0 auto 6px", display: "block", opacity: .3 }} />
               No appointments today
             </div>
@@ -751,8 +751,8 @@ function DashboardContent() {
               { label: "Low Stock", val: dashboardData.inventory?.lowStockCount ?? 0, color: (dashboardData.inventory?.lowStockCount ?? 0) > 0 ? "#ef4444" : "#10b981" },
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 9, background: "#f8fafc", border: "1px solid #f1f5f9", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>{item.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: item.color }}>{item.val}</span>
+                <span style={{ fontSize:10, color: "#64748b", fontWeight: 500 }}>{item.label}</span>
+                <span style={{ fontSize:12, fontWeight: 800, color: item.color }}>{item.val}</span>
               </div>
             ))}
           </div>

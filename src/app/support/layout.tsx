@@ -41,7 +41,7 @@ function getActiveId(tab: string | null) { return (tab && ALL_IDS.includes(tab))
 
 function Spinner() {
   return (
-    <div style={{ minHeight: "100vh", background: ACCENT_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize: 14 }}>
+    <div style={{ minHeight: "100vh", background: ACCENT_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize:13 }}>
       <div style={{ width: 30, height: 30, border: `3px solid ${ACCENT_BDR}`, borderTop: `3px solid ${ACCENT}`, borderRadius: "50%", animation: "sspin 0.8s linear infinite" }} />
       <style>{`@keyframes sspin{to{transform:rotate(360deg)}}`}</style>
       Loading Support Dashboard…
@@ -129,7 +129,7 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         .sp-burger{display:none;width:36px;height:36px;border-radius:10px;background:${ACCENT_LIGHT};border:1.5px solid ${ACCENT_BDR};align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
         .sp-sb-logo{padding:18px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;min-height:64px}
         .sp-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,${ACCENT},${ACCENT2});border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(5,150,105,.3);flex-shrink:0}
-        .sp-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sp-logo-tx{font-size:13px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .sp-logo-sub{font-size:10px;color:${ACCENT};font-weight:600;margin-top:1px}
         .sp-nav{flex:1;padding:10px;overflow-y:auto}
         .sp-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 5px}
@@ -151,7 +151,7 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         .sp-topbar-r{display:flex;align-items:center;gap:10px}
         .sp-profile-btn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:${ACCENT_LIGHT};border:1.5px solid ${ACCENT_BDR};cursor:pointer;transition:background .15s}
         .sp-profile-btn:hover{background:#d1fae5}
-        .sp-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,${ACCENT},#3b82f6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden}
+        .sp-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,${ACCENT},#3b82f6);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;overflow:hidden}
         .sp-profile-name{font-size:11.5px;font-weight:600;color:#1e293b}
         .sp-profile-role{font-size:9px;color:${ACCENT};font-weight:500}
         .sp-content{flex:1;padding:28px 28px 40px;overflow-y:auto}
@@ -160,25 +160,25 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         .dd-banner{border-radius:16px;padding:20px 24px;color:#fff;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
         .dd-banner::before{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.06)}
         .dd-banner-ic{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .dd-banner-name{font-size:20px;font-weight:800;letter-spacing:-.02em}
-        .dd-banner-sub{font-size:12px;opacity:.75;margin-top:3px}
+        .dd-banner-name{font-size:19px;font-weight:800;letter-spacing:-.02em}
+        .dd-banner-sub{font-size:11px;opacity:.75;margin-top:3px}
         .dd-badge-pill{font-size:10px;font-weight:700;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:3px 10px;border-radius:100px;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
         .dd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
         @media(max-width:1200px){.dd-stats{grid-template-columns:repeat(2,1fr)}}
         .dd-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e6fdf5;display:flex;align-items:center;gap:14px;cursor:default}
         .dd-sc-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
         .dd-sc-lbl{font-size:10px;color:#94a3b8;font-weight:500;margin-bottom:3px}
-        .dd-sc-val{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
+        .dd-sc-val{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
         .dd-sc-sub{font-size:9px;color:#94a3b8;margin-top:3px}
         .dd-card{background:#fff;border-radius:14px;border:1px solid #e6fdf5;overflow:hidden}
         .dd-card-head{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
-        .dd-card-title{font-size:13px;font-weight:700;color:#1e293b}
+        .dd-card-title{font-size:12px;font-weight:700;color:#1e293b}
         .dd-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}
         .dd-card-body{padding:16px 18px}
         .dd-tbl-wrap{overflow-x:auto}
         .dd-tbl{width:100%;border-collapse:collapse;min-width:480px}
         .dd-tbl th{text-align:left;font-size:10px;font-weight:700;color:#94a3b8;padding:8px 12px;border-bottom:2px solid #f1f5f9;letter-spacing:.04em;text-transform:uppercase}
-        .dd-tbl td{padding:12px;font-size:12px;color:#475569;border-bottom:1px solid #f8fafc}
+        .dd-tbl td{padding:12px;font-size:11px;color:#475569;border-bottom:1px solid #f8fafc}
         .dd-tbl tr:last-child td{border-bottom:none}
         .dd-tbl tbody tr:hover td{background:#f8fafc}
         .dd-td-name{font-weight:600;color:#1e293b}
@@ -191,7 +191,7 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
         .dd-badge-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
         .dd-btn-ghost{padding:7px 14px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
         .dd-btn-ghost:hover{background:${ACCENT_LIGHT};border-color:${ACCENT_BDR};color:${ACCENT}}
-        .dd-section-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .dd-section-title{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;gap:8px}
         .dd-section-dot{width:4px;height:18px;background:linear-gradient(180deg,${ACCENT},${ACCENT2});border-radius:4px;flex-shrink:0}
         .dd-empty{padding:48px;text-align:center;color:#94a3b8}
         @keyframes dd-spin{to{transform:rotate(360deg)}}
@@ -257,7 +257,6 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
               {sidebarOpen ? <X size={18} color={ACCENT} /> : <Menu size={18} color="#64748b" />}
             </button>
             <div className="sp-search">
-              <Search size={14} color="#94a3b8" />
               <input placeholder="Search patients, appointments…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div className="sp-topbar-r">
@@ -278,13 +277,13 @@ function SupportLayoutContent({ children }: { children: React.ReactNode }) {
                     <div style={{ position: "fixed", inset: 0, zIndex: 60 }} onClick={() => setProfileOpen(false)} />
                     <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: 220, background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 10px 40px rgba(0,0,0,.12)", zIndex: 70, overflow: "hidden" }}>
                       <div style={{ padding: 14, borderBottom: "1px solid #f1f5f9" }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{user?.name}</div>
-                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{user?.email}</div>
-                        {deptProfile && <div style={{ fontSize: 10, color: ACCENT, marginTop: 4, fontWeight: 600 }}>{deptProfile.name} · SUPPORT</div>}
+                        <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{user?.name}</div>
+                        <div style={{ fontSize:10, color: "#64748b", marginTop: 2 }}>{user?.email}</div>
+                        {deptProfile && <div style={{ fontSize:10, color: ACCENT, marginTop: 4, fontWeight: 600 }}>{deptProfile.name} · SUPPORT</div>}
                       </div>
                       <div style={{ padding: 8 }}>
                         <button onClick={() => { setProfileOpen(false); logout(); }}
-                          style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: "#ef4444", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: "#ef4444", fontSize:11, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
                           onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
                           <LogOut size={14} color="#ef4444" /> Log Out

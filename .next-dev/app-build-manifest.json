@@ -1,10 +1,10 @@
 {
   "pages": {
-    "/treatments/skin/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/treatments/skin/page.css",
-      "static/chunks/app/treatments/skin/page.js"
+      "static/css/app/page.css",
+      "static/chunks/app/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -17,99 +17,72 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
-    "/subdept/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/subdept/dashboard/page.css",
-      "static/chunks/app/subdept/dashboard/page.js"
-    ],
-    "/doctor/dashboard/prescription/[appointmentId]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/doctor/dashboard/prescription/[appointmentId]/page.js"
-    ],
-    "/doctor/dashboard/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/doctor/dashboard/layout.js"
-    ],
-    "/doctor/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/doctor/dashboard/page.js"
-    ],
-    "/treatments/hair/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/treatments/hair/page.css",
-      "static/chunks/app/treatments/hair/page.js"
-    ],
-    "/treatments/medical-tourism/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/treatments/medical-tourism/page.css",
-      "static/chunks/app/treatments/medical-tourism/page.js"
-    ],
-    "/treatments/medical-tourism/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/treatments/medical-tourism/loading.css",
-      "static/chunks/app/treatments/medical-tourism/loading.js"
-    ],
-    "/treatments/medical-tourism/[slug]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/treatments/medical-tourism/[slug]/page.css",
-      "static/chunks/app/treatments/medical-tourism/[slug]/page.js"
-    ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/page.css",
-      "static/chunks/app/page.js"
-    ],
-    "/treatments/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/treatments/page.css",
-      "static/chunks/app/treatments/page.js"
-    ],
-    "/contact/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/contact/page.css",
-      "static/chunks/app/contact/page.js"
-    ],
-    "/hospitaladmin/configure/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/hospitaladmin/configure/page.js"
-    ],
-    "/hospitaladmin/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/hospitaladmin/layout.js"
-    ],
     "/about/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/about/page.css",
       "static/chunks/app/about/page.js"
     ],
-    "/hospitaladmin/dashboard/page": [
+    "/subdept/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/hospitaladmin/dashboard/page.js"
+      "static/css/app/subdept/dashboard/page.css",
+      "static/chunks/app/subdept/dashboard/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/_not-found/page.js"
     ],
-    "/hospitaladmin/appointments/page": [
+    "/hospitaladmin/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/hospitaladmin/appointments/page.js"
+      "static/chunks/app/hospitaladmin/dashboard/page.js"
+    ],
+    "/hospitaladmin/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospitaladmin/layout.js"
+    ],
+    "/hospitaladmin/finance/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospitaladmin/finance/page.js"
+    ],
+    "/hospitaladmin/configure/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospitaladmin/configure/page.js"
+    ],
+    "/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/login/page.js"
+    ],
+    "/signup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/signup/page.js"
+    ],
+    "/parentdept/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/parentdept/dashboard/page.js"
+    ],
+    "/parentdept/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/parentdept/layout.js"
+    ],
+    "/diagnostic/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/diagnostic/dashboard/page.js"
+    ],
+    "/diagnostic/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/diagnostic/layout.js"
     ]
   }
 }

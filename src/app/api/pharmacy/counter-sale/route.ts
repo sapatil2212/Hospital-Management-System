@@ -5,6 +5,132 @@ import { Role } from "@prisma/client";
 import prisma from "../../../../../backend/config/db";
 
 const px = prisma as any;
+export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/pharmacy/counter-sale
+ * Returns counter sale history with KPI stats.
+ * Query params: period (today|week|month|all), search, limit, page
+ */
+export async function GET(req: NextRequest) {
+  const auth = await requireRole(req, [Role.SUB_DEPT_HEAD, Role.HOSPITAL_ADMIN, Role.STAFF, Role.RECEPTIONIST]);
+  if (auth.error) return auth.error;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const period  = searchParams.get("period") || "month";
+    const search  = searchParams.get("search") || "";
+    const limit   = parseInt(searchParams.get("limit") || "50");
+    const page    = parseInt(searchParams.get("page") || "1");
+
+    const now = new Date();
+    let fromDate: Date | null = null;
+    if (period === "today") { fromDate = new Date(now); fromDate.setHours(0,0,0,0); }
+    else if (period === "week")  { fromDate = new Date(now); fromDate.setDate(now.getDate() - 7); }
+    else if (period === "month") { fromDate = new Date(now.getFullYear(), now.getMonth(), 1); }
+
+    const where: any = {
+      hospitalId: auth.hospitalId,
+      notes: { contains: "PHARMACY_COUNTER_SALE" },
+    };
+    if (fromDate) where.createdAt = { gte: fromDate };
+    if (search) {
+      where.OR = [
+        { billNo: { contains: search } },
+        { patient: { name: { contains: search } } },
+        { patient: { patientId: { contains: search } } },
+      ];
+    }
+
+    const [bills, totalCount] = await Promise.all([
+      px.bill.findMany({
+        where,
+        include: {
+          patient: { select: { id: true, name: true, patientId: true, phone: true } },
+          billItems: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      px.bill.count({ where }),
+    ]);
+
+    // ── KPI Stats ──
+    const allBills: any[] = await px.bill.findMany({
+      where: { hospitalId: auth.hospitalId, notes: { contains: "PHARMACY_COUNTER_SALE" }, ...(fromDate ? { createdAt: { gte: fromDate } } : {}) },
+      include: { billItems: true },
+    });
+
+    const totalSales   = allBills.length;
+    const totalRevenue = allBills.reduce((s: number, b: any) => s + (b.paidAmount || 0), 0);
+    const totalDiscount= allBills.reduce((s: number, b: any) => s + (b.discount || 0), 0);
+
+    // Best performer medicine
+    const itemFreq: Record<string, { name: string; qty: number; revenue: number }> = {};
+    for (const bill of allBills) {
+      let items: any[] = [];
+      try { items = bill.billItems?.length ? bill.billItems : (typeof bill.items === "string" ? JSON.parse(bill.items) : bill.items || []); } catch {}
+      for (const it of items) {
+        const nm = it.name || "Unknown";
+        if (!itemFreq[nm]) itemFreq[nm] = { name: nm, qty: 0, revenue: 0 };
+        itemFreq[nm].qty     += (it.quantity || 1);
+        itemFreq[nm].revenue += (it.amount || 0);
+      }
+    }
+    const bestMedicine = Object.values(itemFreq).sort((a, b) => b.revenue - a.revenue)[0] || null;
+
+    const history = bills.map((bill: any) => {
+      let items: any[] = [];
+      try { items = bill.billItems?.length ? bill.billItems : (typeof bill.items === "string" ? JSON.parse(bill.items) : bill.items || []); } catch {}
+      return {
+        id: bill.id, billNo: bill.billNo, patient: bill.patient, items,
+        subtotal: bill.subtotal, discount: bill.discount, tax: bill.tax,
+        total: bill.total, paidAmount: bill.paidAmount, status: bill.status,
+        paymentMethod: bill.paymentMethod, notes: bill.notes,
+        createdAt: bill.createdAt,
+      };
+    });
+
+    return successResponse({
+      sales: history,
+      pagination: { total: totalCount, page, totalPages: Math.ceil(totalCount / limit) },
+      stats: { totalSales, totalRevenue, totalDiscount, bestMedicine },
+    }, "Counter sales fetched");
+  } catch (err: any) {
+    return errorResponse(err.message || "Failed to fetch counter sales", 500);
+  }
+}
+
+/**
+ * DELETE /api/pharmacy/counter-sale?id=...
+ * Deletes a counter sale bill record.
+ */
+export async function DELETE(req: NextRequest) {
+  const auth = await requireRole(req, [Role.SUB_DEPT_HEAD, Role.HOSPITAL_ADMIN]);
+  if (auth.error) return auth.error;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("id is required", 400);
+
+    const bill = await px.bill.findFirst({ where: { id, hospitalId: auth.hospitalId, notes: { contains: "PHARMACY_COUNTER_SALE" } } });
+    if (!bill) return errorResponse("Counter sale not found", 404);
+
+    // Delete payments + bill items + revenue + bill
+    await px.$transaction(async (tx: any) => {
+      await tx.payment.deleteMany({ where: { billId: id } });
+      await tx.billItem.deleteMany({ where: { billId: id } });
+      await tx.revenue.deleteMany({ where: { referenceId: id } });
+      await tx.bill.delete({ where: { id } });
+    });
+
+    return successResponse(null, "Counter sale deleted");
+  } catch (err: any) {
+    return errorResponse(err.message || "Failed to delete counter sale", 500);
+  }
+}
 
 /**
  * POST /api/pharmacy/counter-sale

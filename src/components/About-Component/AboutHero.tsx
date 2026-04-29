@@ -70,7 +70,7 @@ export default function AboutHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            Redefining Beauty with <br /> Precision & Care
+            Healthcare Designed <br /> Around You
           </motion.h1>
 
           <motion.p
@@ -79,9 +79,9 @@ export default function AboutHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            At our aesthetic hospital, we believe beauty is deeply personal and deserves expert care. 
-            We combine advanced medical technology with artistic precision to deliver natural, 
-            refined results tailored to every individual.
+            We combine state-of-the-art medical technology with a compassionate, human-centered approach. 
+            <br /><br />
+            Celeb Aesthetica isn&apos;t just a clinic; it&apos;s your partner in lifelong wellness. Our commitment to excellence ensures that every patient receives the highest quality of care tailored to their unique needs.
           </motion.p>
 
           {/* Removed Learn More Button as per user request */}

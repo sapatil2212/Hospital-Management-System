@@ -260,7 +260,7 @@ export default function HospitalAdminFinancePage() {
       downloadBlob(JSON.stringify(rows, null, 2), "application/json", "json");
     } else {
       const keys = rows.length ? Object.keys(rows[0]) : [];
-      const html = `<html><head><title>${tab} export</title><style>body{font-family:sans-serif;padding:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:13px}th{background:#f1f5f9;font-weight:700}</style></head><body><h2>${tab === "expenses" ? "Expenses" : "Revenue (Paid Bills)"}</h2><table><thead><tr>${keys.map(k => `<th>${k}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${keys.map(k => `<td>${(r as any)[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`;
+      const html = `<html><head><title>${tab} export</title><style>body{font-family:sans-serif;padding:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:12px}th{background:#f1f5f9;font-weight:700}</style></head><body><h2>${tab === "expenses" ? "Expenses" : "Revenue (Paid Bills)"}</h2><table><thead><tr>${keys.map(k => `<th>${k}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${keys.map(k => `<td>${(r as any)[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`;
       const w = window.open("", "_blank");
       if (w) { w.document.write(html); w.document.close(); w.print(); }
     }
@@ -329,10 +329,10 @@ export default function HospitalAdminFinancePage() {
         input,select,button{font-family:'Inter',sans-serif}
 
         .fin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
-        .fin-title{font-size:20px;font-weight:900;color:#0f172a;letter-spacing:-.02em}
-        .fin-sub{font-size:12px;color:#94a3b8;margin-top:4px}
+        .fin-title{font-size:19px;font-weight:900;color:#0f172a;letter-spacing:-.02em}
+        .fin-sub{font-size:11px;color:#94a3b8;margin-top:4px}
         .fin-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-        .fin-btn{display:flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+        .fin-btn{display:flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:10px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
         .fin-btn.primary{background:#0A6B70;color:#fff;border:1.5px solid #0A6B70}
         .fin-btn.primary:hover{background:#0E898F}
         .fin-btn.ghost{background:#fff;border:1px solid #e2e8f0;color:#334155}
@@ -343,24 +343,24 @@ export default function HospitalAdminFinancePage() {
         @media(max-width:680px){.fin-stats{grid-template-columns:1fr}}
         .fin-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px 14px;display:flex;gap:12px;align-items:center}
         .fin-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .fin-lbl{font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-        .fin-val{font-size:18px;font-weight:900;color:#0f172a;letter-spacing:-.02em;margin-top:2px}
-        .fin-mini{font-size:11px;color:#64748b;margin-top:2px}
+        .fin-lbl{font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+        .fin-val{font-size:17px;font-weight:900;color:#0f172a;letter-spacing:-.02em;margin-top:2px}
+        .fin-mini{font-size:10px;color:#64748b;margin-top:2px}
 
         .fin-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}
         .fin-tabs{display:flex;gap:6px;padding:10px;border-bottom:1px solid #f1f5f9;background:#fbfdff}
-        .fin-tab{border:none;background:none;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
+        .fin-tab{border:none;background:none;padding:9px 12px;border-radius:12px;font-size:12px;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
         .fin-tab.on{background:#E6F4F4;color:#0A6B70}
         .fin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f5f9}
-        .fin-hint{font-size:12px;color:#94a3b8}
+        .fin-hint{font-size:11px;color:#94a3b8}
 
         .fin-table-wrap{overflow:auto}
         .fin-table{width:100%;border-collapse:separate;border-spacing:0}
-        .fin-table th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:12px 16px;background:#fff;white-space:nowrap;border-bottom:1px solid #f1f5f9}
-        .fin-table td{padding:12px 16px;border-bottom:1px solid #f8fafc;font-size:13px;color:#334155;white-space:nowrap}
-        .fin-id{font-size:11px;color:#94a3b8;font-weight:700}
+        .fin-table th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:12px 16px;background:#fff;white-space:nowrap;border-bottom:1px solid #f1f5f9}
+        .fin-table td{padding:12px 16px;border-bottom:1px solid #f8fafc;font-size:12px;color:#334155;white-space:nowrap}
+        .fin-id{font-size:10px;color:#94a3b8;font-weight:700}
         .fin-amt{font-weight:900;color:#0f172a}
-        .fin-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800}
+        .fin-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:800}
         .fin-badge.ok{background:#dcfce7;color:#166534}
         .fin-badge.warn{background:#ffedd5;color:#9a3412}
       `}</style>
@@ -378,14 +378,14 @@ export default function HospitalAdminFinancePage() {
                     <>
                       <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setShowExportMenu(false)} />
                       <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 6, background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 12px 40px rgba(0,0,0,.12)", zIndex: 91, minWidth: 180, overflow: "hidden" }}>
-                        <button type="button" onClick={() => exportAs("csv")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                        <button type="button" onClick={() => exportAs("csv")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize:12, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                           <FileSpreadsheet size={15} color="#16a34a" /> Export as CSV
                         </button>
-                        <button type="button" onClick={() => exportAs("json")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                        <button type="button" onClick={() => exportAs("json")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize:12, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                           <FileJson size={15} color="#0A6B70" /> Export as JSON
                         </button>
                         <div style={{ height: 1, background: "#f1f5f9" }} />
-                        <button type="button" onClick={() => exportAs("print")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                        <button type="button" onClick={() => exportAs("print")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", border: "none", background: "none", cursor: "pointer", fontSize:12, fontWeight: 500, color: "#334155", transition: "background .1s" }} onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")} onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                           <Printer size={15} color="#8b5cf6" /> Print / PDF
                         </button>
                       </div>
@@ -398,7 +398,7 @@ export default function HospitalAdminFinancePage() {
 
             {/* Stats Cards */}
             {statsLoading ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "18px 0", color: "#94a3b8", fontSize: 13 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "18px 0", color: "#94a3b8", fontSize:12 }}>
                 <Loader2 size={16} style={{ animation: "spin .7s linear infinite" }} /> Loading financials…
               </div>
             ) : (
@@ -446,8 +446,8 @@ export default function HospitalAdminFinancePage() {
                     <TrendingDown size={15} color="#0A6B70" />
                   </div>
                   <div>
-                    <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Operational Expenses</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>{fmtINR(stats.expenses?.breakdown?.fromExpenseTable || 0)}</div>
+                    <div style={{ fontSize:10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Operational Expenses</div>
+                    <div style={{ fontSize:15, fontWeight: 800, color: "#0f172a" }}>{fmtINR(stats.expenses?.breakdown?.fromExpenseTable || 0)}</div>
                   </div>
                 </div>
                 <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
@@ -455,8 +455,8 @@ export default function HospitalAdminFinancePage() {
                     <ShoppingCart size={15} color="#b45309" />
                   </div>
                   <div>
-                    <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Inventory Purchases</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>{fmtINR(stats.expenses?.breakdown?.fromInventoryPurchases || 0)}</div>
+                    <div style={{ fontSize:10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Inventory Purchases</div>
+                    <div style={{ fontSize:15, fontWeight: 800, color: "#0f172a" }}>{fmtINR(stats.expenses?.breakdown?.fromInventoryPurchases || 0)}</div>
                   </div>
                 </div>
               </div>
@@ -476,7 +476,7 @@ export default function HospitalAdminFinancePage() {
                       placeholder={tab === "expenses" ? "Search expenses..." : "Search revenue..."}
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      style={{ border: "none", background: "none", outline: "none", fontSize: 12, color: "#334155", width: 180, fontFamily: "inherit" }}
+                      style={{ border: "none", background: "none", outline: "none", fontSize:11, color: "#334155", width: 180, fontFamily: "inherit" }}
                     />
                     {search && <button type="button" onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}><X size={12} color="#94a3b8" /></button>}
                   </div>
@@ -484,20 +484,20 @@ export default function HospitalAdminFinancePage() {
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {selectedExp.size > 0 && tab === "expenses" && (
-                    <button type="button" onClick={bulkDeleteExpenses} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    <button type="button" onClick={bulkDeleteExpenses} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize:11, fontWeight: 700, cursor: "pointer" }}>
                       <Trash2 size={12} /> Delete ({selectedExp.size})
                     </button>
                   )}
                   {selectedRev.size > 0 && tab === "revenue" && (
-                    <button type="button" onClick={bulkDeleteRevenues} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    <button type="button" onClick={bulkDeleteRevenues} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", fontSize:11, fontWeight: 700, cursor: "pointer" }}>
                       <Trash2 size={12} /> Delete ({selectedRev.size})
                     </button>
                   )}
-                  <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
+                  <span style={{ fontSize:10, color: "#94a3b8", fontWeight: 600 }}>Sort:</span>
                   {tab === "expenses" ? (
                     <>
                       {[{ k: "date", l: "Date" }, { k: "amount", l: "Amount" }, { k: "category", l: "Category" }].map(s => (
-                        <button key={s.k} type="button" onClick={() => toggleExpSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${expSort.key === s.k ? "#80CCCC" : "#e2e8f0"}`, background: expSort.key === s.k ? "#E6F4F4" : "#f8fafc", color: expSort.key === s.k ? "#0A6B70" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        <button key={s.k} type="button" onClick={() => toggleExpSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${expSort.key === s.k ? "#80CCCC" : "#e2e8f0"}`, background: expSort.key === s.k ? "#E6F4F4" : "#f8fafc", color: expSort.key === s.k ? "#0A6B70" : "#64748b", fontSize:10, fontWeight: 700, cursor: "pointer" }}>
                           {s.l} <ArrowUpDown size={10} />
                         </button>
                       ))}
@@ -505,13 +505,13 @@ export default function HospitalAdminFinancePage() {
                   ) : (
                     <>
                       {[{ k: "date", l: "Date" }, { k: "amount", l: "Amount" }, { k: "source", l: "Source" }].map(s => (
-                        <button key={s.k} type="button" onClick={() => toggleRevSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${revSort.key === s.k ? "#80CCCC" : "#e2e8f0"}`, background: revSort.key === s.k ? "#E6F4F4" : "#f8fafc", color: revSort.key === s.k ? "#0A6B70" : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        <button key={s.k} type="button" onClick={() => toggleRevSort(s.k)} style={{ display: "flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 6, border: `1px solid ${revSort.key === s.k ? "#80CCCC" : "#e2e8f0"}`, background: revSort.key === s.k ? "#E6F4F4" : "#f8fafc", color: revSort.key === s.k ? "#0A6B70" : "#64748b", fontSize:10, fontWeight: 700, cursor: "pointer" }}>
                           {s.l} <ArrowUpDown size={10} />
                         </button>
                       ))}
                     </>
                   )}
-                  <button type="button" onClick={() => { loadStats(); tab === "expenses" ? loadExpenses() : loadRevenue(); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                  <button type="button" onClick={() => { loadStats(); tab === "expenses" ? loadExpenses() : loadRevenue(); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize:10, fontWeight: 600, cursor: "pointer" }}>
                     <RefreshCw size={11} /> Refresh
                   </button>
                 </div>
@@ -557,7 +557,7 @@ export default function HospitalAdminFinancePage() {
                               </button>
                             </td>
                             <td>{fmtDate(r.date)}</td>
-                            <td><span style={{ padding: "3px 8px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700 }}>{(r.category || "OTHER").replace(/_/g, " ")}</span></td>
+                            <td><span style={{ padding: "3px 8px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize:10, fontWeight: 700 }}>{(r.category || "OTHER").replace(/_/g, " ")}</span></td>
                             <td>{r.title || r.description || "—"}</td>
                             <td className="fin-amt">{fmtINR(r.amount)}</td>
                             <td>
@@ -591,7 +591,7 @@ export default function HospitalAdminFinancePage() {
                     <div style={{ padding: 56, textAlign: "center", color: "#94a3b8" }}>
                       <TrendingUp size={32} color="#e2e8f0" style={{ marginBottom: 8 }} />
                       <div style={{ fontWeight: 600 }}>No revenue entries found</div>
-                      <div style={{ fontSize: 12, marginTop: 4 }}>Paid bills appear automatically · use "Add Revenue" for other income</div>
+                      <div style={{ fontSize:11, marginTop: 4 }}>Paid bills appear automatically · use "Add Revenue" for other income</div>
                     </div>
                   ) : (
                     <table className="fin-table">
@@ -623,23 +623,23 @@ export default function HospitalAdminFinancePage() {
                             </td>
                             <td>
                               {r._type === "bill" ? (
-                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize:10, fontWeight: 700, whiteSpace: "nowrap" }}>
                                   Billing
                                 </span>
                               ) : (
-                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#f0fdf4", color: "#16a34a", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                                <span style={{ padding: "3px 9px", borderRadius: 100, background: "#f0fdf4", color: "#16a34a", fontSize:10, fontWeight: 700, whiteSpace: "nowrap" }}>
                                   Manual
                                 </span>
                               )}
                             </td>
-                            <td style={{ color: "#64748b", fontSize: 12 }}>{fmtDate(r.date)}</td>
+                            <td style={{ color: "#64748b", fontSize:11 }}>{fmtDate(r.date)}</td>
                             <td>
-                              <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{r.description}</div>
-                              {r.subText && <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>{r.subText}</div>}
-                              {r.billNo && <div style={{ fontSize: 10, color: "#80CCCC", marginTop: 1, fontWeight: 700 }}>{r.billNo}</div>}
+                              <div style={{ fontWeight: 600, color: "#1e293b", fontSize:12 }}>{r.description}</div>
+                              {r.subText && <div style={{ fontSize:10, color: "#94a3b8", marginTop: 1 }}>{r.subText}</div>}
+                              {r.billNo && <div style={{ fontSize:10, color: "#80CCCC", marginTop: 1, fontWeight: 700 }}>{r.billNo}</div>}
                             </td>
                             <td>
-                              <span style={{ padding: "3px 8px", borderRadius: 100, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize: 11, fontWeight: 600 }}>
+                              <span style={{ padding: "3px 8px", borderRadius: 100, background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize:10, fontWeight: 600 }}>
                                 {r.source}
                               </span>
                             </td>
@@ -679,40 +679,40 @@ export default function HospitalAdminFinancePage() {
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 520, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
             <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>New Entry</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>Add Expense</div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>New Entry</div>
+                <div style={{ fontSize:19, fontWeight: 800, color: "#1e293b" }}>Add Expense</div>
               </div>
               <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Title *</label>
-                <input value={expForm.title} onChange={e => setExpForm({ ...expForm, title: e.target.value })} placeholder="e.g. Electricity bill" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Title *</label>
+                <input value={expForm.title} onChange={e => setExpForm({ ...expForm, title: e.target.value })} placeholder="e.g. Electricity bill" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Category</label>
-                  <select value={expForm.category} onChange={e => setExpForm({ ...expForm, category: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", background: "#fff" }}>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Category</label>
+                  <select value={expForm.category} onChange={e => setExpForm({ ...expForm, category: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", background: "#fff" }}>
                     {["SALARY","EQUIPMENT","MAINTENANCE","UTILITY","MEDICINE","INVENTORY","HOUSEKEEPING","MARKETING","INSURANCE_EXPENSE","OTHER"].map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
-                  <input type="number" min="1" value={expForm.amount} onChange={e => setExpForm({ ...expForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
+                  <input type="number" min="1" value={expForm.amount} onChange={e => setExpForm({ ...expForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Date *</label>
-                <input type="date" value={expForm.date} onChange={e => setExpForm({ ...expForm, date: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Date *</label>
+                <input type="date" value={expForm.date} onChange={e => setExpForm({ ...expForm, date: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
-                <textarea value={expForm.description} onChange={e => setExpForm({ ...expForm, description: e.target.value })} placeholder="Optional details…" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", resize: "vertical" }} />
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
+                <textarea value={expForm.description} onChange={e => setExpForm({ ...expForm, description: e.target.value })} placeholder="Optional details…" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", resize: "vertical" }} />
               </div>
-              {expMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{expMsg}</div>}
+              {expMsg && <div style={{ fontSize:12, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{expMsg}</div>}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-                <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button type="button" onClick={saveExpense} disabled={expSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#0A6B70", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: expSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                <button type="button" onClick={() => { setShowExpForm(false); setExpMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={saveExpense} disabled={expSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#0A6B70", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", opacity: expSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
                   {expSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{expSaving ? "Saving…" : "Add Expense"}
                 </button>
               </div>
@@ -728,32 +728,32 @@ export default function HospitalAdminFinancePage() {
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
             <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>New Entry</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>Add Revenue</div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>New Entry</div>
+                <div style={{ fontSize:19, fontWeight: 800, color: "#1e293b" }}>Add Revenue</div>
               </div>
               <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Source Type</label>
-                  <select value={revForm.sourceType} onChange={e => setRevForm({ ...revForm, sourceType: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", background: "#fff" }}>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Source Type</label>
+                  <select value={revForm.sourceType} onChange={e => setRevForm({ ...revForm, sourceType: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", background: "#fff" }}>
                     {["CONSULTATION","PROCEDURE","BED_CHARGE","PHARMACY","LAB_TEST","OTHER"].map(s => <option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
-                  <input type="number" min="1" value={revForm.amount} onChange={e => setRevForm({ ...revForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
+                  <input type="number" min="1" value={revForm.amount} onChange={e => setRevForm({ ...revForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
-                <textarea value={revForm.description} onChange={e => setRevForm({ ...revForm, description: e.target.value })} placeholder="e.g. Payment received for consultation" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", resize: "vertical" }} />
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
+                <textarea value={revForm.description} onChange={e => setRevForm({ ...revForm, description: e.target.value })} placeholder="e.g. Payment received for consultation" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", resize: "vertical" }} />
               </div>
-              {revMsg && <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{revMsg}</div>}
+              {revMsg && <div style={{ fontSize:12, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{revMsg}</div>}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-                <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button type="button" onClick={saveRevenue} disabled={revSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#0A6B70", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: revSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                <button type="button" onClick={() => { setShowRevForm(false); setRevMsg(""); }} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={saveRevenue} disabled={revSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#0A6B70", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", opacity: revSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
                   {revSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{revSaving ? "Saving…" : "Add Revenue"}
                 </button>
               </div>
@@ -770,8 +770,8 @@ export default function HospitalAdminFinancePage() {
             {/* Header */}
             <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "22px 24px 18px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 4 }}>Transaction Details</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1e293b" }}>{viewBill.billNo}</div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 4 }}>Transaction Details</div>
+                <div style={{ fontSize:20, fontWeight: 800, color: "#1e293b" }}>{viewBill.billNo}</div>
               </div>
               <button type="button" onClick={() => setViewBill(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <X size={16} color="#0A6B70" />
@@ -785,24 +785,24 @@ export default function HospitalAdminFinancePage() {
                   <UserIcon size={18} color="#0A6B70" />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, color: "#1e293b", fontSize: 14 }}>{viewBill.patient?.name}</div>
-                  <div style={{ fontSize: 11, color: "#94a3b8" }}>{viewBill.patient?.patientId} · {viewBill.patient?.phone || "—"}</div>
+                  <div style={{ fontWeight: 700, color: "#1e293b", fontSize:13 }}>{viewBill.patient?.name}</div>
+                  <div style={{ fontSize:10, color: "#94a3b8" }}>{viewBill.patient?.patientId} · {viewBill.patient?.phone || "—"}</div>
                 </div>
               </div>
 
               {/* Summary Row */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
                 <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Total Paid</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#166534" }}>{fmtINR(viewBill.total)}</div>
+                  <div style={{ fontSize:10, color: "#16a34a", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Total Paid</div>
+                  <div style={{ fontSize:17, fontWeight: 800, color: "#166534" }}>{fmtINR(viewBill.total)}</div>
                 </div>
                 <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#0A6B70", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Subtotal</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewBill.subtotal)}</div>
+                  <div style={{ fontSize:10, color: "#0A6B70", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Subtotal</div>
+                  <div style={{ fontSize:17, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewBill.subtotal)}</div>
                 </div>
                 <div style={{ background: "#fefce8", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#a16207", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Paid At</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#854d0e" }}>{viewBill.paidAt ? fmtDate(viewBill.paidAt) : "—"}</div>
+                  <div style={{ fontSize:10, color: "#a16207", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em" }}>Paid At</div>
+                  <div style={{ fontSize:12, fontWeight: 700, color: "#854d0e" }}>{viewBill.paidAt ? fmtDate(viewBill.paidAt) : "—"}</div>
                 </div>
               </div>
 
@@ -810,12 +810,12 @@ export default function HospitalAdminFinancePage() {
               {(viewBill.tax > 0 || viewBill.discount > 0) && (
                 <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
                   {viewBill.discount > 0 && (
-                    <div style={{ flex: 1, background: "#fff7ed", borderRadius: 10, padding: "8px 12px", fontSize: 12 }}>
+                    <div style={{ flex: 1, background: "#fff7ed", borderRadius: 10, padding: "8px 12px", fontSize:11 }}>
                       <span style={{ color: "#9a3412", fontWeight: 700 }}>Discount:</span> <span style={{ fontWeight: 800, color: "#c2410c" }}>{fmtINR(viewBill.discount)}</span>
                     </div>
                   )}
                   {viewBill.tax > 0 && (
-                    <div style={{ flex: 1, background: "#faf5ff", borderRadius: 10, padding: "8px 12px", fontSize: 12 }}>
+                    <div style={{ flex: 1, background: "#faf5ff", borderRadius: 10, padding: "8px 12px", fontSize:11 }}>
                       <span style={{ color: "#7e22ce", fontWeight: 700 }}>Tax:</span> <span style={{ fontWeight: 800, color: "#9333ea" }}>{fmtINR(viewBill.tax)}</span>
                     </div>
                   )}
@@ -825,24 +825,24 @@ export default function HospitalAdminFinancePage() {
               {/* Bill Items */}
               {viewBill.billItems?.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize:11, fontWeight: 700, color: "#64748b", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                     <FileText size={13} color="#64748b" /> Bill Items
                   </div>
                   <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize:11 }}>
                       <thead>
                         <tr style={{ background: "#f8fafc" }}>
-                          <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#94a3b8", fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }}>Description</th>
-                          <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#94a3b8", fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }}>Type</th>
-                          <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#94a3b8", fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }}>Qty</th>
-                          <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#94a3b8", fontSize: 10, textTransform: "uppercase", letterSpacing: ".06em" }}>Amount</th>
+                          <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#94a3b8", fontSize:10, textTransform: "uppercase", letterSpacing: ".06em" }}>Description</th>
+                          <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#94a3b8", fontSize:10, textTransform: "uppercase", letterSpacing: ".06em" }}>Type</th>
+                          <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#94a3b8", fontSize:10, textTransform: "uppercase", letterSpacing: ".06em" }}>Qty</th>
+                          <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#94a3b8", fontSize:10, textTransform: "uppercase", letterSpacing: ".06em" }}>Amount</th>
                         </tr>
                       </thead>
                       <tbody>
                         {viewBill.billItems.map((item: any, idx: number) => (
                           <tr key={item.id || idx} style={{ borderTop: "1px solid #f1f5f9" }}>
                             <td style={{ padding: "8px 12px", color: "#334155", fontWeight: 500 }}>{item.name || item.description || "—"}</td>
-                            <td style={{ padding: "8px 12px" }}><span style={{ padding: "2px 7px", borderRadius: 100, background: "#eef2ff", color: "#4338ca", fontSize: 10, fontWeight: 700 }}>{(item.type || "").replace(/_/g, " ")}</span></td>
+                            <td style={{ padding: "8px 12px" }}><span style={{ padding: "2px 7px", borderRadius: 100, background: "#eef2ff", color: "#4338ca", fontSize:10, fontWeight: 700 }}>{(item.type || "").replace(/_/g, " ")}</span></td>
                             <td style={{ padding: "8px 12px", textAlign: "right", color: "#64748b" }}>{item.quantity}</td>
                             <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#1e293b" }}>{fmtINR(item.amount)}</td>
                           </tr>
@@ -856,21 +856,21 @@ export default function HospitalAdminFinancePage() {
               {/* Payment History */}
               {viewBill.payments?.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize:11, fontWeight: 700, color: "#64748b", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                     <Receipt size={13} color="#64748b" /> Payment History
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {viewBill.payments.map((p: any, idx: number) => (
                       <div key={p.id || idx} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #dcfce7", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div>
-                          <div style={{ fontWeight: 700, color: "#166534", fontSize: 13 }}>{fmtINR(p.amount)}</div>
-                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                          <div style={{ fontWeight: 700, color: "#166534", fontSize:12 }}>{fmtINR(p.amount)}</div>
+                          <div style={{ fontSize:10, color: "#64748b", marginTop: 2 }}>
                             {fmtDate(p.paidAt)} · <span style={{ fontWeight: 600 }}>{p.method}</span>
                             {p.transactionId && <span> · TXN: {p.transactionId}</span>}
                           </div>
-                          {p.notes && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{p.notes}</div>}
+                          {p.notes && <div style={{ fontSize:10, color: "#94a3b8", marginTop: 2 }}>{p.notes}</div>}
                         </div>
-                        <span style={{ padding: "3px 8px", borderRadius: 100, background: "#dcfce7", color: "#166534", fontSize: 10, fontWeight: 700 }}>PAID</span>
+                        <span style={{ padding: "3px 8px", borderRadius: 100, background: "#dcfce7", color: "#166534", fontSize:10, fontWeight: 700 }}>PAID</span>
                       </div>
                     ))}
                   </div>
@@ -879,7 +879,7 @@ export default function HospitalAdminFinancePage() {
 
               {/* Notes */}
               {viewBill.notes && (
-                <div style={{ marginTop: 16, padding: "10px 14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a", fontSize: 12, color: "#92400e" }}>
+                <div style={{ marginTop: 16, padding: "10px 14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a", fontSize:11, color: "#92400e" }}>
                   <span style={{ fontWeight: 700 }}>Notes:</span> {viewBill.notes}
                 </div>
               )}
@@ -895,34 +895,34 @@ export default function HospitalAdminFinancePage() {
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
             <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>Expense Details</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{viewExpense.title || "Expense"}</div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>Expense Details</div>
+                <div style={{ fontSize:19, fontWeight: 800, color: "#1e293b" }}>{viewExpense.title || "Expense"}</div>
               </div>
               <button type="button" onClick={() => setViewExpense(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewExpense.date)}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
+                  <div style={{ fontSize:13, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewExpense.date)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewExpense.amount)}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
+                  <div style={{ fontSize:17, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewExpense.amount)}</div>
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Category</div>
-                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 12, fontWeight: 700 }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</span>
+                <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Category</div>
+                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize:11, fontWeight: 700 }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</span>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Type</div>
+                <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Type</div>
                 <span className={`fin-badge ${(viewExpense as any)._isPurchase ? "warn" : "ok"}`}>{(viewExpense as any)._isPurchase ? "Purchase Order" : "Expense"}</span>
               </div>
               {viewExpense.description && (
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
-                  <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{viewExpense.description}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
+                  <div style={{ fontSize:12, color: "#475569", lineHeight: 1.5 }}>{viewExpense.description}</div>
                 </div>
               )}
             </div>
@@ -937,30 +937,30 @@ export default function HospitalAdminFinancePage() {
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
             <div style={{ background: "#E6F4F4", borderBottom: "1px solid #B3E0E0", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>Revenue Details</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>Manual Entry</div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#0A6B70", fontWeight: 700, marginBottom: 2 }}>Revenue Details</div>
+                <div style={{ fontSize:19, fontWeight: 800, color: "#1e293b" }}>Manual Entry</div>
               </div>
               <button type="button" onClick={() => setViewManualRev(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewManualRev.date)}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
+                  <div style={{ fontSize:13, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewManualRev.date)}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewManualRev.amount)}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
+                  <div style={{ fontSize:17, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewManualRev.amount)}</div>
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Source Type</div>
-                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize: 12, fontWeight: 700 }}>{viewManualRev.source}</span>
+                <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Source Type</div>
+                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize:11, fontWeight: 700 }}>{viewManualRev.source}</span>
               </div>
               {viewManualRev.description && viewManualRev.description !== "—" && (
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
-                  <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{viewManualRev.description}</div>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
+                  <div style={{ fontSize:12, color: "#475569", lineHeight: 1.5 }}>{viewManualRev.description}</div>
                 </div>
               )}
             </div>
@@ -977,29 +977,29 @@ export default function HospitalAdminFinancePage() {
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #fef2f2, #fee2e2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                 <Trash2 size={24} color="#ef4444" />
               </div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", marginBottom: 4 }}>
+              <div style={{ fontSize:16, fontWeight: 800, color: "#1e293b", marginBottom: 4 }}>
                 {deleteConfirm.type.includes("bulk") ? `Delete ${deleteConfirm.count} ${deleteConfirm.type === "bulk-expense" ? "Expenses" : "Revenue Entries"}` : "Delete Entry"}
               </div>
               {deleteConfirm.type.includes("bulk") && (
-                <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, background: "#fef2f2", padding: "4px 12px", borderRadius: 100, display: "inline-block", marginTop: 4 }}>
+                <div style={{ fontSize:12, color: "#dc2626", fontWeight: 600, background: "#fef2f2", padding: "4px 12px", borderRadius: 100, display: "inline-block", marginTop: 4 }}>
                   {deleteConfirm.count} selected
                 </div>
               )}
             </div>
-            <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, padding: "0 24px 20px", textAlign: "center" }}>
+            <div style={{ fontSize:12, color: "#64748b", lineHeight: 1.5, padding: "0 24px 20px", textAlign: "center" }}>
               {deleteConfirm.type === "expense" && "Are you sure you want to delete this expense? This action cannot be undone."}
               {deleteConfirm.type === "revenue" && "Are you sure you want to delete this revenue entry? This action cannot be undone."}
               {deleteConfirm.type === "bulk-expense" && `Are you sure you want to delete ${deleteConfirm.count} selected expense${deleteConfirm.count === 1 ? "" : "s"}? This action cannot be undone.`}
               {deleteConfirm.type === "bulk-revenue" && `Are you sure you want to delete ${deleteConfirm.count} selected revenue entr${deleteConfirm.count === 1 ? "y" : "ies"}? Only manually-added revenue can be deleted.`}
             </div>
             <div style={{ display: "flex", gap: 10, padding: "16px 24px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", justifyContent: "center" }}>
-              <button type="button" onClick={() => setDeleteConfirm(null)} style={{ padding: "10px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+              <button type="button" onClick={() => setDeleteConfirm(null)} style={{ padding: "10px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
               <button type="button" onClick={() => {
                 if (deleteConfirm.type === "expense" && deleteConfirm.id) confirmDeleteExpense(deleteConfirm.id);
                 else if (deleteConfirm.type === "revenue" && deleteConfirm.id) confirmDeleteRevenue(deleteConfirm.id);
                 else if (deleteConfirm.type === "bulk-expense") confirmBulkDeleteExpenses();
                 else if (deleteConfirm.type === "bulk-revenue") confirmBulkDeleteRevenues();
-              }} style={{ padding: "10px 20px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              }} style={{ padding: "10px 20px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 <Trash2 size={13} /> Delete
               </button>
             </div>

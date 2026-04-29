@@ -688,6 +688,67 @@ export const sendPayslipEmail = async (opts: {
   });
 };
 
+export const sendAppointmentRescheduled = async (opts: {
+  to: string;
+  patientName: string;
+  patientId: string;
+  doctorName: string;
+  departmentName: string;
+  oldDate: string;
+  oldTimeSlot: string;
+  newDate: string;
+  newTimeSlot: string;
+  tokenNumber?: number | null;
+  type: string;
+  hospitalName: string;
+  hospitalLogo?: string | null;
+}) => {
+  const logoHtml = opts.hospitalLogo
+    ? `<img src="${opts.hospitalLogo}" alt="${opts.hospitalName}" style="max-height:100px;max-width:280px;object-fit:contain;" />`
+    : `<div style="font-size:18px;font-weight:700;color:#0f172a;">${opts.hospitalName}</div>`;
+
+  await transporter.sendMail({
+    from: `"${opts.hospitalName}" <${smtpUser}>`,
+    to: opts.to,
+    subject: `Appointment Rescheduled – ${opts.hospitalName}`,
+    html: `
+      <div style="font-family:'Inter',Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border:1px solid #f1f5f9;border-radius:12px;overflow:hidden;">
+        <div style="padding:24px;text-align:center;border-bottom:1px solid #f1f5f9;">
+          ${logoHtml}
+          <div style="font-size:13px;color:#64748b;margin-top:8px;">Appointment Update</div>
+        </div>
+        <div style="padding:24px;">
+          <h2 style="color:#334155;font-size:16px;margin:0 0 6px;font-weight:600;">Hi, ${opts.patientName}!</h2>
+          <p style="color:#64748b;font-size:12px;line-height:1.5;margin:0 0 16px;">Your appointment has been <strong style="color:#d97706;">rescheduled</strong> by the doctor. Please find your updated details below:</p>
+
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Previous Slot</div>
+            <div style="font-size:13px;color:#b45309;font-weight:500;text-decoration:line-through;">${opts.oldDate} at ${opts.oldTimeSlot}</div>
+          </div>
+
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:600;color:#166534;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Updated Appointment</div>
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;width:100px;">Patient ID</td><td style="font-size:12px;color:#334155;font-family:monospace;font-weight:600;">${opts.patientId}</td></tr>
+              <tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;">Doctor</td><td style="font-size:12px;color:#334155;font-weight:500;">${opts.doctorName}</td></tr>
+              <tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;">Department</td><td style="font-size:12px;color:#334155;">${opts.departmentName}</td></tr>
+              <tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;">Date</td><td style="font-size:12px;color:#334155;font-weight:500;">${opts.newDate}</td></tr>
+              <tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;">Time</td><td style="font-size:12px;color:#334155;font-weight:500;">${opts.newTimeSlot}</td></tr>
+              <tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;">Type</td><td style="font-size:12px;color:#334155;">${opts.type}</td></tr>
+              ${opts.tokenNumber ? `<tr><td style="font-size:12px;color:#64748b;padding:4px 0;font-weight:500;">Token No.</td><td style="font-size:18px;font-weight:700;color:#0e898f;">#${opts.tokenNumber}</td></tr>` : ""}
+            </table>
+          </div>
+
+          <p style="color:#94a3b8;font-size:11px;margin:0;">If you have any questions, please contact the hospital reception.</p>
+        </div>
+        <div style="padding:16px 24px;background:#f8fafc;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;text-align:center;">
+          This is an automated notification from ${opts.hospitalName}.
+        </div>
+      </div>
+    `,
+  });
+};
+
 export const sendBillInvoice = async (opts: {
   to: string;
   patientName: string;

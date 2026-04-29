@@ -60,7 +60,15 @@ export function PatientsManagementPanel() {
   // List view state
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const urlQ = searchParams.get("q");
+  const [searchTerm, setSearchTerm] = useState(urlQ || "");
+
+  useEffect(() => {
+    if (urlQ !== null) {
+      setSearchTerm(urlQ);
+      setCurrentPage(1);
+    }
+  }, [urlQ]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -86,6 +94,7 @@ export function PatientsManagementPanel() {
   const [treatmentPlans, setTreatmentPlans] = useState<any[]>([]);
   const [selectedRxAppointment, setSelectedRxAppointment] = useState<any>(null);
   const [loadingProfileId, setLoadingProfileId] = useState<string | null>(null);
+  const [completingApptId, setCompletingApptId] = useState<string | null>(null);
 
   // Upload state
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -149,6 +158,13 @@ export function PatientsManagementPanel() {
   };
 
   useEffect(() => { loadPatients(); }, [currentPage, searchTerm]);
+
+  const completeAppointment = async (apptId: string, patientId: string) => {
+    setCompletingApptId(apptId);
+    await api(`/api/appointments/${apptId}`, "PUT", { status: "COMPLETED" });
+    await loadPatientDetails(patientId);
+    setCompletingApptId(null);
+  };
 
   const handleViewProfile = async (p: any) => {
     setLoadingProfileId(p.id);
@@ -270,7 +286,7 @@ export function PatientsManagementPanel() {
     doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 23);
     const rows = getExportData();
     const keys = Object.keys(rows[0] || {});
-    autoTable(doc, { startY: 28, head: [keys], body: rows.map(r => keys.map(k => (r as any)[k])), styles: { fontSize: 8 }, headStyles: { fillColor: [14, 137, 143] } });
+    autoTable(doc, { startY: 28, head: [keys], body: rows.map(r => keys.map(k => (r as any)[k])), styles: { fontSize:9 }, headStyles: { fillColor: [14, 137, 143] } });
     doc.save(`patients-${new Date().toISOString().slice(0, 10)}.pdf`);
     setShowExport(false);
   };
@@ -325,18 +341,18 @@ export function PatientsManagementPanel() {
             onClick={() => { 
               setSelectedPatient(null); 
               setPatientDetails(null); 
-              router.push("/hospitaladmin/dashboard?tab=patients");
+              router.push(`${window.location.pathname}?tab=patients`);
             }}
-            style={{ padding: "8px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#64748b" }}
+            style={{ padding: "8px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize:12, color: "#64748b" }}
           >
             <ChevronLeft size={15} /> All Patients
           </button>
           <span style={{ color: "#cbd5e1" }}>/</span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>{patientDetails.name}</span>
+          <span style={{ fontSize:13, fontWeight: 600, color: "#1e293b" }}>{patientDetails.name}</span>
           <div style={{ marginLeft: "auto" }}>
             <button
               onClick={() => loadPatientDetails(selectedPatient.id)}
-              style={{ padding: "8px 14px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 9, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+              style={{ padding: "8px 14px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 9, display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 600, fontSize:12 }}
             >
               <RefreshCw size={14} /> Refresh
             </button>
@@ -346,7 +362,7 @@ export function PatientsManagementPanel() {
         {detailsLoading ? (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
             <Loader2 size={32} color="#0E898F" style={{ animation: "spin 1s linear infinite", margin: "0 auto" }} />
-            <p style={{ marginTop: 14, color: "#64748b", fontSize: 14 }}>Loading patient records...</p>
+            <p style={{ marginTop: 14, color: "#64748b", fontSize:13 }}>Loading patient records...</p>
           </div>
         ) : (
           <>
@@ -378,8 +394,8 @@ export function PatientsManagementPanel() {
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>{patientDetails.name}</div>
-                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>ID: {patientDetails.patientId}</div>
+                  <div style={{ fontSize:20, fontWeight: 800, marginBottom: 2 }}>{patientDetails.name}</div>
+                  <div style={{ fontSize:12, color: "#64748b", marginBottom: 14 }}>ID: {patientDetails.patientId}</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
                     {[
                       { icon: <Phone size={13} />, val: patientDetails.phone },
@@ -388,7 +404,7 @@ export function PatientsManagementPanel() {
                       patientDetails.dateOfBirth && { icon: <Calendar size={13} />, val: `${age(patientDetails.dateOfBirth)} yrs` },
                       patientDetails.bloodGroup && { icon: <Droplet size={13} />, val: patientDetails.bloodGroup },
                     ].filter(Boolean).map((item: any, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569" }}>
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize:12, color: "#475569" }}>
                         <span style={{ color: "#0E898F" }}>{item.icon}</span> {item.val}
                       </div>
                     ))}
@@ -401,8 +417,8 @@ export function PatientsManagementPanel() {
                     { label: "Pending", val: `₹${totalPending.toLocaleString()}` },
                   ].map((s, i) => (
                     <div key={i} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "12px 18px", textAlign: "center", boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
-                      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: "#0E898F" }}>{s.val}</div>
+                      <div style={{ fontSize:10, color: "#64748b", marginBottom: 4 }}>{s.label}</div>
+                      <div style={{ fontSize:19, fontWeight: 700, color: "#0E898F" }}>{s.val}</div>
                     </div>
                   ))}
                 </div>
@@ -420,8 +436,8 @@ export function PatientsManagementPanel() {
                 <div key={i} style={{ background: "#fff", borderRadius: 12, padding: 18, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 11, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.icon}</div>
                   <div>
-                    <div style={{ fontSize: 11, color: "#64748b", marginBottom: 3 }}>{s.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: "#1e293b" }}>{s.val}</div>
+                    <div style={{ fontSize:10, color: "#64748b", marginBottom: 3 }}>{s.label}</div>
+                    <div style={{ fontSize:19, fontWeight: 700, color: "#1e293b" }}>{s.val}</div>
                   </div>
                 </div>
               ))}
@@ -442,7 +458,7 @@ export function PatientsManagementPanel() {
                     background: detailTab === t.id ? "#fff" : "transparent",
                     borderBottom: detailTab === t.id ? "2px solid #0E898F" : "2px solid transparent",
                     color: detailTab === t.id ? "#0E898F" : "#64748b",
-                    fontWeight: 600, fontSize: 13, cursor: "pointer",
+                    fontWeight: 600, fontSize:12, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 7, transition: "all 0.15s"
                   }}>
                     {t.icon} {t.label}
@@ -455,7 +471,7 @@ export function PatientsManagementPanel() {
                 {detailTab === "overview" && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Personal Information</div>
+                      <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Personal Information</div>
                         {[
                           ["Patient ID", patientDetails.patientId],
                           ["Full Name", patientDetails.name],
@@ -471,36 +487,36 @@ export function PatientsManagementPanel() {
                           ["Registered", new Date(patientDetails.createdAt).toLocaleDateString()],
                         ].map(([k, v]) => (
                           <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-                            <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
-                            <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
+                            <span style={{ color: "#64748b", fontSize:12 }}>{k}</span>
+                            <span style={{ fontWeight: 600, fontSize:12, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
                           </div>
                         ))}
 
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14, marginTop: 24 }}>Emergency Contact</div>
+                        <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 14, marginTop: 24 }}>Emergency Contact</div>
                         {[
                           ["Contact Person", patientDetails.emergencyName || "—"],
                           ["Relation", patientDetails.emergencyRelation || "—"],
                           ["Contact Number", patientDetails.emergencyPhone || "—"],
                         ].map(([k, v]) => (
                           <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-                            <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
-                            <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
+                            <span style={{ color: "#64748b", fontSize:12 }}>{k}</span>
+                            <span style={{ fontWeight: 600, fontSize:12, color: "#1e293b", textAlign: "right", maxWidth: "60%" }}>{v}</span>
                           </div>
                         ))}
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Recent Appointments</div>
+                      <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Recent Appointments</div>
                       {appointments.length === 0 ? (
-                        <div style={{ color: "#94a3b8", fontSize: 13, padding: "20px 0" }}>No appointments found</div>
+                        <div style={{ color: "#94a3b8", fontSize:12, padding: "20px 0" }}>No appointments found</div>
                       ) : appointments.slice(0, 6).map((a: any) => (
                         <div key={a.id} style={{ padding: 12, background: "#f8fafc", borderRadius: 9, border: "1px solid #e2e8f0", marginBottom: 10 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{a.doctor?.name}</span>
-                            <span style={{ fontSize: 11, color: "#94a3b8" }}>{new Date(a.appointmentDate).toLocaleDateString()}</span>
+                            <span style={{ fontWeight: 600, fontSize:12, color: "#1e293b" }}>{a.doctor?.name}</span>
+                            <span style={{ fontSize:10, color: "#94a3b8" }}>{new Date(a.appointmentDate).toLocaleDateString()}</span>
                           </div>
                           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <span style={{ fontSize: 12, color: "#64748b" }}>{a.department?.name || "General"}</span>
-                            <span style={{ ...statusStyle(a.status), padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{a.status}</span>
+                            <span style={{ fontSize:11, color: "#64748b" }}>{a.department?.name || "General"}</span>
+                            <span style={{ ...statusStyle(a.status), padding: "2px 8px", borderRadius: 6, fontSize:10, fontWeight: 600 }}>{a.status}</span>
                           </div>
                         </div>
                       ))}
@@ -509,25 +525,25 @@ export function PatientsManagementPanel() {
                     {/* Documents section - full width */}
                     <div style={{ gridColumn: "span 2", marginTop: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Documents & Files</div>
+                        <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b" }}>Documents & Files</div>
                         <button
                           onClick={() => docInputRef.current?.click()}
                           disabled={uploadingDoc}
-                          style={{ padding: "7px 14px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                          style={{ padding: "7px 14px", background: "#0E898F", color: "#fff", border: "none", borderRadius: 8, fontSize:11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                         >
                           {uploadingDoc ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={13} />}
                           {uploadingDoc ? "Uploading..." : "Upload Documents"}
                         </button>
                       </div>
-                      <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 12 }}>Accepted formats: Images (JPG, PNG, WEBP) and PDF files</div>
+                      <div style={{ fontSize:10, color: "#94a3b8", marginBottom: 12 }}>Accepted formats: Images (JPG, PNG, WEBP) and PDF files</div>
                       {(() => {
                         const docs: { name: string; url: string; type: string; uploadedAt: string }[] = (() => { try { return JSON.parse(patientDetails.documents || "[]"); } catch { return []; } })();
                         if (docs.length === 0) return (
                           <div style={{ padding: "36px 0", textAlign: "center", background: "#f8fafc", borderRadius: 12, border: "2px dashed #e2e8f0", cursor: "pointer" }}
                             onClick={() => docInputRef.current?.click()}>
                             <FileIcon size={28} style={{ margin: "0 auto 10px", display: "block", color: "#cbd5e1" }} />
-                            <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>No documents uploaded yet</div>
-                            <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>Click here or use the button above to upload</div>
+                            <div style={{ fontSize:12, color: "#94a3b8", fontWeight: 500 }}>No documents uploaded yet</div>
+                            <div style={{ fontSize:11, color: "#cbd5e1", marginTop: 4 }}>Click here or use the button above to upload</div>
                           </div>
                         );
                         return (
@@ -541,7 +557,7 @@ export function PatientsManagementPanel() {
                                     {isPdf ? (
                                       <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
                                         <FileText size={32} color="#ef4444" />
-                                        <span style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>PDF Document</span>
+                                        <span style={{ fontSize:10, color: "#64748b", fontWeight: 600 }}>PDF Document</span>
                                       </div>
                                     ) : (
                                       <img src={doc.url} alt={doc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -550,8 +566,8 @@ export function PatientsManagementPanel() {
                                   {/* Info + delete */}
                                   <div style={{ padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: 11, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={doc.name}>{doc.name}</div>
-                                      <div style={{ fontSize: 10, color: "#94a3b8" }}>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : ""}</div>
+                                      <div style={{ fontSize:10, fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={doc.name}>{doc.name}</div>
+                                      <div style={{ fontSize:10, color: "#94a3b8" }}>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : ""}</div>
                                     </div>
                                     <button
                                       onClick={() => handleDeleteDoc(idx)}
@@ -570,7 +586,7 @@ export function PatientsManagementPanel() {
                               style={{ border: "2px dashed #e2e8f0", borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", minHeight: 156, background: "#fafbfc" }}
                             >
                               <Plus size={20} color="#94a3b8" />
-                              <span style={{ fontSize: 11, color: "#94a3b8", marginTop: 6, fontWeight: 500 }}>Add More</span>
+                              <span style={{ fontSize:10, color: "#94a3b8", marginTop: 6, fontWeight: 500 }}>Add More</span>
                             </div>
                           </div>
                         );
@@ -582,7 +598,7 @@ export function PatientsManagementPanel() {
                 {/* APPOINTMENTS TAB */}
                 {detailTab === "appointments" && (
                   <>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Appointment History ({appointments.length})</div>
+                    <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Appointment History ({appointments.length})</div>
                     {appointments.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8" }}>No appointments found</div>
                     ) : (
@@ -590,26 +606,60 @@ export function PatientsManagementPanel() {
                         <table style={{ width: "100%", borderCollapse: "collapse" }}>
                           <thead>
                             <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                              {["Date & Time", "Doctor", "Department", "Type", "Fee", "Status"].map(h => (
-                                <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+                              {["Date & Time", "Doctor", "Department", "Type", "Fee", "Status", "Actions"].map(h => (
+                                <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {appointments.map((a: any) => (
                               <tr key={a.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                <td style={{ padding: "14px", fontSize: 13 }}>
+                                <td style={{ padding: "14px", fontSize:12 }}>
                                   <div style={{ fontWeight: 600, color: "#1e293b" }}>{new Date(a.appointmentDate).toLocaleDateString()}</div>
-                                  <div style={{ fontSize: 11, color: "#94a3b8" }}>{a.timeSlot}</div>
+                                  <div style={{ fontSize:10, color: "#94a3b8" }}>{a.timeSlot}</div>
                                 </td>
                                 <td style={{ padding: "14px" }}>
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{a.doctor?.name}</div>
-                                  <div style={{ fontSize: 11, color: "#94a3b8" }}>{a.doctor?.specialization || ""}</div>
+                                  <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{a.doctor?.name}</div>
+                                  <div style={{ fontSize:10, color: "#94a3b8" }}>{a.doctor?.specialization || ""}</div>
                                 </td>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>{a.department?.name || "General"}</td>
-                                <td style={{ padding: "14px" }}><span style={{ background: "#f1f5f9", color: "#64748b", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{a.type}</span></td>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>₹{(a.consultationFee || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px" }}><span style={{ ...statusStyle(a.status), padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{a.status}</span></td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#64748b" }}>{a.department?.name || "General"}</td>
+                                <td style={{ padding: "14px" }}><span style={{ background: "#f1f5f9", color: "#64748b", padding: "3px 8px", borderRadius: 6, fontSize:10, fontWeight: 600 }}>{a.type}</span></td>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 700, color: "#1e293b" }}>₹{(a.consultationFee || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px" }}><span style={{ ...statusStyle(a.status), padding: "4px 10px", borderRadius: 6, fontSize:10, fontWeight: 600 }}>{a.status}</span></td>
+                                <td style={{ padding: "10px 14px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                                    {/* View Rx */}
+                                    <button
+                                      onClick={() => router.push(`/doctor/dashboard/prescription/${a.id}?mode=view`)}
+                                      title="View Rx"
+                                      style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 8px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#f0fdf4", color: "#16a34a", fontSize: 10, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+                                    >
+                                      <Eye size={11} /> View Rx
+                                    </button>
+                                    {/* Edit Rx */}
+                                    <button
+                                      onClick={() => router.push(`/doctor/dashboard/prescription/${a.id}`)}
+                                      title="Edit Rx"
+                                      style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 8px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#eff6ff", color: "#2563eb", fontSize: 10, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+                                    >
+                                      <Pencil size={11} /> Edit Rx
+                                    </button>
+                                    {/* Complete */}
+                                    {a.status !== "COMPLETED" && a.status !== "CANCELLED" && (
+                                      <button
+                                        onClick={() => completeAppointment(a.id, patientDetails.id)}
+                                        disabled={completingApptId === a.id}
+                                        title="Mark as Completed"
+                                        style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 8px", borderRadius: 6, border: "1px solid #e2e8f0", background: completingApptId === a.id ? "#f1f5f9" : "#fff7ed", color: completingApptId === a.id ? "#94a3b8" : "#ea580c", fontSize: 10, fontWeight: 600, cursor: completingApptId === a.id ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+                                      >
+                                        {completingApptId === a.id
+                                          ? <Loader2 size={11} style={{ animation: "spin .7s linear infinite" }} />
+                                          : <Check size={11} />}
+                                        {completingApptId === a.id ? "..." : "Complete"}
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -622,7 +672,7 @@ export function PatientsManagementPanel() {
                 {/* MEDICAL TAB */}
                 {detailTab === "medical" && (
                   <>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Procedure Records ({procedures.length})</div>
+                    <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Procedure Records ({procedures.length})</div>
                     {procedures.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8" }}>No procedure records found</div>
                     ) : (
@@ -631,20 +681,20 @@ export function PatientsManagementPanel() {
                           <thead>
                             <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                               {["Date", "Procedure", "Department", "Type", "Amount", "Performed By", "Status", "Prescription"].map(h => (
-                                <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>
+                                <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {procedures.map((p: any) => (
                               <tr key={p.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#1e293b" }}>{new Date(p.performedAt).toLocaleDateString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{p.procedure?.name}</td>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>{p.subDepartment?.name}</td>
-                                <td style={{ padding: "14px" }}><span style={{ background: "#f1f5f9", color: "#64748b", padding: "3px 8px", borderRadius: 6, fontSize: 11 }}>{p.procedure?.type}</span></td>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>₹{(p.amount || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>{p.performedBy || "—"}</td>
-                                <td style={{ padding: "14px" }}><span style={{ ...statusStyle(p.status), padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{p.status}</span></td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#1e293b" }}>{new Date(p.performedAt).toLocaleDateString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 600, color: "#1e293b" }}>{p.procedure?.name}</td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#64748b" }}>{p.subDepartment?.name}</td>
+                                <td style={{ padding: "14px" }}><span style={{ background: "#f1f5f9", color: "#64748b", padding: "3px 8px", borderRadius: 6, fontSize:10 }}>{p.procedure?.type}</span></td>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 700, color: "#1e293b" }}>₹{(p.amount || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#64748b" }}>{p.performedBy || "—"}</td>
+                                <td style={{ padding: "14px" }}><span style={{ ...statusStyle(p.status), padding: "4px 10px", borderRadius: 6, fontSize:10, fontWeight: 600 }}>{p.status}</span></td>
                                 <td style={{ padding: "14px" }}>
                                   {p.appointment?.id ? (
                                     <button
@@ -655,7 +705,7 @@ export function PatientsManagementPanel() {
                                       <FileText size={14} />
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 12, color: "#cbd5e1" }}>—</span>
+                                    <span style={{ fontSize:11, color: "#cbd5e1" }}>—</span>
                                   )}
                                 </td>
                               </tr>
@@ -670,7 +720,7 @@ export function PatientsManagementPanel() {
                 {/* TREATMENT PLANS TAB */}
                 {detailTab === "plans" && (
                   <>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Treatment Plans ({treatmentPlans.length})</div>
+                    <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Treatment Plans ({treatmentPlans.length})</div>
                     {treatmentPlans.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8" }}>No treatment plans found</div>
                     ) : (
@@ -684,15 +734,15 @@ export function PatientsManagementPanel() {
                             <div key={plan.id} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 18 }}>
                               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
                                 <div>
-                                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{plan.planName}</div>
-                                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{plan.service?.name || plan.doctor?.name || ""}</div>
+                                  <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b" }}>{plan.planName}</div>
+                                  <div style={{ fontSize:11, color: "#64748b", marginTop: 2 }}>{plan.service?.name || plan.doctor?.name || ""}</div>
                                 </div>
-                                <span style={{ ...sc, padding: "3px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700, border: `1px solid ${sc.c}33` }}>{plan.status}</span>
+                                <span style={{ ...sc, padding: "3px 10px", borderRadius: 100, fontSize:10, fontWeight: 700, border: `1px solid ${sc.c}33` }}>{plan.status}</span>
                               </div>
                               <div style={{ height: 6, background: "#e2e8f0", borderRadius: 100, overflow: "hidden", marginBottom: 10 }}>
                                 <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#0E898F,#10b981)", borderRadius: 100 }} />
                               </div>
-                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize:11 }}>
                                 <span style={{ color: "#64748b" }}>{plan.completedSessions}/{plan.totalSessions} sessions ({pct}%)</span>
                                 <div style={{ display: "flex", gap: 14 }}>
                                   <span style={{ color: "#16a34a", fontWeight: 600 }}>₹{(plan.paidAmount || 0).toLocaleString()} paid</span>
@@ -710,7 +760,7 @@ export function PatientsManagementPanel() {
                 {/* BILLING TAB */}
                 {detailTab === "billing" && (
                   <>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Billing & Payments ({bills.length})</div>
+                    <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", marginBottom: 16 }}>Billing & Payments ({bills.length})</div>
                     {bills.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8" }}>No billing records found</div>
                     ) : (
@@ -719,24 +769,24 @@ export function PatientsManagementPanel() {
                           <thead>
                             <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                               {["Bill No", "Date", "Subtotal", "Discount", "Tax", "Total", "Paid", "Balance", "Status"].map(h => (
-                                <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>
+                                <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {bills.map((b: any) => (
                               <tr key={b.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 700, color: "#0E898F", fontFamily: "monospace" }}>{b.billNo}</td>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>{new Date(b.createdAt).toLocaleDateString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13 }}>₹{(b.subtotal || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#16a34a" }}>-₹{(b.discount || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, color: "#64748b" }}>₹{(b.tax || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 700 }}>₹{(b.total || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 600, color: "#16a34a" }}>₹{(b.paidAmount || 0).toLocaleString()}</td>
-                                <td style={{ padding: "14px", fontSize: 13, fontWeight: 600, color: (b.total - b.paidAmount) > 0 ? "#dc2626" : "#16a34a" }}>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 700, color: "#0E898F", fontFamily: "monospace" }}>{b.billNo}</td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#64748b" }}>{new Date(b.createdAt).toLocaleDateString()}</td>
+                                <td style={{ padding: "14px", fontSize:12 }}>₹{(b.subtotal || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#16a34a" }}>-₹{(b.discount || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, color: "#64748b" }}>₹{(b.tax || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 700 }}>₹{(b.total || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 600, color: "#16a34a" }}>₹{(b.paidAmount || 0).toLocaleString()}</td>
+                                <td style={{ padding: "14px", fontSize:12, fontWeight: 600, color: (b.total - b.paidAmount) > 0 ? "#dc2626" : "#16a34a" }}>
                                   ₹{((b.total || 0) - (b.paidAmount || 0)).toLocaleString()}
                                 </td>
-                                <td style={{ padding: "14px" }}><span style={{ ...statusStyle(b.status), padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{b.status}</span></td>
+                                <td style={{ padding: "14px" }}><span style={{ ...statusStyle(b.status), padding: "4px 10px", borderRadius: 6, fontSize:10, fontWeight: 600 }}>{b.status}</span></td>
                               </tr>
                             ))}
                           </tbody>
@@ -768,22 +818,22 @@ export function PatientsManagementPanel() {
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1e293b", margin: 0 }}>Patient Management</h1>
+          <h1 style={{ fontSize:20, fontWeight: 800, color: "#1e293b", margin: 0 }}>Patient Management</h1>
           {totalCount > 0 && (
-            <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>{totalCount} registered patients</p>
+            <p style={{ fontSize:12, color: "#64748b", margin: "4px 0 0 0" }}>{totalCount} registered patients</p>
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {selectedIds.size > 0 && (
             <button onClick={() => setShowBulkConfirm(true)}
-              style={{ padding: "8px 16px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              style={{ padding: "8px 16px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize:11, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
               <Trash2 size={14} /> Delete ({selectedIds.size})
             </button>
           )}
           {/* Export dropdown */}
           <div style={{ position: "relative" }}>
             <button onClick={() => setShowExport(!showExport)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 500, cursor: "pointer" }}>
               <Download size={14} /> Export
             </button>
             {showExport && (
@@ -794,7 +844,7 @@ export function PatientsManagementPanel() {
                   { label: "Word Document", icon: <FileType size={14} />, bg: "#eff6ff", color: "#2563eb", fn: exportWord },
                 ].map(item => (
                   <button key={item.label} onClick={item.fn}
-                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize: 13, color: "#334155", fontWeight: 500 }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderRadius: 8, border: "none", background: "none", width: "100%", cursor: "pointer", fontSize:12, color: "#334155", fontWeight: 500 }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#f1f5f9")}
                     onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                     <span style={{ width: 20, height: 20, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", background: item.bg, color: item.color }}>{item.icon}</span>
@@ -806,7 +856,7 @@ export function PatientsManagementPanel() {
           </div>
           <button
             onClick={() => setShowAddPatient(true)}
-            style={{ padding: "8px 20px", background: "linear-gradient(135deg,#0E898F,#07595D)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ padding: "8px 20px", background: "linear-gradient(135deg,#0E898F,#07595D)", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize:12, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
           >
             <Plus size={15} /> Register New
           </button>
@@ -821,10 +871,10 @@ export function PatientsManagementPanel() {
           placeholder="Search by name, phone number or patient ID..."
           value={searchTerm}
           onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-          style={{ flex: 1, border: "none", outline: "none", fontSize: 13, color: "#334155", background: "transparent" }}
+          style={{ flex: 1, border: "none", outline: "none", fontSize:12, color: "#334155", background: "transparent" }}
         />
         {searchTerm && (
-          <button onClick={() => setSearchTerm("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 12 }}>Clear</button>
+          <button onClick={() => setSearchTerm("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize:11 }}>Clear</button>
         )}
       </div>
 
@@ -833,13 +883,13 @@ export function PatientsManagementPanel() {
         {loading ? (
           <div style={{ padding: "70px 0", textAlign: "center", color: "#94a3b8" }}>
             <Loader2 size={28} color="#0E898F" style={{ animation: "spin 1s linear infinite", margin: "0 auto 12px", display: "block" }} />
-            <div style={{ fontSize: 13 }}>Loading patients...</div>
+            <div style={{ fontSize:12 }}>Loading patients...</div>
           </div>
         ) : patients.length === 0 ? (
           <div style={{ padding: "70px 0", textAlign: "center", color: "#94a3b8" }}>
             <UserRound size={40} style={{ opacity: 0.25, margin: "0 auto 12px", display: "block" }} />
-            <div style={{ fontSize: 14, fontWeight: 600 }}>No patients found</div>
-            <div style={{ fontSize: 12, marginTop: 4 }}>{searchTerm ? "Try a different search term" : "Register your first patient to get started"}</div>
+            <div style={{ fontSize:13, fontWeight: 600 }}>No patients found</div>
+            <div style={{ fontSize:11, marginTop: 4 }}>{searchTerm ? "Try a different search term" : "Register your first patient to get started"}</div>
           </div>
         ) : (
           <>
@@ -852,7 +902,7 @@ export function PatientsManagementPanel() {
                     </div>
                   </th>
                   {["Patient ID", "Patient", "Contact", "Gender", "Age", "Blood Group", "Visits", "Registered", "Actions"].map(h => (
-                    <th key={h} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ padding: "13px 16px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -868,32 +918,32 @@ export function PatientsManagementPanel() {
                       </div>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
-                      <span style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6 }}>{p.patientId}</span>
+                      <span style={{ fontSize:10, fontFamily: "monospace", fontWeight: 700, color: "#0369a1", background: "#f0f9ff", padding: "3px 8px", borderRadius: 6 }}>{p.patientId}</span>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{p.name}</span>
+                        <span style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{p.name}</span>
                       </div>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>{p.phone}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{p.email || "—"}</div>
+                      <div style={{ fontSize:12, fontWeight: 500, color: "#334155" }}>{p.phone}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>{p.email || "—"}</div>
                     </td>
                     <td style={{ padding: "15px 16px" }}>
-                      <span style={{ fontSize: 12, color: "#64748b", background: "#f1f5f9", padding: "3px 8px", borderRadius: 6 }}>{p.gender || "—"}</span>
+                      <span style={{ fontSize:11, color: "#64748b", background: "#f1f5f9", padding: "3px 8px", borderRadius: 6 }}>{p.gender || "—"}</span>
                     </td>
-                    <td style={{ padding: "15px 16px", fontSize: 13, color: "#64748b" }}>{age(p.dateOfBirth)}</td>
+                    <td style={{ padding: "15px 16px", fontSize:12, color: "#64748b" }}>{age(p.dateOfBirth)}</td>
                     <td style={{ padding: "15px 16px" }}>
-                      <span style={{ fontSize: 12, background: "#fef3c7", color: "#f59e0b", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>{p.bloodGroup || "—"}</span>
+                      <span style={{ fontSize:11, background: "#fef3c7", color: "#f59e0b", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>{p.bloodGroup || "—"}</span>
                     </td>
-                    <td style={{ padding: "15px 16px", fontSize: 13, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments || 0}</td>
-                    <td style={{ padding: "15px 16px", fontSize: 12, color: "#94a3b8" }}>{new Date(p.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: "15px 16px", fontSize:12, fontWeight: 700, color: "#0A6B70" }}>{p._count?.appointments || 0}</td>
+                    <td style={{ padding: "15px 16px", fontSize:11, color: "#94a3b8" }}>{new Date(p.createdAt).toLocaleDateString()}</td>
                     <td style={{ padding: "15px 16px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
                           onClick={() => handleViewProfile(p)}
                           disabled={loadingProfileId === p.id}
-                          style={{ padding: "6px 12px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 8, cursor: loadingProfileId === p.id ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, opacity: loadingProfileId === p.id ? 0.7 : 1 }}
+                          style={{ padding: "6px 12px", background: "#E6F4F4", color: "#0E898F", border: "none", borderRadius: 8, cursor: loadingProfileId === p.id ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 4, fontSize:11, fontWeight: 600, opacity: loadingProfileId === p.id ? 0.7 : 1 }}
                           title="View Profile"
                         >
                           {loadingProfileId === p.id ? (
@@ -933,10 +983,10 @@ export function PatientsManagementPanel() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderTop: "1px solid #f1f5f9" }}>
-                <div style={{ fontSize: 12, color: "#94a3b8" }}>Page {currentPage} of {totalPages} · {totalCount} patients</div>
+                <div style={{ fontSize:11, color: "#94a3b8" }}>Page {currentPage} of {totalPages} · {totalCount} patients</div>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                    style={{ padding: "6px 12px", border: "1px solid #e2e8f0", borderRadius: 7, background: "#fff", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.5 : 1, fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                    style={{ padding: "6px 12px", border: "1px solid #e2e8f0", borderRadius: 7, background: "#fff", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.5 : 1, fontSize:11, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
                     <ChevronLeft size={14} /> Prev
                   </button>
                   {[...Array(Math.min(5, totalPages))].map((_, i) => {
@@ -944,13 +994,13 @@ export function PatientsManagementPanel() {
                     if (pg < 1 || pg > totalPages) return null;
                     return (
                       <button key={i} onClick={() => setCurrentPage(pg)}
-                        style={{ width: 32, height: 32, border: "1px solid #e2e8f0", borderRadius: 7, background: currentPage === pg ? "#0E898F" : "#fff", color: currentPage === pg ? "#fff" : "#64748b", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                        style={{ width: 32, height: 32, border: "1px solid #e2e8f0", borderRadius: 7, background: currentPage === pg ? "#0E898F" : "#fff", color: currentPage === pg ? "#fff" : "#64748b", cursor: "pointer", fontSize:11, fontWeight: 600 }}>
                         {pg}
                       </button>
                     );
                   })}
                   <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                    style={{ padding: "6px 12px", border: "1px solid #e2e8f0", borderRadius: 7, background: "#fff", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.5 : 1, fontSize: 12, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+                    style={{ padding: "6px 12px", border: "1px solid #e2e8f0", borderRadius: 7, background: "#fff", cursor: currentPage === totalPages ? "not-allowed" : "pointer", opacity: currentPage === totalPages ? 0.5 : 1, fontSize:11, color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
                     Next <ChevronRight size={14} />
                   </button>
                 </div>
@@ -971,19 +1021,19 @@ export function PatientsManagementPanel() {
                 <AlertTriangle size={22} color="#ef4444" />
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>Delete Patient?</div>
-                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                <div style={{ fontSize:15, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>Delete Patient?</div>
+                <div style={{ fontSize:12, color: "#64748b", lineHeight: 1.5 }}>
                   This will permanently delete <b>{deleteTarget.name}</b> and all their medical history, appointments, and billing records.
                 </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button onClick={() => setDeleteTarget(null)}
-                style={{ padding: "9px 18px", border: "1px solid #e2e8f0", borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#64748b" }}>
+                style={{ padding: "9px 18px", border: "1px solid #e2e8f0", borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize:12, color: "#64748b" }}>
                 Cancel
               </button>
               <button onClick={handleDelete} disabled={deleting}
-                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 9, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
+                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 9, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize:12, display: "flex", alignItems: "center", gap: 7 }}>
                 {deleting ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
                 Delete Permanently
               </button>
@@ -1028,19 +1078,19 @@ export function PatientsManagementPanel() {
                 <AlertTriangle size={22} color="#ef4444" />
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>Delete {selectedIds.size} Patients?</div>
-                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                <div style={{ fontSize:15, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>Delete {selectedIds.size} Patients?</div>
+                <div style={{ fontSize:12, color: "#64748b", lineHeight: 1.5 }}>
                   This will permanently delete the selected patients and all their associated records. This action cannot be undone.
                 </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button onClick={() => setShowBulkConfirm(false)}
-                style={{ padding: "9px 18px", border: "1px solid #e2e8f0", borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#64748b" }}>
+                style={{ padding: "9px 18px", border: "1px solid #e2e8f0", borderRadius: 9, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize:12, color: "#64748b" }}>
                 Cancel
               </button>
               <button onClick={handleBulkDelete} disabled={bulkDeleting}
-                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 9, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
+                style={{ padding: "9px 18px", background: "#ef4444", border: "none", borderRadius: 9, color: "#fff", cursor: "pointer", fontWeight: 600, fontSize:12, display: "flex", alignItems: "center", gap: 7 }}>
                 {bulkDeleting ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
                 {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size} Patients`}
               </button>
@@ -1100,25 +1150,25 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "#fff", borderRadius: 16, padding: 40, textAlign: "center", width: 400 }}>
         <Loader2 size={24} style={{ animation: "spin 1s linear infinite", margin: "0 auto 10px", color: "#0E898F" }} />
-        <div style={{ fontSize: 13, color: "#64748b" }}>Loading patient profile...</div>
+        <div style={{ fontSize:12, color: "#64748b" }}>Loading patient profile...</div>
       </div>
     </div>
   );
 
   if (!form) return null;
 
-  const LBL: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" };
-  const INP: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, outline: "none" };
+  const LBL: React.CSSProperties = { display: "block", fontSize:10, fontWeight: 600, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" };
+  const INP: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize:12, outline: "none" };
   const SEL: React.CSSProperties = { ...INP, background: "#fff" };
-  const SECTION: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 10, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
+  const SECTION: React.CSSProperties = { fontSize:12, fontWeight: 700, color: "#0E898F", marginBottom: 10, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div style={{ background: "#fff", borderRadius: 16, padding: 0, width: 650, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px", borderBottom: "1px solid #f1f5f9" }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>Edit Patient Profile</div>
-            <div style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>Update complete information for {form.name}</div>
+            <div style={{ fontSize:17, fontWeight: 700, color: "#1e293b" }}>Edit Patient Profile</div>
+            <div style={{ fontSize:12, color: "#64748b", marginTop: 2 }}>Update complete information for {form.name}</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={20} /></button>
         </div>
@@ -1231,20 +1281,20 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
             </div>
           </div>
 
-          {msg && <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 8, background: "#fff5f5", color: "#ef4444", fontSize: 12, fontWeight: 600 }}>{msg}</div>}
+          {msg && <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 8, background: "#fff5f5", color: "#ef4444", fontSize:11, fontWeight: 600 }}>{msg}</div>}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 32, paddingBottom: 10 }}>
             <button 
               type="button" 
               onClick={onClose}
-              style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}
             >
               Cancel
             </button>
             <button 
               type="submit" 
               disabled={saving}
-              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: "#0E898F", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
             >
               {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : "Save All Changes"}
             </button>
@@ -1257,30 +1307,19 @@ function PatientEditModal({ patientId, onClose, onUpdate }: { patientId: string;
 
 // ─── Add Patient Modal Component (3-Step Wizard) ───
 function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [bookAppointmentNow, setBookAppointmentNow] = useState(false);
 
-  // Step 1: Basic + Contact
   const [form, setForm] = useState({
-    name: "", phone: "", gender: "", dateOfBirth: "", bloodGroup: "",
-    email: "", address: "",
+    name: "", phone: "", gender: "", dateOfBirth: "", bloodGroup: "", email: "", address: "",
   });
 
-  // Step 2: Visit + Appointment + Classification + Medical
   const [visit, setVisit] = useState({
     visitType: "OPD", customVisitType: "", departmentId: "", doctorId: "", complaint: "",
-    appointmentType: "WALK_IN", appointmentDate: "", timeSlot: "",
-    patientType: "NEW", allergies: "",
+    appointmentType: "WALK_IN", appointmentDate: "", timeSlot: "", patientType: "NEW", allergies: "",
   });
 
-  // Step 3: Billing + Emergency + Docs
-  const [billing, setBilling] = useState({
-    consultationFee: "", discount: "", paymentMode: "CASH", paymentStatus: "PENDING",
-  });
-  const [emergency, setEmergency] = useState({ name: "", relation: "", phone: "" });
-
-  // Lookups
   const [departments, setDepartments] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [slots, setSlots] = useState<string[]>([]);
@@ -1307,51 +1346,36 @@ function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSucces
       .finally(() => setLoadingSlots(false));
   }, [visit.doctorId, visit.appointmentDate]);
 
-  useEffect(() => {
-    if (visit.doctorId) {
-      const doc = doctors.find((d: any) => d.id === visit.doctorId);
-      if (doc?.consultationFee) setBilling(b => ({ ...b, consultationFee: String(doc.consultationFee) }));
-    }
-  }, [visit.doctorId, doctors]);
-
   const today = new Date().toISOString().split("T")[0];
 
-  const canGoStep2 = form.name.trim().length >= 2 && form.phone.trim().length >= 7 && !!form.gender;
-  const canGoStep3 = !!visit.departmentId && !!visit.doctorId;
+  const canSave = form.name.trim().length >= 2 && form.phone.trim().length >= 7 && !!form.gender && 
+    (!bookAppointmentNow || (!!visit.departmentId && !!visit.doctorId && !!visit.appointmentDate && !!visit.timeSlot));
 
   const handleFinalSubmit = async () => {
     setSaving(true); setMsg(null);
-    // 1) Register patient
     const patientPayload: any = {
-      name: form.name.trim(), phone: form.phone.trim(),
+      name: form.name.trim(), phone: form.phone.trim(), gender: form.gender,
+      patientType: visit.patientType, allergies: visit.allergies,
     };
-    if (form.gender) patientPayload.gender = form.gender;
     if (form.dateOfBirth) patientPayload.dateOfBirth = form.dateOfBirth;
     if (form.bloodGroup) patientPayload.bloodGroup = form.bloodGroup;
     if (form.email) patientPayload.email = form.email;
     if (form.address) patientPayload.address = form.address;
-    if (visit.patientType) patientPayload.patientType = visit.patientType;
-    if (visit.allergies) patientPayload.allergies = visit.allergies;
-    if (emergency.name) patientPayload.emergencyName = emergency.name;
-    if (emergency.relation) patientPayload.emergencyRelation = emergency.relation;
-    if (emergency.phone) patientPayload.emergencyPhone = emergency.phone;
 
     const pRes = await api("/api/patients", "POST", patientPayload);
     if (!pRes.success) { setMsg({ type: "error", text: pRes.message || "Failed to register patient" }); setSaving(false); return; }
     const patient = pRes.data?.patient || pRes.data;
 
-    // 2) Book appointment (only if date + slot + doctor provided)
-    if (visit.doctorId && visit.appointmentDate && visit.timeSlot) {
+    if (bookAppointmentNow && visit.doctorId && visit.appointmentDate && visit.timeSlot) {
       const resolvedType = visit.visitType === "OTHER" ? (visit.customVisitType || "OPD") : visit.visitType;
       const apptType = ["EMERGENCY", "FOLLOW_UP", "OPD", "ONLINE"].includes(resolvedType) ? resolvedType : "OPD";
       const apptPayload: any = {
-        patientId: patient.id, doctorId: visit.doctorId,
-        appointmentDate: visit.appointmentDate, timeSlot: visit.timeSlot,
-        type: apptType,
-        notes: visit.complaint || null,
+        patientId: patient.id, doctorId: visit.doctorId, appointmentDate: visit.appointmentDate, 
+        timeSlot: visit.timeSlot, type: apptType, notes: visit.complaint || null, departmentId: visit.departmentId,
       };
-      if (visit.departmentId) apptPayload.departmentId = visit.departmentId;
-      if (billing.consultationFee) apptPayload.consultationFee = parseFloat(billing.consultationFee);
+
+      const doc = doctors.find((d: any) => d.id === visit.doctorId);
+      if (doc?.consultationFee) apptPayload.consultationFee = parseFloat(doc.consultationFee);
 
       const aRes = await api("/api/appointments", "POST", apptPayload);
       if (!aRes.success) { setMsg({ type: "error", text: `Patient registered but appointment failed: ${aRes.message}` }); setSaving(false); return; }
@@ -1360,132 +1384,71 @@ function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     onSuccess();
   };
 
-  const LBL: React.CSSProperties = { display: "block", fontSize: 11, fontWeight: 600, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" };
-  const INP: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, outline: "none" };
+  const LBL: React.CSSProperties = { display: "block", fontSize:10, fontWeight: 600, color: "#64748b", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".03em" };
+  const INP: React.CSSProperties = { width: "100%", padding: "9px 11px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize:12, outline: "none" };
   const SEL: React.CSSProperties = { ...INP, background: "#fff" };
-  const SECTION: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: "#0E898F", marginBottom: 10, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
-
-  const STEPS = [
-    { num: 1, label: "Patient Info" },
-    { num: 2, label: "Visit Details" },
-    { num: 3, label: "Payment & Confirm" },
-  ];
+  const SECTION: React.CSSProperties = { fontSize:12, fontWeight: 700, color: "#0E898F", marginBottom: 10, marginTop: 16, display: "flex", alignItems: "center", gap: 6 };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div style={{ background: "#fff", borderRadius: 18, width: 680, maxHeight: "92vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,.18)", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
 
-        {/* Header */}
         <div style={{ background: "linear-gradient(135deg,#0E898F,#07595D)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <UserRound size={17} color="#fff" />
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Register New Patient</span>
+            <span style={{ fontSize:14, fontWeight: 800, color: "#fff" }}>Register New Patient</span>
           </div>
           <button onClick={onClose} style={{ background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", cursor: "pointer" }}><X size={14} /></button>
         </div>
 
-        {/* Step Indicator */}
-        <div style={{ display: "flex", alignItems: "center", padding: "12px 24px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-          {STEPS.map((s, i) => (
-            <div key={s.num} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, background: step >= s.num ? "#0E898F" : "#e2e8f0", color: step >= s.num ? "#fff" : "#94a3b8", transition: "all .2s" }}>{s.num}</div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: step >= s.num ? "#0E898F" : "#94a3b8" }}>{s.label}</span>
-              </div>
-              {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: step > s.num ? "#0E898F" : "#e2e8f0", margin: "0 12px", transition: "all .2s" }} />}
-            </div>
-          ))}
-        </div>
-
-        {/* Body */}
         <div style={{ flex: 1, overflow: "auto", padding: "16px 24px 20px" }}>
+          <div style={SECTION}><UserRound size={14} /> Basic Information</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={LBL}>Full Name *</label>
+              <input style={INP} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Patient's full name" required />
+            </div>
+            <div>
+              <label style={LBL}>Mobile Number *</label>
+              <input style={INP} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="9876543210" required />
+            </div>
+            <div>
+              <label style={LBL}>Gender *</label>
+              <select style={SEL} value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} required>
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style={LBL}>Date of Birth</label>
+              <input type="date" style={INP} value={form.dateOfBirth} onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} />
+            </div>
+            <div>
+              <label style={LBL}>Blood Group</label>
+              <select style={SEL} value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
+                <option value="">Select</option>
+                {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={LBL}>Address</label>
+              <input style={INP} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Full address" />
+            </div>
+          </div>
 
-          {/* ═══ STEP 1: Patient Info ═══ */}
-          {step === 1 && (
-            <>
-              <div style={SECTION}><UserRound size={14} /> Basic Information (Quick Entry)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ gridColumn: "span 2" }}>
-                  <label style={LBL}>Full Name *</label>
-                  <input style={INP} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Patient's full name" required />
-                </div>
-                <div>
-                  <label style={LBL}>Mobile Number *</label>
-                  <input style={INP} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="9876543210" required />
-                </div>
-                <div>
-                  <label style={LBL}>Gender *</label>
-                  <select style={SEL} value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} required>
-                    <option value="">Select Gender</option>
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={LBL}>Date of Birth</label>
-                  <input type="date" style={INP} value={form.dateOfBirth} onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} />
-                </div>
-                <div>
-                  <label style={LBL}>Blood Group</label>
-                  <select style={SEL} value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
-                    <option value="">Select</option>
-                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-              </div>
+          <div style={{ marginTop: 24, padding: "14px", background: bookAppointmentNow ? "#E6F4F4" : "#f8fafc", borderRadius: 12, border: bookAppointmentNow ? "1px solid #0E898F" : "1px solid #e2e8f0", transition: "all .2s" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <input type="checkbox" checked={bookAppointmentNow} onChange={e => setBookAppointmentNow(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#0E898F" }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Book an appointment for this patient now</span>
+            </label>
+          </div>
 
-              <div style={SECTION}><Phone size={14} /> Contact Details</div>
+          {bookAppointmentNow && (
+            <div style={{ marginTop: 16, padding: "16px 20px", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+              <div style={{ ...SECTION, marginTop: 0 }}><Stethoscope size={14} /> Visit Details</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={LBL}>Email Address</label>
-                  <input type="email" style={INP} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="patient@email.com" />
-                </div>
-                <div style={{ gridColumn: "span 2" }}>
-                  <label style={LBL}>Address</label>
-                  <input style={INP} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Full address" />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ═══ STEP 2: Visit Details ═══ */}
-          {step === 2 && (
-            <>
-              <div style={SECTION}><Stethoscope size={14} /> Visit Details</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={LBL}>Visit Type *</label>
-                  <select style={SEL} value={visit.visitType} onChange={e => setVisit({ ...visit, visitType: e.target.value, customVisitType: e.target.value === "OTHER" ? visit.customVisitType : "" })}>
-                    <option value="OPD">OPD</option>
-                    <option value="IPD">IPD</option>
-                    <option value="EMERGENCY">Emergency</option>
-                    <option value="FOLLOW_UP">Follow-up</option>
-                    <option value="CONSULTATION">Consultation</option>
-                    <option value="DAY_CARE">Day Care</option>
-                    <option value="SURGERY">Surgery</option>
-                    <option value="LAB_ONLY">Lab / Diagnostics Only</option>
-                    <option value="PHARMACY_ONLY">Pharmacy Only</option>
-                    <option value="VACCINATION">Vaccination</option>
-                    <option value="HEALTH_CHECKUP">Health Checkup</option>
-                    <option value="REFERRAL">Referral</option>
-                    <option value="TELEMEDICINE">Telemedicine</option>
-                    <option value="OTHER">Other (Custom)</option>
-                  </select>
-                </div>
-                {visit.visitType === "OTHER" && (
-                  <div>
-                    <label style={LBL}>Custom Visit Type *</label>
-                    <input style={INP} value={visit.customVisitType} onChange={e => setVisit({ ...visit, customVisitType: e.target.value })} placeholder="Enter visit type" />
-                  </div>
-                )}
-                <div>
-                  <label style={LBL}>Appointment Type</label>
-                  <select style={SEL} value={visit.appointmentType} onChange={e => setVisit({ ...visit, appointmentType: e.target.value })}>
-                    <option value="WALK_IN">Walk-in</option>
-                    <option value="PRE_BOOKED">Pre-booked</option>
-                  </select>
-                </div>
                 <div>
                   <label style={LBL}>Department *</label>
                   <select style={SEL} value={visit.departmentId} onChange={e => setVisit({ ...visit, departmentId: e.target.value, doctorId: "", timeSlot: "" })}>
@@ -1506,14 +1469,14 @@ function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 </div>
               </div>
 
-              <div style={SECTION}><Calendar size={14} /> Appointment Schedule (Optional)</div>
+              <div style={SECTION}><Calendar size={14} /> Appointment Schedule</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
                 <div>
-                  <label style={LBL}>Appointment Date</label>
+                  <label style={LBL}>Appointment Date *</label>
                   <input type="date" style={INP} min={today} value={visit.appointmentDate} onChange={e => setVisit({ ...visit, appointmentDate: e.target.value, timeSlot: "" })} />
                 </div>
                 <div>
-                  <label style={LBL}>Selected Slot</label>
+                  <label style={LBL}>Selected Slot *</label>
                   <input style={{ ...INP, background: "#f8fafc", cursor: "default" }} readOnly value={visit.timeSlot || "Select from below"} />
                 </div>
               </div>
@@ -1521,149 +1484,62 @@ function AddPatientModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14, marginBottom: 12 }}>
                   {loadingSlots ? (
                     <div style={{ textAlign: "center", padding: 16 }}><Loader2 size={18} color="#0E898F" style={{ animation: "spin 1s linear infinite" }} /></div>
-                  ) : slots.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: 12, color: "#94a3b8", fontSize: 12 }}>No slots available for this date</div>
-                  ) : (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {slots.map(s => {
-                        const booked = bookedSlots.includes(s);
-                        const selected = visit.timeSlot === s;
-                        return (
-                          <button key={s} type="button" disabled={booked}
-                            onClick={() => setVisit({ ...visit, timeSlot: s })}
-                            style={{ padding: "6px 12px", borderRadius: 7, border: selected ? "2px solid #0E898F" : "1px solid #e2e8f0", background: booked ? "#f1f5f9" : selected ? "#E6F4F4" : "#fff", color: booked ? "#cbd5e1" : selected ? "#0E898F" : "#334155", fontSize: 12, fontWeight: 600, cursor: booked ? "not-allowed" : "pointer", textDecoration: booked ? "line-through" : "none" }}>
-                            {s}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  ) : (() => {
+                    const filteredSlots = slots.filter(s => {
+                      if (!visit.appointmentDate) return true;
+                      const now = new Date();
+                      const [y, m, day] = visit.appointmentDate.split("-").map(Number);
+                      const [h, min] = s.split(":").map(Number);
+                      const slotDate = new Date(y, m - 1, day, h, min, 0);
+                      return slotDate > now;
+                    });
+                    
+                    if (filteredSlots.length === 0) {
+                      return <div style={{ textAlign: "center", padding: 12, color: "#94a3b8", fontSize:11 }}>No slots available for this date</div>;
+                    }
+                    
+                    return (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                        {filteredSlots.map(s => {
+                          const booked = bookedSlots.includes(s);
+                          const selected = visit.timeSlot === s;
+                          const [h, m] = s.split(":").map(Number);
+                          const ampm = h >= 12 ? "PM" : "AM";
+                          const h12 = h % 12 || 12;
+                          const formattedTime = `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+
+                          return (
+                            <button key={s} type="button" disabled={booked}
+                              onClick={() => setVisit({ ...visit, timeSlot: s })}
+                              style={{ padding: "8px 4px", borderRadius: 8, border: selected ? "2px solid #0E898F" : booked ? "1px solid #e2e8f0" : "1.5px solid #B3E0E0", background: selected ? "#0E898F" : booked ? "#f1f5f9" : "#E6F4F4", color: selected ? "#fff" : booked ? "#cbd5e1" : "#0A6B70", fontSize:11, fontWeight: 700, cursor: booked ? "not-allowed" : "pointer", textDecoration: booked ? "line-through" : "none", fontFamily: "'Inter',sans-serif" }}>
+                              {formattedTime}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
-
-              <div style={SECTION}><ClipboardList size={14} /> Patient Classification</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={LBL}>Patient Type</label>
-                  <select style={SEL} value={visit.patientType} onChange={e => setVisit({ ...visit, patientType: e.target.value })}>
-                    <option value="NEW">New</option>
-                    <option value="EXISTING">Existing</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={SECTION}><Activity size={14} /> Medical Snapshot (Optional)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                <div>
-                  <label style={LBL}>Allergies</label>
-                  <input style={INP} value={visit.allergies} onChange={e => setVisit({ ...visit, allergies: e.target.value })} placeholder="Penicillin, Dust..." />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ═══ STEP 3: Payment & Confirm ═══ */}
-          {step === 3 && (
-            <>
-              <div style={SECTION}><IndianRupee size={14} /> Billing / Payment</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={LBL}>Consultation Fee</label>
-                  <input type="number" style={INP} value={billing.consultationFee} onChange={e => setBilling({ ...billing, consultationFee: e.target.value })} placeholder="Auto from doctor" />
-                </div>
-                <div>
-                  <label style={LBL}>Discount</label>
-                  <input type="number" style={INP} value={billing.discount} onChange={e => setBilling({ ...billing, discount: e.target.value })} placeholder="0" />
-                </div>
-                <div>
-                  <label style={LBL}>Payment Mode</label>
-                  <select style={SEL} value={billing.paymentMode} onChange={e => setBilling({ ...billing, paymentMode: e.target.value })}>
-                    <option value="CASH">Cash</option>
-                    <option value="UPI">UPI</option>
-                    <option value="CARD">Card</option>
-                    <option value="ONLINE">Online</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={LBL}>Payment Status</label>
-                  <select style={SEL} value={billing.paymentStatus} onChange={e => setBilling({ ...billing, paymentStatus: e.target.value })}>
-                    <option value="PENDING">Pending</option>
-                    <option value="PAID">Paid</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={SECTION}><Phone size={14} /> Emergency Contact (Optional)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={LBL}>Contact Person</label>
-                  <input style={INP} value={emergency.name} onChange={e => setEmergency({ ...emergency, name: e.target.value })} placeholder="Name" />
-                </div>
-                <div>
-                  <label style={LBL}>Relation</label>
-                  <select style={SEL} value={emergency.relation} onChange={e => setEmergency({ ...emergency, relation: e.target.value })}>
-                    <option value="">Select</option>
-                    {["Spouse", "Parent", "Sibling", "Child", "Friend", "Other"].map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={LBL}>Contact Number</label>
-                  <input style={INP} value={emergency.phone} onChange={e => setEmergency({ ...emergency, phone: e.target.value })} placeholder="Phone" />
-                </div>
-              </div>
-
-              {/* Confirmation Summary */}
-              <div style={SECTION}><Eye size={14} /> Booking Summary</div>
-              <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 16 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13 }}>
-                  {[
-                    ["Patient", form.name],
-                    ["Phone", form.phone],
-                    ["Gender", form.gender],
-                    ["Department", departments.find((d: any) => d.id === visit.departmentId)?.name || "—"],
-                    ["Doctor", doctors.find((d: any) => d.id === visit.doctorId)?.name || "—"],
-                    ["Date & Time", visit.appointmentDate && visit.timeSlot ? `${visit.appointmentDate} at ${visit.timeSlot}` : "Not scheduled"],
-                    ["Visit Type", visit.visitType === "OTHER" ? (visit.customVisitType || "Other") : visit.visitType],
-                    ["Complaint", visit.complaint || "—"],
-                    ["Fee", billing.consultationFee ? `₹${billing.consultationFee}` : "—"],
-                    ["Payment", `${billing.paymentMode} · ${billing.paymentStatus}`],
-                  ].map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f1f5f9" }}>
-                      <span style={{ color: "#64748b" }}>{k}</span>
-                      <span style={{ fontWeight: 600, color: "#1e293b" }}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           {msg && (
-            <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, background: msg.type === "error" ? "#fff5f5" : "#f0fdf4", color: msg.type === "error" ? "#ef4444" : "#16a34a", fontSize: 12, fontWeight: 600 }}>
+            <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, background: msg.type === "error" ? "#fff5f5" : "#f0fdf4", color: msg.type === "error" ? "#ef4444" : "#16a34a", fontSize:11, fontWeight: 600 }}>
               {msg.text}
             </div>
           )}
         </div>
 
-        {/* Footer Buttons */}
-        <div style={{ padding: "14px 24px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", background: "#fafbfc" }}>
-          <button onClick={step === 1 ? onClose : () => setStep(s => s - 1 as any)}
-            style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            {step === 1 ? "Cancel" : "← Back"}
+        <div style={{ padding: "14px 24px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 12, background: "#fafbfc" }}>
+          <button onClick={onClose}
+            style={{ padding: "10px 20px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}>
+            Cancel
           </button>
-          {step < 3 ? (
-            <button
-              onClick={() => setStep(s => s + 1 as any)}
-              disabled={step === 1 ? !canGoStep2 : !canGoStep3}
-              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: (step === 1 ? canGoStep2 : canGoStep3) ? "#0E898F" : "#cbd5e1", color: "#fff", fontSize: 13, fontWeight: 700, cursor: (step === 1 ? canGoStep2 : canGoStep3) ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 8 }}>
-              Next Step →
-            </button>
-          ) : (
-            <button onClick={handleFinalSubmit} disabled={saving}
-              style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: "#0E898F", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-              {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <><CalendarDays size={15} /> Register & Book</>}
-            </button>
-          )}
+          <button onClick={handleFinalSubmit} disabled={saving || !canSave}
+            style={{ padding: "10px 24px", borderRadius: 9, border: "none", background: canSave ? "#0E898F" : "#cbd5e1", color: "#fff", fontSize:12, fontWeight: 700, cursor: canSave ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 8 }}>
+            {saving ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : (bookAppointmentNow ? "Register & Book Appointment" : "Register Patient")}
+          </button>
         </div>
       </div>
     </div>

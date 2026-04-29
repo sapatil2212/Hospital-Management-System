@@ -10,10 +10,10 @@ import {
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
-const ACCENT       = "#2563eb";
-const ACCENT2      = "#1d4ed8";
+const ACCENT = "#2563eb";
+const ACCENT2 = "#1d4ed8";
 const ACCENT_LIGHT = "#eff6ff";
-const ACCENT_BDR   = "#bfdbfe";
+const ACCENT_BDR = "#bfdbfe";
 
 const initials = (n: string) =>
   n.split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase();
@@ -22,17 +22,17 @@ const NAV_SECTIONS = [
   {
     label: "Management",
     items: [
-      { id: "overview",  label: "Overview",               Icon: LayoutDashboard },
-      { id: "subdepts",  label: "Sub-Departments",        Icon: Building2 },
+      { id: "overview", label: "Overview", Icon: LayoutDashboard },
+      { id: "subdepts", label: "Sub-Departments", Icon: Building2 },
       { id: "dept-info", label: "Department Information", Icon: Info },
     ],
   },
   {
     label: "Admin Operations",
     items: [
-      { id: "appointments", label: "Appointments",  Icon: CalendarDays  },
-      { id: "queue",        label: "Patient Queue", Icon: ClipboardList },
-      { id: "patients",     label: "Patients",      Icon: Users         },
+      { id: "appointments", label: "Appointments", Icon: CalendarDays },
+      { id: "queue", label: "Patient Queue", Icon: ClipboardList },
+      { id: "patients", label: "Patients", Icon: Users },
     ],
   },
 ];
@@ -46,7 +46,7 @@ function getActiveId(tab: string | null): string {
 
 function Spinner() {
   return (
-    <div style={{ minHeight: "100vh", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize: 14 }}>
+    <div style={{ minHeight: "100vh", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", gap: 14, color: "#64748b", fontSize: 13 }}>
       <div style={{ width: 30, height: 30, border: `3px solid ${ACCENT_BDR}`, borderTop: `3px solid ${ACCENT}`, borderRadius: "50%", animation: "aspin 0.8s linear infinite" }} />
       <style>{`@keyframes aspin{to{transform:rotate(360deg)}}`}</style>
       Loading Administrative Dashboard…
@@ -55,21 +55,21 @@ function Spinner() {
 }
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const router       = useRouter();
-  const pathname     = usePathname();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [user, setUser]         = useState<any>(null);
-  const [loading, setLoading]   = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [deptProfile, setDeptProfile] = useState<any>(null);
   const [hospitalLogo, setHospitalLogo] = useState<string | null>(null);
   const [hospitalName, setHospitalName] = useState("Hospital");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [search, setSearch]     = useState("");
+  const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  const tab      = searchParams.get("tab");
+  const tab = searchParams.get("tab");
   const activeId = getActiveId(tab);
 
   useEffect(() => {
@@ -83,9 +83,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           .then(pd => {
             if (!pd.success) { router.push("/login"); return; }
             const type = pd.data?.type;
-            if (type === "CLINICAL")    { router.push("/clinical/dashboard");    return; }
-            if (type === "SUPPORT")     { router.push("/support/dashboard");     return; }
-            if (type === "DIAGNOSTIC")  { router.push("/diagnostic/dashboard");  return; }
+            if (type === "CLINICAL") { router.push("/clinical/dashboard"); return; }
+            if (type === "SUPPORT") { router.push("/support/dashboard"); return; }
+            if (type === "DIAGNOSTIC") { router.push("/diagnostic/dashboard"); return; }
             if (type !== "ADMINISTRATIVE") { router.push("/parentdept/dashboard"); return; }
             setDeptProfile(pd.data);
             setLoading(false);
@@ -99,7 +99,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
               setHospitalLogo(s.data.settings.logo || null);
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       })
       .catch(() => router.push("/login"));
   }, [router]);
@@ -135,7 +135,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .ad-burger{display:none;width:36px;height:36px;border-radius:10px;background:${ACCENT_LIGHT};border:1.5px solid ${ACCENT_BDR};align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
         .ad-sb-logo{padding:18px 20px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;min-height:64px}
         .ad-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,${ACCENT},${ACCENT2});border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,.3);flex-shrink:0}
-        .ad-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .ad-logo-tx{font-size:13px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .ad-logo-sub{font-size:10px;color:${ACCENT};font-weight:600;margin-top:1px}
         .ad-nav{flex:1;padding:10px;overflow-y:auto}
         .ad-nav-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;padding:0 8px;margin:14px 0 5px}
@@ -157,7 +157,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .ad-topbar-r{display:flex;align-items:center;gap:10px}
         .ad-profile-btn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:${ACCENT_LIGHT};border:1.5px solid ${ACCENT_BDR};cursor:pointer;transition:background .15s}
         .ad-profile-btn:hover{background:#dbeafe}
-        .ad-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,${ACCENT},#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden}
+        .ad-profile-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,${ACCENT},#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;overflow:hidden}
         .ad-profile-name{font-size:11.5px;font-weight:600;color:#1e293b}
         .ad-profile-role{font-size:9px;color:${ACCENT};font-weight:500}
         .ad-content{flex:1;padding:28px 28px 40px;overflow-y:auto}
@@ -166,25 +166,25 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .dd-banner{border-radius:16px;padding:20px 24px;color:#fff;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;margin-bottom:0}
         .dd-banner::before{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.06)}
         .dd-banner-ic{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .dd-banner-name{font-size:20px;font-weight:800;letter-spacing:-.02em}
-        .dd-banner-sub{font-size:12px;opacity:.75;margin-top:3px}
+        .dd-banner-name{font-size:19px;font-weight:800;letter-spacing:-.02em}
+        .dd-banner-sub{font-size:11px;opacity:.75;margin-top:3px}
         .dd-badge-pill{font-size:10px;font-weight:700;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:3px 10px;border-radius:100px;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
         .dd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
         @media(max-width:1200px){.dd-stats{grid-template-columns:repeat(2,1fr)}}
         .dd-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e8eeff;display:flex;align-items:center;gap:14px;cursor:default}
         .dd-sc-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
         .dd-sc-lbl{font-size:10px;color:#94a3b8;font-weight:500;margin-bottom:3px}
-        .dd-sc-val{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
+        .dd-sc-val{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
         .dd-sc-sub{font-size:9px;color:#94a3b8;margin-top:3px}
         .dd-card{background:#fff;border-radius:14px;border:1px solid #e8eeff;overflow:hidden}
         .dd-card-head{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
-        .dd-card-title{font-size:13px;font-weight:700;color:#1e293b}
+        .dd-card-title{font-size:12px;font-weight:700;color:#1e293b}
         .dd-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}
         .dd-card-body{padding:16px 18px}
         .dd-tbl-wrap{overflow-x:auto}
         .dd-tbl{width:100%;border-collapse:collapse;min-width:480px}
         .dd-tbl th{text-align:left;font-size:10px;font-weight:700;color:#94a3b8;padding:8px 12px;border-bottom:2px solid #f1f5f9;letter-spacing:.04em;text-transform:uppercase}
-        .dd-tbl td{padding:12px;font-size:12px;color:#475569;border-bottom:1px solid #f8fafc}
+        .dd-tbl td{padding:12px;font-size:11px;color:#475569;border-bottom:1px solid #f8fafc}
         .dd-tbl tr:last-child td{border-bottom:none}
         .dd-tbl tbody tr:hover td{background:#f8fafc}
         .dd-td-name{font-weight:600;color:#1e293b}
@@ -197,7 +197,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .dd-badge-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
         .dd-btn-ghost{padding:7px 14px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
         .dd-btn-ghost:hover{background:${ACCENT_LIGHT};border-color:${ACCENT_BDR};color:${ACCENT}}
-        .dd-section-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .dd-section-title{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;gap:8px}
         .dd-section-dot{width:4px;height:18px;background:linear-gradient(180deg,${ACCENT},${ACCENT2});border-radius:4px;flex-shrink:0}
         .dd-empty{padding:48px;text-align:center;color:#94a3b8}
         @keyframes dd-spin{to{transform:rotate(360deg)}}
@@ -267,7 +267,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
               {sidebarOpen ? <X size={18} color={ACCENT} /> : <Menu size={18} color="#64748b" />}
             </button>
             <div className="ad-search">
-              <Search size={14} color="#94a3b8" />
               <input placeholder="Search patients, appointments…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div className="ad-topbar-r">
@@ -289,13 +288,13 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     <div style={{ position: "fixed", inset: 0, zIndex: 60 }} onClick={() => setProfileOpen(false)} />
                     <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: 220, background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 10px 40px rgba(0,0,0,.12)", zIndex: 70, overflow: "hidden" }}>
                       <div style={{ padding: 14, borderBottom: "1px solid #f1f5f9" }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{user?.name}</div>
-                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{user?.email}</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{user?.name}</div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{user?.email}</div>
                         {deptProfile && <div style={{ fontSize: 10, color: ACCENT, marginTop: 4, fontWeight: 600 }}>{deptProfile.name} · ADMINISTRATIVE</div>}
                       </div>
                       <div style={{ padding: 8 }}>
                         <button onClick={() => { setProfileOpen(false); logout(); }}
-                          style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: "#ef4444", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "none", background: "transparent", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
                           onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
                           <LogOut size={14} color="#ef4444" /> Log Out

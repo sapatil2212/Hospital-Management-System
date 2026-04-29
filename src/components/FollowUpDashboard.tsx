@@ -42,14 +42,14 @@ function StatsBar({ stats }: { stats: any }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
       {items.map(i => (
-        <div key={i.label} style={{ background: "#fff", borderRadius: 14, padding: "16px 20px", border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em" }}>{i.label}</div>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: i.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i.icon size={13} color={i.color} />
-            </div>
+        <div key={i.label} style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, padding: "16px 18px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: i.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <i.icon size={20} color={i.color} strokeWidth={2} />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: i.color }}>{i.value ?? 0}</div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5 }}>{i.label}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: i.color, lineHeight: 1 }}>{i.value ?? 0}</div>
+          </div>
         </div>
       ))}
     </div>
@@ -71,11 +71,10 @@ function FollowUpCard({
 
   return (
     <div style={{
-      background: "#fff",
+      background: isOverdue ? "linear-gradient(135deg, #ffffff, #fef2f2)" : isToday ? "linear-gradient(135deg, #ffffff, #f0fdfa)" : "linear-gradient(135deg, #ffffff, #f8fafc)",
       borderRadius: 14,
       border: `1px solid ${isOverdue ? "#fecaca" : isToday ? "#B3E0E0" : "#e2e8f0"}`,
       padding: "16px 20px",
-      boxShadow: isOverdue ? "0 2px 8px rgba(239,68,68,.08)" : isToday ? "0 2px 8px rgba(59,130,246,.08)" : "0 1px 4px rgba(0,0,0,.04)",
       transition: "all .15s",
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
