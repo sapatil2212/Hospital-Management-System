@@ -49,7 +49,8 @@ export async function GET(req: NextRequest) {
       orderBy: { name: "asc" },
     });
 
-    const BOOKING_DEPT_TYPES = ["CLINICAL", "DIAGNOSTIC"];
+    // Exclude purely non-clinical/admin departments that shouldn't appear in the booking form
+    const NON_BOOKING_TYPES = ["SUPPORT", "ADMINISTRATIVE"];
 
     return successResponse({
       hospital: {
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
         phone: settings?.phone || null,
         address: settings?.address || null,
       },
-      departments: departments.filter(d => BOOKING_DEPT_TYPES.includes(d.type as string)),
+      departments: departments.filter(d => !NON_BOOKING_TYPES.includes(d.type as string)),
     }, "Public booking info");
   } catch (e: any) {
     return errorResponse(e.message, 500);
