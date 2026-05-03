@@ -110,6 +110,8 @@ export const bookAppointment = async (
       consultationFee,
       tokenNumber,
       notes: input.notes || null,
+      subDepartmentId: (input as any).subDepartmentId || null,
+      subDeptNote: (input as any).subDeptNote || null,
     },
     include: {
       patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },

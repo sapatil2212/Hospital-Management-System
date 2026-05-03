@@ -20,7 +20,7 @@
   "app\\hospitaladmin\\dashboard\\page.tsx -> @/app/subdept/dashboard/PatientsManagementPanel": {
     "id": "app\\hospitaladmin\\dashboard\\page.tsx -> @/app/subdept/dashboard/PatientsManagementPanel",
     "files": [
-      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx.js"
+      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx-_aead0.js"
     ]
   },
   "app\\hospitaladmin\\dashboard\\page.tsx -> @/components/AdminDepartmentsPanel": {
@@ -39,6 +39,138 @@
     "id": "app\\subdept\\dashboard\\modals.tsx -> jspdf",
     "files": []
   },
+  "app\\subdept\\dashboard\\page.tsx -> ./PatientsManagementPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> ./PatientsManagementPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx-_aead1.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/AccountSettingsPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AccountSettingsPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_AccountSettingsPanel_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/AdminInventoryPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AdminInventoryPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_AdminInventoryPanel_tsx-_9aec0.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/AmbulanceDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AmbulanceDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_AmbulanceDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/AppointmentPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AppointmentPanel",
+    "files": []
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/BillingDepartmentDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/BillingDepartmentDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BillingDepartmentDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/BillingQueue": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/BillingQueue",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BillingQueue_tsx-_3b4a0.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/BiomedicalDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/BiomedicalDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BiomedicalDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/CriticalCareDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/CriticalCareDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_CriticalCareDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/DentalOPDDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/DentalOPDDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_DentalOPDDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/DoctorPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/DoctorPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_DoctorPanel_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/HRDepartmentDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/HRDepartmentDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_HRDepartmentDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/HousekeepingDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/HousekeepingDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_HousekeepingDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/LabDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/LabDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_LabDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/NursingDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/NursingDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_NursingDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/OPDDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/OPDDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_OPDDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/PathologyDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/PathologyDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_PathologyDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/PharmacyDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/PharmacyDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_PharmacyDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/SpecialtyClinicDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/SpecialtyClinicDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_SpecialtyClinicDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> docx": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> docx",
+    "files": []
+  },
+  "app\\subdept\\dashboard\\page.tsx -> file-saver": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> file-saver",
+    "files": []
+  },
+  "app\\subdept\\dashboard\\page.tsx -> jspdf": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> jspdf",
+    "files": []
+  },
+  "app\\subdept\\dashboard\\page.tsx -> jspdf-autotable": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> jspdf-autotable",
+    "files": []
+  },
+  "app\\subdept\\dashboard\\page.tsx -> xlsx": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> xlsx",
+    "files": []
+  },
   "components\\AdminInventoryPanel.tsx -> jspdf": {
     "id": "components\\AdminInventoryPanel.tsx -> jspdf",
     "files": []
@@ -46,6 +178,24 @@
   "components\\AdminInventoryPanel.tsx -> jspdf-autotable": {
     "id": "components\\AdminInventoryPanel.tsx -> jspdf-autotable",
     "files": []
+  },
+  "components\\BillingDepartmentDashboard.tsx -> @/app/hospitaladmin/finance/page": {
+    "id": "components\\BillingDepartmentDashboard.tsx -> @/app/hospitaladmin/finance/page",
+    "files": [
+      "static/chunks/_app-pages-browser_src_app_hospitaladmin_finance_page_tsx.js"
+    ]
+  },
+  "components\\BillingDepartmentDashboard.tsx -> @/components/AdminInventoryPanel": {
+    "id": "components\\BillingDepartmentDashboard.tsx -> @/components/AdminInventoryPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_AdminInventoryPanel_tsx-_9aec1.js"
+    ]
+  },
+  "components\\BillingDepartmentDashboard.tsx -> @/components/BillingQueue": {
+    "id": "components\\BillingDepartmentDashboard.tsx -> @/components/BillingQueue",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BillingQueue_tsx-_3b4a0.js"
+    ]
   },
   "components\\BillingQueue.tsx -> docx": {
     "id": "components\\BillingQueue.tsx -> docx",
@@ -65,6 +215,88 @@
   },
   "components\\BillingQueue.tsx -> xlsx": {
     "id": "components\\BillingQueue.tsx -> xlsx",
+    "files": []
+  },
+  "components\\HRDepartmentDashboard.tsx -> @/app/hospitaladmin/doctors/page": {
+    "id": "components\\HRDepartmentDashboard.tsx -> @/app/hospitaladmin/doctors/page",
+    "files": [
+      "static/chunks/_app-pages-browser_src_app_hospitaladmin_doctors_page_tsx.js"
+    ]
+  },
+  "components\\HRDepartmentDashboard.tsx -> @/app/hospitaladmin/staff/page": {
+    "id": "components\\HRDepartmentDashboard.tsx -> @/app/hospitaladmin/staff/page",
+    "files": [
+      "static/chunks/_app-pages-browser_src_app_hospitaladmin_staff_page_tsx.js"
+    ]
+  },
+  "components\\PathologyDashboard.tsx -> @/components/BillingModule": {
+    "id": "components\\PathologyDashboard.tsx -> @/components/BillingModule",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BillingModule_tsx.js"
+    ]
+  },
+  "components\\PathologyDashboard.tsx -> @/components/BillingQueue": {
+    "id": "components\\PathologyDashboard.tsx -> @/components/BillingQueue",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_BillingQueue_tsx-_3b4a1.js"
+    ]
+  },
+  "components\\PathologyDashboard.tsx -> docx": {
+    "id": "components\\PathologyDashboard.tsx -> docx",
+    "files": []
+  },
+  "components\\PathologyDashboard.tsx -> file-saver": {
+    "id": "components\\PathologyDashboard.tsx -> file-saver",
+    "files": []
+  },
+  "components\\PathologyDashboard.tsx -> jspdf": {
+    "id": "components\\PathologyDashboard.tsx -> jspdf",
+    "files": []
+  },
+  "components\\PathologyDashboard.tsx -> jspdf-autotable": {
+    "id": "components\\PathologyDashboard.tsx -> jspdf-autotable",
+    "files": []
+  },
+  "components\\PathologyDashboard.tsx -> xlsx": {
+    "id": "components\\PathologyDashboard.tsx -> xlsx",
+    "files": []
+  },
+  "components\\PatientProfilePanel.tsx -> html2canvas": {
+    "id": "components\\PatientProfilePanel.tsx -> html2canvas",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
+    ]
+  },
+  "components\\PatientProfilePanel.tsx -> jspdf": {
+    "id": "components\\PatientProfilePanel.tsx -> jspdf",
+    "files": []
+  },
+  "components\\PharmacyDashboard.tsx -> jspdf": {
+    "id": "components\\PharmacyDashboard.tsx -> jspdf",
+    "files": []
+  },
+  "components\\PharmacyDashboard.tsx -> jspdf-autotable": {
+    "id": "components\\PharmacyDashboard.tsx -> jspdf-autotable",
+    "files": []
+  },
+  "components\\SubDeptProceduresPanel.tsx -> docx": {
+    "id": "components\\SubDeptProceduresPanel.tsx -> docx",
+    "files": []
+  },
+  "components\\SubDeptProceduresPanel.tsx -> file-saver": {
+    "id": "components\\SubDeptProceduresPanel.tsx -> file-saver",
+    "files": []
+  },
+  "components\\SubDeptProceduresPanel.tsx -> jspdf": {
+    "id": "components\\SubDeptProceduresPanel.tsx -> jspdf",
+    "files": []
+  },
+  "components\\SubDeptProceduresPanel.tsx -> jspdf-autotable": {
+    "id": "components\\SubDeptProceduresPanel.tsx -> jspdf-autotable",
+    "files": []
+  },
+  "components\\SubDeptProceduresPanel.tsx -> xlsx": {
+    "id": "components\\SubDeptProceduresPanel.tsx -> xlsx",
     "files": []
   }
 }

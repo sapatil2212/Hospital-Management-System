@@ -24,6 +24,7 @@ const toLocalDateStr = (d: Date) =>
 interface Patient { id: string; patientId: string; name: string; phone: string; email?: string; gender?: string; dateOfBirth?: string; bloodGroup?: string; }
 interface Doctor { id: string; name: string; specialization?: string; departmentId?: string; department?: { name: string }; consultationFee?: number; }
 interface Department { id: string; name: string; code: string; type?: string; }
+interface SubDepartment { id: string; name: string; type: string; code?: string; }
 interface Appointment {
   id: string; patientId: string; doctorId: string; departmentId?: string;
   appointmentDate: string; timeSlot: string; type: string; status: string;
@@ -52,7 +53,8 @@ const TYPE_COLORS: Record<string, string> = {
   OPD: "#0E898F", ONLINE: "#8b5cf6", FOLLOW_UP: "#10b981", EMERGENCY: "#ef4444",
 };
 
-const fmt12 = (t: string) => {
+const fmt12 = (t: string | null | undefined) => {
+  if (!t) return "";
   const [h, m] = t.split(":").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";
   const h12 = h % 12 || 12;
@@ -1670,6 +1672,9 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
   const [dupPatient, setDupPatient] = useState<{ id: string; patientId: string; name: string; phone: string; email?: string; matchedBy?: "phone" | "email" } | null>(null);
   const [checkingDup, setCheckingDup] = useState(false);
   const [forceNewPatient, setForceNewPatient] = useState(false);
+  const [subDepts, setSubDepts] = useState<SubDepartment[]>([]);
+  const [selectedSubDeptId, setSelectedSubDeptId] = useState("");
+  const [loadingSubDepts, setLoadingSubDepts] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
@@ -1684,6 +1689,17 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
     const url = deptFilter ? `/api/config/doctors?simple=true&departmentId=${deptFilter}` : `/api/config/doctors?simple=true`;
     api(url).then(d => setDoctors(d.data || []));
   }, [deptFilter]);
+
+  const selectedDeptObj = departments.find(d => d.id === deptFilter);
+  const isDiagnosticDept = selectedDeptObj?.type === "DIAGNOSTIC";
+
+  useEffect(() => {
+    if (!isDiagnosticDept || !deptFilter) { setSubDepts([]); setSelectedSubDeptId(""); return; }
+    setLoadingSubDepts(true);
+    api(`/api/config/subdepartments?departmentId=${deptFilter}&limit=100`)
+      .then(d => setSubDepts(d.data?.data || d.data || []))
+      .finally(() => setLoadingSubDepts(false));
+  }, [deptFilter, isDiagnosticDept]);
 
   useEffect(() => {
     if (!doctor?.id || !appointmentDate) { setSlots([]); return; }
@@ -1773,13 +1789,17 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
   };
 
   const handleBook = async () => {
-    if (!patient || !doctor || !timeSlot || !appointmentDate) return;
+    if (!patient || (!doctor && !selectedSubDeptId) || !appointmentDate) return;
+    if (doctor && !timeSlot) return;
     setSaving(true); setMsg("");
-    const [y, m, d] = appointmentDate.split("-").map(Number);
-    const [h, min] = timeSlot.split(":").map(Number);
-    if (new Date(y, m - 1, d, h, min) < new Date()) { setMsg("Selected time has passed"); setSaving(false); return; }
-    const payload: any = { patientId: patient.id, doctorId: doctor.id, appointmentDate, timeSlot, type, notes: notes || null };
+    if (timeSlot) {
+      const [y, m, d] = appointmentDate.split("-").map(Number);
+      const [h, min] = timeSlot.split(":").map(Number);
+      if (new Date(y, m - 1, d, h, min) < new Date()) { setMsg("Selected time has passed"); setSaving(false); return; }
+    }
+    const payload: any = { patientId: patient.id, doctorId: doctor?.id || null, appointmentDate, timeSlot: timeSlot || null, type, notes: notes || null };
     if (deptFilter) payload.departmentId = deptFilter;
+    if (selectedSubDeptId) payload.subDepartmentId = selectedSubDeptId;
     if (consultationFee) payload.consultationFee = parseFloat(consultationFee);
     const res = await api("/api/appointments", "POST", payload);
     if (res.success) { onSuccess(patient.name); reset(); }
@@ -1794,6 +1814,7 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
     setShowNewPatient(false); setSearchQ(""); setSearchResults([]);
     setDupPatient(null); setRegisterMsg(""); setForceNewPatient(false);
     setNewForm({ name: "", phone: "", whatsapp: "", email: "", gender: "" });
+    setSelectedSubDeptId(""); setSubDepts([]);
   };
 
   const grouped = groupSlots(slots);
@@ -2024,6 +2045,29 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
               ))}
             </div>
 
+            {isDiagnosticDept && (
+              <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#059669", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Building2 size={12} />Select Diagnostic Unit
+                </div>
+                {loadingSubDepts ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 12 }}><Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />Loading units...</div>
+                ) : subDepts.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "#94a3b8" }}>No diagnostic units configured for this department.</div>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {subDepts.map(sd => (
+                      <button key={sd.id} type="button" onClick={() => { setSelectedSubDeptId(sd.id); setDoctor(null); setStep(3); if (!appointmentDate) setAppointmentDate(today); }}
+                        style={{ padding: "8px 16px", borderRadius: 9, border: `1.5px solid ${selectedSubDeptId === sd.id ? "#059669" : "#e2e8f0"}`, background: selectedSubDeptId === sd.id ? "#f0fdf4" : "#fff", color: selectedSubDeptId === sd.id ? "#059669" : "#334155", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .12s", display: "flex", alignItems: "center", gap: 6 }}>
+                        <Building2 size={12} />{sd.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div style={{ marginTop: 12, fontSize: 11, color: "#64748b" }}>Select a unit above to proceed. Doctor selection is optional for diagnostic appointments.</div>
+              </div>
+            )}
+
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 12 }}>
               {doctors.map(d => (
                 <button key={d.id} onClick={() => selectDoctor(d)}
@@ -2061,10 +2105,21 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
                 <User size={12} color="#0369a1" /><span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1" }}>{patient!.name}</span>
                 <button onClick={() => setStep(1)} style={{ background: "none", border: "none", cursor: "pointer", color: "#93c5fd", display: "flex", padding: 0 }}><Edit size={10} /></button>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 9, background: "#E6F4F4", border: "1px solid #B3E0E0" }}>
-                <Stethoscope size={12} color="#0A6B70" /><span style={{ fontSize: 12, fontWeight: 600, color: "#0A6B70" }}>{doctor!.name}</span>
-                <button onClick={() => setStep(2)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6ee7b7", display: "flex", padding: 0 }}><Edit size={10} /></button>
-              </div>
+              {doctor && (
+                <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 9, background: "#E6F4F4", border: "1px solid #B3E0E0" }}>
+                  <Stethoscope size={12} color="#0A6B70" /><span style={{ fontSize: 12, fontWeight: 600, color: "#0A6B70" }}>{doctor.name}</span>
+                  <button onClick={() => setStep(2)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6ee7b7", display: "flex", padding: 0 }}><Edit size={10} /></button>
+                </div>
+              )}
+              {selectedSubDeptId && !doctor && (() => {
+                const sd = subDepts.find(s => s.id === selectedSubDeptId);
+                return sd ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 9, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                    <Building2 size={12} color="#059669" /><span style={{ fontSize: 12, fontWeight: 600, color: "#059669" }}>{sd.name}</span>
+                    <button onClick={() => setStep(2)} style={{ background: "none", border: "none", cursor: "pointer", color: "#86efac", display: "flex", padding: 0 }}><Edit size={10} /></button>
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             <div style={{ marginBottom: 20 }}>
@@ -2159,9 +2214,18 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
                   <div style={{ fontSize: 12, color: "#64748b" }}>{patient!.patientId} · {patient!.phone}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Doctor</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{doctor!.name}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>{doctor!.specialization || doctor!.department?.name || "—"}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{doctor ? "Doctor" : "Diagnostic Unit"}</div>
+                  {doctor ? (
+                    <>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{doctor.name}</div>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>{doctor.specialization || doctor.department?.name || "—"}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#059669" }}>{subDepts.find(s => s.id === selectedSubDeptId)?.name || "—"}</div>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>Direct Diagnostic Appointment</div>
+                    </>
+                  )}
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date & Time</div>

@@ -1,0 +1,90 @@
+/*!*******************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/Preloader.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************/
+.Preloader_preloader__2Iqze {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.Preloader_content__ikS4k {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.Preloader_logoWrapper__u_Szo {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.Preloader_logo__mWOw6 {
+  object-fit: contain;
+}
+
+.Preloader_loaderLine__JecIe {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  width: 160px;
+  border-radius: var(--radius-full);
+}
+
+.Preloader_loadingText__mAGyk {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .Preloader_logoWrapper__u_Szo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .Preloader_loaderLine__JecIe {
+    width: 130px;
+  }
+
+  .Preloader_loadingText__mAGyk {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .Preloader_content__ikS4k {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .Preloader_logoWrapper__u_Szo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .Preloader_loaderLine__JecIe {
+    width: 110px;
+  }
+
+  .Preloader_loadingText__mAGyk {
+    font-size: 0.65rem;
+  }
+}
+

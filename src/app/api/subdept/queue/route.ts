@@ -178,6 +178,44 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // ── DIRECT BOOKINGS: appointments booked directly for this sub-dept (any status SCHEDULED/CONFIRMED) ──
+    const directAppointments = await (prisma as any).appointment.findMany({
+      where: {
+        hospitalId,
+        subDepartmentId: subDeptId,
+        status: { in: ["SCHEDULED", "CONFIRMED"] },
+      },
+      include: {
+        patient: { select: { id: true, name: true, patientId: true, phone: true, gender: true, dateOfBirth: true, bloodGroup: true } },
+        doctor: { select: { id: true, name: true, specialization: true, department: { select: { name: true } } } },
+        department: { select: { id: true, name: true } },
+      },
+      orderBy: [{ appointmentDate: "asc" }, { timeSlot: "asc" }],
+      take: 200,
+    });
+
+    const directQueue = directAppointments.map((a: any) => {
+      const age = a.patient?.dateOfBirth
+        ? Math.floor((Date.now() - new Date(a.patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+        : null;
+      return {
+        id: a.id,
+        appointmentDate: a.appointmentDate,
+        tokenNumber: a.tokenNumber,
+        timeSlot: a.timeSlot,
+        type: a.type,
+        status: a.status,
+        consultationFee: a.consultationFee,
+        doctorNotes: a.notes,
+        subDeptNote: a.subDeptNote,
+        isDirectBooking: true,
+        patient: { id: a.patient?.id, name: a.patient?.name || "Unknown", patientId: a.patient?.patientId, phone: a.patient?.phone, gender: a.patient?.gender, age, bloodGroup: a.patient?.bloodGroup },
+        doctor: a.doctor ? { name: a.doctor.name, specialization: a.doctor.specialization, department: a.doctor.department?.name } : null,
+        department: a.department?.name,
+        suggestedProcedures: [],
+      };
+    });
+
     // Count today's referrals for stats
     const todayReferrals = queue.filter((q: any) => {
       const apptDate = new Date(q.appointmentDate);
@@ -252,6 +290,7 @@ export async function GET(req: NextRequest) {
       {
         queue,
         completedList,
+        directQueue,
         date: today.toISOString(),
         subDeptName: (profile as any).name,
         subDeptId,
@@ -259,6 +298,7 @@ export async function GET(req: NextRequest) {
         total: queue.length,
         todayReferrals,
         completedCount: completedList.length,
+        directTotal: directQueue.length,
         recentTotal,
       },
       "Queue fetched"

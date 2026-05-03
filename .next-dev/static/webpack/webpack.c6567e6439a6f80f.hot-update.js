@@ -9,18 +9,9 @@
  */
 self["webpackHotUpdate_N_E"]("webpack",{},
 /******/ function(__webpack_require__) { // webpackRuntimeModules
-/******/ /* webpack/runtime/get javascript chunk filename */
-/******/ !function() {
-/******/ 	// This function allow to reference async chunks
-/******/ 	__webpack_require__.u = function(chunkId) {
-/******/ 		// return url for filenames based on template
-/******/ 		return "static/chunks/" + chunkId + ".js";
-/******/ 	};
-/******/ }();
-/******/ 
 /******/ /* webpack/runtime/getFullHash */
 /******/ !function() {
-/******/ 	__webpack_require__.h = function() { return "c80aa4e3e03ac32c"; }
+/******/ 	__webpack_require__.h = function() { return "393abb44710de8ff"; }
 /******/ }();
 /******/ 
 /******/ }

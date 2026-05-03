@@ -17,6 +17,8 @@ export const createAppointmentSchema = z.object({
   type: z.enum(["OPD", "ONLINE", "FOLLOW_UP", "EMERGENCY"]).default("OPD"),
   consultationFee: z.number().min(0).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
+  subDepartmentId: z.string().uuid("Invalid sub-department ID").optional().nullable(),
+  subDeptNote: z.string().max(1000).optional().nullable(),
 });
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;

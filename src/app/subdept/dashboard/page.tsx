@@ -159,6 +159,8 @@ function SubDeptDashboardContent() {
   const [selectedQueue, setSelectedQueue] = useState<Set<string>>(new Set());
   const [queueExportOpen, setQueueExportOpen] = useState(false);
   const [completedQueue, setCompletedQueue] = useState<any[]>([]);
+  const [directQueue, setDirectQueue] = useState<any[]>([]);
+  const [directQueueSearch, setDirectQueueSearch] = useState("");
   const [completedQueueSearch, setCompletedQueueSearch] = useState("");
   const [viewCompletedItem, setViewCompletedItem] = useState<any>(null);
   const [editCompletedItem, setEditCompletedItem] = useState<any>(null);
@@ -371,7 +373,7 @@ function SubDeptDashboardContent() {
   const loadQueue = useCallback(async () => {
     setQueueLoading(true);
     const res = await fetch("/api/subdept/queue", { credentials: "include" }).then(r => r.json());
-    if (res.success) { setQueue(res.data.queue || []); setCompletedQueue(res.data.completedList || []); setQueueMeta(res.data); }
+    if (res.success) { setQueue(res.data.queue || []); setCompletedQueue(res.data.completedList || []); setDirectQueue(res.data.directQueue || []); setQueueMeta(res.data); }
     setQueueLoading(false);
   }, []);
 
@@ -2286,6 +2288,84 @@ function SubDeptDashboardContent() {
                   </div>
                 </div>
               )}
+
+              {/* ═══════════════════ DIRECT APPOINTMENTS ═══════════════════ */}
+              {directQueue.length > 0 && (<>
+                <div style={{marginTop:28,marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+                  <CalendarDays size={16} color="#0E898F"/>
+                  <span style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>Direct Appointments</span>
+                  <span style={{fontSize:10,fontWeight:600,background:"#E6F4F4",padding:"2px 10px",borderRadius:100,border:`1px solid #B3E0E0`,color:"#0A6B70"}}>{directQueue.length}</span>
+                  <span style={{fontSize:11,color:"#94a3b8",marginLeft:4}}>Booked directly via reception/staff</span>
+                </div>
+                {/* Search */}
+                <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 14px",marginBottom:12,maxWidth:350}}>
+                  <Search size={13} color="#94a3b8"/>
+                  <input style={{background:"none",border:"none",outline:"none",fontSize:12,color:"#334155",width:"100%",fontFamily:"inherit"}}
+                    placeholder="Search direct appointments..." value={directQueueSearch} onChange={e=>setDirectQueueSearch(e.target.value)}/>
+                  {directQueueSearch && <button onClick={()=>setDirectQueueSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={12} color="#94a3b8"/></button>}
+                </div>
+                {(()=>{
+                  const filtered = directQueueSearch
+                    ? directQueue.filter((d:any) => d.patient?.name?.toLowerCase().includes(directQueueSearch.toLowerCase()) || d.patient?.patientId?.toLowerCase().includes(directQueueSearch.toLowerCase()))
+                    : directQueue;
+                  return filtered.length === 0 ? (
+                    <div style={{textAlign:"center",padding:"30px 20px",background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",color:"#94a3b8",fontSize:12}}>No matches</div>
+                  ) : (
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+                      <div style={{overflowX:"auto"}}>
+                        <table style={{width:"100%",borderCollapse:"collapse"}}>
+                          <thead>
+                            <tr style={{background:"#f8fafc"}}>
+                              {["Patient","Appointment Date","Time","Status","Notes","Actions"].map(h=>(
+                                <th key={h} style={{textAlign:"left",fontSize:10,fontWeight:600,color:"#94a3b8",padding:"12px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map((d:any)=>(
+                              <tr key={d.id} style={{borderBottom:"1px solid #f8fafc"}}
+                                onMouseEnter={e=>{e.currentTarget.style.background="#fafbfc";}}
+                                onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
+                                <td style={{padding:"12px 14px"}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                    <div style={{width:30,height:30,borderRadius:8,background:"linear-gradient(135deg,#0E898F,#0A6B70)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:11,flexShrink:0}}>
+                                      {(d.patient?.name||"?").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{d.patient?.name||"Unknown"}</div>
+                                      <div style={{fontSize:10,color:"#94a3b8"}}>{d.patient?.patientId} · {d.patient?.gender||""}{d.patient?.age ? ` · ${d.patient.age}y` : ""}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{padding:"12px 14px",fontSize:12,color:"#334155"}}>
+                                  {d.appointmentDate ? new Date(d.appointmentDate).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—"}
+                                </td>
+                                <td style={{padding:"12px 14px",fontSize:12,color:"#334155"}}>
+                                  {d.timeSlot ? (()=>{const [h,m]=d.timeSlot.split(":").map(Number);return `${h%12||12}:${String(m).padStart(2,"0")} ${h>=12?"PM":"AM"}`;})() : <span style={{color:"#94a3b8",fontStyle:"italic"}}>Walk-in</span>}
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <span style={{fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:100,background:d.status==="CONFIRMED"?"#f0fdf4":"#f8fafc",color:d.status==="CONFIRMED"?"#16a34a":"#64748b",border:`1px solid ${d.status==="CONFIRMED"?"#bbf7d0":"#e2e8f0"}`}}>
+                                    {d.status}
+                                  </span>
+                                </td>
+                                <td style={{padding:"12px 14px",fontSize:11,color:"#64748b",maxWidth:200}}>
+                                  {d.doctorNotes||d.subDeptNote||<span style={{color:"#cbd5e1"}}>—</span>}
+                                </td>
+                                <td style={{padding:"12px 14px"}}>
+                                  <button onClick={()=>setRecordingFor(d)}
+                                    style={{padding:"6px 14px",borderRadius:8,border:"none",background:meta.gradient,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
+                                    <Plus size={11}/>Record
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>)}
 
               {/* ═══════════════════ COMPLETED REFERRALS ═══════════════════ */}
               {completedQueue.length > 0 && (<>
