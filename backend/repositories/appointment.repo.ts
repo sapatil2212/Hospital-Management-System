@@ -11,6 +11,7 @@ export interface AppointmentQueryOptions {
   doctorId?: string;
   patientId?: string;
   departmentId?: string;
+  subDepartmentId?: string;
   status?: string;
   type?: string;
   date?: string;
@@ -52,6 +53,7 @@ export const findAllAppointments = async (
     doctorId,
     patientId,
     departmentId,
+    subDepartmentId,
     status,
     type,
     date,
@@ -86,6 +88,7 @@ export const findAllAppointments = async (
     ...(doctorId ? { doctorId } : {}),
     ...(patientId ? { patientId } : {}),
     ...(departmentId ? { departmentId } : {}),
+    ...(subDepartmentId ? { subDepartmentId } : {}),
     ...(status ? { status: status as any } : {}),
     ...(type ? { type: type as any } : {}),
     ...dateFilter,

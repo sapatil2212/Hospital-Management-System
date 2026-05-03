@@ -31,7 +31,7 @@ export const findSubDepartments = async (params: {
     prisma.subDepartment.findMany({
       where,
       include: {
-        department: { select: { id: true, name: true } },
+        department: { select: { id: true, name: true, type: true } },
         procedures: { where: { isActive: true }, orderBy: { sequence: "asc" }, select: { id: true, name: true, type: true, fee: true, sequence: true, isActive: true } },
         _count: { select: { procedures: true } },
       },
@@ -57,7 +57,7 @@ export const findSubDepartmentById = async (id: string, hospitalId: string) => {
   return prisma.subDepartment.findFirst({
     where: { id, hospitalId },
     include: {
-      department: { select: { id: true, name: true } },
+      department: { select: { id: true, name: true, type: true } },
       procedures: { orderBy: { sequence: "asc" } },
       user: { select: { id: true, email: true, isActive: true } },
       _count: { select: { procedures: true } },
@@ -73,7 +73,7 @@ export const findSubDepartmentByUserId = async (userId: string) => {
   return prisma.subDepartment.findUnique({
     where: { userId },
     include: {
-      department: { select: { id: true, name: true } },
+      department: { select: { id: true, name: true, type: true } },
       procedures: { where: { isActive: true }, orderBy: { sequence: "asc" } },
     },
   });
@@ -100,7 +100,7 @@ export const createSubDepartment = async (hospitalId: string, data: CreateSubDep
       customName: data.customName || null,
     } as any,
     include: {
-      department: { select: { id: true, name: true } },
+      department: { select: { id: true, name: true, type: true } },
       procedures: true,
     },
   });
@@ -127,7 +127,7 @@ export const updateSubDepartment = async (id: string, hospitalId: string, data: 
       ...(data.customName !== undefined && { customName: data.customName }),
     } as any,
     include: {
-      department: { select: { id: true, name: true } },
+      department: { select: { id: true, name: true, type: true } },
       procedures: { orderBy: { sequence: "asc" } },
     },
   });

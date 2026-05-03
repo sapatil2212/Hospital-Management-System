@@ -614,7 +614,7 @@ export default function DepartmentPanel() {
       billingCode: item.billingCode || "",
       isActive: item.isActive,
       loginEmail: item.loginEmail || "",
-      loginPassword: "",
+      loginPassword: generatePassword(item.name),
     });
     setErrors({});
     setShowPassword(false);
@@ -926,35 +926,35 @@ export default function DepartmentPanel() {
         .dept-modal-lg{max-width:720px}
         .dept-modal-md{max-width:560px}
         .dept-modal-sm{max-width:400px;padding:24px;text-align:center}
-        .dept-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0}
-        .dept-modal-title{font-size:17px;font-weight:800;color:#1e293b}
+        .dept-modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e2e8f0;background:#fff;flex-shrink:0}
+        .dept-modal-title{font-size:13px;font-weight:700;color:#1e293b}
         .dept-modal-form{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
-        .dept-modal-body{padding:24px;overflow-y:auto;flex:1}
-        .dept-modal-footer{padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;flex-shrink:0}
-        .dept-section{margin-bottom:24px}
+        .dept-modal-body{padding:16px 20px;overflow-y:auto;flex:1}
+        .dept-modal-footer{padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;background:#fff;flex-shrink:0}
+        .dept-section{margin-bottom:14px}
         .dept-section:last-child{margin-bottom:0}
-        .dept-section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
-        .dept-section-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+        .dept-section-title{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #f1f5f9}
+        .dept-section-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center}
         .dept-section-icon.blue{background:#E6F4F4;color:#0E898F}
         .dept-section-icon.green{background:#f0fdf4;color:#16a34a}
         .dept-section-icon.purple{background:#f5f3ff;color:#7c3aed}
         .dept-section-icon.orange{background:#fff7ed;color:#ea580c}
         .dept-section-icon.gray{background:#f8fafc;color:#64748b}
-        .dept-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .dept-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         .dept-form-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
-        .dept-field{display:flex;flex-direction:column;gap:5px}
+        .dept-field{display:flex;flex-direction:column;gap:3px}
         .dept-field.full{grid-column:1/-1}
-        .dept-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
-        .dept-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
+        .dept-lbl{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8}
+        .dept-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
         .dept-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
         .dept-input::placeholder{color:#94a3b8}
         .dept-input.error{border-color:#fca5a5}
         .dept-textarea{min-height:80px;resize:vertical}
-        .dept-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 13px;font-size:13px;color:#1e293b;outline:none;width:100%;cursor:pointer}
-        .dept-error{font-size:11px;color:#ef4444;margin-top:2px}
-        .dept-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0}
-        .dept-toggle-label{font-size:13px;color:#334155;font-weight:500}
-        .dept-toggle-desc{font-size:11px;color:#94a3b8;margin-top:2px}
+        .dept-select{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;color:#1e293b;outline:none;width:100%;cursor:pointer}
+        .dept-error{font-size:10px;color:#ef4444;margin-top:2px}
+        .dept-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+        .dept-toggle-label{font-size:11px;color:#334155;font-weight:500}
+        .dept-toggle-desc{font-size:10px;color:#94a3b8;margin-top:2px}
         .dept-toggle{width:44px;height:24px;border-radius:100px;background:#e2e8f0;border:none;cursor:pointer;position:relative;transition:background .2s}
         .dept-toggle.on{background:#0E898F}
         .dept-toggle.disabled{opacity:.5;cursor:not-allowed}
@@ -1325,9 +1325,7 @@ export default function DepartmentPanel() {
             {/* Section 1: Basic Info */}
             <div className="dept-section">
               <div className="dept-section-title">
-                <span className="dept-section-icon blue">
-                  <Building2 size={16} />
-                </span>
+                <span className="dept-section-icon blue"><Building2 size={11}/></span>
                 Basic Information
               </div>
               <div className="dept-form-grid">
@@ -1368,9 +1366,7 @@ export default function DepartmentPanel() {
             {/* Section 2: Department Type */}
             <div className="dept-section">
               <div className="dept-section-title">
-                <span className="dept-section-icon purple">
-                  <Settings2 size={15} />
-                </span>
+                <span className="dept-section-icon purple"><Settings2 size={11}/></span>
                 Department Type
               </div>
               <div className="dept-form-grid">
@@ -1395,9 +1391,7 @@ export default function DepartmentPanel() {
             {/* Section 4: Management */}
             <div className="dept-section">
               <div className="dept-section-title">
-                <span className="dept-section-icon orange">
-                  <User size={16} />
-                </span>
+                <span className="dept-section-icon orange"><User size={11}/></span>
                 Management
               </div>
               <div className="dept-form-grid">
@@ -1416,7 +1410,7 @@ export default function DepartmentPanel() {
                     ))}
                   </select>
                   {users.length === 0 && (
-                    <span style={{fontSize:11,color:"#94a3b8",marginTop:3}}>No users found. Users are created when credentials are sent to doctors or staff.</span>
+                  <span style={{fontSize:10,color:"#94a3b8",marginTop:3}}>No users found. Users are created when credentials are sent to doctors or staff.</span>
                   )}
                 </div>
               </div>
@@ -1425,11 +1419,9 @@ export default function DepartmentPanel() {
             {/* Section 5: Login Credentials */}
             <div className="dept-section">
               <div className="dept-section-title">
-                <span className="dept-section-icon blue">
-                  <ShieldCheck size={16} />
-                </span>
+                <span className="dept-section-icon blue"><ShieldCheck size={11}/></span>
                 Department Head Login Credentials
-                <span style={{ marginLeft: "auto", fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 100, fontWeight: 700, border: "1px solid #fde68a" }}>Admin Only</span>
+                <span style={{ marginLeft: "auto", fontSize: 9, background: "#fef3c7", color: "#92400e", padding: "2px 7px", borderRadius: 100, fontWeight: 700, border: "1px solid #fde68a" }}>Admin Only</span>
               </div>
               <div className="dept-form-grid">
                 <div className="dept-field full">
@@ -1442,16 +1434,16 @@ export default function DepartmentPanel() {
                     onChange={(e) => setForm((f) => ({ ...f, loginEmail: e.target.value }))}
                   />
                   {errors.loginEmail && <span className="dept-error">{errors.loginEmail}</span>}
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                    <Lock size={10} />Login at <strong>http://localhost:3000/parentdept/login</strong> · Credentials sent via email on "Send Credentials"
+                  <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                    <Lock size={9}/>Login at <strong>http://localhost:3000/parentdept/login</strong> · Credentials sent via email on "Send Credentials"
                   </div>
                 </div>
                 <div className="dept-field full">
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                     <label className="dept-lbl" style={{ margin: 0 }}>Password</label>
                     <button type="button" onClick={() => setForm((f) => ({ ...f, loginPassword: generatePassword(f.name || "Dept") }))}
-                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}>
-                      <RefreshCw size={11} />Regenerate
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}>
+                      <RefreshCw size={10}/>Regenerate
                     </button>
                   </div>
                   <div style={{ position: "relative" }}>
@@ -1473,8 +1465,8 @@ export default function DepartmentPanel() {
                     </div>
                   </div>
                   {editItem
-                    ? <div style={{ fontSize: 11, color: form.loginPassword ? "#0A6B70" : "#94a3b8", marginTop: 4 }}>{form.loginPassword ? "✓ New password will be set on save" : "Password unchanged — fill to reset it"}</div>
-                    : <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Pattern: <code style={{ background: "#f1f5f9", padding: "1px 5px", borderRadius: 4, color: "#334155" }}>DeptName@Year</code> · e.g. <em>Pharmacy@2026</em> — or type a custom password</div>
+                    ? <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>Suggested password shown — edit or leave as-is. Only saved if you change it or it&apos;s new.</div>
+                    : <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>Pattern: <code style={{ background: "#f1f5f9", padding: "1px 5px", borderRadius: 4, color: "#334155", fontSize: 10 }}>DeptName@Year</code> · e.g. <em>Pharmacy@2026</em> — or type a custom password</div>
                   }
                 </div>
                 {editItem && form.loginEmail && (
@@ -1482,7 +1474,7 @@ export default function DepartmentPanel() {
                     <button
                       type="button"
                       className="dept-btn-outline"
-                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", fontSize: 12, fontWeight: 700, borderRadius: 9, border: "1.5px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", cursor: sendingCredId ? "not-allowed" : "pointer", opacity: sendingCredId ? 0.6 : 1, fontFamily: "inherit" }}
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 12, fontWeight: 700, borderRadius: 8, border: "1.5px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", cursor: sendingCredId ? "not-allowed" : "pointer", opacity: sendingCredId ? 0.6 : 1, fontFamily: "inherit" }}
                       disabled={!!sendingCredId}
                       onClick={() => handleSendCredentials(editItem, !!editItem.credentialsSent, form.loginPassword || undefined)}
                     >
@@ -1490,7 +1482,7 @@ export default function DepartmentPanel() {
                       {editItem.credentialsSent ? "Resend Credentials" : "Send Credentials"}
                     </button>
                     {editItem.credentialsSent && (
-                      <span style={{ fontSize: 11, color: "#16a34a", display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}><Check size={11} /> Credentials previously sent</span>
+                      <span style={{ fontSize: 10, color: "#16a34a", display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}><Check size={10}/> Credentials previously sent</span>
                     )}
                   </div>
                 )}
@@ -1500,9 +1492,7 @@ export default function DepartmentPanel() {
             {/* Section 6: Advanced */}
             <div className="dept-section">
               <div className="dept-section-title">
-                <span className="dept-section-icon gray">
-                  <MapPin size={16} />
-                </span>
+                <span className="dept-section-icon gray"><MapPin size={11}/></span>
                 Advanced Settings
               </div>
               <div className="dept-form-grid">
@@ -1528,160 +1518,132 @@ export default function DepartmentPanel() {
             </div>
           </div>
 
-          {/* Sub-department creation (add only) */}
-          {!editItem && (
-            <div className="dept-section" style={{ borderTop: "2px dashed #e2e8f0", paddingTop: 18, marginTop: 0, paddingLeft: 24, paddingRight: 24, paddingBottom: 0 }}>
-              <div className="dept-section-title" style={{ marginBottom: createSubDept ? 14 : 0 }}>
-                <span className="dept-section-icon teal"><Layers size={15} /></span>
-                Also Create a Sub-Department?
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 11, color: createSubDept ? "#0E898F" : "#94a3b8", fontWeight: 600 }}>{createSubDept ? "Yes" : "No"}</span>
-                  <Toggle checked={createSubDept} onChange={(v) => {
-                    setCreateSubDept(v);
-                    if (v) {
-                      const opts = SUBDEPT_OPTIONS_BY_DEPT_TYPE[form.type] || [];
-                      setSubDeptForm((f: any) => ({ ...f, type: opts[0]?.value || "", loginPassword: generatePassword(form.name || "Dept") }));
-                    }
-                  }} />
-                </div>
-              </div>
-              {createSubDept && (
-                <div className="dept-form-grid" style={{ marginBottom: 18 }}>
-                  <div className="dept-field">
-                    <label className="dept-lbl">Sub-Dept Name *</label>
-                    <input
-                      className="dept-input"
-                      style={{ fontSize: 12, padding: "8px 11px" }}
-                      placeholder="e.g., General OPD"
-                      value={subDeptForm.name}
-                      onChange={e => setSubDeptForm((f: any) => ({ ...f, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="dept-field">
-                    <label className="dept-lbl">Sub-Dept Type *</label>
-                    <SearchableSelect
-                      value={subDeptForm.type}
-                      onChange={v => setSubDeptForm((f: any) => ({ ...f, type: v }))}
-                      options={SUBDEPT_OPTIONS_BY_DEPT_TYPE[form.type] || []}
-                      placeholder="Select type..."
-                    />
-                  </div>
-                  <div className="dept-field">
-                    <label className="dept-lbl">Sub-Dept Login Email</label>
-                    <input
-                      className="dept-input"
-                      style={{ fontSize: 12, padding: "8px 11px" }}
-                      type="email"
-                      placeholder="e.g., opd@hospital.com"
-                      value={subDeptForm.loginEmail}
-                      onChange={e => setSubDeptForm((f: any) => ({ ...f, loginEmail: e.target.value }))}
-                    />
-                  </div>
-                  <div className="dept-field">
-                    <label className="dept-lbl">Sub-Dept Password</label>
-                    <input
-                      className="dept-input"
-                      style={{ fontSize: 12, padding: "8px 11px" }}
-                      type="text"
-                      placeholder="Auto-generated"
-                      value={subDeptForm.loginPassword}
-                      onChange={e => setSubDeptForm((f: any) => ({ ...f, loginPassword: e.target.value }))}
-                    />
-                  </div>
-                  <div className="dept-field full" style={{ marginTop: -4 }}>
-                    <div style={{ fontSize: 11, color: "#0A6B70", display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "#E6F4F4", borderRadius: 8, border: "1px solid #B3E0E0" }}>
-                      <Check size={11} />
-                      Sub-department will be created under <strong style={{ marginLeft: 2 }}>{DEPT_TYPES.find(t => t.value === form.type)?.label || form.type}</strong> automatically.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           <div className="dept-modal-footer">
-            <button type="button" className="dept-btn-ghost" onClick={() => setModal(false)}>
+            <button type="button" className="dept-btn-ghost" style={{padding:"7px 14px",fontSize:12}} onClick={() => setModal(false)}>
               Cancel
             </button>
-            <button type="submit" className="dept-btn-primary" disabled={saving}>
-              {saving && <Loader2 size={14} className="dept-spin" />}
-              {editItem ? "Update Department" : (createSubDept ? "Create Department + Sub-Dept" : "Create Department")}
+            <button type="submit" className="dept-btn-primary" style={{padding:"7px 14px",fontSize:12}} disabled={saving}>
+              {saving && <Loader2 size={13} className="dept-spin" />}
+              {editItem ? "Update Department" : "Create Department"}
             </button>
           </div>
         </form>
       </Modal>
 
       {/* View Details Modal */}
-      <Modal open={!!viewItem} onClose={() => setViewItem(null)} title="Department Details" size="md">
-        {viewItem && (
-          <div className="dept-view-modal-body">
-            <div className="dept-view-grid">
-              <div className="dept-view-item">
-                <span className="dept-view-label">Department Name</span>
-                <span className="dept-view-value">{viewItem.name}</span>
+      {viewItem && (
+        <div className="dept-overlay" onClick={e => e.target === e.currentTarget && setViewItem(null)}>
+          <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:640,boxShadow:"0 8px 32px rgba(0,0,0,.12)",maxHeight:"92vh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+
+            {/* Header */}
+            <div style={{padding:"14px 20px",borderBottom:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+              <div style={{width:36,height:36,borderRadius:10,background:"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <Building2 size={18} color="#64748b"/>
               </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Code</span>
-                <span className="dept-view-value"><span className="dept-dept-code">{viewItem.code}</span></span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Type</span>
-                <span className="dept-view-value"><span className={`dept-badge ${TYPE_COLORS[viewItem.type]||"gray"}`}>{viewItem.type==="CUSTOM"&&viewItem.customTypeName?viewItem.customTypeName:viewItem.type}</span></span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Status</span>
-                <span className="dept-view-value"><span className={`dept-badge ${viewItem.isActive?"green":"red"}`}>{viewItem.isActive?"Active":"Inactive"}</span></span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Consultation Fee</span>
-                <span className="dept-view-value">{viewItem.consultationFee?`₹${viewItem.consultationFee}`:"—"}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Billing Code</span>
-                <span className="dept-view-value">{viewItem.billingCode||"—"}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Appointments</span>
-                <span className="dept-view-value">{viewItem.allowAppointments?"Enabled":"Disabled"}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">IPD</span>
-                <span className="dept-view-value">{viewItem.isIPD?"Yes":"No"}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Location</span>
-                <span className="dept-view-value">{viewItem.location||"—"}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Head of Department</span>
-                <span className="dept-view-value">{viewItem.hodDoctor?.name||viewItem.hodUser?.name||"—"}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Doctors</span>
-                <span className="dept-view-value">{viewItem._count?.doctors||0}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Staff</span>
-                <span className="dept-view-value">{viewItem._count?.staff||0}</span>
-              </div>
-              <div className="dept-view-item">
-                <span className="dept-view-label">Sub-Departments</span>
-                <span className="dept-view-value">{viewItem._count?.subDepartments||0}</span>
-              </div>
-              {viewItem.description && (
-                <div className="dept-view-item full">
-                  <span className="dept-view-label">Description</span>
-                  <span className="dept-view-value">{viewItem.description}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{viewItem.name}</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3,flexWrap:"wrap"}}>
+                  <span className={`dept-badge ${TYPE_COLORS[viewItem.type]||"gray"}`} style={{fontSize:10}}>{viewItem.type==="CUSTOM"&&viewItem.customTypeName?viewItem.customTypeName:viewItem.type}</span>
+                  <span className={`dept-badge ${viewItem.isActive?"green":"red"}`} style={{fontSize:10}}>{viewItem.isActive?"Active":"Inactive"}</span>
+                  {viewItem.code&&<span style={{fontFamily:"monospace",fontSize:10,color:"#94a3b8",background:"#f8fafc",padding:"2px 6px",borderRadius:4,border:"1px solid #e2e8f0"}}>{viewItem.code}</span>}
                 </div>
-              )}
+              </div>
+              <button className="dept-icon-btn" onClick={()=>setViewItem(null)}><X size={15}/></button>
             </div>
-            <div style={{marginTop:20,display:"flex",justifyContent:"flex-end",gap:10}}>
-              <button className="dept-btn-ghost" onClick={()=>setViewItem(null)}>Close</button>
-              <button className="dept-btn-primary" onClick={()=>{openEdit(viewItem);setViewItem(null);}}>Edit Department</button>
+
+            {/* Body */}
+            <div style={{overflowY:"auto",flex:1,padding:"16px 20px",display:"flex",flexDirection:"column",gap:16}}>
+
+              {/* Identity */}
+              <div>
+                <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:"#94a3b8",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+                  <Building2 size={10}/> Identity
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Department Name</div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#334155"}}>{viewItem.name}</div>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Code</div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#334155",fontFamily:"monospace"}}>{viewItem.code||<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}</div>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Location</div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#334155"}}>{viewItem.location||<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}</div>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Billing Code</div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#334155",fontFamily:"monospace"}}>{viewItem.billingCode||<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}</div>
+                  </div>
+                  {viewItem.description&&(
+                    <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0",gridColumn:"1/-1"}}>
+                      <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Description</div>
+                      <div style={{fontSize:11,color:"#475569",lineHeight:1.6}}>{viewItem.description}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Clinical Settings */}
+              <div>
+                <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:"#94a3b8",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+                  <Settings2 size={10}/> Clinical Settings
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Consultation Fee</div>
+                    <div style={{fontSize:11,fontWeight:700,color:viewItem.consultationFee?"#16a34a":"#334155"}}>
+                      {viewItem.consultationFee?`₹${viewItem.consultationFee}`:<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}
+                    </div>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Appointments</div>
+                    <span className={`dept-badge ${viewItem.allowAppointments?"green":"gray"}`} style={{fontSize:10}}>{viewItem.allowAppointments?"Enabled":"Disabled"}</span>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>IPD</div>
+                    <span className={`dept-badge ${viewItem.isIPD?"blue":"gray"}`} style={{fontSize:10}}>{viewItem.isIPD?"Yes":"No"}</span>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Head of Department</div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#334155"}}>{viewItem.hodDoctor?.name||viewItem.hodUser?.name||<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Strip */}
+              <div style={{display:"flex",gap:0,border:"1px solid #e2e8f0",borderRadius:8,overflow:"hidden"}}>
+                <div style={{flex:1,padding:"10px 14px",textAlign:"center",borderRight:"1px solid #e2e8f0"}}>
+                  <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{viewItem._count?.doctors||0}</div>
+                  <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Doctors</div>
+                </div>
+                <div style={{flex:1,padding:"10px 14px",textAlign:"center",borderRight:"1px solid #e2e8f0"}}>
+                  <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{viewItem._count?.staff||0}</div>
+                  <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Staff</div>
+                </div>
+                <div style={{flex:1,padding:"10px 14px",textAlign:"center",borderRight:"1px solid #e2e8f0"}}>
+                  <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{viewItem._count?.subDepartments||0}</div>
+                  <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Sub-Depts</div>
+                </div>
+                <div style={{flex:1,padding:"10px 14px",textAlign:"center"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:viewItem.isActive?"#16a34a":"#ef4444",marginTop:2}}>{viewItem.isActive?"Active":"Inactive"}</div>
+                  <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Status</div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div style={{padding:"12px 20px",borderTop:"1px solid #e2e8f0",display:"flex",justifyContent:"flex-end",gap:8,flexShrink:0}}>
+              <button className="dept-btn-ghost" style={{padding:"7px 14px",fontSize:12}} onClick={()=>setViewItem(null)}>Close</button>
+              <button className="dept-btn-primary" style={{padding:"7px 14px",fontSize:12}} onClick={()=>{openEdit(viewItem);setViewItem(null);}}>
+                <Pencil size={12}/>Edit Department
+              </button>
             </div>
           </div>
-        )}
-      </Modal>
+        </div>
+      )}
 
       {/* Delete Confirmation */}
       <DeleteConfirmDialog

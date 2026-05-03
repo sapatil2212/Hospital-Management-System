@@ -279,7 +279,7 @@ function DashboardContent() {
       )}
 
       <div className="hd-body" style={(tab === "inventory" || tab === "billing" || tab === "ipd" || tab === "departments" || tab === "reports" || tab === "enquiries" || tab === "tourism" || tab === "blogs" || tab === "patients") ? { gridTemplateColumns: "1fr" } : undefined}>
-    <div className="hd-center">
+    <div className="hd-center" style={tab === "billing" ? { padding: 0 } : {}}>
       {tab === "overview" && (<>
         <div className="hd-page-header">
           <div>
@@ -656,7 +656,7 @@ function DashboardContent() {
       )}
 
       {tab === "billing" && (
-        <BillingQueue />
+        <BillingQueue deptName="Billing Counter" />
       )}
 
       {tab === "ipd" && (

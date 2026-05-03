@@ -9,7 +9,7 @@ import {
   Stethoscope, ArrowLeft, Power,
   ClipboardList, CheckCircle2, Info, MapPin, Phone, Mail,
   Pencil, Trash2, Eye, Download, ChevronUp, ChevronDown, X, AlertTriangle,
-  CheckCircle,
+  CheckCircle, Plus, Search, Edit3, Save,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -17,6 +17,7 @@ import {
 } from "recharts";
 
 const ReportsPanel = dynamic(() => import("@/components/ReportsPanel"), { ssr: false });
+const PatientsManagementPanel = dynamic(() => import("@/app/subdept/dashboard/PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Patient Management...</span></div> });
 
 /* ─── constants ─── */
 const TEAL  = "#0E898F";
@@ -272,7 +273,7 @@ function ClinicalDashboard() {
       {tab === "subdepts"      && !sdId && <SubDeptsTab onView={id => router.push(`/clinical/dashboard?tab=subdepts&subdept=${id}`, { scroll: false })} />}
       {tab === "appointments"  && <AppointmentsTab deptProfile={deptProfile} />}
       {tab === "queue"         && <QueueTab deptProfile={deptProfile} />}
-      {tab === "patients"      && <PatientsTab />}
+      {tab === "patients"      && <PatientsTab deptProfile={deptProfile} />}
       {tab === "dept-info"     && <DeptInfoTab deptProfile={deptProfile} />}
     </>
   );
@@ -1103,6 +1104,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
   const [search, setSearch]     = useState("");
   const [view, setView]         = useState<"pending" | "completed" | "all">("pending");
   const [updating, setUpdating] = useState<Record<string, string>>({});
+  const [selectedDate, setSelectedDate] = useState<string>(toLocalDateStr(new Date()));
 
   useEffect(() => {
     if (deptProfile?.id) { setDeptId(deptProfile.id); return; }
@@ -1114,8 +1116,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
 
   const load = useCallback((id: string) => {
     setLoading(true);
-    const today = new Date().toISOString().slice(0, 10);
-    fetch(`/api/appointments?limit=200&departmentId=${id}&date=${today}&sortBy=tokenNumber&sortOrder=asc`, { credentials: "include" })
+    fetch(`/api/appointments?limit=500&departmentId=${id}&sortBy=appointmentDate&sortOrder=asc`, { credentials: "include" })
       .then(r => r.json())
       .then(d => { setAll(d.data?.data || []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -1134,17 +1135,26 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
     } finally { setUpdating(p => { const n = { ...p }; delete n[id]; return n; }); }
   };
 
-  /* ── stats ── */
-  const waiting   = all.filter(a => a.status === "SCHEDULED").length;
-  const confirmed = all.filter(a => a.status === "CONFIRMED").length;
-  const completed = all.filter(a => a.status === "COMPLETED").length;
-  const noShow    = all.filter(a => a.status === "NO_SHOW").length;
+  /* ── date helpers ── */
+  const todayStr    = toLocalDateStr(new Date());
+  const tomorrowStr = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return toLocalDateStr(d); })();
+  const dateLabel = selectedDate === todayStr ? "Today" : selectedDate === tomorrowStr ? "Tomorrow" : new Date(selectedDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  /* ── date-filtered base ── */
+  const byDate = useMemo(() => all.filter(a => (a.appointmentDate || "").slice(0, 10) === selectedDate), [all, selectedDate]);
+
+  /* ── stats (date-scoped) ── */
+  const waiting   = byDate.filter(a => a.status === "SCHEDULED").length;
+  const confirmed = byDate.filter(a => a.status === "CONFIRMED").length;
+  const completed = byDate.filter(a => a.status === "COMPLETED").length;
+  const noShow    = byDate.filter(a => a.status === "NO_SHOW").length;
 
   /* ── filtered ── */
   const filtered = useMemo(() => {
-    let list = [...all];
-    if (view === "pending")   list = list.filter(a => ["SCHEDULED", "CONFIRMED"].includes(a.status));
+    let list = [...byDate];
+    if (view === "pending")        list = list.filter(a => ["SCHEDULED", "CONFIRMED"].includes(a.status));
     else if (view === "completed") list = list.filter(a => ["COMPLETED", "NO_SHOW", "CANCELLED"].includes(a.status));
+    else                           list = list.filter(a => !["COMPLETED", "NO_SHOW", "CANCELLED"].includes(a.status));
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(a =>
@@ -1154,9 +1164,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
       );
     }
     return list;
-  }, [all, view, search]);
-
-  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }, [byDate, view, search]);
 
   const STAT_CARDS = [
     { label: "Waiting",    value: waiting,   bg: "#fffbeb",  color: "#b45309",  icon: <ClipboardList size={16} color="#b45309" /> },
@@ -1171,13 +1179,52 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <div className="cl-section-title" style={{ marginBottom: 4 }}>
-            <div className="cl-section-title-dot" />Today&apos;s Patient Queue
+            <div className="cl-section-title-dot" />Patient Queue
           </div>
-          <div style={{ fontSize:10, color: "#94a3b8", paddingLeft: 14 }}>{today}</div>
+          <div style={{ fontSize:10, color: "#94a3b8", paddingLeft: 14 }}>{dateLabel}</div>
         </div>
         <button className="cl-btn-ghost" onClick={() => deptId && load(deptId)}>
           <RefreshCw size={12} style={loading ? { animation: "cl-spin .7s linear infinite" } : {}} /> Refresh
         </button>
+      </div>
+
+      {/* Date selector */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 18, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          onClick={() => setSelectedDate(todayStr)}
+          style={{ padding: "6px 14px", borderRadius: 8,
+            border: `1.5px solid ${selectedDate === todayStr ? TEAL : "#e2e8f0"}`,
+            background: selectedDate === todayStr ? TEAL : "#fff",
+            color: selectedDate === todayStr ? "#fff" : "#64748b",
+            fontSize:11, fontWeight: 700, cursor: "pointer" }}>
+          Today
+        </button>
+        <button
+          onClick={() => setSelectedDate(tomorrowStr)}
+          style={{ padding: "6px 14px", borderRadius: 8,
+            border: `1.5px solid ${selectedDate === tomorrowStr ? TEAL : "#e2e8f0"}`,
+            background: selectedDate === tomorrowStr ? TEAL : "#fff",
+            color: selectedDate === tomorrowStr ? "#fff" : "#64748b",
+            fontSize:11, fontWeight: 700, cursor: "pointer" }}>
+          Tomorrow
+        </button>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          style={{ padding: "6px 10px", borderRadius: 8,
+            border: `1.5px solid ${selectedDate !== todayStr && selectedDate !== tomorrowStr ? TEAL : "#e2e8f0"}`,
+            fontSize:11, outline: "none", color: "#334155", cursor: "pointer",
+            background: selectedDate !== todayStr && selectedDate !== tomorrowStr ? TEAL_LIGHT : "#fff" }}
+          onFocus={e => (e.target.style.borderColor = TEAL)}
+          onBlur={e  => (e.target.style.borderColor = selectedDate !== todayStr && selectedDate !== tomorrowStr ? TEAL : "#e2e8f0")}
+        />
+        {selectedDate !== todayStr && (
+          <button onClick={() => setSelectedDate(todayStr)}
+            style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #e2e8f0", background: "#fff", color: "#94a3b8", fontSize:10, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+            <X size={10} /> Clear
+          </button>
+        )}
       </div>
 
       {/* Stat cards */}
@@ -1196,7 +1243,7 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
       {/* Toolbar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
         {(["pending", "completed", "all"] as const).map(v => {
-          const label = v === "pending" ? `Pending (${waiting + confirmed})` : v === "completed" ? `Done (${completed + noShow})` : `All (${all.length})`;
+          const label = v === "pending" ? `Pending (${waiting + confirmed})` : v === "completed" ? `Done (${completed + noShow})` : `All (${byDate.length})`;
           return (
             <button key={v} onClick={() => setView(v)}
               style={{ padding: "5px 12px", borderRadius: 7,
@@ -1298,9 +1345,9 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
             </tbody>
           </table>
         </div>
-        {all.length > 0 && (
+        {byDate.length > 0 && (
           <div style={{ padding: "9px 18px", borderTop: "1px solid #f1f5f9", fontSize:10, color: "#94a3b8" }}>
-            Showing {filtered.length} of {all.length} appointments today
+            Showing {filtered.length} of {byDate.length} appointments · {dateLabel}
           </div>
         )}
       </div>
@@ -1309,110 +1356,27 @@ function QueueTab({ deptProfile }: { deptProfile: any }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PATIENTS TAB
+   PATIENTS TAB — complete list of patients for this department
 ══════════════════════════════════════════════════════════════ */
-function PatientsTab() {
-  const [patients, setPatients] = useState<any[]>([]);
-  const [pStats, setPStats]     = useState<any>(null);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState("");
+function PatientsTab({ deptProfile }: { deptProfile: any }) {
+  const [deptId, setDeptId] = useState<string | null>(deptProfile?.id || null);
 
   useEffect(() => {
-    fetch("/api/patients?limit=50&sortBy=createdAt&sortOrder=desc", { credentials: "include" })
+    if (deptProfile?.id) { setDeptId(deptProfile.id); return; }
+    fetch("/api/parentdept/me", { credentials: "include" })
       .then(r => r.json())
-      .then(d => {
-        if (d.success) { setPatients(d.data?.data || []); setPStats(d.data?.stats || null); }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+      .then(d => { if (d.success && d.data?.id) setDeptId(d.data.id); })
+      .catch(() => {});
+  }, [deptProfile?.id]);
 
-  /* gender chart data */
-  const genderData = pStats ? [
-    { name: "Male",   value: pStats.maleCount   || 0 },
-    { name: "Female", value: pStats.femaleCount  || 0 },
-    { name: "Other",  value: pStats.otherCount   || 0 },
-  ].filter(d => d.value > 0) : [];
-
-  const filtered = patients.filter(p => !search || (p.name || "").toLowerCase().includes(search.toLowerCase()) || (p.patientId || "").toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <>
-      <div className="cl-section-title" style={{ marginBottom: 20 }}>
-        <div className="cl-section-title-dot" />Patients
-      </div>
-
-      {/* Stats + Chart row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 280px", gap: 14, marginBottom: 22 }}>
-        {[
-          { label: "Total Patients", value: pStats?.total ?? "—", Icon: Users, color: "linear-gradient(135deg,#8b5cf6,#6d28d9)" },
-          { label: "Today Registered", value: pStats?.today ?? "—", Icon: UserCheck, color: `linear-gradient(135deg,${TEAL},${TEAL2})` },
-          { label: "This Month", value: pStats?.thisMonth ?? "—", Icon: CalendarDays, color: "linear-gradient(135deg,#3b82f6,#2563eb)" },
-        ].map((s, i) => (
-          <div key={i} className="cl-sc">
-            <div className="cl-sc-ic" style={{ background: TEAL_LIGHT }}><s.Icon size={20} color={TEAL} /></div>
-            <div><div className="cl-sc-lbl">{s.label}</div><div className="cl-sc-val">{s.value}</div></div>
-          </div>
-        ))}
-        <div className="cl-card" style={{ display: "flex", flexDirection: "column" }}>
-          <div className="cl-card-head" style={{ paddingBottom: 8 }}>
-            <div className="cl-card-title" style={{ fontSize:11 }}>Gender Distribution</div>
-          </div>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 0" }}>
-            {genderData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={90}>
-                <PieChart>
-                  <Pie data={genderData} cx="50%" cy="50%" outerRadius={38} dataKey="value" paddingAngle={3}>
-                    {genderData.map((_: any, i: number) => <Cell key={i} fill={[TEAL, "#8b5cf6", "#f59e0b"][i]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ fontSize:10, borderRadius: 8 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ fontSize:10, color: "#94a3b8" }}>No data</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Search + Table */}
-      <div style={{ marginBottom: 12 }}>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by name or patient ID…"
-          style={{ padding: "8px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:11, outline: "none", width: 280 }}
-          onFocus={e => e.target.style.borderColor = TEAL}
-          onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-        />
-      </div>
-      <div className="cl-card">
-        <div className="cl-tbl-wrap">
-          <table className="cl-tbl">
-            <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Gender</th><th>Blood Group</th><th>Registered</th></tr></thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "#94a3b8" }}>
-                  <Loader2 size={16} style={{ animation: "cl-spin .7s linear infinite", verticalAlign: "middle", marginRight: 8 }} />Loading…
-                </td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "#94a3b8" }}>No patients found</td></tr>
-              ) : filtered.map(p => (
-                <tr key={p.id}>
-                  <td><span style={{ fontSize:10, fontWeight: 700, color: TEAL, background: TEAL_LIGHT, padding: "2px 7px", borderRadius: 6 }}>{p.patientId}</span></td>
-                  <td><span className="cl-td-name">{p.name}</span></td>
-                  <td style={{ color: "#64748b" }}>{p.phone || "—"}</td>
-                  <td><span className="cl-badge cl-badge-gray">{p.gender || "—"}</span></td>
-                  <td style={{ fontWeight: 600 }}>{p.bloodGroup || "—"}</td>
-                  <td style={{ color: "#94a3b8" }}>{p.createdAt ? fmt(p.createdAt) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
+  if (!deptId) return (
+    <div style={{ padding: "80px 0", textAlign: "center" }}>
+      <Loader2 size={32} color={TEAL} style={{ animation: "cl-spin 1s linear infinite", margin: "0 auto" }} />
+      <p style={{ marginTop: 14, color: "#64748b", fontSize:13 }}>Loading department context...</p>
+    </div>
   );
+
+  return <PatientsManagementPanel departmentId={deptId} />;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1473,46 +1437,53 @@ function SubDeptsTab({ onView }: { onView: (id: string) => void }) {
             return (
               <div key={sd.id}
                 onClick={() => !off && onView(sd.id)}
-                style={{ background: off ? "#fafafa" : "#fff", borderRadius: 16, border: `1.5px solid ${off ? "#e2e8f0" : m.lightBg}`, overflow: "hidden", cursor: off ? "default" : "pointer", transition: "all .2s", opacity: off ? 0.65 : 1, boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}
-                onMouseEnter={e => { if (!off) { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 12px 32px rgba(14,137,143,.12)`; } }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,.04)"; }}
+                style={{ 
+                  background: off ? "#fafafa" : "#fff", 
+                  borderRadius: 16, 
+                  border: `1px solid ${off ? "#e2e8f0" : "#f1f5f9"}`, 
+                  overflow: "hidden", 
+                  cursor: off ? "default" : "pointer", 
+                  transition: "all .2s", 
+                  opacity: off ? 0.65 : 1
+                }}
+                onMouseEnter={e => { if (!off) { e.currentTarget.style.borderColor = m.accent; e.currentTarget.style.background = "#f8fafc"; } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#f1f5f9"; e.currentTarget.style.background = "#fff"; }}
               >
-                <div style={{ height: 4, background: off ? "#e2e8f0" : m.gradient }} />
-                <div style={{ padding: "16px 18px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: off ? "#e2e8f0" : m.gradient, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: off ? "none" : `0 4px 12px ${m.accent}33` }}>
-                      <Stethoscope size={20} color={off ? "#94a3b8" : "#fff"} />
+                <div style={{ padding: "20px 22px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: off ? "#f1f5f9" : m.lightBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: off ? "#94a3b8" : m.accent }}>
+                      <Stethoscope size={20} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize:14, fontWeight: 700, color: off ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
-                      <div style={{ fontSize:10, color: off ? "#cbd5e1" : m.accent, fontWeight: 600, marginTop: 1 }}>{sd.code ? `${sd.code} · ` : ""}{sd.type?.replace(/_/g, " ")}</div>
+                      <div style={{ fontSize:15, fontWeight: 700, color: off ? "#94a3b8" : "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
+                      <div style={{ fontSize:10, color: off ? "#cbd5e1" : m.accent, fontWeight: 600, marginTop: 1, textTransform: "uppercase", letterSpacing: ".02em" }}>{sd.code ? `${sd.code} · ` : ""}{sd.type?.replace(/_/g, " ")}</div>
                     </div>
                     <button onClick={e => toggle(e, sd)} disabled={toggling === sd.id}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: sd.isActive ? m.accent : "#94a3b8", padding: 4, flexShrink: 0 }}>
+                      style={{ background: "none", border: "none", cursor: "pointer", color: sd.isActive ? m.accent : "#94a3b8", padding: 4, flexShrink: 0, opacity: .6 }}>
                       {toggling === sd.id
                         ? <Loader2 size={18} style={{ animation: "cl-spin .7s linear infinite" }} />
-                        : <Power size={18} style={{ opacity: sd.isActive ? 1 : 0.4 }} />}
+                        : <Power size={18} />}
                     </button>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 18 }}>
                     {[
                       { v: sd._count?.procedures || 0, l: "Procedures" },
                       { v: sd._count?.procedureRecords || 0, l: "Records" },
                       { v: sd._count?.appointments || 0, l: "Referrals" },
                     ].map((s, i) => (
-                      <div key={i} style={{ background: off ? "#f8fafc" : m.lightBg, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                        <div style={{ fontSize:17, fontWeight: 800, color: off ? "#cbd5e1" : m.accent }}>{s.v}</div>
-                        <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".03em" }}>{s.l}</div>
+                      <div key={i} style={{ background: off ? "#f8fafc" : "#f8fafc", borderRadius: 12, padding: "12px 8px", textAlign: "center", border: "1px solid #f1f5f9" }}>
+                        <div style={{ fontSize:18, fontWeight: 800, color: off ? "#cbd5e1" : "#1e293b" }}>{s.v}</div>
+                        <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginTop: 1 }}>{s.l}</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 14, borderTop: "1px solid #f1f5f9" }}>
                     {sd.hodStaffName ? (
-                      <div style={{ fontSize:10, color: "#64748b", display: "flex", alignItems: "center", gap: 5 }}>
-                        <UserCheck size={12} color="#94a3b8" /> {sd.hodStaffName}
+                      <div style={{ fontSize:11, color: "#64748b", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
+                        <UserCheck size={13} color="#94a3b8" /> {sd.hodStaffName}
                       </div>
-                    ) : <div style={{ fontSize:10, color: "#cbd5e1" }}>No HOD</div>}
-                    {sd.isActive && <div style={{ fontSize:10, fontWeight: 600, color: m.accent, display: "flex", alignItems: "center", gap: 4 }}>View <ChevronRight size={13} /></div>}
+                    ) : <div style={{ fontSize:11, color: "#cbd5e1" }}>No HOD</div>}
+                    {sd.isActive && <div style={{ fontSize:11, fontWeight: 700, color: m.accent, display: "flex", alignItems: "center", gap: 4 }}>View <ChevronRight size={14} /></div>}
                   </div>
                 </div>
               </div>

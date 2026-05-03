@@ -10,8 +10,17 @@ export async function generatePrescriptionNo(hospitalId: string): Promise<string
 
 // ─── Generate sequential bill number ───
 export async function generateBillNo(hospitalId: string): Promise<string> {
-  const count = await px.bill.count({ where: { hospitalId } });
-  return `BILL-${String(count + 1).padStart(4, "0")}`;
+  const last = await px.bill.findFirst({
+    where: { hospitalId, billNo: { startsWith: "BILL-" } },
+    orderBy: { billNo: "desc" },
+    select: { billNo: true },
+  });
+  let next = 1;
+  if (last?.billNo) {
+    const m = last.billNo.match(/(\d+)$/);
+    if (m) next = parseInt(m[1], 10) + 1;
+  }
+  return `BILL-${String(next).padStart(4, "0")}`;
 }
 
 // ─── Create Prescription ───

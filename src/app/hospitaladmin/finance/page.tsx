@@ -4,7 +4,7 @@ import {
   TrendingUp, TrendingDown, Plus, Download, Loader2, IndianRupee, CreditCard,
   RefreshCw, ShoppingCart, Eye, X, FileText, User as UserIcon, Receipt,
   Trash2, ArrowUpDown, ChevronDown, CheckSquare, Square, MinusSquare,
-  FileSpreadsheet, Printer, FileJson, AlertTriangle
+  FileSpreadsheet, Printer, FileJson, AlertTriangle, Pencil, Building2, Clock
 } from "lucide-react";
 
 type ApiResponse<T> = { success: boolean; data?: T; message?: string };
@@ -48,15 +48,25 @@ export default function HospitalAdminFinancePage() {
 
   // Add Expense form
   const [showExpForm, setShowExpForm] = useState(false);
-  const [expForm, setExpForm] = useState({ title: "", category: "OTHER", amount: "", date: new Date().toISOString().split("T")[0], description: "" });
+  const [expForm, setExpForm] = useState({ title: "", category: "OTHER", amount: "", date: new Date().toISOString().split("T")[0], description: "", department: "Hospital Administration" });
   const [expSaving, setExpSaving] = useState(false);
   const [expMsg, setExpMsg] = useState("");
 
   // Add Revenue form
   const [showRevForm, setShowRevForm] = useState(false);
-  const [revForm, setRevForm] = useState({ sourceType: "OTHER", amount: "", description: "" });
+  const [revForm, setRevForm] = useState({ sourceType: "OTHER", amount: "", description: "", department: "Hospital Administration" });
   const [revSaving, setRevSaving] = useState(false);
   const [revMsg, setRevMsg] = useState("");
+
+  // Edit Expense
+  const [editExpense, setEditExpense] = useState<any>(null);
+  const [editExpForm, setEditExpForm] = useState({ title: "", category: "OTHER", amount: "", date: "", description: "", department: "Hospital Administration" });
+  const [editExpSaving, setEditExpSaving] = useState(false);
+
+  // Edit Revenue
+  const [editRevenue, setEditRevenue] = useState<any>(null);
+  const [editRevForm, setEditRevForm] = useState({ sourceType: "OTHER", amount: "", description: "", department: "Hospital Administration" });
+  const [editRevSaving, setEditRevSaving] = useState(false);
 
   // Sorting
   const [expSort, setExpSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "date", dir: "desc" });
@@ -132,14 +142,37 @@ export default function HospitalAdminFinancePage() {
     if (!expForm.date) { setExpMsg("Please select a date"); return; }
     setExpSaving(true); setExpMsg("");
     try {
-      const d = await api<ApiResponse<any>>("/api/expense", "POST", { ...expForm, amount: expAmt });
+      const d = await api<ApiResponse<any>>("/api/expense", "POST", { ...expForm, amount: expAmt, addedByName: (user as any)?.name || "Admin" });
       if (d.success) {
         setShowExpForm(false);
-        setExpForm({ title: "", category: "OTHER", amount: "", date: new Date().toISOString().split("T")[0], description: "" });
+        setExpForm({ title: "", category: "OTHER", amount: "", date: new Date().toISOString().split("T")[0], description: "", department: "Hospital Administration" });
         loadExpenses(); loadStats();
       } else { setExpMsg(d.message || "Failed to add expense"); }
     } catch (err: any) { setExpMsg(err?.message || "Network error — please try again"); }
     setExpSaving(false);
+  };
+
+  const saveEditExpense = async () => {
+    const expAmt = parseFloat(editExpForm.amount);
+    if (!editExpForm.title.trim() || isNaN(expAmt) || expAmt <= 0) return;
+    setEditExpSaving(true);
+    try {
+      const d = await api<ApiResponse<any>>(`/api/expense/${editExpense.id}`, "PUT", { ...editExpForm, amount: expAmt });
+      if (d.success) { setEditExpense(null); loadExpenses(); loadStats(); }
+    } catch {}
+    setEditExpSaving(false);
+  };
+
+  const openEditExpense = (r: any) => {
+    setEditExpForm({
+      title: r.title || "",
+      category: r.category || "OTHER",
+      amount: String(r.amount || ""),
+      date: r.date ? new Date(r.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      description: r.description || "",
+      department: r.department || "Hospital Administration",
+    });
+    setEditExpense(r);
   };
 
   const saveRevenue = async () => {
@@ -147,15 +180,36 @@ export default function HospitalAdminFinancePage() {
     if (!revForm.amount || isNaN(amt) || amt <= 0) { setRevMsg("Please enter a valid amount greater than 0"); return; }
     setRevSaving(true); setRevMsg("");
     try {
-      const d = await api<ApiResponse<any>>("/api/revenue", "POST", { ...revForm, amount: amt });
+      const d = await api<ApiResponse<any>>("/api/revenue", "POST", { ...revForm, amount: amt, addedBy: (user as any)?.name || "Admin" });
       if (d.success) {
         setShowRevForm(false);
-        setRevForm({ sourceType: "OTHER", amount: "", description: "" });
+        setRevForm({ sourceType: "OTHER", amount: "", description: "", department: "Hospital Administration" });
         loadRevenue();
         loadStats();
       } else { setRevMsg(d.message || "Failed to add revenue"); }
     } catch (err: any) { setRevMsg(err?.message || "Network error — please try again"); }
     setRevSaving(false);
+  };
+
+  const saveEditRevenue = async () => {
+    const amt = parseFloat(editRevForm.amount);
+    if (isNaN(amt) || amt <= 0) return;
+    setEditRevSaving(true);
+    try {
+      const d = await api<ApiResponse<any>>(`/api/revenue/${editRevenue.id}`, "PUT", { ...editRevForm, amount: amt });
+      if (d.success) { setEditRevenue(null); loadRevenue(); loadStats(); }
+    } catch {}
+    setEditRevSaving(false);
+  };
+
+  const openEditRevenue = (r: any) => {
+    setEditRevForm({
+      sourceType: r._raw?.sourceType || "OTHER",
+      amount: String(r.amount || ""),
+      description: r._raw?.description || r.description || "",
+      department: r._raw?.department || "Hospital Administration",
+    });
+    setEditRevenue(r);
   };
 
   const deleteExpense = async (id: string) => {
@@ -545,6 +599,7 @@ export default function HospitalAdminFinancePage() {
                           <th>Description</th>
                           <th>Amount</th>
                           <th>Type</th>
+                          <th>Added By</th>
                           <th>Action</th>
                         </tr>
                       </thead>
@@ -566,14 +621,29 @@ export default function HospitalAdminFinancePage() {
                               </span>
                             </td>
                             <td>
+                              {(r as any)._isPurchase ? (
+                                <span style={{ fontSize: 10, color: "#94a3b8" }}>Auto</span>
+                              ) : (
+                                <div>
+                                  <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{r.addedByName || "—"}</div>
+                                  <div style={{ fontSize: 10, color: "#94a3b8" }}>{r.department || "Hospital Administration"}</div>
+                                </div>
+                              )}
+                            </td>
+                            <td>
                               <div style={{ display: "flex", gap: 4 }}>
                                 <button type="button" onClick={() => setViewExpense(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Details">
                                   <Eye size={13} color="#0E898F" />
                                 </button>
                                 {!(r as any)._isPurchase && (
-                                  <button type="button" onClick={() => deleteExpense(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
-                                    <Trash2 size={13} color="#ef4444" />
-                                  </button>
+                                  <>
+                                    <button type="button" onClick={() => openEditExpense(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #dbeafe", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Edit">
+                                      <Pencil size={12} color="#2563eb" />
+                                    </button>
+                                    <button type="button" onClick={() => deleteExpense(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
+                                      <Trash2 size={13} color="#ef4444" />
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -610,6 +680,7 @@ export default function HospitalAdminFinancePage() {
                           <th>Description / Patient</th>
                           <th>Source / Bill</th>
                           <th>Amount</th>
+                          <th>Added By</th>
                           <th>Action</th>
                         </tr>
                       </thead>
@@ -645,6 +716,16 @@ export default function HospitalAdminFinancePage() {
                             </td>
                             <td className="fin-amt" style={{ color: "#16a34a", fontWeight: 700 }}>{fmtINR(r.amount)}</td>
                             <td>
+                              {r._type === "bill" ? (
+                                <span style={{ fontSize: 10, color: "#94a3b8" }}>Billing System</span>
+                              ) : (
+                                <div>
+                                  <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{r._raw?.addedBy || "—"}</div>
+                                  <div style={{ fontSize: 10, color: "#94a3b8" }}>{r._raw?.department || "Hospital Administration"}</div>
+                                </div>
+                              )}
+                            </td>
+                            <td>
                               <div style={{ display: "flex", gap: 4 }}>
                                 {r._type === "bill" && (
                                   <button type="button" onClick={() => setViewBill(r._raw)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Bill Details">
@@ -655,6 +736,9 @@ export default function HospitalAdminFinancePage() {
                                   <>
                                     <button type="button" onClick={() => setViewManualRev(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="View Details">
                                       <Eye size={13} color="#0E898F" />
+                                    </button>
+                                    <button type="button" onClick={() => openEditRevenue(r)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #dbeafe", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Edit">
+                                      <Pencil size={12} color="#2563eb" />
                                     </button>
                                     <button type="button" onClick={() => deleteRevenue(r.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Delete">
                                       <Trash2 size={13} color="#ef4444" />
@@ -672,7 +756,105 @@ export default function HospitalAdminFinancePage() {
               </div>
             </div>
           </div>
-    {/* ═══ Add Expense Modal ═══ */}
+      {/* ═══ Edit Expense Modal ═══ */}
+      {editExpense && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setEditExpense(null)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 520, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
+            <div style={{ background: "#eff6ff", borderBottom: "1px solid #bfdbfe", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#2563eb", fontWeight: 700, marginBottom: 2 }}>Edit Entry</div>
+                <div style={{ fontSize:19, fontWeight: 800, color: "#1e293b" }}>Edit Expense</div>
+              </div>
+              <button type="button" onClick={() => setEditExpense(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(37,99,235,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#2563eb" /></button>
+            </div>
+            <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Title *</label>
+                <input value={editExpForm.title} onChange={e => setEditExpForm({ ...editExpForm, title: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Category</label>
+                  <select value={editExpForm.category} onChange={e => setEditExpForm({ ...editExpForm, category: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", background: "#fff" }}>
+                    {["SALARY","EQUIPMENT","MAINTENANCE","UTILITY","MEDICINE","INVENTORY","HOUSEKEEPING","MARKETING","INSURANCE_EXPENSE","OTHER"].map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
+                  <input type="number" min="1" value={editExpForm.amount} onChange={e => setEditExpForm({ ...editExpForm, amount: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Date *</label>
+                  <input type="date" value={editExpForm.date} onChange={e => setEditExpForm({ ...editExpForm, date: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Department</label>
+                  <input value={editExpForm.department} onChange={e => setEditExpForm({ ...editExpForm, department: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description / Remarks</label>
+                <textarea value={editExpForm.description} onChange={e => setEditExpForm({ ...editExpForm, description: e.target.value })} rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", resize: "vertical" }} />
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                <button type="button" onClick={() => setEditExpense(null)} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={saveEditExpense} disabled={editExpSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#2563eb", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", opacity: editExpSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                  {editExpSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{editExpSaving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Edit Revenue Modal ═══ */}
+      {editRevenue && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setEditRevenue(null)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", zIndex: 1, background: "#fff", borderRadius: 20, width: "95%", maxWidth: 480, boxShadow: "0 24px 80px rgba(0,0,0,.2)" }}>
+            <div style={{ background: "#eff6ff", borderBottom: "1px solid #bfdbfe", padding: "20px 24px 16px", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize:10, textTransform: "uppercase", letterSpacing: ".1em", color: "#2563eb", fontWeight: 700, marginBottom: 2 }}>Edit Entry</div>
+                <div style={{ fontSize:19, fontWeight: 800, color: "#1e293b" }}>Edit Revenue</div>
+              </div>
+              <button type="button" onClick={() => setEditRevenue(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(37,99,235,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#2563eb" /></button>
+            </div>
+            <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Source Type</label>
+                  <select value={editRevForm.sourceType} onChange={e => setEditRevForm({ ...editRevForm, sourceType: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", background: "#fff" }}>
+                    {["CONSULTATION","PROCEDURE","BED_CHARGE","PHARMACY","LAB_TEST","OTHER"].map(s => <option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Amount (₹) *</label>
+                  <input type="number" min="1" value={editRevForm.amount} onChange={e => setEditRevForm({ ...editRevForm, amount: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Department</label>
+                <input value={editRevForm.department} onChange={e => setEditRevForm({ ...editRevForm, department: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+              </div>
+              <div>
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description / Remarks</label>
+                <textarea value={editRevForm.description} onChange={e => setEditRevForm({ ...editRevForm, description: e.target.value })} rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", resize: "vertical" }} />
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                <button type="button" onClick={() => setEditRevenue(null)} style={{ padding: "10px 18px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize:12, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button type="button" onClick={saveEditRevenue} disabled={editRevSaving} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: "#2563eb", color: "#fff", fontSize:12, fontWeight: 700, cursor: "pointer", opacity: editRevSaving ? .6 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                  {editRevSaving && <Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} />}{editRevSaving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Add Expense Modal ═══ */}
       {showExpForm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => { setShowExpForm(false); setExpMsg(""); }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)", backdropFilter: "blur(4px)" }} />
@@ -705,8 +887,18 @@ export default function HospitalAdminFinancePage() {
                 <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Date *</label>
                 <input type="date" value={expForm.date} onChange={e => setExpForm({ ...expForm, date: e.target.value })} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
               </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Added By</label>
+                  <input value={(user as any)?.name || "Admin"} readOnly style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", background: "#f8fafc", color: "#94a3b8" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Department</label>
+                  <input value={expForm.department} onChange={e => setExpForm({ ...expForm, department: e.target.value })} placeholder="e.g. Hospital Administration" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+                </div>
+              </div>
               <div>
-                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description / Remarks</label>
                 <textarea value={expForm.description} onChange={e => setExpForm({ ...expForm, description: e.target.value })} placeholder="Optional details…" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", resize: "vertical" }} />
               </div>
               {expMsg && <div style={{ fontSize:12, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{expMsg}</div>}
@@ -746,8 +938,18 @@ export default function HospitalAdminFinancePage() {
                   <input type="number" min="1" value={revForm.amount} onChange={e => setRevForm({ ...revForm, amount: e.target.value })} placeholder="0" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
                 </div>
               </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Added By</label>
+                  <input value={(user as any)?.name || "Admin"} readOnly style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", background: "#f8fafc", color: "#94a3b8" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Department</label>
+                  <input value={revForm.department} onChange={e => setRevForm({ ...revForm, department: e.target.value })} placeholder="e.g. Hospital Administration" style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none" }} />
+                </div>
+              </div>
               <div>
-                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description</label>
+                <label style={{ fontSize:10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5, display: "block" }}>Description / Remarks</label>
                 <textarea value={revForm.description} onChange={e => setRevForm({ ...revForm, description: e.target.value })} placeholder="e.g. Payment received for consultation" rows={2} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize:12, outline: "none", resize: "vertical" }} />
               </div>
               {revMsg && <div style={{ fontSize:12, color: "#fff", fontWeight: 700, background: "#ef4444", padding: "10px 14px", borderRadius: 10, textAlign: "center" }}>{revMsg}</div>}
@@ -901,29 +1103,45 @@ export default function HospitalAdminFinancePage() {
               <button type="button" onClick={() => setViewExpense(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
-                  <div style={{ fontSize:13, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewExpense.date)}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Date</div>
+                  <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewExpense.date)}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize:17, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewExpense.amount)}</div>
+                <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Amount</div>
+                  <div style={{ fontSize:15, fontWeight: 800, color: "#166534" }}>{fmtINR(viewExpense.amount)}</div>
+                </div>
+                <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#0A6B70", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Category</div>
+                  <div style={{ fontSize:11, fontWeight: 700, color: "#0A6B70" }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</div>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Category</div>
-                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize:11, fontWeight: 700 }}>{(viewExpense.category || "OTHER").replace(/_/g, " ")}</span>
+              <div style={{ display: "flex", gap: 10, padding: "12px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", alignItems: "center" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><UserIcon size={16} color="#0A6B70" /></div>
+                <div>
+                  <div style={{ fontSize:12, fontWeight: 700, color: "#1e293b" }}>{viewExpense.addedByName || "—"}</div>
+                  <div style={{ fontSize:10, color: "#94a3b8", marginTop: 1, display: "flex", alignItems: "center", gap: 4 }}>
+                    <Building2 size={10} color="#94a3b8" /> {viewExpense.department || "Hospital Administration"}
+                  </div>
+                </div>
+                <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                  <div style={{ fontSize:10, color: "#94a3b8" }}>Created</div>
+                  <div style={{ fontSize:10, fontWeight: 600, color: "#64748b" }}>{viewExpense.createdAt ? fmtDate(viewExpense.createdAt) : "—"}</div>
+                </div>
               </div>
               <div>
                 <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Type</div>
-                <span className={`fin-badge ${(viewExpense as any)._isPurchase ? "warn" : "ok"}`}>{(viewExpense as any)._isPurchase ? "Purchase Order" : "Expense"}</span>
+                <span className={`fin-badge ${(viewExpense as any)._isPurchase ? "warn" : "ok"}`}>{(viewExpense as any)._isPurchase ? "Purchase Order" : "Manual Expense"}</span>
               </div>
               {viewExpense.description && (
-                <div>
-                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
+                <div style={{ padding: "10px 14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><FileText size={10} /> Description / Remarks</div>
                   <div style={{ fontSize:12, color: "#475569", lineHeight: 1.5 }}>{viewExpense.description}</div>
                 </div>
+              )}
+              {viewExpense.updatedAt && viewExpense.updatedAt !== viewExpense.createdAt && (
+                <div style={{ fontSize:10, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}><Clock size={10} /> Last updated: {fmtDate(viewExpense.updatedAt)}</div>
               )}
             </div>
           </div>
@@ -943,26 +1161,39 @@ export default function HospitalAdminFinancePage() {
               <button type="button" onClick={() => setViewManualRev(null)} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(10,107,112,.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><X size={16} color="#0A6B70" /></button>
             </div>
             <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Date</div>
-                  <div style={{ fontSize:13, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewManualRev.date)}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Date</div>
+                  <div style={{ fontSize:12, fontWeight: 600, color: "#1e293b" }}>{fmtDate(viewManualRev.date)}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Amount</div>
-                  <div style={{ fontSize:17, fontWeight: 800, color: "#0A6B70" }}>{fmtINR(viewManualRev.amount)}</div>
+                <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Amount</div>
+                  <div style={{ fontSize:15, fontWeight: 800, color: "#166534" }}>{fmtINR(viewManualRev.amount)}</div>
+                </div>
+                <div style={{ background: "#E6F4F4", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#0A6B70", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Source</div>
+                  <div style={{ fontSize:11, fontWeight: 700, color: "#0A6B70" }}>{viewManualRev.source}</div>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Source Type</div>
-                <span style={{ padding: "4px 10px", borderRadius: 100, background: "#E6F4F4", color: "#0A6B70", fontSize:11, fontWeight: 700 }}>{viewManualRev.source}</span>
-              </div>
-              {viewManualRev.description && viewManualRev.description !== "—" && (
+              <div style={{ display: "flex", gap: 10, padding: "12px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", alignItems: "center" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: "#E6F4F4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><UserIcon size={16} color="#0A6B70" /></div>
                 <div>
-                  <div style={{ fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Description</div>
-                  <div style={{ fontSize:12, color: "#475569", lineHeight: 1.5 }}>{viewManualRev.description}</div>
+                  <div style={{ fontSize:12, fontWeight: 700, color: "#1e293b" }}>{viewManualRev._raw?.addedBy || "—"}</div>
+                  <div style={{ fontSize:10, color: "#94a3b8", marginTop: 1, display: "flex", alignItems: "center", gap: 4 }}>
+                    <Building2 size={10} color="#94a3b8" /> {viewManualRev._raw?.department || "Hospital Administration"}
+                  </div>
                 </div>
-              )}
+                <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                  <div style={{ fontSize:10, color: "#94a3b8" }}>Created</div>
+                  <div style={{ fontSize:10, fontWeight: 600, color: "#64748b" }}>{viewManualRev._raw?.createdAt ? fmtDate(viewManualRev._raw.createdAt) : "—"}</div>
+                </div>
+              </div>
+              {(viewManualRev.description && viewManualRev.description !== "—") || (viewManualRev._raw?.description && viewManualRev._raw.description !== "—") ? (
+                <div style={{ padding: "10px 14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a" }}>
+                  <div style={{ fontSize:10, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><FileText size={10} /> Description / Remarks</div>
+                  <div style={{ fontSize:12, color: "#475569", lineHeight: 1.5 }}>{viewManualRev._raw?.description || viewManualRev.description}</div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

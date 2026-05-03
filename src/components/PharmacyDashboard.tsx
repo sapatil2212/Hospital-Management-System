@@ -9,12 +9,19 @@ import {
   ClipboardList, Calendar, User, Phone, Stethoscope, Receipt,
   ArrowRight, Ban, PlayCircle, Archive, ShieldCheck, CreditCard,
   Banknote, Wallet, Hash, BadgeAlert, CircleDot, Zap, Info, History, Send, Smartphone, UserCheck,
-  FileSpreadsheet, FileType, Table, TrendingDown
+  FileSpreadsheet, FileType, Table, TrendingDown,
+  UserPlus, Activity as ActivityIcon, FlaskConical, TestTube2, Layers as LayersIcon, RotateCcw, Printer
 } from "lucide-react";
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, PieChart, Pie, Cell 
+} from "recharts";
 import AdminInventoryPanel from "./AdminInventoryPanel";
 import PharmacyCounterSellPanel from "./PharmacyCounterSellPanel";
-import PharmacyFinancePanel from "./PharmacyFinancePanel";
+import BillingModule from "./BillingModule";
 import CounterSaleModal from "./CounterSaleModal";
+import BillingQueue from "./BillingQueue";
+
 
 // â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -35,6 +42,7 @@ interface QueueItem {
   dispensed: boolean;
   totalCharge: number;
   createdAt: string;
+  bill?: any;
 }
 
 interface Stats {
@@ -85,24 +93,6 @@ interface InventoryItem {
   description?: string;
   totalStock?: number;
   batches?: { id: string; batchNumber?: string; remainingQty: number; expiryDate?: string; purchasePrice: number; sellingPrice?: number }[];
-}
-
-interface PharmacyBill {
-  id: string;
-  billNo: string;
-  patient: { name: string; patientId: string };
-  items: string;
-  subtotal: number;
-  discount: number;
-  tax: number;
-  total: number;
-  paidAmount: number;
-  status: string;
-  isGst: boolean;
-  cgst: number;
-  sgst: number;
-  paymentMethod?: string;
-  createdAt: string;
 }
 
 // â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -200,6 +190,16 @@ const exportToWord = (title: string, headers: string[], rows: any[][], filename:
   link.click();
 };
 
+const loadImageAsBase64 = (url: string): Promise<string | null> => {
+  if (!url) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const img = new Image(); img.crossOrigin = "anonymous";
+    img.onload = () => { try { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; c.getContext("2d")!.drawImage(img, 0, 0); resolve(c.toDataURL("image/png")); } catch { resolve(null); } };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+};
+
 const PRIORITY_MAP: Record<string, { label: string; color: string; bg: string }> = {
   EMERGENCY: { label: "Emergency", color: "#dc2626", bg: "#fef2f2" },
   ICU: { label: "ICU", color: "#9333ea", bg: "#faf5ff" },
@@ -209,12 +209,15 @@ const PRIORITY_MAP: Record<string, { label: string; color: string; bg: string }>
 
 // â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export default function PharmacyDashboard({ profile, user, activeTab }: { profile: any; user: any; activeTab?: string }) {
-  const [tab, setTab] = useState<"overview" | "queue" | "inventory" | "billing" | "reports" | "counter-sell" | "revenue">("overview");
+export default function PharmacyDashboard({ profile, user, activeTab, onReady }: { profile: any; user: any; activeTab?: string; onReady?: () => void }) {
+  const [tab, setTab] = useState<"overview" | "queue" | "inventory" | "billing" | "reports" | "counter-sell" | "revenue" | "expense">("overview");
+
+  // Signal parent that this component has mounted (used to dismiss the Preloader)
+  React.useEffect(() => { onReady?.(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync external activeTab into internal state
   React.useEffect(() => {
-    if (activeTab && ["overview","queue","inventory","billing","reports","counter-sell","revenue"].includes(activeTab)) {
+    if (activeTab && ["overview","queue","inventory","billing","reports","counter-sell","revenue","expense"].includes(activeTab)) {
       setTab(activeTab as any);
     }
   }, [activeTab]);
@@ -222,16 +225,58 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [statsLoading, setStatsLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [refreshCountdown, setRefreshCountdown] = useState(30);
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+
+  // Expense tab state
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [expenseStats, setExpenseStats] = useState<{ monthTotal: number; categoryBreakdown: any[] } | null>(null);
+  const [expLoading, setExpLoading] = useState(false);
+  const [expModal, setExpModal] = useState(false);
+  const [expForm, setExpForm] = useState({ title: "", category: "MEDICINE", amount: "", date: new Date().toISOString().slice(0, 10), description: "" });
+  const [expSaving, setExpSaving] = useState(false);
+  const [expMsg, setExpMsg] = useState("");
+  const [expSearch, setExpSearch] = useState("");
+  const [expEditId, setExpEditId] = useState<string | null>(null);
+  const [expDelConfirm, setExpDelConfirm] = useState<string | null>(null);
+  const [expDeleting, setExpDeleting] = useState(false);
+
+  // Hospital info for PDF generation
+  const [hospitalInfo, setHospitalInfo] = useState<any>({ name: "Hospital", address: "", phone: "", email: "", logo: "", letterhead: "", letterheadSize: "A4" });
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await api("/api/config/settings");
+        if (s.success && s.data?.settings) {
+          const d = s.data.settings;
+          setHospitalInfo({ name: d.hospitalName || "Hospital", address: d.address || "", phone: d.phone || "", email: d.email || "", logo: d.logo || "", letterhead: d.letterhead || "", letterheadSize: d.letterheadSize || "A4", gstNumber: d.gstNumber || "", registrationNo: d.registrationNo || "" });
+          return;
+        }
+      } catch {}
+      try {
+        const h = await api("/api/hospital/details");
+        if (h.success && h.data) {
+          const d = h.data; const s2 = d.settings || {};
+          setHospitalInfo({ name: s2.hospitalName || d.name || "Hospital", address: s2.address || "", phone: s2.phone || d.mobile || "", email: s2.email || d.email || "", logo: s2.logo || "", letterhead: s2.letterhead || "", letterheadSize: s2.letterheadSize || "A4", gstNumber: s2.gstNumber || "", registrationNo: s2.registrationNo || "" });
+        }
+      } catch {}
+    })();
+  }, []);
+
+  // Queue bill view modal
+  const [queueBillViewItem, setQueueBillViewItem] = useState<QueueItem | null>(null);
+  const queueBillPrintRef = useRef<HTMLDivElement>(null);
+  const jsPdfCacheQ = useRef<any>(null);
 
   // Queue
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [queueStats, setQueueStats] = useState({ pending: 0, dispensed: 0, total: 0 });
+  const [queueBillingStats, setQueueBillingStats] = useState({ todayRevenue: 0, monthRevenue: 0, pendingBills: 0 });
   const [queueLoading, setQueueLoading] = useState(false);
   const [queueSearch, setQueueSearch] = useState("");
-  const [queueFilter, setQueueFilter] = useState<"all" | "pending" | "dispensed" | "HOLD" | "SKIPPED">("pending");
+  const [queueFilter, setQueueFilter] = useState<"all" | "pending" | "dispensed" | "HOLD" | "SKIPPED">("all");
   const [queueSourceFilter, setQueueSourceFilter] = useState<"all" | "OPD" | "IPD" | "EMERGENCY">("all");
-  const [queueDate, setQueueDate] = useState(new Date().toISOString().slice(0, 10));
+  const [queueDate, setQueueDate] = useState("");
+  const [queueExportOpen, setQueueExportOpen] = useState(false);
+  const queueExportRef = useRef<HTMLDivElement>(null);
   const [expandedRx, setExpandedRx] = useState<string | null>(null);
   // Queue Multi-select
   const [selectedQueue, setSelectedQueue] = useState<Set<string>>(new Set());
@@ -239,7 +284,6 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [bulkDeleteRemark, setBulkDeleteRemark] = useState("");
   const [dispensingId, setDispensingId] = useState<string | null>(null);
-  const [dispenseNotes, setDispenseNotes] = useState("");
   // Queue CRUD extras
   const [queueViewModal, setQueueViewModal] = useState<any>(null);
   const [rxActionTarget, setRxActionTarget] = useState<any>(null);
@@ -293,6 +337,10 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   // Delete queue item
   const [rxDeleteTarget, setRxDeleteTarget] = useState<any>(null);
   const [rxDeleting, setRxDeleting] = useState(false);
+  // Revoke dispense
+  const [revokeDispenseTarget, setRevokeDispenseTarget] = useState<any>(null);
+  const [revokeReason, setRevokeReason] = useState("");
+  const [revoking, setRevoking] = useState(false);
   // Substitute modal
   const [substituteModal, setSubstituteModal] = useState<{ itemId: string; name: string; rxId: string; medIdx: number } | null>(null);
   const [substituteResults, setSubstituteResults] = useState<any[]>([]);
@@ -387,25 +435,57 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const [apptSlots, setApptSlots] = useState<string[]>([]);
   const [apptSlotsLoading, setApptSlotsLoading] = useState(false);
 
-  // Billing
-  const [bills, setBills] = useState<PharmacyBill[]>([]);
-  const [billsLoading, setBillsLoading] = useState(false);
-  const [billSearch, setBillSearch] = useState("");
-  const [billFilter, setBillFilter] = useState<"all" | "PENDING" | "PAID" | "PARTIALLY_PAID">("all");
-  const [paymentModal, setPaymentModal] = useState<PharmacyBill | null>(null);
-  const [paymentForm, setPaymentForm] = useState({ amount: "", method: "CASH", transactionId: "", notes: "" });
-  const [payingBill, setPayingBill] = useState(false);
-
   // Dispense Form & Transfer
   const [subDepts, setSubDepts] = useState<any[]>([]);
-  const [dispenseForm, setDispenseForm] = useState<any>({});
-  const [transferTo, setTransferTo] = useState<string>("");
+  const [dspItems, setDspItems] = useState<any[]>([]);
+  const [dspAction, setDspAction] = useState<"close"|"collect"|"transfer">("close");
+  const [dspPayMethod, setDspPayMethod] = useState("CASH");
+  const [dspDiscount, setDspDiscount] = useState(0);
+  const [dspTxnId, setDspTxnId] = useState("");
+  const [dspTransferTarget, setDspTransferTarget] = useState("");
+  const [dspTransferNote, setDspTransferNote] = useState("");
+  const [dspNotes, setDspNotes] = useState("");
 
   useEffect(() => {
     api("/api/config/subdepartments?limit=50").then(d => {
       if (d.success) setSubDepts(d.data?.data || d.data || []);
     });
   }, []);
+
+  // Initialize dsp state when dispense modal opens/closes
+  useEffect(() => {
+    if (!dispenseModalItem) {
+      setDspItems([]);
+      setDspAction("close");
+      setDspPayMethod("CASH");
+      setDspDiscount(0);
+      setDspTxnId("");
+      setDspTransferTarget("");
+      setDspTransferNote("");
+      setDspNotes("");
+      return;
+    }
+    const raw = dispenseModalItem.medications;
+    const meds: any[] = (() => { try { return typeof raw === "string" ? JSON.parse(raw) : Array.isArray(raw) ? raw : []; } catch { return []; } })();
+    const items = meds.map((m: any) => {
+      const medName = (m.name || m.medicine || "").toLowerCase().trim();
+      const matched = medName
+        ? (inventory.find((i: any) => i.isActive && i.name.toLowerCase() === medName)
+          || inventory.find((i: any) => i.isActive && i.genericName?.toLowerCase() === medName)
+          || inventory.find((i: any) => i.isActive && medName.length > 3 && i.name.toLowerCase().includes(medName)))
+        : null;
+      return {
+        prescribedName: m.name || m.medicine || "",
+        dosage: m.dosage || "",
+        frequency: m.frequency || "",
+        inventoryItemId: matched?.id || "",
+        name: matched?.name || m.name || m.medicine || "",
+        quantity: parseInt(m.quantity) || 1,
+        unitPrice: matched ? (matched.sellingPrice || matched.mrp || 0) : (parseFloat(m.price) || 0),
+      };
+    });
+    setDspItems(items);
+  }, [dispenseModalItem]);
 
   // â”€â”€ Load Stats â”€â”€
   const loadStats = useCallback(async () => {
@@ -414,6 +494,40 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     if (res.success) setStats(res.data);
     setStatsLoading(false);
   }, []);
+
+  const loadExpenses = useCallback(async () => {
+    setExpLoading(true);
+    const res = await api("/api/expense?limit=100&department=Pharmacy");
+    if (res.success) {
+      setExpenses(res.data?.expenses || []);
+      setExpenseStats(res.data?.stats || null);
+    }
+    setExpLoading(false);
+  }, []);
+
+  const saveExpense = async () => {
+    const amt = parseFloat(expForm.amount);
+    if (!expForm.title.trim()) { setExpMsg("Title is required"); return; }
+    if (!expForm.amount || isNaN(amt) || amt <= 0) { setExpMsg("Enter a valid amount"); return; }
+    if (!expForm.date) { setExpMsg("Date is required"); return; }
+    setExpSaving(true); setExpMsg("");
+    const res = expEditId
+      ? await api(`/api/expense/${expEditId}`, "PUT", { ...expForm, amount: amt, department: "Pharmacy" })
+      : await api("/api/expense", "POST", { ...expForm, amount: amt, department: "Pharmacy" });
+    if (res.success) {
+      setExpModal(false); setExpEditId(null);
+      setExpForm({ title: "", category: "MEDICINE", amount: "", date: new Date().toISOString().slice(0, 10), description: "" });
+      loadExpenses();
+    } else { setExpMsg(res.message || "Failed to save expense"); }
+    setExpSaving(false);
+  };
+
+  const deleteExpense = async (id: string) => {
+    setExpDeleting(true);
+    const res = await api(`/api/expense/${id}`, "DELETE");
+    if (res.success) { setExpDelConfirm(null); loadExpenses(); }
+    setExpDeleting(false);
+  };
 
   // Auto-refresh every 30 seconds on overview tab
   useEffect(() => {
@@ -435,10 +549,22 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   const loadQueue = useCallback(async () => {
     setQueueLoading(true);
     const statusParam = queueFilter === "all" ? "all" : queueFilter === "dispensed" ? "COMPLETED" : queueFilter === "HOLD" ? "HOLD" : queueFilter === "SKIPPED" ? "SKIPPED" : "";
-    const res = await api(`/api/pharmacy/queue?status=${statusParam}&search=${encodeURIComponent(queueSearch)}&date=${queueDate}`);
+    const params = new URLSearchParams({ status: statusParam, search: queueSearch });
+    if (queueDate) { params.set("date", queueDate); } else { params.set("allDates", "true"); }
+    const [res, billingRes] = await Promise.all([
+      api(`/api/pharmacy/queue?${params}`),
+      fetch("/api/billing?pharmacyOnly=true&limit=1", { credentials: "include" }).then(r => r.json()).catch(() => null),
+    ]);
     if (res.success) {
       setQueue(res.data.queue || []);
       setQueueStats(res.data.stats || { pending: 0, dispensed: 0, total: 0 });
+    }
+    if (billingRes?.success) {
+      setQueueBillingStats({
+        todayRevenue: billingRes.data?.stats?.todayRevenue || 0,
+        monthRevenue: billingRes.data?.stats?.monthRevenue || 0,
+        pendingBills: billingRes.data?.stats?.pendingCount || 0,
+      });
     }
     setQueueLoading(false);
   }, [queueFilter, queueSearch, queueDate]);
@@ -648,7 +774,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     setCsSaving(false);
     if (res.success) {
       setCsSuccessMsg("Sale complete - " + (res.data?.billNo || "") + " - Rs." + (res.data?.total || 0));
-      loadStats(); loadBills(); loadInventory();
+      loadStats(); loadInventory();
       setTimeout(() => {
         setCounterSaleModal(false); setCsSuccessMsg("");
         setCsItems([{ inventoryItemId: "", name: "", quantity: "1", unitPrice: "0", gst: "0", availableStock: 0 }]);
@@ -697,7 +823,130 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
     }
   };
 
-  // â”€â”€ Delete Rx from Queue â”€â”€
+  // ── Revoke Dispense ──
+  const handleRevokeDispense = async () => {
+    if (!revokeDispenseTarget) return;
+    setRevoking(true);
+    const res = await api("/api/pharmacy/queue", "PATCH", {
+      prescriptionId: revokeDispenseTarget.id,
+      workflowId: revokeDispenseTarget.workflowId,
+      action: "revoke_dispense",
+    });
+    setRevoking(false);
+    if (res.success) {
+      setRevokeDispenseTarget(null);
+      setRevokeReason("");
+      loadQueue();
+      loadStats();
+    } else {
+      alert(res.message || "Failed to revoke dispense");
+    }
+  };
+
+  // ── Queue Bill PDF Download ──
+  const getJsPdfQ = async () => {
+    if (jsPdfCacheQ.current) return jsPdfCacheQ.current;
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
+    jsPdfCacheQ.current = { jsPDF, autoTable };
+    return jsPdfCacheQ.current;
+  };
+
+  const handleQueueBillDownload = async (item: QueueItem) => {
+    if (!item?.bill) return;
+    const { jsPDF, autoTable } = await getJsPdfQ();
+    const pageSize = (hospitalInfo.letterheadSize || "A4").toLowerCase() as "a4" | "a5" | "letter";
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: pageSize });
+    const pw = doc.internal.pageSize.getWidth(); const ph = doc.internal.pageSize.getHeight();
+    const mx = 18; const cw = pw - mx * 2;
+    const rs = (v: number) => `Rs. ${Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const lhDU = await loadImageAsBase64(hospitalInfo.letterhead || "");
+    const lgDU = lhDU ? null : await loadImageAsBase64(hospitalInfo.logo || "");
+    const hasLH = !!lhDU;
+    let y: number;
+    const dateStr = item.appointment?.appointmentDate ? fmtDate(item.appointment.appointmentDate) : fmtDate(item.createdAt);
+    if (hasLH) {
+      try { doc.addImage(lhDU!, "PNG", 0, 0, pw, ph); } catch {}
+      y = 80;
+      const rx = pw - mx;
+      doc.setFillColor(14,137,143); doc.roundedRect(rx-32,52,32,7,1.5,1.5,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(255,255,255); doc.text("INVOICE", rx-16, 57, {align:"center"});
+      doc.setFontSize(12); doc.setTextColor(30,41,59); doc.text(item.bill.billNo||"BILL", rx, 68, {align:"right"});
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(100,116,139); doc.text("Date: "+dateStr, rx, 74, {align:"right"});
+    } else {
+      y = 16;
+      doc.setFillColor(248,250,252); doc.rect(0,0,pw,52,"F");
+      doc.setDrawColor(14,165,233); doc.setLineWidth(0.8); doc.line(0,52,pw,52);
+      const infoX = lgDU ? mx+28 : mx;
+      if (lgDU) { try { doc.addImage(lgDU,"PNG",mx,y,22,22); } catch {} }
+      if (!lgDU) { doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.setTextColor(14,165,233); doc.text(hospitalInfo.name||"Hospital", infoX, y+6); }
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(100,116,139);
+      let hy = y+12;
+      if (hospitalInfo.address) { doc.text(hospitalInfo.address, infoX, hy); hy+=4; }
+      if (hospitalInfo.phone) { doc.text("Phone: "+hospitalInfo.phone, infoX, hy); hy+=4; }
+      if (hospitalInfo.email) { doc.text("Email: "+hospitalInfo.email, infoX, hy); hy+=4; }
+      if (hospitalInfo.gstNumber) { doc.text("GSTIN: "+hospitalInfo.gstNumber, infoX, hy); }
+      const rx = pw - mx;
+      doc.setFillColor(14,165,233); doc.roundedRect(rx-32,y,32,7,1.5,1.5,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(255,255,255); doc.text("INVOICE", rx-16, y+5, {align:"center"});
+      doc.setFontSize(12); doc.setTextColor(30,41,59); doc.text(item.bill.billNo||"BILL", rx, y+16, {align:"right"});
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(100,116,139); doc.text("Date: "+dateStr, rx, y+22, {align:"right"});
+      y = 58;
+    }
+    doc.setFillColor(248,250,252); doc.roundedRect(mx,y,cw,24,2,2,"F");
+    doc.setDrawColor(226,232,240); doc.setLineWidth(0.2); doc.roundedRect(mx,y,cw,24,2,2,"S");
+    const meta = [
+      {label:"Patient Name",value:item.patient?.name||""},{label:"Patient ID",value:item.patient?.patientId||""},
+      {label:"Date",value:dateStr},{label:"Doctor",value:item.doctor?.name?"Dr. "+item.doctor.name:"Walk-in"},{label:"Rx No",value:item.prescriptionNo||""},
+    ];
+    const mColW = cw/3;
+    meta.forEach((m,i) => {
+      const col=i%3; const row=Math.floor(i/3); const mX=mx+4+col*mColW; const mY=y+5+row*11;
+      doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(148,163,184); doc.text(m.label.toUpperCase(), mX, mY);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(30,41,59); doc.text(m.value, mX, mY+4.5);
+    });
+    y+=30;
+    const pharmItems = (item.bill.billItems||[]).filter((it:any)=>it.type==="PHARMACY");
+    const pharmTotal = pharmItems.reduce((s:number,it:any)=>s+(it.amount||0),0);
+    if (pharmItems.length>0) {
+      doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(190,24,93); doc.text("Pharmacy — Medicine Details", mx, y+2);
+      if (item.prescriptionNo) { doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(148,163,184); doc.text("Rx #"+item.prescriptionNo, pw-mx, y+2, {align:"right"}); }
+      y+=5;
+      if (item.diagnosis) { doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(100,116,139); doc.text("Diagnosis: "+item.diagnosis, mx, y+2); y+=5; }
+      const medRows = pharmItems.map((it:any,i:number)=>[String(i+1),it.name,String(it.quantity||1),rs(it.unitPrice||0),rs(it.amount||0)]);
+      medRows.push(["","","","Medicine Total:",rs(pharmTotal)]);
+      autoTable(doc,{startY:y,head:[["#","Medicine","Qty","Unit Price","Amount"]],body:medRows,theme:"striped",headStyles:{fillColor:[252,231,243],textColor:[190,24,93],fontSize:7.5,fontStyle:"bold",cellPadding:{top:2.5,bottom:2.5,left:3,right:3}},bodyStyles:{fontSize:8,textColor:[51,65,85],cellPadding:{top:2,bottom:2,left:3,right:3}},alternateRowStyles:{fillColor:[253,242,248]},columnStyles:{0:{cellWidth:8,halign:"center"},1:{cellWidth:"auto"},2:{cellWidth:12,halign:"center"},3:{cellWidth:26,halign:"right"},4:{cellWidth:28,halign:"right",fontStyle:"bold"}},margin:{left:mx,right:mx},didParseCell:(data:any)=>{if(data.section==="body"&&data.row.index===medRows.length-1){data.cell.styles.fontStyle="bold";data.cell.styles.textColor=[190,24,93];data.cell.styles.fillColor=[252,231,243];}}});
+      y=(doc as any).lastAutoTable.finalY+6;
+    }
+    const sW=78; const sX=pw-mx-sW;
+    const sLines:any[]=[{label:"Subtotal",value:rs(pharmTotal)}];
+    const lineH=6; const boxH=(sLines.length*lineH)+lineH+14;
+    doc.setFillColor(248,250,252); doc.roundedRect(sX,y,sW,boxH,2,2,"F");
+    doc.setDrawColor(226,232,240); doc.setLineWidth(0.2); doc.roundedRect(sX,y,sW,boxH,2,2,"S");
+    let sY=y+6;
+    sLines.forEach((row:any)=>{doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...(row.color||[71,85,105]) as [number,number,number]);doc.text(row.label,sX+4,sY);doc.text(row.value,sX+sW-4,sY,{align:"right"});sY+=lineH;});
+    doc.setDrawColor(14,137,143);doc.setLineWidth(0.4);doc.line(sX+4,sY-1,sX+sW-4,sY-1);sY+=4;
+    doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(30,41,59);doc.text("Pharmacy Total",sX+4,sY);
+    doc.setTextColor(14,137,143);doc.setFontSize(11);doc.text(rs(pharmTotal),sX+sW-4,sY,{align:"right"});
+    y+=boxH+8;
+    if(item.bill.status==="PAID"){
+      doc.setFillColor(240,253,244);doc.setDrawColor(187,247,208);doc.setLineWidth(0.3);doc.roundedRect(mx,y,cw,14,2,2,"FD");
+      doc.setFont("helvetica","bold");doc.setFontSize(6.5);doc.setTextColor(148,163,184);doc.text("STATUS",mx+4,y+5);
+      doc.setFontSize(8.5);doc.setTextColor(22,101,52);doc.text("PAID",mx+4,y+10);
+      doc.setFontSize(6.5);doc.setTextColor(148,163,184);doc.text("PHARMACY AMOUNT",mx+40,y+5);
+      doc.setFontSize(8.5);doc.setTextColor(22,101,52);doc.text(rs(pharmTotal),mx+40,y+10);
+      y+=20;
+    }
+    const sigY=Math.max(y+10,ph-(hasLH?60:50));
+    doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);
+    doc.line(mx,sigY,mx+55,sigY);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(100,116,139);doc.text("Patient / Attendant Signature",mx,sigY+5);
+    doc.line(pw-mx-55,sigY,pw-mx,sigY);doc.text("Authorized Signatory",pw-mx-55,sigY+5);
+    const footerY=sigY+14;
+    if(!hasLH){doc.setDrawColor(226,232,240);doc.setLineWidth(0.15);doc.line(mx,footerY,pw-mx,footerY);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(100,116,139);doc.text("Thank you for choosing "+(hospitalInfo.name||"our hospital"),pw/2,footerY+5,{align:"center"});doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text("This is a computer-generated invoice.",pw/2,footerY+9,{align:"center"});}
+    else{doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(100,116,139);doc.text("This is a computer-generated invoice.",pw/2,footerY+3,{align:"center"});}
+    doc.save(`Invoice_${(item.bill.billNo||"BILL").replace(/\s+/g,"-")}_${(item.patient?.name||"patient").replace(/\s+/g,"_")}.pdf`);
+  };
+
+  // ── Delete Rx from Queue ──
   const handleDeleteRx = async () => {
     if (!rxDeleteTarget) return;
     if (!rxDeleteRemark.trim()) {
@@ -1079,22 +1328,19 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   };
 
   // â”€â”€ Load Bills â”€â”€
-  const loadBills = useCallback(async () => {
-    setBillsLoading(true);
-    const res = await api("/api/billing?limit=100");
-    if (res.success) {
-      const allBills = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
-      // Filter pharmacy-related bills (those with PHARMACY bill items or linked to pharmacy prescriptions)
-      setBills(allBills);
-    }
-    setBillsLoading(false);
-  }, []);
-
   // â”€â”€ Auto-load on tab change â”€â”€
   useEffect(() => { loadStats(); }, [loadStats]);
   useEffect(() => { if (tab === "queue") { loadQueue(); if (inventory.length === 0) loadInventory(); } }, [tab, loadQueue]);
-  useEffect(() => { if (tab === "billing") loadBills(); }, [tab, loadBills]);
-  useEffect(() => { if (tab === "reports" && inventory.length === 0) loadInventory(); }, [tab]);
+  useEffect(() => { if (tab === "reports") { loadStats(); } }, [tab]);
+  useEffect(() => { if (tab === "expense") loadExpenses(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!queueExportOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (queueExportRef.current && !queueExportRef.current.contains(e.target as Node)) setQueueExportOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [queueExportOpen]);
 
   // â”€â”€ Real-time Prescription Notifications (SSE) â”€â”€
   useEffect(() => {
@@ -1146,100 +1392,80 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
   }, [inventory, counterSaleModal]);
 
   // â”€â”€ Dispense Handler â”€â”€
-  const handleDispense = async (item: QueueItem) => {
-    setDispensingId(item.id);
+  const handleDispenseSubmit = async () => {
+    if (!dispenseModalItem) return;
+    const item = dispenseModalItem;
 
-    const formItems = dispenseForm[item.id] || item.medications?.map((m: any) => ({
-        name: m.name || m.medicine,
-        quantity: parseInt(m.quantity) || 1,
-        inventoryItemId: m.inventoryItemId || null,
-        price: parseFloat(m.price) || m.amount || 0
-      })) || [];
-
-    // Validate all items have inventoryItemId and sufficient stock
-    const invalidItems = formItems.filter((m: any) => !m.inventoryItemId);
-    if (invalidItems.length > 0) {
-      setSuccessModal({ open: true, title: "Missing Inventory Items", message: `Please select inventory items for all medications. ${invalidItems.length} item(s) missing.`, details: [] });
-      setDispensingId(null);
+    const validItems = dspItems.filter((m: any) => m.inventoryItemId && m.quantity > 0);
+    if (validItems.length === 0) {
+      setSuccessModal({ open: true, title: "No Items Selected", message: "Select at least one inventory item before dispensing.", details: [] });
       return;
     }
 
-    // Check stock availability
-    const stockIssues = formItems.filter((m: any) => {
+    const overStock = validItems.filter((m: any) => {
       const inv = inventory.find((i: any) => i.id === m.inventoryItemId);
-      if (!inv) return true;
-      const availableStock = inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
-      return m.quantity > availableStock;
+      const avail = inv ? (inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0) : 0;
+      return m.quantity > avail;
     });
-    
-    if (stockIssues.length > 0) {
-      setSuccessModal({ open: true, title: "Insufficient Stock", message: `Insufficient stock for ${stockIssues.length} item(s). Please adjust quantities.`, details: [] });
-      setDispensingId(null);
+    if (overStock.length > 0) {
+      setSuccessModal({ open: true, title: "Insufficient Stock", message: `${overStock.length} item(s) exceed available stock. Adjust quantities.`, details: [] });
       return;
     }
 
-    const totalCharge = formItems.reduce((sum: number, m: any) => sum + ((parseFloat(m.price) || 0) * (parseInt(m.quantity) || 1)), 0);
+    if (dspAction === "transfer" && !dspTransferTarget) {
+      setSuccessModal({ open: true, title: "Select Department", message: "Choose a department to transfer the patient to.", details: [] });
+      return;
+    }
+
+    setDispensingId(item.id);
+    const subtotal = dspItems.reduce((s: number, m: any) => s + (m.quantity * m.unitPrice), 0);
+    const total = Math.max(0, subtotal - (dspDiscount || 0));
 
     const res = await api("/api/pharmacy/queue", "PATCH", {
       prescriptionId: item.id,
-      workflowId: item.workflowId,
-      notes: dispenseNotes || "Dispensed from pharmacy",
-      dispensedItems: formItems,
-      totalCharge,
+      workflowId: item.workflowId || null,
+      notes: dspNotes || "Dispensed from pharmacy counter",
+      dispensedItems: validItems.map((m: any) => ({ name: m.name, inventoryItemId: m.inventoryItemId, quantity: m.quantity, price: m.unitPrice })),
+      totalCharge: total,
+      paymentAction: dspAction === "collect" ? "collect" : dspAction === "transfer" ? (dspTransferTarget === "BILLING" ? "transfer_billing" : "transfer_dept") : null,
+      paymentMethod: dspAction === "collect" ? dspPayMethod : undefined,
+      transactionId: dspTxnId || undefined,
+      discount: dspDiscount || 0,
+      transferDeptId: dspAction === "transfer" ? dspTransferTarget : undefined,
+      transferNote: dspAction === "transfer" ? (dspTransferNote || "Transferred from Pharmacy after dispensing") : undefined,
     });
 
-    // Process transfer if selected
-    if (res.success && transferTo && item.appointment?.id) {
-      if (transferTo === "BILLING") {
-        await api("/api/billing/transfer", "POST", {
-            appointmentId: item.appointment.id,
-            note: "Transferred from Pharmacy after dispensing. " + dispenseNotes
-        });
-      } else {
-        await api(`/api/appointments/${item.appointment.id}`, "PUT", {
-            subDepartmentId: transferTo,
-            subDeptNote: "Transferred from Pharmacy after dispensing. " + dispenseNotes
-        });
-      }
-    }
-
     setDispensingId(null);
-    setDispenseNotes("");
-    setTransferTo("");
+    setDispenseModalItem(null);
     if (res.success) {
       setExpandedRx(null);
       loadQueue();
       loadStats();
       loadInventory();
-    }
-  };
-
-  // â”€â”€ Payment Handler â”€â”€
-  const handlePayment = async () => {
-    if (!paymentModal || !paymentForm.amount) return;
-    setPayingBill(true);
-    const res = await api(`/api/billing/${paymentModal.id}`, "PATCH", {
-      amount: parseFloat(paymentForm.amount),
-      method: paymentForm.method,
-      transactionId: paymentForm.transactionId || undefined,
-      notes: paymentForm.notes || "Pharmacy payment",
-    });
-    setPayingBill(false);
-    if (res.success) {
-      setPaymentModal(null);
-      setPaymentForm({ amount: "", method: "CASH", transactionId: "", notes: "" });
-      loadBills();
-      loadStats();
+      setSuccessModal({
+        open: true,
+        title: dspAction === "collect" ? "Dispensed & Paid!" : dspAction === "transfer" ? "Dispensed & Transferred!" : "Dispensed!",
+        message: dspAction === "collect"
+          ? `Medicines dispensed and payment of \u20B9${total.toFixed(2)} collected.`
+          : dspAction === "transfer"
+            ? `Medicines dispensed. Patient transferred to ${dspTransferTarget === "BILLING" ? "Billing Counter" : subDepts.find((s: any) => s.id === dspTransferTarget)?.name || "department"}.`
+            : "Medicines dispensed successfully.",
+        details: [],
+      });
+    } else {
+      setSuccessModal({ open: true, title: "Error", message: res.message || "Failed to dispense. Please try again.", details: [] });
     }
   };
 
   // â”€â”€ Filter logic â”€â”€
-  const filteredQueue = queue.filter(q => {
-    if (queueFilter === "pending" && q.dispensed) return false;
-    if (queueFilter === "dispensed" && !q.dispensed) return false;
-    if (queueSourceFilter !== "all" && q.appointment?.type !== queueSourceFilter) return false;
-    return true;
-  });
+  const filteredQueue = queue
+    .filter(q => {
+      if (queueFilter === "pending" && q.dispensed) return false;
+      if (queueFilter === "dispensed" && !q.dispensed) return false;
+      if (queueSourceFilter !== "all" && q.appointment?.type !== queueSourceFilter) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const filteredInventory = inventory.filter(i => {
     if (invFilter === "low" && (i.totalStock || 0) > i.minStock) return false;
@@ -1248,15 +1474,6 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
       thirtyDays.setDate(thirtyDays.getDate() + 30);
       const hasExpiring = i.batches?.some(b => b.expiryDate && new Date(b.expiryDate) <= thirtyDays);
       if (!hasExpiring) return false;
-    }
-    return true;
-  });
-
-  const filteredBills = (Array.isArray(bills) ? bills : []).filter(b => {
-    if (billFilter !== "all" && b.status !== billFilter) return false;
-    if (billSearch) {
-      const s = billSearch.toLowerCase();
-      return b.billNo?.toLowerCase().includes(s) || b.patient?.name?.toLowerCase().includes(s) || b.patient?.patientId?.toLowerCase().includes(s);
     }
     return true;
   });
@@ -1279,7 +1496,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
 
       {/* â”€â”€ Overview Tab â”€â”€ */}
       {tab === "overview" && (
-        <div className="ph-section" style={{ background: "#f8fafc", padding: 24, minHeight: "100%", borderRadius: 16 }}>
+        <div className="ph-section" style={{ minHeight: "100%" }}>
           {statsLoading && !stats ? (
             <div className="ph-loading"><Loader2 size={20} className="ph-spin" /> Loading dashboard...</div>
           ) : stats ? (
@@ -1438,67 +1655,102 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
               {/* ── Row 3: Charts (3fr + 2fr) ── */}
               <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 14, marginBottom: 14 }}>
 
-                {/* 7-Day Revenue + Dispensing Chart */}
+                {/* 7-Day Dual Area Line Chart */}
                 <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid #e2e8f0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>7-Day Performance</div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Revenue trend &middot; hover bars for details</div>
-                    </div>
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
-                        <span style={{ width: 10, height: 10, borderRadius: 2, background: ACCENT, display: "inline-block" }} /> Revenue
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
-                        <span style={{ width: 10, height: 10, borderRadius: 2, background: "#cbd5e1", display: "inline-block" }} /> Units
-                      </div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Revenue &amp; dispensing trend</div>
                     </div>
                   </div>
-                  {/* Chart area */}
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 150, position: "relative", paddingBottom: 26, marginTop: 12 }}>
-                    {/* Grid lines */}
-                    {[0, 33, 66, 100].map(pct => (
-                      <div key={pct} style={{ position: "absolute", left: 0, right: 0, bottom: `calc(26px + ${pct / 100} * 124px)`, borderTop: `1px dashed ${pct === 0 ? "#e2e8f0" : "#f1f5f9"}`, zIndex: 0 }} />
-                    ))}
-                    {stats.chartData.map((d, i) => {
-                      const maxRev = Math.max(...stats.chartData.map(x => x.revenue), 1);
-                      const maxCnt = Math.max(...stats.chartData.map(x => x.count), 1);
-                      const revH = Math.max((d.revenue / maxRev) * 124, 4);
-                      const cntH = Math.max((d.count / maxCnt) * 124, 3);
-                      const isToday = d.date === new Date().toISOString().slice(0, 10);
-                      const isHov = hoveredBar === i;
-                      return (
-                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", position: "relative", zIndex: 1, cursor: "pointer" }}
-                          onMouseEnter={() => setHoveredBar(i)} onMouseLeave={() => setHoveredBar(null)}>
-                          {/* Tooltip */}
-                          {isHov && (
-                            <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", background: "#1e293b", color: "#fff", borderRadius: 8, padding: "8px 12px", fontSize: 11, whiteSpace: "nowrap", zIndex: 20, boxShadow: "0 4px 16px rgba(0,0,0,.2)", pointerEvents: "none" }}>
-                              <div style={{ fontWeight: 700, marginBottom: 3, color: "#e2e8f0" }}>{d.label}</div>
-                              <div style={{ color: "#4ade80" }}>{fmtCurrency(d.revenue)}</div>
-                              <div style={{ color: "#94a3b8", fontSize: 10, marginTop: 2 }}>{d.count} units dispensed</div>
-                              <div style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", border: "5px solid transparent", borderTopColor: "#1e293b" }} />
-                            </div>
-                          )}
-                          {/* Stacked bars: revenue (solid) + count (ghost) */}
-                          <div style={{ width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 2, height: 124 }}>
-                            <div style={{ width: "42%", borderRadius: "4px 4px 0 0", background: isToday ? ACCENT : isHov ? `${ACCENT}cc` : `${ACCENT}70`, height: revH, transition: "all .2s", minHeight: 3 }} />
-                            <div style={{ width: "30%", borderRadius: "4px 4px 0 0", background: isToday ? "#cbd5e1" : isHov ? "#94a3b8" : "#e2e8f0", height: cntH, transition: "all .2s", minHeight: 2 }} />
-                          </div>
-                          {/* Day label */}
-                          <div style={{ position: "absolute", bottom: 0, fontSize: 9, color: isToday ? ACCENT : "#94a3b8", fontWeight: isToday ? 700 : 400, textAlign: "center", width: "100%" }}>{d.label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {/* Summary footer */}
-                  <div style={{ marginTop: 4, paddingTop: 12, borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, color: "#64748b" }}>7-day total: <strong style={{ color: "#0f172a" }}>{fmtCurrency(stats.weekRevenue)}</strong></span>
-                    {stats.revenueGrowth !== null && (
-                      <span style={{ fontSize: 11, fontWeight: 600, color: (stats.revenueGrowth ?? 0) >= 0 ? "#16a34a" : "#ef4444", display: "flex", alignItems: "center", gap: 4 }}>
-                        {(stats.revenueGrowth ?? 0) >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                        {(stats.revenueGrowth ?? 0) >= 0 ? "+" : ""}{stats.revenueGrowth}% vs prev week
-                      </span>
-                    )}
+                  {/* SVG Dual Area Line Chart */}
+                  {(() => {
+                    const cd = stats.chartData;
+                    const W = 520, H = 160, PL = 44, PR = 12, PT = 10, PB = 28;
+                    const cW = W - PL - PR, cH = H - PT - PB;
+                    const n = cd.length;
+                    if (n < 2) return <div style={{ height: H, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>No data yet</div>;
+                    const maxRev = Math.max(...cd.map(d => d.revenue), 1);
+                    const maxCnt = Math.max(...cd.map(d => d.count), 1);
+                    const step = cW / (n - 1);
+                    const xOf = (i: number) => PL + i * step;
+                    const yR = (v: number) => PT + cH - (v / maxRev) * cH;
+                    const yC = (v: number) => PT + cH - (v / maxCnt) * cH;
+                    const revLine = cd.map((d, i) => `${i === 0 ? "M" : "L"} ${xOf(i)} ${yR(d.revenue)}`).join(" ");
+                    const cntLine = cd.map((d, i) => `${i === 0 ? "M" : "L"} ${xOf(i)} ${yC(d.count)}`).join(" ");
+                    const revArea = `${revLine} L ${xOf(n - 1)} ${PT + cH} L ${PL} ${PT + cH} Z`;
+                    const cntArea = `${cntLine} L ${xOf(n - 1)} ${PT + cH} L ${PL} ${PT + cH} Z`;
+                    const yTicks = [0, 0.33, 0.66, 1];
+                    const todayIdx = cd.findIndex(d => d.date === new Date().toISOString().slice(0, 10));
+                    return (
+                      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible" }}>
+                        <defs>
+                          <linearGradient id="ph-rev-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={ACCENT} stopOpacity="0.32" />
+                            <stop offset="100%" stopColor={ACCENT} stopOpacity="0.02" />
+                          </linearGradient>
+                          <linearGradient id="ph-cnt-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#86efac" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#86efac" stopOpacity="0.02" />
+                          </linearGradient>
+                        </defs>
+                        {/* Grid lines + Y labels */}
+                        {yTicks.map((t, i) => {
+                          const y = PT + cH - t * cH;
+                          const val = maxRev * t;
+                          const lbl = val === 0 ? "0" : val >= 1000 ? `${Math.round(val / 1000)}k` : String(Math.round(val));
+                          return (
+                            <g key={i}>
+                              <line x1={PL} y1={y} x2={W - PR} y2={y} stroke={i === 0 ? "#e2e8f0" : "#f1f5f9"} strokeWidth="1" strokeDasharray={i === 0 ? "0" : "4 3"} />
+                              <text x={PL - 5} y={y + 4} textAnchor="end" fontSize="9" fill="#94a3b8">{lbl}</text>
+                            </g>
+                          );
+                        })}
+                        {/* Today highlight */}
+                        {todayIdx >= 0 && (
+                          <line x1={xOf(todayIdx)} y1={PT} x2={xOf(todayIdx)} y2={PT + cH} stroke={ACCENT} strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4" />
+                        )}
+                        {/* Area fills (count behind revenue) */}
+                        <path d={cntArea} fill="url(#ph-cnt-grad)" />
+                        <path d={revArea} fill="url(#ph-rev-grad)" />
+                        {/* Lines */}
+                        <path d={cntLine} fill="none" stroke="#4ade80" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                        <path d={revLine} fill="none" stroke={ACCENT} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                        {/* Dots + tooltips via title */}
+                        {cd.map((d, i) => (
+                          <g key={i}>
+                            <circle cx={xOf(i)} cy={yC(d.count)} r="3.5" fill="#fff" stroke="#4ade80" strokeWidth="2" />
+                            <circle cx={xOf(i)} cy={yR(d.revenue)} r="4" fill="#fff" stroke={ACCENT} strokeWidth="2.5">
+                              <title>{d.label}: {fmtCurrency(d.revenue)} · {d.count} dispensed</title>
+                            </circle>
+                            {/* X labels */}
+                            <text x={xOf(i)} y={H - 5} textAnchor="middle" fontSize="9" fill={i === todayIdx ? ACCENT : "#94a3b8"} fontWeight={i === todayIdx ? "700" : "400"}>{d.label}</text>
+                          </g>
+                        ))}
+                      </svg>
+                    );
+                  })()}
+                  {/* Legend + footer */}
+                  <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#475569" }}>
+                        <svg width="24" height="3"><line x1="0" y1="1.5" x2="24" y2="1.5" stroke={ACCENT} strokeWidth="2.5" /></svg>
+                        Revenue
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#475569" }}>
+                        <svg width="24" height="3"><line x1="0" y1="1.5" x2="24" y2="1.5" stroke="#4ade80" strokeWidth="2" /></svg>
+                        Dispensed
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 11, color: "#64748b" }}>7-day: <strong style={{ color: "#0f172a" }}>{fmtCurrency(stats.weekRevenue)}</strong></span>
+                      {stats.revenueGrowth !== null && (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: (stats.revenueGrowth ?? 0) >= 0 ? "#16a34a" : "#ef4444", display: "flex", alignItems: "center", gap: 3 }}>
+                          {(stats.revenueGrowth ?? 0) >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                          {(stats.revenueGrowth ?? 0) >= 0 ? "+" : ""}{stats.revenueGrowth}%
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1621,27 +1873,25 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* â”€â”€ Rx Queue Tab â”€â”€ */}
+      {/* ── Rx Queue Tab ── */}
       {tab === "queue" && (
         <div className="ph-section">
-          {/* Queue Header â€” Row 1: Search/Date left, Action buttons right */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <div className="ph-search-wrap">
-                <Search size={14} color="#94a3b8" />
-                <input className="ph-search-input" placeholder="Search patient, Rx number..." value={queueSearch} onChange={e => setQueueSearch(e.target.value)} />
-                {queueSearch && <button className="ph-icon-btn-sm" onClick={() => setQueueSearch("")}><X size={12} /></button>}
+
+          {/* ── Page Header ── */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#0f172a", letterSpacing: "-.02em", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${ACCENT},#07595D)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Pill size={18} color="#fff" />
+                </div>
+                Prescription Queue
               </div>
-              <input type="date" value={queueDate} onChange={e => setQueueDate(e.target.value)}
-                style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 12, color: "#334155", background: "#fff", outline: "none" }} />
-              {queueDate !== new Date().toISOString().slice(0, 10) && (
-                <button className="ph-icon-btn-sm" onClick={() => setQueueDate(new Date().toISOString().slice(0, 10))} title="Back to today"><X size={13} /></button>
-              )}
+              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, marginLeft: 46 }}>All prescriptions — pending dispensing, dispensed &amp; collected</div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="ph-btn-ghost" onClick={loadQueue}><RefreshCw size={13} /> Refresh</button>
-              <button className="ph-btn-primary" style={{ background: "#ea580c" }} onClick={() => { setCounterSaleModal(true); setCsError(""); }}>
-                <ShoppingCart size={14} /> Counter Sale
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="ph-btn-ghost" onClick={loadQueue} disabled={queueLoading}><RefreshCw size={13} className={queueLoading ? "ph-spin" : ""} /> Refresh</button>
+              <button className="ph-btn-primary" style={{ background: ACCENT }} onClick={() => { setCounterSaleModal(true); setCsError(""); }}>
+                <ShoppingCart size={14} /> New Transaction
               </button>
               <button className="ph-btn-primary" onClick={() => { setRxCreateModal(true); setRxCreateError(""); if (rxCreateDoctors.length === 0) api("/api/config/doctors?simple=true").then(r => { if (r.success) setRxCreateDoctors(Array.isArray(r.data) ? r.data : r.data?.data || []); }); }}>
                 <Plus size={14} /> Add Walk-in Rx
@@ -1649,45 +1899,103 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
             </div>
           </div>
 
-          {/* Row 2: Filter pills â€” status + source in one horizontal row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-            <div className="ph-filter-pills">
-              {(["pending", "dispensed", "HOLD", "SKIPPED", "all"] as const).map(f => (
-                <button key={f} className={`ph-pill${queueFilter === f ? " on" : ""}`} onClick={() => setQueueFilter(f)}>
-                  {f === "pending" && <Clock size={12} />}
-                  {f === "dispensed" && <CheckCircle2 size={12} />}
-                  {f === "HOLD" && <Archive size={12} />}
-                  {f === "SKIPPED" && <Ban size={12} />}
-                  {f === "all" && <Layers size={12} />}
-                  {f === "pending" ? "Pending" : f === "dispensed" ? "Dispensed" : f === "HOLD" ? "On Hold" : f === "SKIPPED" ? "Skipped" : "All"}
-                  {f === "pending" && queueStats.pending > 0 && <span className="ph-pill-count">{queueStats.pending}</span>}
-                </button>
-              ))}
-            </div>
-            <div style={{ width: 1, height: 20, background: "#e2e8f0", flexShrink: 0 }} />
-            <div className="ph-filter-pills">
-              {(["all", "OPD", "IPD", "EMERGENCY"] as const).map(f => (
-                <button key={f} className={`ph-pill${queueSourceFilter === f ? " on" : ""}`} onClick={() => setQueueSourceFilter(f)}>
-                  {f === "all" ? "All Sources" : f}
-                </button>
-              ))}
-            </div>
+          {/* ── KPI Cards ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
+            {([
+              { label: "Today's Collection", val: `₹${Number(queueBillingStats.todayRevenue||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}`, icon: <IndianRupee size={20} color={ACCENT}/>, bg: "#E6F4F4" },
+              { label: "Month Revenue",       val: `₹${Number(queueBillingStats.monthRevenue||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}`, icon: <TrendingUp size={20} color="#10b981"/>, bg: "#f0fdf4" },
+              { label: "Pending Dispensing",  val: String(queueStats.pending),  icon: <Clock size={20} color="#ea580c"/>,         bg: "#fff3e6" },
+              { label: "Total Prescriptions", val: String(queueStats.total),    icon: <ClipboardList size={20} color="#a855f7"/>, bg: "#fdf4ff" },
+            ] as { label:string; val:string; icon:React.ReactNode; bg:string }[]).map((s, i) => (
+              <div key={i}
+                style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", transition: "box-shadow .2s,transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}>
+                <div style={{ width: 44, height: 44, borderRadius: 11, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{s.val}</div>
+                  <div style={{ fontSize: 10, color: "#64748b", marginTop: 3 }}>{s.label}</div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Stats Bar */}
-          <div className="ph-inv-stats" style={{ marginBottom: 14 }}>
-            <div className="ph-inv-stat"><ClipboardList size={14} color={ACCENT} /><span><strong>{queueStats.total}</strong> Total Today</span></div>
-            <div className="ph-inv-stat" style={{ background: "#fff7ed", borderColor: "#fed7aa" }}>
-              <Clock size={14} color="#ea580c" /><span style={{ color: "#ea580c" }}><strong>{queueStats.pending}</strong> Pending</span>
+          {/* ── Filter Bar (same as billing module) ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap", padding: "12px 16px", background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
+            {/* Search */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: "1 1 180px", minWidth: 160 }}>
+              <Search size={14} color="#94a3b8" />
+              <input style={{ background: "none", border: "none", outline: "none", fontSize: 12, color: "#334155", width: "100%", fontFamily: "inherit" }}
+                placeholder="Search patient, Rx number…" value={queueSearch} onChange={e => setQueueSearch(e.target.value)} />
+              {queueSearch && <button style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }} onClick={() => setQueueSearch("")}><X size={11} color="#94a3b8" /></button>}
             </div>
-            <div className="ph-inv-stat" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
-              <CheckCircle2 size={14} color="#16a34a" /><span style={{ color: "#16a34a" }}><strong>{queueStats.dispensed}</strong> Dispensed</span>
-            </div>
-            <div className="ph-inv-stat" style={{ background: "#faf5ff", borderColor: "#e9d5ff" }}>
-              <Archive size={14} color="#7c3aed" /><span style={{ color: "#7c3aed" }}><strong>{queue.filter(q => q.workflowStatus === "HOLD").length}</strong> On Hold</span>
-            </div>
-            <div className="ph-inv-stat" style={{ background: "#f8fafc", borderColor: "#e2e8f0" }}>
-              <Ban size={14} color="#94a3b8" /><span><strong>{queue.filter(q => q.workflowStatus === "SKIPPED").length}</strong> Skipped</span>
+            {/* Status */}
+            <select value={queueFilter} onChange={e => setQueueFilter(e.target.value as any)}
+              style={{ padding: "8px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, color: "#334155", background: "#fff", outline: "none", cursor: "pointer" }}>
+              <option value="all">All Status</option>
+              <option value="pending">Pending Dispensing</option>
+              <option value="dispensed">Dispensed</option>
+              <option value="HOLD">On Hold</option>
+              <option value="SKIPPED">Skipped</option>
+            </select>
+            {/* Source */}
+            <select value={queueSourceFilter} onChange={e => setQueueSourceFilter(e.target.value as any)}
+              style={{ padding: "8px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, color: "#334155", background: "#fff", outline: "none", cursor: "pointer" }}>
+              <option value="all">All Sources</option>
+              <option value="OPD">OPD</option>
+              <option value="IPD">IPD</option>
+              <option value="EMERGENCY">Emergency</option>
+            </select>
+            {/* Date filter (optional — empty = all dates) */}
+            <input type="date" value={queueDate} onChange={e => setQueueDate(e.target.value)} title="Filter by date (leave empty for all)"
+              style={{ padding: "7px 10px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 12, color: queueDate ? "#334155" : "#94a3b8", background: "#fff", outline: "none" }} />
+            {queueDate && (
+              <button title="Clear date — show all" onClick={() => setQueueDate("")}
+                style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                <X size={11} /> All Dates
+              </button>
+            )}
+            <div style={{ flex: 1 }} />
+            {/* Refresh */}
+            <button onClick={loadQueue} disabled={queueLoading}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}>
+              <RefreshCw size={13} className={queueLoading ? "ph-spin" : ""} />
+            </button>
+            {/* Export Dropdown */}
+            <div style={{ position: "relative" }} ref={queueExportRef}>
+              <button onClick={() => setQueueExportOpen(o => !o)}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#059669", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                <Download size={13} /> Export <ChevronDown size={13} />
+              </button>
+              {queueExportOpen && (() => {
+                const getRows = () => filteredQueue.map(q => ({
+                  "Rx No": q.prescriptionNo, "Patient": q.patient?.name || "", "Patient ID": q.patient?.patientId || "",
+                  "Doctor": q.doctor?.name || "Walk-in", "Source": q.appointment?.type || "Walk-in",
+                  "Meds": (q.medications || []).length, "Status": q.dispensed ? "Dispensed" : q.workflowStatus || "Pending",
+                  "Time": q.createdAt ? new Date(q.createdAt).toLocaleString("en-IN") : ""
+                }));
+                const headers = ["Rx No", "Patient", "Patient ID", "Doctor", "Source", "Meds", "Status", "Time"];
+                const tableRows = filteredQueue.map(q => [q.prescriptionNo, q.patient?.name || "", q.patient?.patientId || "", q.doctor?.name || "Walk-in", q.appointment?.type || "Walk-in", String((q.medications || []).length), q.dispensed ? "Dispensed" : q.workflowStatus || "Pending", q.createdAt ? new Date(q.createdAt).toLocaleString("en-IN") : ""]);
+                return (
+                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,.1)", zIndex: 100, minWidth: 160 }}>
+                    <button onClick={() => { exportToCSV(getRows(), "pharmacy-queue"); setQueueExportOpen(false); }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", fontSize: 12, color: "#475569", background: "none", border: "none", borderBottom: "1px solid #f1f5f9", width: "100%", textAlign: "left", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                      <FileSpreadsheet size={14} color="#10b981" /> Excel (CSV)
+                    </button>
+                    <button onClick={() => { exportToPDF("Pharmacy Queue Report", headers, tableRows, "pharmacy-queue"); setQueueExportOpen(false); }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", fontSize: 12, color: "#475569", background: "none", border: "none", borderBottom: "1px solid #f1f5f9", width: "100%", textAlign: "left", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                      <FileText size={14} color="#ef4444" /> PDF
+                    </button>
+                    <button onClick={() => { exportToWord("Pharmacy Queue Report", headers, tableRows, "pharmacy-queue"); setQueueExportOpen(false); }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", fontSize: 12, color: "#475569", background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                      <FileType size={14} color="#2563eb" /> Word (DOCX)
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -1874,7 +2182,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                 {item.appointment.type}
                               </span>
                             ) : (
-                              <span style={{ fontSize: 11, color: "#cbd5e1" }}>\u2014</span>
+                              <span style={{ fontSize: 11, color: "#cbd5e1" }}>—</span>
                             )}
                           </td>
                           <td><span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>{meds.length}</span><span style={{ fontSize: 11, color: "#94a3b8" }}> med{meds.length !== 1 ? "s" : ""}</span></td>
@@ -1894,7 +2202,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
                               {!item.dispensed && !isSkipped && !isHold && (
                                 <>
-                                  <button className="ph-tbl-action" title="Dispense & Bill" onClick={e => { e.stopPropagation(); setDispenseModalItem(item); setDispensingId(null); setDispenseNotes(""); setTransferTo(""); }}>
+                                  <button className="ph-tbl-action" title="Dispense & Bill" onClick={e => { e.stopPropagation(); setDispenseModalItem(item); setDispensingId(null); }}>
                                     <Pill size={13} color="#16a34a" />
                                   </button>
                                   <button className="ph-tbl-action" title="View" onClick={e => { e.stopPropagation(); setQueueViewModal(item); }}>
@@ -1914,9 +2222,24 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                 </button>
                               )}
                               {item.dispensed && (
-                                <button className="ph-tbl-action" title="View Rx" onClick={e => { e.stopPropagation(); setQueueViewModal(item); }}>
-                                  <Eye size={13} />
-                                </button>
+                                <>
+                                  <button className="ph-tbl-action" title="View Rx" onClick={e => { e.stopPropagation(); setQueueViewModal(item); }}>
+                                    <Eye size={13} />
+                                  </button>
+                                  {item.bill && (
+                                    <>
+                                      <button className="ph-tbl-action" title="View Bill" style={{ color: "#0E898F" }} onClick={e => { e.stopPropagation(); setQueueBillViewItem(item); }}>
+                                        <Receipt size={13} />
+                                      </button>
+                                      <button className="ph-tbl-action" title="Download Bill PDF" style={{ color: "#2563eb" }} onClick={e => { e.stopPropagation(); handleQueueBillDownload(item); }}>
+                                        <Download size={13} />
+                                      </button>
+                                    </>
+                                  )}
+                                  <button className="ph-tbl-action" title="Revoke Dispense — undo &amp; re-dispense" style={{ color: "#dc2626" }} onClick={e => { e.stopPropagation(); setRevokeDispenseTarget(item); setRevokeReason(""); }}>
+                                    <RotateCcw size={13} />
+                                  </button>
+                                </>
                               )}
                               {!item.dispensed && (
                                 <button className="ph-tbl-action" title="Remove" style={{ color: "#ef4444" }} onClick={e => { e.stopPropagation(); setRxDeleteTarget(item); setRxDeleteRemark(""); }}>
@@ -1982,7 +2305,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                 {!item.dispensed && !isSkipped && !isHold && (
                                   <div style={{ marginTop: 14 }}>
                                     <button className="ph-btn-primary" style={{ padding: "8px 16px", fontSize: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 9 }}
-                                      onClick={() => { setDispenseModalItem(item); setDispensingId(null); setDispenseNotes(""); setTransferTo(""); }}>
+                                      onClick={() => { setDispenseModalItem(item); setDispensingId(null); }}>
                                       <Pill size={14} /> Dispense & Bill
                                     </button>
                                   </div>
@@ -1993,7 +2316,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                                     <div style={{ padding: "6px 12px", background: isHold ? "#faf5ff" : "#f8fafc", border: `1px solid ${isHold ? "#e9d5ff" : "#e2e8f0"}`, borderRadius: 8, fontSize: 12, color: isHold ? "#7c3aed" : "#94a3b8", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                                       {isHold ? <Archive size={13} /> : <Ban size={13} />}
                                       {isHold ? "On Hold" : "Skipped"}
-                                      {item.workflowNotes && <span style={{ fontWeight: 400, color: "#64748b" }}>\u2014 {item.workflowNotes}</span>}
+                                      {item.workflowNotes && <span style={{ fontWeight: 400, color: "#64748b" }}>— {item.workflowNotes}</span>}
                                     </div>
                                     <button className="ph-btn-primary" style={{ fontSize: 11, padding: "5px 12px" }} onClick={() => { setRxActionTarget(item); setRxActionType("resume"); setRxActionNotes(""); }}>
                                       <PlayCircle size={12} /> Resume
@@ -2003,8 +2326,23 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
           
                                 {item.dispensed && (
                                   <div className="ph-dispensed-badge" style={{ justifyContent: "space-between", marginTop: 14 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}><ShieldCheck size={14} /> Dispensed successfully</div>
-                                    <button className="ph-btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }} onClick={() => setQueueViewModal(item)}><Eye size={12} /> View Rx</button>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}><ShieldCheck size={14} /> Dispensed successfully{item.bill && <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400 }}>· Bill: {item.bill.billNo} · <span style={{ color: item.bill.status === "PAID" ? "#16a34a" : "#ea580c", fontWeight: 700 }}>{item.bill.status}</span></span>}</div>
+                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                      <button className="ph-btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }} onClick={() => setQueueViewModal(item)}><Eye size={12} /> View Rx</button>
+                                      {item.bill && (
+                                        <>
+                                          <button style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid #b2d8da", background: "#E6F4F4", color: "#0E898F", fontWeight: 700, cursor: "pointer" }} onClick={() => setQueueBillViewItem(item)}>
+                                            <Receipt size={11} /> View Bill
+                                          </button>
+                                          <button style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid #bae6fd", background: "#f0f9ff", color: "#0284c7", fontWeight: 700, cursor: "pointer" }} onClick={() => handleQueueBillDownload(item)}>
+                                            <Download size={11} /> Download
+                                          </button>
+                                        </>
+                                      )}
+                                      <button style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontWeight: 700, cursor: "pointer" }} onClick={() => { setRevokeDispenseTarget(item); setRevokeReason(""); }}>
+                                        <RotateCcw size={11} /> Revoke &amp; Re-dispense
+                                      </button>
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -2021,256 +2359,341 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* â”€â”€ Queue: Dispense & Bill Modal â”€â”€ */}
-      {dispenseModalItem && (() => {
-        const dItem = dispenseModalItem;
-        const dMeds: any[] = (() => { try { return typeof dItem.medications === "string" ? JSON.parse(dItem.medications) : dItem.medications || []; } catch { return []; } })();
-
-        // Auto-match medications to inventory items by name/genericName
-        const autoMatch = (med: any) => {
-          if (med.inventoryItemId) {
-            const inv = inventory.find((i: any) => i.id === med.inventoryItemId);
-            return { inventoryItemId: med.inventoryItemId, price: med.price || inv?.sellingPrice || inv?.mrp || 0, name: inv?.name || med.name || med.medicine || "" };
-          }
-          const medName = (med.name || med.medicine || "").toLowerCase().trim();
-          if (!medName) return { inventoryItemId: null, price: med.price || 0, name: med.name || med.medicine || "" };
-          // Try exact match, then partial match
-          const exact = inventory.find((i: any) => i.isActive && (i.name.toLowerCase() === medName || i.genericName?.toLowerCase() === medName));
-          if (exact) return { inventoryItemId: exact.id, price: exact.sellingPrice || exact.mrp || med.price || 0, name: exact.name };
-          const partial = inventory.find((i: any) => i.isActive && (i.name.toLowerCase().includes(medName) || medName.includes(i.name.toLowerCase()) || (i.genericName && (i.genericName.toLowerCase().includes(medName) || medName.includes(i.genericName.toLowerCase())))));
-          if (partial) return { inventoryItemId: partial.id, price: partial.sellingPrice || partial.mrp || med.price || 0, name: partial.name };
-          return { inventoryItemId: null, price: med.price || 0, name: med.name || med.medicine || "" };
-        };
-
-        const formMeds = dispenseForm[dItem.id] || dMeds.map((m: any) => {
-          const match = autoMatch(m);
-          return { ...m, quantity: parseInt(m.quantity) || 1, price: match.price, inventoryItemId: match.inventoryItemId, name: match.name };
-        });
-        const totalCharge = formMeds.reduce((s: number, m: any) => s + ((m.quantity || 1) * (m.price || 0)), 0);
-        
-        // Check stock availability for all items
-        const stockIssues = formMeds.map((med: any, idx: number) => {
-          const matchedInv = med.inventoryItemId ? inventory.find((inv: any) => inv.id === med.inventoryItemId) : null;
-          const availableStock = matchedInv ? (matchedInv.totalStock || matchedInv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0) : 0;
-          const isNotInInventory = !matchedInv;
-          const isOutOfStock = matchedInv ? availableStock === 0 : true;
-          const qtyExceedsStock = matchedInv ? (med.quantity || 1) > availableStock : false;
-          return { idx, med, matchedInv, availableStock, isNotInInventory, isOutOfStock: isNotInInventory ? false : isOutOfStock, qtyExceedsStock };
-        });
-        
-        const hasStockIssues = stockIssues.some((s: any) => s.isNotInInventory || s.isOutOfStock || s.qtyExceedsStock);
-        const outOfStockCount = stockIssues.filter((s: any) => s.isOutOfStock || s.isNotInInventory).length;
-        const exceedsStockCount = stockIssues.filter((s: any) => s.qtyExceedsStock && !s.isOutOfStock).length;
-        
-        return (
-          <div className="ph-modal-overlay" onClick={() => setDispenseModalItem(null)}>
-            <div className="ph-modal" style={{ width: 900, maxHeight: "90vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
-              <div className="ph-modal-header" style={{ background: `linear-gradient(135deg, ${ACCENT}12, ${ACCENT}06)`, borderBottom: `1px solid ${ACCENT}25` }}>
+      {/* ── Queue: Bill View Modal ── */}
+      {queueBillViewItem?.bill && (
+        <div className="ph-modal-overlay" onClick={() => setQueueBillViewItem(null)}>
+          <div className="ph-modal" style={{ width: 760, maxHeight: "92vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+            <div className="ph-modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Receipt size={18} color={ACCENT} />
                 <div>
-                  <div className="ph-modal-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Pill size={18} color={ACCENT} /> Dispense & Bill
-                  </div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    {dItem.prescriptionNo} &middot; {dItem.patient?.name} ({dItem.patient?.patientId})
-                    {dItem.doctor ? ` - Dr. ${dItem.doctor.name}` : " - Walk-in"}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Bill — {queueBillViewItem.bill.billNo}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>{queueBillViewItem.patient?.name} · {queueBillViewItem.prescriptionNo}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={{ display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#475569",fontSize:12,fontWeight:600,cursor:"pointer" }}
+                  onClick={() => { const w=window.open("","_blank"); if(!w)return; const c=queueBillPrintRef.current?.innerHTML||""; w.document.write(`<html><head><title>Bill ${queueBillViewItem.bill.billNo}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{padding:8px;border:1px solid #e2e8f0;font-size:12px;}th{background:#f1f5f9;}</style></head><body>${c}</body></html>`); w.document.close(); w.print(); }}>
+                  <Printer size={14} /> Print
+                </button>
+                <button style={{ display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,border:"1px solid #bae6fd",background:"#f0f9ff",color:"#0284c7",fontSize:12,fontWeight:600,cursor:"pointer" }}
+                  onClick={() => handleQueueBillDownload(queueBillViewItem)}>
+                  <Download size={14} /> Download PDF
+                </button>
+                <button className="ph-btn-ghost" style={{ padding:"6px 10px" }} onClick={() => setQueueBillViewItem(null)}><X size={16} /></button>
+              </div>
+            </div>
+            <div style={{ overflowY: "auto", padding: 24 }} ref={queueBillPrintRef}>
+              {/* Bill Header */}
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid #e2e8f0" }}>
+                <div>
+                  <div style={{ fontSize:18,fontWeight:900,color:"#0f172a" }}>{hospitalInfo.name||"Hospital"}</div>
+                  {hospitalInfo.address && <div style={{ fontSize:11,color:"#64748b",marginTop:2 }}>{hospitalInfo.address}</div>}
+                  {hospitalInfo.phone && <div style={{ fontSize:11,color:"#64748b" }}>Phone: {hospitalInfo.phone}</div>}
+                  {hospitalInfo.email && <div style={{ fontSize:11,color:"#64748b" }}>{hospitalInfo.email}</div>}
+                </div>
+                <div style={{ textAlign:"right" }}>
+                  <div style={{ display:"inline-block",background:"#0E898F",color:"#fff",fontSize:10,fontWeight:800,letterSpacing:".08em",padding:"3px 10px",borderRadius:6,marginBottom:6 }}>INVOICE</div>
+                  <div style={{ fontSize:16,fontWeight:800,color:"#0f172a" }}>{queueBillViewItem.bill.billNo}</div>
+                  <div style={{ fontSize:11,color:"#64748b" }}>{queueBillViewItem.appointment?.appointmentDate ? fmtDate(queueBillViewItem.appointment.appointmentDate) : fmtDate(queueBillViewItem.createdAt)}</div>
+                </div>
+              </div>
+              {/* Patient Info */}
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,background:"#f8fafc",borderRadius:10,padding:"12px 16px",marginBottom:20,border:"1px solid #e2e8f0" }}>
+                {[{label:"Patient",value:queueBillViewItem.patient?.name},{label:"Patient ID",value:queueBillViewItem.patient?.patientId},{label:"Doctor",value:queueBillViewItem.doctor?.name?"Dr. "+queueBillViewItem.doctor.name:"Walk-in"},{label:"Rx No",value:queueBillViewItem.prescriptionNo},{label:"Date",value:queueBillViewItem.appointment?.appointmentDate?fmtDate(queueBillViewItem.appointment.appointmentDate):fmtDate(queueBillViewItem.createdAt)},{label:"Status",value:queueBillViewItem.bill.status}].map((f,i)=>(
+                  <div key={i}><div style={{ fontSize:9,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".06em" }}>{f.label}</div><div style={{ fontSize:12,fontWeight:600,color:f.label==="Status"?(queueBillViewItem.bill.status==="PAID"?"#16a34a":"#ea580c"):"#1e293b",marginTop:2 }}>{f.value||"—"}</div></div>
+                ))}
+              </div>
+              {/* Pharmacy Items only */}
+              {(() => {
+                const phItems = (queueBillViewItem.bill.billItems||[]).filter((it:any)=>it.type==="PHARMACY");
+                const phTotal = phItems.reduce((s:number,it:any)=>s+(it.amount||0),0);
+                return (
+                  <>
+                    {phItems.length > 0 ? (
+                      <>
+                        <div style={{ fontSize:11,fontWeight:700,color:"#be185d",marginBottom:8,display:"flex",alignItems:"center",gap:6 }}>
+                          <Pill size={13} color="#be185d" /> Pharmacy — Dispensed Medicines
+                          {queueBillViewItem.prescriptionNo && <span style={{ fontWeight:400,color:"#94a3b8",fontSize:10 }}>· Rx #{queueBillViewItem.prescriptionNo}</span>}
+                        </div>
+                        <table style={{ width:"100%",borderCollapse:"collapse",marginBottom:16 }}>
+                          <thead>
+                            <tr style={{ background:"#fce7f3" }}>
+                              {["#","Medicine","Qty","Unit Price","Amount"].map(h=>(
+                                <th key={h} style={{ padding:"8px 10px",textAlign:"left",fontSize:11,fontWeight:700,color:"#be185d" }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {phItems.map((it:any,i:number)=>(
+                              <tr key={i} style={{ background:i%2===0?"#fff":"#fdf2f8",borderBottom:"1px solid #fce7f3" }}>
+                                <td style={{ padding:"7px 10px",fontSize:12,color:"#94a3b8" }}>{i+1}</td>
+                                <td style={{ padding:"7px 10px",fontSize:12,fontWeight:600,color:"#1e293b" }}>{it.name}</td>
+                                <td style={{ padding:"7px 10px",fontSize:12,color:"#475569",textAlign:"center" }}>{it.quantity||1}</td>
+                                <td style={{ padding:"7px 10px",fontSize:12,color:"#475569",textAlign:"right" }}>₹{Number(it.unitPrice||0).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                                <td style={{ padding:"7px 10px",fontSize:12,fontWeight:700,color:"#1e293b",textAlign:"right" }}>₹{Number(it.amount||0).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
+                    ) : <div style={{ color:"#94a3b8",fontSize:12,textAlign:"center",padding:20 }}>No pharmacy items dispensed</div>}
+                    {/* Totals — pharmacy only */}
+                    <div style={{ display:"flex",justifyContent:"flex-end" }}>
+                      <div style={{ minWidth:240,background:"#f8fafc",borderRadius:10,padding:"12px 16px",border:"1px solid #e2e8f0" }}>
+                        <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:"#64748b",marginBottom:6 }}>
+                          <span>Subtotal</span><span>₹{phTotal.toLocaleString("en-IN",{minimumFractionDigits:2})}</span>
+                        </div>
+                        <div style={{ borderTop:"2px solid #0E898F",paddingTop:8,display:"flex",justifyContent:"space-between",fontSize:14,fontWeight:800,color:"#0f172a" }}>
+                          <span>Pharmacy Total</span><span style={{ color:"#0E898F" }}>₹{phTotal.toLocaleString("en-IN",{minimumFractionDigits:2})}</span>
+                        </div>
+                        {queueBillViewItem.bill.status==="PAID" && (
+                          <div style={{ marginTop:8,padding:"6px 10px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0",display:"flex",alignItems:"center",gap:6 }}>
+                            <CheckCircle2 size={14} color="#16a34a"/><span style={{ fontSize:12,fontWeight:700,color:"#16a34a" }}>PAID</span>
+                            <span style={{ fontSize:11,color:"#64748b",marginLeft:"auto" }}>₹{phTotal.toLocaleString("en-IN",{minimumFractionDigits:2})}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â"€â"€ Queue: Dispense & Bill Modal â"€â"€ */}
+      {dispenseModalItem && (
+        <div className="ph-modal-overlay" onClick={() => !dispensingId && setDispenseModalItem(null)}>
+          <div className="ph-modal" style={{ width: 820, maxHeight: "92vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="ph-modal-header" style={{ background: `linear-gradient(135deg, ${ACCENT}14, ${ACCENT}06)`, borderBottom: `1px solid ${ACCENT}28` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: ACCENT + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Pill size={18} color={ACCENT} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Dispense Medicines</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>
+                    {dispenseModalItem.prescriptionNo} &middot; <strong>{dispenseModalItem.patient?.name}</strong> ({dispenseModalItem.patient?.patientId})
+                    {dispenseModalItem.doctor ? ` &middot; Dr. ${dispenseModalItem.doctor.name}` : " &middot; Walk-in"}
+                    {dispenseModalItem.diagnosis ? ` &mdash; ${dispenseModalItem.diagnosis}` : ""}
                   </div>
                 </div>
-                <button className="ph-icon-btn-sm" onClick={() => setDispenseModalItem(null)}><X size={16} /></button>
+              </div>
+              <button className="ph-icon-btn-sm" onClick={() => setDispenseModalItem(null)}><X size={16} /></button>
+            </div>
+
+            <div className="ph-modal-body" style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
+
+              {/* Section 1: Medicines Table */}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: ".04em", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Package size={13} /> Medicines to Dispense
+                  </div>
+                  <button
+                    style={{ fontSize: 11, padding: "4px 12px", borderRadius: 7, border: `1px solid ${ACCENT}`, background: "#fff", color: ACCENT, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                    onClick={() => setDspItems(prev => [...prev, { prescribedName: "", dosage: "", frequency: "", inventoryItemId: "", name: "", quantity: 1, unitPrice: 0 }])}
+                  >
+                    <Plus size={11} /> Add Item
+                  </button>
+                </div>
+
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#64748b", fontSize: 11 }}>Medicine / Item</th>
+                      <th style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: "#64748b", fontSize: 11, width: 70 }}>Qty</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: 11, width: 100 }}>Unit Price (&#8377;)</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#64748b", fontSize: 11, width: 90 }}>Total (&#8377;)</th>
+                      <th style={{ padding: "8px 10px", width: 36 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dspItems.map((med, idx) => {
+                      const inv = inventory.find((i: any) => i.id === med.inventoryItemId);
+                      const stock = inv ? (inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0) : 0;
+                      const stockOk = !inv || stock >= med.quantity;
+                      return (
+                        <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9", background: !med.inventoryItemId ? "#fffbeb" : !stockOk ? "#fff5f5" : "#fff" }}>
+                          <td style={{ padding: "8px 10px" }}>
+                            {med.prescribedName && (
+                              <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 3 }}>
+                                Rx: <strong style={{ color: "#475569" }}>{med.prescribedName}</strong>
+                                {med.dosage && <span> &middot; {med.dosage}</span>}
+                                {med.frequency && <span> &middot; {med.frequency}</span>}
+                              </div>
+                            )}
+                            <select
+                              style={{ width: "100%", padding: "6px 8px", borderRadius: 7, border: `1px solid ${!med.inventoryItemId ? "#f59e0b" : !stockOk ? "#fca5a5" : "#cbd5e1"}`, fontSize: 12, background: "#fff", outline: "none" }}
+                              value={med.inventoryItemId}
+                              onChange={e => {
+                                const sel = inventory.find((i: any) => i.id === e.target.value);
+                                setDspItems(prev => prev.map((m, i) => i === idx ? { ...m, inventoryItemId: e.target.value, name: sel?.name || m.name, unitPrice: sel?.sellingPrice || sel?.mrp || m.unitPrice } : m));
+                              }}
+                            >
+                              <option value="">-- Select from Inventory --</option>
+                              {inventory.filter((i: any) => i.isActive).map((i: any) => {
+                                const s = i.totalStock || i.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0;
+                                return <option key={i.id} value={i.id}>{i.name}{i.genericName ? ` (${i.genericName})` : ""} — Stock: {s} {i.unit}{s === 0 ? " [OUT]" : ""}</option>;
+                              })}
+                            </select>
+                            {inv && (
+                              <div style={{ fontSize: 10, marginTop: 2, color: stockOk ? "#16a34a" : "#dc2626", fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                                {stockOk ? <CheckCircle2 size={9} /> : <AlertCircle size={9} />}
+                                {stock} {inv.unit} in stock {!stockOk && `(need ${med.quantity})`}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                            <input type="number" min="1" value={med.quantity}
+                              onChange={e => setDspItems(prev => prev.map((m, i) => i === idx ? { ...m, quantity: Math.max(1, parseInt(e.target.value) || 1) } : m))}
+                              style={{ width: 55, padding: "6px", borderRadius: 7, border: `1px solid ${!stockOk ? "#fca5a5" : "#cbd5e1"}`, fontSize: 12, textAlign: "center" }}
+                            />
+                          </td>
+                          <td style={{ padding: "8px 10px" }}>
+                            <input type="number" min="0" step="0.01" value={med.unitPrice}
+                              onChange={e => setDspItems(prev => prev.map((m, i) => i === idx ? { ...m, unitPrice: parseFloat(e.target.value) || 0 } : m))}
+                              style={{ width: 85, padding: "6px 8px", borderRadius: 7, border: "1px solid #cbd5e1", fontSize: 12, textAlign: "right" }}
+                            />
+                          </td>
+                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#1e293b" }}>
+                            {(med.quantity * med.unitPrice).toFixed(2)}
+                          </td>
+                          <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                            <button onClick={() => setDspItems(prev => prev.filter((_, i) => i !== idx))}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 4, borderRadius: 5 }}>
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {dspItems.length === 0 && (
+                      <tr><td colSpan={5} style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>
+                        No medicines. Click <strong>Add Item</strong> to add from inventory.
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="ph-modal-body" style={{ overflowY: "auto", flex: 1 }}>
-                {/* Patient & Rx Info Strip */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-                  {[
-                    { label: "Patient", value: dItem.patient?.name || "-", sub: dItem.patient?.patientId },
-                    { label: "Doctor", value: dItem.doctor ? `Dr. ${dItem.doctor.name}` : "Walk-in", sub: dItem.doctor?.specialization || "" },
-                    { label: "Diagnosis", value: dItem.diagnosis || "-", sub: dItem.appointment?.type || "" },
-                  ].map((info, i) => (
-                    <div key={i} style={{ padding: "10px 12px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
-                      <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>{info.label}</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{info.value}</div>
-                      {info.sub && <div style={{ fontSize: 10, color: "#94a3b8" }}>{info.sub}</div>}
+              {/* Section 2: Bill Summary */}
+              {dspItems.length > 0 && (() => {
+                const subtotal = dspItems.reduce((s, m) => s + (m.quantity * m.unitPrice), 0);
+                const total = Math.max(0, subtotal - (dspDiscount || 0));
+                return (
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 16px", minWidth: 260 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "#64748b" }}>
+                        <span>Subtotal</span><span>&#8377; {subtotal.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, fontSize: 12, color: "#64748b" }}>
+                        <span>Discount (&#8377;)</span>
+                        <input type="number" min="0" value={dspDiscount} onChange={e => setDspDiscount(parseFloat(e.target.value) || 0)}
+                          style={{ width: 80, padding: "4px 8px", borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 12, textAlign: "right" }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1.5px solid #e2e8f0", fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
+                        <span>Total</span>
+                        <span style={{ color: ACCENT }}>&#8377; {total.toFixed(2)}</span>
+                      </div>
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* Section 3: Notes */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Dispensing Notes <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span></label>
+                <input value={dspNotes} onChange={e => setDspNotes(e.target.value)}
+                  placeholder="Add remarks about dispensing..."
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12, fontFamily: "inherit" }} />
+              </div>
+
+              {/* Section 4: After Dispensing Action */}
+              <div style={{ background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", padding: "14px 16px" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 12 }}>After Dispensing — What&apos;s Next?</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  {([
+                    { key: "close", label: "Close Visit", desc: "Mark as done, no billing", icon: <CheckCircle2 size={16} />, color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+                    { key: "collect", label: "Collect Payment", desc: "Collect payment right here", icon: <IndianRupee size={16} />, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+                    { key: "transfer", label: "Transfer Patient", desc: "Send to billing or another dept", icon: <Send size={16} />, color: "#7c3aed", bg: "#faf5ff", border: "#e9d5ff" },
+                  ] as const).map(opt => (
+                    <button key={opt.key} onClick={() => setDspAction(opt.key)}
+                      style={{ padding: "12px 10px", borderRadius: 10, border: `2px solid ${dspAction === opt.key ? opt.color : "#e2e8f0"}`, background: dspAction === opt.key ? opt.bg : "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, transition: "all .15s" }}>
+                      <div style={{ color: dspAction === opt.key ? opt.color : "#94a3b8" }}>{opt.icon}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: dspAction === opt.key ? opt.color : "#64748b" }}>{opt.label}</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center" }}>{opt.desc}</div>
+                    </button>
                   ))}
                 </div>
 
-                {/* Stock Status Alert */}
-                {hasStockIssues && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, marginBottom: 16 }}>
-                    <AlertCircle size={20} color="#dc2626" />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626" }}>Stock Issues Detected</div>
-                      <div style={{ fontSize: 11, color: "#7f1d1d" }}>
-                        {outOfStockCount > 0 && `${outOfStockCount} item(s) not available in inventory. `}
-                        {exceedsStockCount > 0 && `${exceedsStockCount} item(s) exceed available stock. `}
-                        Please select available inventory items and adjust quantities.
-                      </div>
+                {/* Collect Payment fields */}
+                {dspAction === "collect" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "12px 0 0" }}>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Payment Method</label>
+                      <select value={dspPayMethod} onChange={e => setDspPayMethod(e.target.value)}
+                        style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 12, background: "#fff" }}>
+                        <option value="CASH">Cash</option>
+                        <option value="UPI">UPI / QR</option>
+                        <option value="CARD">Card</option>
+                        <option value="ONLINE">Online Transfer</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Transaction / Reference ID <span style={{ color: "#94a3b8", fontWeight: 400 }}>(optional)</span></label>
+                      <input value={dspTxnId} onChange={e => setDspTxnId(e.target.value)}
+                        placeholder="UPI ref / card last 4..."
+                        style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 12, fontFamily: "inherit" }} />
                     </div>
                   </div>
                 )}
 
-                {/* Medications Table */}
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em", display: "flex", alignItems: "center", gap: 6 }}>
-                  <Package size={14} /> Medications <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 400, textTransform: "none" }}>(Select from inventory only)</span>
-                </div>
-                <div className="ph-tbl-wrap" style={{ marginBottom: 12 }}>
-                  <table className="ph-tbl">
-                    <thead>
-                      <tr>
-                        <th style={{ minWidth: 220 }}>Inventory Item <span style={{ color: "#ef4444" }}>*</span></th>
-                        <th style={{ width: 70 }}>Qty</th>
-                        <th style={{ width: 100 }}>Unit Price (Rs.)</th>
-                        <th style={{ width: 90 }}>Total (Rs.)</th>
-                        <th style={{ width: 120 }}>Stock Status</th>
-                        <th style={{ width: 80 }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formMeds.map((med: any, idx: number) => {
-                        const stockInfo = stockIssues.find((s: any) => s.idx === idx);
-                        const matchedInv = stockInfo?.matchedInv;
-                        const availableStock = stockInfo?.availableStock || 0;
-                        const isNotInInventory = stockInfo?.isNotInInventory;
-                        const isOutOfStock = stockInfo?.isOutOfStock;
-                        const qtyExceedsStock = stockInfo?.qtyExceedsStock;
-                        const thirtyDays = new Date(); thirtyDays.setDate(thirtyDays.getDate() + 30);
-                        const hasExpiring = matchedInv?.batches?.some((b: any) => b.expiryDate && new Date(b.expiryDate) <= thirtyDays);
-                        
-                        return (
-                          <tr key={idx} style={{ background: isNotInInventory || isOutOfStock ? "#fff5f5" : qtyExceedsStock ? "#fffbeb" : "#fff" }}>
-                            <td>
-                              <select 
-                                className="ph-input" 
-                                value={med.inventoryItemId || ""}
-                                onChange={e => {
-                                  const selectedId = e.target.value;
-                                  const selectedInv = inventory.find(inv => inv.id === selectedId);
-                                  const newForm = [...formMeds]; 
-                                  newForm[idx] = { 
-                                    ...newForm[idx], 
-                                    inventoryItemId: selectedId,
-                                    name: selectedInv?.name || med.name || med.medicine || "",
-                                    price: selectedInv?.sellingPrice || med.price || 0
-                                  };
-                                  setDispenseForm({ ...dispenseForm, [dItem.id]: newForm });
-                                }} 
-                                style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: `1px solid ${isNotInInventory || isOutOfStock ? "#fecaca" : "#cbd5e1"}`, fontSize: 12 }}
-                              >
-                                <option value="">-- Select from Inventory --</option>
-                                {inventory.filter((inv: any) => inv.isActive).map((inv: any) => (
-                                  <option key={inv.id} value={inv.id}>
-                                    {inv.name} {inv.genericName ? `(${inv.genericName})` : ""} - Stock: {inv.totalStock || inv.batches?.reduce((s: number, b: any) => s + b.remainingQty, 0) || 0} {inv.unit}
-                                  </option>
-                                ))}
-                              </select>
-                              {matchedInv && <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>SKU: {matchedInv.sku || "N/A"} | {matchedInv.category}</div>}
-                              {!matchedInv && med.inventoryItemId && <div style={{ fontSize: 9, color: "#dc2626", marginTop: 2 }}>âš ï¸ Not found in inventory</div>}
-                            </td>
-                            <td>
-                              <input 
-                                type="number" 
-                                min="1" 
-                                max={availableStock || undefined}
-                                value={med.quantity || 1} 
-                                onChange={e => {
-                                  const newQty = parseInt(e.target.value) || 0;
-                                  const newForm = [...formMeds]; 
-                                  newForm[idx] = { ...newForm[idx], quantity: newQty };
-                                  setDispenseForm({ ...dispenseForm, [dItem.id]: newForm });
-                                }} 
-                                className="ph-input" 
-                                style={{ width: 60, padding: 6, borderRadius: 6, border: `1px solid ${qtyExceedsStock ? "#f59e0b" : "#cbd5e1"}` }} 
-                              />
-                            </td>
-                            <td>
-                              <input 
-                                type="number" 
-                                min="0" 
-                                value={med.price || 0} 
-                                onChange={e => {
-                                  const newForm = [...formMeds]; 
-                                  newForm[idx] = { ...newForm[idx], price: parseFloat(e.target.value) || 0 };
-                                  setDispenseForm({ ...dispenseForm, [dItem.id]: newForm });
-                                }} 
-                                className="ph-input" 
-                                style={{ width: 80, padding: 6, borderRadius: 6, border: "1px solid #cbd5e1" }} 
-                              />
-                            </td>
-                            <td><strong style={{ color: "#1e293b" }}>{((med.quantity || 1) * (med.price || 0)).toFixed(2)}</strong></td>
-                            <td>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                {matchedInv ? (
-                                  <>
-                                    <span style={{ fontWeight: 700, fontSize: 12, color: isOutOfStock ? "#dc2626" : qtyExceedsStock ? "#ea580c" : "#16a34a" }}>
-                                      {availableStock} {matchedInv?.unit || "units"}
-                                    </span>
-                                    {isOutOfStock && <span style={{ fontSize: 9, fontWeight: 700, color: "#dc2626", display: "flex", alignItems: "center", gap: 3 }}><Ban size={10} /> OUT OF STOCK</span>}
-                                    {!isOutOfStock && qtyExceedsStock && <span style={{ fontSize: 9, fontWeight: 700, color: "#ea580c", display: "flex", alignItems: "center", gap: 3 }}><AlertTriangle size={10} /> Only {availableStock} available</span>}
-                                    {hasExpiring && <span style={{ fontSize: 9, fontWeight: 600, color: "#ea580c", display: "flex", alignItems: "center", gap: 3 }}><Clock size={9} /> Near expiry</span>}
-                                  </>
-                                ) : (
-                                  <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>âš ï¸ Select inventory item</span>
-                                )}
-                              </div>
-                            </td>
-                            <td>
-                              <button className="ph-btn-ghost" onClick={() => openSubstitute(med.name || med.medicine || "", dItem.id, idx)} style={{ padding: "4px 8px", fontSize: 11, color: "#0ea5e9" }}>Substitute</button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Bill Total */}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b" }}>
-                    Bill Total: <span style={{ color: ACCENT }}>{fmtCurrency(totalCharge)}</span>
-                  </div>
-                </div>
-
-                {/* Transfer / Notes / Action */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "16px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {/* Transfer fields */}
+                {dspAction === "transfer" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 0 0" }}>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>After Dispensing</label>
-                      <select className="ph-select" value={transferTo} onChange={e => setTransferTo(e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff", fontSize: 13, outline: "none" }}>
-                        <option value="">Finish & Close Visit</option>
-                        <option value="BILLING" style={{ fontWeight: "bold", color: "#0ea5e9" }}>Transfer to Central Billing</option>
-                        {subDepts.map(sd => <option key={sd.id} value={sd.id}>Transfer to {sd.name}</option>)}
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Transfer To <span style={{ color: "#ef4444" }}>*</span></label>
+                      <select value={dspTransferTarget} onChange={e => setDspTransferTarget(e.target.value)}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: `1px solid ${!dspTransferTarget ? "#f59e0b" : "#cbd5e1"}`, fontSize: 12, background: "#fff" }}>
+                        <option value="">-- Select Department --</option>
+                        <option value="BILLING" style={{ fontWeight: "bold", color: "#0ea5e9" }}>Central Billing Counter</option>
+                        {subDepts.filter((sd: any) => sd.type !== "PHARMACY").map((sd: any) => (
+                          <option key={sd.id} value={sd.id}>{sd.name} ({sd.type})</option>
+                        ))}
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Dispensing Notes</label>
-                      <input className="ph-input" placeholder="Add comments / dispensing notes..."
-                        value={dispenseNotes} onChange={e => setDispenseNotes(e.target.value)}
-                        style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13 }} />
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Transfer Remark</label>
+                      <textarea value={dspTransferNote} onChange={e => setDspTransferNote(e.target.value)}
+                        placeholder="Reason for transfer, instructions for next dept..."
+                        rows={2}
+                        style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 12, resize: "vertical", fontFamily: "inherit" }} />
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
-                    <Info size={12} /> Stock is deducted FIFO from batches. You can only dispense items available in inventory with sufficient stock.
-                  </div>
-                </div>
-              </div>
-
-              <div className="ph-modal-footer" style={{ borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <button className="ph-btn-ghost" onClick={() => setDispenseModalItem(null)}>Cancel</button>
-                <button 
-                  className="ph-btn-primary" 
-                  style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, borderRadius: 10 }}
-                  disabled={dispensingId === dItem.id || hasStockIssues || formMeds.some((m: any) => !m.inventoryItemId)}
-                  onClick={() => { handleDispense(dItem); setDispenseModalItem(null); }}
-                >
-                  {dispensingId === dItem.id ? <Loader2 size={14} className="ph-spin" /> : <CheckCircle2 size={14} />}
-                  {hasStockIssues ? "Resolve Stock Issues" : transferTo ? "Dispense & Transfer" : "Complete Dispensing"}
-                </button>
+                )}
               </div>
             </div>
+
+            {/* Footer */}
+            <div className="ph-modal-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", padding: "14px 20px" }}>
+              <button className="ph-btn-ghost" onClick={() => setDispenseModalItem(null)} disabled={!!dispensingId}>Cancel</button>
+              <button
+                style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: dispensingId ? "#94a3b8" : `linear-gradient(135deg, ${ACCENT}, #0A6B70)`, color: "#fff", fontSize: 13, fontWeight: 700, cursor: dispensingId ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8, opacity: (dspAction === "transfer" && !dspTransferTarget) ? 0.6 : 1 }}
+                onClick={handleDispenseSubmit}
+                disabled={!!dispensingId || dspItems.length === 0 || (dspAction === "transfer" && !dspTransferTarget)}
+              >
+                {dispensingId ? <Loader2 size={14} className="ph-spin" /> : <CheckCircle2 size={14} />}
+                {dispensingId ? "Processing..." : dspAction === "collect" ? "Dispense & Collect Payment" : dspAction === "transfer" ? "Dispense & Transfer Patient" : "Dispense & Close Visit"}
+              </button>
+            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* ── Counter Sell Tab ── */}
       {tab === "counter-sell" && (
@@ -2281,10 +2704,221 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
 
       {/* ── Revenue / Finance Tab ── */}
       {tab === "revenue" && (
-        <div className="ph-section">
-          <PharmacyFinancePanel />
+        <div className="ph-section" style={{ padding: 24 }}>
+          <BillingModule scope="pharmacy" />
         </div>
       )}
+
+      {/* ── Expense Tab ── */}
+      {tab === "expense" && (() => {
+        const EXP_CATS: { value: string; label: string; color: string; bg: string }[] = [
+          { value: "MEDICINE",          label: "Medicine",          color: "#0E898F", bg: "#E6F4F4" },
+          { value: "INVENTORY",         label: "Inventory",         color: "#7c3aed", bg: "#f5f3ff" },
+          { value: "EQUIPMENT",         label: "Equipment",         color: "#2563eb", bg: "#eff6ff" },
+          { value: "MAINTENANCE",       label: "Maintenance",       color: "#d97706", bg: "#fffbeb" },
+          { value: "SALARY",            label: "Salary",            color: "#16a34a", bg: "#f0fdf4" },
+          { value: "UTILITY",           label: "Utility",           color: "#0891b2", bg: "#ecfeff" },
+          { value: "HOUSEKEEPING",      label: "Housekeeping",      color: "#9333ea", bg: "#faf5ff" },
+          { value: "MARKETING",         label: "Marketing",         color: "#ea580c", bg: "#fff7ed" },
+          { value: "INSURANCE_EXPENSE", label: "Insurance",         color: "#dc2626", bg: "#fef2f2" },
+          { value: "OTHER",             label: "Other",             color: "#64748b", bg: "#f8fafc" },
+        ];
+        const getCat = (v: string) => EXP_CATS.find(c => c.value === v) || EXP_CATS[EXP_CATS.length - 1];
+        const fmtDate = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); } catch { return d; }};
+        const totalAll = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+        const filtered = expenses.filter(e =>
+          !expSearch || e.title?.toLowerCase().includes(expSearch.toLowerCase()) ||
+          e.description?.toLowerCase().includes(expSearch.toLowerCase()) ||
+          e.category?.toLowerCase().includes(expSearch.toLowerCase())
+        );
+        return (
+          <div className="ph-section" style={{ padding: 24, background: "#fff" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", letterSpacing: "-.02em" }}>Expense Tracker</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>Pharmacy expenses · synced with hospital accounts</div>
+              </div>
+              <button onClick={() => { setExpEditId(null); setExpForm({ title: "", category: "MEDICINE", amount: "", date: new Date().toISOString().slice(0,10), description: "" }); setExpMsg(""); setExpModal(true); }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#ea580c", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 2px 8px rgba(234,88,12,.25)" }}>
+                <Plus size={15} /> Add Expense
+              </button>
+            </div>
+
+            {/* KPI Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
+              {[
+                { label: "This Month", value: fmtCurrency(expenseStats?.monthTotal || 0), icon: <Calendar size={18} color="#ea580c" />, bg: "#fff7ed", border: "#fed7aa", color: "#ea580c" },
+                { label: "All-time Total", value: fmtCurrency(totalAll), icon: <TrendingDown size={18} color="#7c3aed" />, bg: "#f5f3ff", border: "#ddd6fe", color: "#7c3aed" },
+                { label: "Entries", value: String(expenses.length), icon: <ClipboardList size={18} color={ACCENT} />, bg: "#E6F4F4", border: "#B3E0E0", color: ACCENT },
+              ].map((c, i) => (
+                <div key={i} style={{ background: c.bg, borderRadius: 14, padding: "16px 20px", border: `1px solid ${c.border}`, display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>{c.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{c.value}</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{c.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Toolbar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "8px 14px", flex: 1, maxWidth: 320 }}>
+                <Search size={14} color="#94a3b8" />
+                <input value={expSearch} onChange={e => setExpSearch(e.target.value)} placeholder="Search expenses…"
+                  style={{ border: "none", outline: "none", background: "none", fontSize: 12, color: "#334155", width: "100%" }} />
+                {expSearch && <button onClick={() => setExpSearch("")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}><X size={12} color="#94a3b8" /></button>}
+              </div>
+              <button onClick={loadExpenses} style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}>
+                <RefreshCw size={13} /> Refresh
+              </button>
+            </div>
+
+            {/* Table */}
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Expense Records</span>
+                <span style={{ fontSize: 11, color: "#94a3b8" }}>{filtered.length} entries</span>
+              </div>
+              {expLoading ? (
+                <div style={{ padding: 40, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#94a3b8" }}>
+                  <Loader2 size={16} className="ph-spin" /> Loading expenses…
+                </div>
+              ) : filtered.length === 0 ? (
+                <div style={{ padding: 48, textAlign: "center", color: "#94a3b8" }}>
+                  <TrendingDown size={36} style={{ marginBottom: 10, opacity: .4 }} />
+                  <div style={{ fontWeight: 600, color: "#475569" }}>No expenses found</div>
+                  <div style={{ fontSize: 11, marginTop: 4 }}>Click "Add Expense" to record one</div>
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      {["Date","Title","Category","Amount","Remark",""].map((h,i) => (
+                        <th key={i} style={{ textAlign: i === 5 ? "right" : "left", fontSize: 10, fontWeight: 600, color: "#94a3b8", padding: "10px 16px", borderBottom: "2px solid #f1f5f9", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((e: any, i: number) => {
+                      const cat = getCat(e.category);
+                      return (
+                        <tr key={e.id || i} style={{ borderBottom: expDelConfirm === e.id ? "none" : "1px solid #f8fafc" }}
+                          onMouseEnter={ev => (ev.currentTarget.style.background = expDelConfirm === e.id ? "#fef2f2" : "#fafbff")}
+                          onMouseLeave={ev => (ev.currentTarget.style.background = expDelConfirm === e.id ? "#fef2f2" : "")}>
+                          <td style={{ padding: "12px 16px", fontSize: 12, color: "#475569", whiteSpace: "nowrap" }}>{fmtDate(e.date || e.createdAt)}</td>
+                          <td style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{e.title}</td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700, background: cat.bg, color: cat.color }}>{cat.label}</span>
+                          </td>
+                          <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 800, color: "#ea580c", whiteSpace: "nowrap" }}>{fmtCurrency(e.amount)}</td>
+                          <td style={{ padding: "12px 16px", fontSize: 11, color: "#64748b", maxWidth: 200 }}>{e.description || "—"}</td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", whiteSpace: "nowrap" }}>
+                            {expDelConfirm === e.id ? (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 11, color: "#dc2626", fontWeight: 600 }}>Delete?</span>
+                                <button onClick={() => deleteExpense(e.id)} disabled={expDeleting}
+                                  style={{ padding: "3px 10px", borderRadius: 6, background: "#dc2626", border: "none", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                  {expDeleting ? "..." : "Yes"}
+                                </button>
+                                <button onClick={() => setExpDelConfirm(null)}
+                                  style={{ padding: "3px 10px", borderRadius: 6, background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>No</button>
+                              </span>
+                            ) : (
+                              <span style={{ display: "inline-flex", gap: 6 }}>
+                                <button onClick={() => {
+                                    setExpEditId(e.id);
+                                    setExpForm({ title: e.title, category: e.category || "OTHER", amount: String(e.amount), date: (e.date || e.createdAt || "").slice(0,10), description: e.description || "" });
+                                    setExpMsg(""); setExpModal(true);
+                                  }}
+                                  style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 7, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#2563eb", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                  <Edit2 size={11} /> Edit
+                                </button>
+                                <button onClick={() => setExpDelConfirm(e.id)}
+                                  style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 7, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                  <Trash2 size={11} /> Delete
+                                </button>
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Add Expense Modal */}
+            {expModal && (
+              <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, backdropFilter: "blur(2px)" }}
+                onClick={e => { if (e.target === e.currentTarget) setExpModal(false); }}>
+                <div style={{ background: "#fff", borderRadius: 18, padding: 28, width: "min(480px,95vw)", boxShadow: "0 20px 60px rgba(0,0,0,.18)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fff7ed", display: "flex", alignItems: "center", justifyContent: "center" }}><TrendingDown size={18} color="#ea580c" /></div>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#0f172a" }}>{expEditId ? "Edit Expense" : "Add Expense"}</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>{expEditId ? "Update this expense record" : "Recorded to hospital accounts"}</div>
+                      </div>
+                    </div>
+                    <button onClick={() => { setExpModal(false); setExpEditId(null); }} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 6, cursor: "pointer", display: "flex" }}><X size={14} color="#64748b" /></button>
+                  </div>
+
+                  {expMsg && (
+                    <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#dc2626", marginBottom: 16 }}>{expMsg}</div>
+                  )}
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>Title <span style={{ color: "#ef4444" }}>*</span></label>
+                      <input value={expForm.title} onChange={e => setExpForm(f => ({ ...f, title: e.target.value }))}
+                        placeholder="e.g. Monthly medicine restock"
+                        style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>Category</label>
+                        <select value={expForm.category} onChange={e => setExpForm(f => ({ ...f, category: e.target.value }))}
+                          style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, outline: "none", background: "#fff" }}>
+                          {EXP_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>Amount (₹) <span style={{ color: "#ef4444" }}>*</span></label>
+                        <input type="number" min="0" step="0.01" value={expForm.amount} onChange={e => setExpForm(f => ({ ...f, amount: e.target.value }))}
+                          placeholder="0.00"
+                          style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, outline: "none" }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>Date <span style={{ color: "#ef4444" }}>*</span></label>
+                      <input type="date" value={expForm.date} onChange={e => setExpForm(f => ({ ...f, date: e.target.value }))}
+                        style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, outline: "none" }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>Remark / Description</label>
+                      <textarea value={expForm.description} onChange={e => setExpForm(f => ({ ...f, description: e.target.value }))}
+                        rows={3} placeholder="Optional notes about this expense…"
+                        style={{ width: "100%", padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+                    <button onClick={() => setExpModal(false)}
+                      style={{ flex: 1, padding: "10px", border: "1px solid #e2e8f0", borderRadius: 10, background: "#f8fafc", color: "#475569", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                    <button onClick={saveExpense} disabled={expSaving}
+                      style={{ flex: 2, padding: "10px", border: "none", borderRadius: 10, background: expSaving ? "#f97316" : "#ea580c", color: "#fff", fontSize: 13, fontWeight: 700, cursor: expSaving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      {expSaving ? <><Loader2 size={14} className="ph-spin" /> Saving…</> : <><Check size={14} /> {expEditId ? "Update" : "Save Expense"}</>}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* â”€â”€ Queue: View Rx Detail Modal â”€â”€ */}
       {queueViewModal && (
@@ -2390,7 +3024,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         <CounterSaleModal
           onClose={() => setCounterSaleModal(false)}
           user={user}
-          onSuccess={() => { loadStats(); loadBills(); loadInventory(); loadQueue(); }}
+          onSuccess={() => { loadStats(); loadInventory(); loadQueue(); }}
         />
       )}
 
@@ -3311,15 +3945,7 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                           <div style={{ fontSize: 10, padding: "2px 8px", background: st.bg, color: st.color, border: `1px solid ${st.border}`, borderRadius: 100, marginTop: 3 }}>{st.label}</div>
                         </div>
                         <button className="ph-btn-primary" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => {
-                          setDispenseForm((prev: any) => {
-                            const rxForms = { ...prev };
-                            if (rxForms[substituteModal.rxId]) {
-                              const meds = [...rxForms[substituteModal.rxId]];
-                              meds[substituteModal.medIdx] = { ...meds[substituteModal.medIdx], name: item.name, inventoryItemId: item.id, price: item.sellingPrice || 0 };
-                              rxForms[substituteModal.rxId] = meds;
-                            }
-                            return rxForms;
-                          });
+                          setDspItems(prev => prev.map((m, i) => i === substituteModal.medIdx ? { ...m, name: item.name, inventoryItemId: item.id, unitPrice: item.sellingPrice || item.mrp || 0 } : m));
                           setSubstituteModal(null);
                         }}>
                           Use This
@@ -3395,6 +4021,64 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
               <button style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#ef4444", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} onClick={handleDeleteRx} disabled={rxDeleting}>
                 {rxDeleting ? <Loader2 size={13} className="ph-spin" /> : <Trash2 size={13} />}
                 {rxDeleting ? "Removing..." : "Yes, Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â”€â”€ Queue: Revoke Dispense Confirm Modal â”€â”€ */}
+      {revokeDispenseTarget && (
+        <div className="ph-modal-overlay" onClick={() => { if (!revoking) { setRevokeDispenseTarget(null); setRevokeReason(""); } }}>
+          <div className="ph-modal" style={{ width: 460 }} onClick={e => e.stopPropagation()}>
+            <div className="ph-modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <RotateCcw size={16} color="#dc2626" />
+                </div>
+                <div className="ph-modal-title" style={{ color: "#dc2626" }}>Revoke Dispense</div>
+              </div>
+              <button className="ph-icon-btn-sm" onClick={() => { setRevokeDispenseTarget(null); setRevokeReason(""); }} disabled={revoking}><X size={16} /></button>
+            </div>
+            <div className="ph-modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Warning banner */}
+              <div style={{ display: "flex", gap: 12, padding: "12px 14px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12 }}>
+                <AlertCircle size={20} color="#ea580c" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#9a3412", marginBottom: 4 }}>This will completely undo the dispense</div>
+                  <div style={{ fontSize: 12, color: "#7c2d12", lineHeight: 1.5 }}>
+                    The following will be <strong>permanently reverted</strong>:<br />
+                    • Dispense workflow reset to Pending<br />
+                    • PHARMACY bill items removed from invoice<br />
+                    • Revenue record deleted<br />
+                    • Payment record deleted &amp; bill set to Pending<br />
+                    • Stock quantities restored to inventory
+                  </div>
+                </div>
+              </div>
+              {/* Prescription info */}
+              <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{revokeDispenseTarget.patient?.name}</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  Rx: <strong>{revokeDispenseTarget.prescriptionNo}</strong>
+                  {revokeDispenseTarget.doctor?.name && ` · Dr. ${revokeDispenseTarget.doctor.name}`}
+                  {` · ${revokeDispenseTarget.medications?.length || 0} medication${revokeDispenseTarget.medications?.length !== 1 ? "s" : ""}`}
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: "#64748b", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                <CheckCircle2 size={14} color="#16a34a" style={{ flexShrink: 0 }} />
+                After revoking, the prescription returns to <strong>Pending</strong> and can be dispensed again normally.
+              </div>
+            </div>
+            <div className="ph-modal-footer">
+              <button className="ph-btn-ghost" onClick={() => { setRevokeDispenseTarget(null); setRevokeReason(""); }} disabled={revoking}>Cancel</button>
+              <button
+                style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: "#dc2626", color: "#fff", fontSize: 12, fontWeight: 700, cursor: revoking ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: revoking ? 0.7 : 1 }}
+                onClick={handleRevokeDispense}
+                disabled={revoking}
+              >
+                {revoking ? <Loader2 size={13} className="ph-spin" /> : <RotateCcw size={13} />}
+                {revoking ? "Revoking..." : "Yes, Revoke Dispense"}
               </button>
             </div>
           </div>
@@ -3496,321 +4180,165 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
 
       {/* ── Billing Tab ── */}
       {tab === "billing" && (
-        <div className="ph-section">
-          {/* Billing Toolbar */}
-          <div className="ph-toolbar">
-            <div className="ph-toolbar-left">
-              <div className="ph-search-wrap">
-                <Search size={14} color="#94a3b8" />
-                <input className="ph-search-input" placeholder="Search bill no, patient..." value={billSearch} onChange={e => setBillSearch(e.target.value)} />
-                {billSearch && <button className="ph-icon-btn-sm" onClick={() => setBillSearch("")}><X size={12} /></button>}
-              </div>
-              <div className="ph-filter-pills">
-                {(["all", "PENDING", "PAID", "PARTIALLY_PAID"] as const).map(f => (
-                  <button key={f} className={`ph-pill${billFilter === f ? " on" : ""}`} onClick={() => setBillFilter(f)}>
-                    {f === "all" && <Layers size={12} />}
-                    {f === "PENDING" && <Clock size={12} />}
-                    {f === "PAID" && <CheckCircle2 size={12} />}
-                    {f === "PARTIALLY_PAID" && <DollarSign size={12} />}
-                    {f === "all" ? "All" : f === "PARTIALLY_PAID" ? "Partial" : f.charAt(0) + f.slice(1).toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button className="ph-btn-ghost" onClick={loadBills}><RefreshCw size={13} /> Refresh</button>
-          </div>
-
-          {/* Billing Stats Bar */}
-          <div className="ph-inv-stats">
-            <div className="ph-inv-stat">
-              <Receipt size={14} color={ACCENT} />
-              <span><strong>{bills.length}</strong> Total Bills</span>
-            </div>
-            <div className="ph-inv-stat" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
-              <CheckCircle2 size={14} color="#16a34a" />
-              <span><strong>{fmtCurrency(bills.filter(b => b.status === "PAID").reduce((s, b) => s + b.total, 0))}</strong> Collected</span>
-            </div>
-            <div className="ph-inv-stat warn">
-              <Clock size={14} />
-              <span><strong>{bills.filter(b => b.status === "PENDING").length}</strong> Pending</span>
-            </div>
-            <div className="ph-inv-stat" style={{ background: "#eff6ff", borderColor: "#bfdbfe" }}>
-              <IndianRupee size={14} color="#2563eb" />
-              <span><strong>{fmtCurrency(bills.reduce((s, b) => s + (b.total - b.paidAmount), 0))}</strong> Outstanding</span>
-            </div>
-          </div>
-
-          {/* Bills Table */}
-          {billsLoading ? (
-            <div className="ph-loading"><Loader2 size={20} className="ph-spin" /> Loading bills...</div>
-          ) : filteredBills.length === 0 ? (
-            <div className="ph-empty">
-              <Receipt size={32} color="#cbd5e1" />
-              <div style={{ marginTop: 8 }}>No bills found</div>
-              <div className="ph-empty-sub">Bills are created when prescriptions are dispensed</div>
-            </div>
-          ) : (
-            <div className="ph-tbl-wrap">
-              <table className="ph-tbl">
-                <thead>
-                  <tr>
-                    <th>Bill No</th>
-                    <th>Patient</th>
-                    <th>Items</th>
-                    <th>Subtotal</th>
-                    <th>Discount</th>
-                    <th>Tax</th>
-                    <th>Total</th>
-                    <th>Paid</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBills.map((bill: any) => {
-                    const billItems = typeof bill.items === "string" ? (() => { try { return JSON.parse(bill.items); } catch { return []; } })() : (bill.items || []);
-                    const due = bill.total - bill.paidAmount;
-                    return (
-                      <tr key={bill.id}>
-                        <td><strong>{bill.billNo}</strong></td>
-                        <td>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{bill.patient?.name || "-"}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8" }}>{bill.patient?.patientId || ""}</div>
-                        </td>
-                        <td>{bill.billItems?.length || billItems.length || 0}</td>
-                        <td>{fmtCurrency(bill.subtotal)}</td>
-                        <td style={{ color: bill.discount > 0 ? "#ea580c" : "#94a3b8" }}>{bill.discount > 0 ? `-${fmtCurrency(bill.discount)}` : "-"}</td>
-                        <td>
-                          {bill.isGst ? (
-                            <span style={{ fontSize: 10, color: "#64748b" }}>
-                              {fmtCurrency(bill.tax)}
-                              <br /><span style={{ color: "#94a3b8" }}>CGST {bill.cgst}% + SGST {bill.sgst}%</span>
-                            </span>
-                          ) : (
-                            <span style={{ color: "#94a3b8" }}>-</span>
-                          )}
-                        </td>
-                        <td><strong>{fmtCurrency(bill.total)}</strong></td>
-                        <td style={{ color: bill.paidAmount >= bill.total ? "#16a34a" : "#ea580c", fontWeight: 700 }}>{fmtCurrency(bill.paidAmount)}</td>
-                        <td>
-                          <span className={`ph-badge ${bill.status === "PAID" ? "green" : bill.status === "PARTIALLY_PAID" ? "blue" : "orange"}`}>
-                            {bill.status === "PARTIALLY_PAID" ? "Partial" : bill.status}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: 11, color: "#64748b" }}>{fmtDate(bill.createdAt)}</td>
-                        <td>
-                          {bill.status !== "PAID" && bill.status !== "CANCELLED" && (
-                            <button className="ph-btn-primary" style={{ padding: "5px 10px", fontSize: 11 }} onClick={() => {
-                              setPaymentModal(bill);
-                              setPaymentForm({ amount: String(due > 0 ? due : bill.total), method: "CASH", transactionId: "", notes: "" });
-                            }}>
-                              <Wallet size={12} /> Collect
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Payment Modes Legend */}
-          <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-            {[
-              { icon: <Banknote size={13} />, label: "Cash", color: "#16a34a" },
-              { icon: <CreditCard size={13} />, label: "Card", color: "#2563eb" },
-              { icon: <Wallet size={13} />, label: "UPI", color: "#9333ea" },
-              { icon: <ShieldCheck size={13} />, label: "Insurance", color: "#ea580c" },
-            ].map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
-                <span style={{ color: m.color }}>{m.icon}</span> {m.label}
-              </div>
-            ))}
-          </div>
+        <div className="ph-section" style={{ padding: 0 }}>
+          <BillingQueue scope="pharmacy" />
         </div>
       )}
 
-      {/* â”€â”€ Payment Modal â”€â”€ */}
-      {paymentModal && (
-        <div className="ph-modal-overlay" onClick={() => setPaymentModal(null)}>
-          <div className="ph-modal" onClick={e => e.stopPropagation()}>
-            <div className="ph-modal-header">
-              <div>
-                <div className="ph-modal-title">Collect Payment</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>{paymentModal.billNo} &middot; {paymentModal.patient?.name}</div>
-              </div>
-              <button className="ph-icon-btn-sm" onClick={() => setPaymentModal(null)}><X size={16} /></button>
+      {tab === "reports" && (
+        <div style={{padding:24,background:"#fff",minHeight:"100%",boxSizing:"border-box"}}>
+          {statsLoading || !stats ? (
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"80px 0",color:"#94a3b8"}}>
+              <Loader2 size={22} style={{animation:"spin .7s linear infinite"}}/>Loading pharmacy reports...
             </div>
-            <div className="ph-modal-body">
-              {/* Bill Summary */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16, padding: 14, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
-                <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Total</span><div style={{ fontWeight: 700, fontSize: 16, color: "#1e293b" }}>{fmtCurrency(paymentModal.total)}</div></div>
-                <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Paid</span><div style={{ fontWeight: 700, fontSize: 16, color: "#16a34a" }}>{fmtCurrency(paymentModal.paidAmount)}</div></div>
-                <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Due</span><div style={{ fontWeight: 700, fontSize: 16, color: "#ef4444" }}>{fmtCurrency(paymentModal.total - paymentModal.paidAmount)}</div></div>
-                <div><span style={{ fontSize: 11, color: "#94a3b8" }}>GST</span><div style={{ fontWeight: 600, fontSize: 13 }}>{paymentModal.isGst ? `CGST ${paymentModal.cgst}% + SGST ${paymentModal.sgst}%` : "Non-GST"}</div></div>
+          ) : ((()=>{
+            const fmtC = (v:number) => `₹${Number(v||0).toLocaleString("en-IN",{minimumFractionDigits:0})}`;
+            
+            // Define KPI Cards for Pharmacy (matching Reception style)
+            const kpiCards = [
+              {icon:<IndianRupee size={20} color="#16a34a"/>,bg:"#f0fdf4",value:fmtC(stats.todayRevenue),label:"Today's Revenue",badge:"TODAY",badgeBg:"#f0fdf4",badgeColor:"#16a34a",badgeBorder:"#bbf7d0"},
+              {icon:<TrendingUp size={20} color={ACCENT}/>,bg:LIGHT_BG,value:fmtC(stats.weekRevenue),label:"This Week's Revenue",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+              {icon:<ClipboardList size={20} color="#3b82f6"/>,bg:"#eff6ff",value:String(stats.todayRxCount),label:"Today's Prescriptions",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+              {icon:<Clock size={20} color={stats.pendingCount>0?"#ea580c":"#94a3b8"}/>,bg:stats.pendingCount>0?"#fff7ed":"#f8fafc",value:String(stats.pendingCount),label:"Pending in Queue",badge:stats.pendingCount>0?"PENDING":null as null,badgeBg:"#fff7ed",badgeColor:"#ea580c",badgeBorder:"#fed7aa"},
+            ];
+
+            const secondaryChips = [
+              {icon:<CheckCircle2 size={16} color="#10b981"/>,value:String(stats.todayDispensed),label:"Today's Dispensed",bg:"#f0fdf4"},
+              {icon:<IndianRupee size={16} color="#3b82f6"/>,value:fmtC(stats.yesterdayRevenue),label:"Yesterday's Revenue",bg:"#eff6ff"},
+              {icon:<ActivityIcon size={16} color={stats.revenueGrowth!==null&&stats.revenueGrowth>0?"#10b981":"#ef4444"}/>,value:stats.revenueGrowth!==null?`${stats.revenueGrowth>0?"+":""}${stats.revenueGrowth}%`:"—",label:"Week-on-Week Growth",bg:stats.revenueGrowth!==null&&stats.revenueGrowth>0?"#f0fdf4":"#fef2f2"},
+              {icon:<TrendingUp size={16} color={ACCENT}/>,value:fmtC(stats.totalRevenue),label:"Total Revenue",bg:LIGHT_BG},
+            ];
+
+            const chartData = stats.chartData || [];
+            const pieData = (stats.topMedicines || []).slice(0, 6).map((m, i) => ({
+              name: m.name,
+              value: m.qty,
+              fill: ["#0E898F", "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"][i % 6]
+            }));
+
+            return (<>
+              {/* Header */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                <div>
+                  <div style={{fontSize:22,fontWeight:800,color:"#0f172a",letterSpacing:"-.02em"}}>Pharmacy Reports & Analytics</div>
+                  <div style={{fontSize:12,color:"#64748b",marginTop:3,display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{width:7,height:7,borderRadius:"50%",background:"#22c55e",display:"inline-block",boxShadow:"0 0 0 3px #dcfce7",flexShrink:0}}/>
+                    Live &middot; Dispensing analytics and inventory insights
+                  </div>
+                </div>
+                <button onClick={loadStats} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",fontSize:12,fontWeight:600,color:"#475569",cursor:"pointer"}}>
+                  <RefreshCw size={13}/>Refresh
+                </button>
               </div>
 
-              {/* Payment Form */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Amount (Rs.)</label>
-                  <input type="number" className="ph-modal-input" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} min="0" step="0.01" />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 6 }}>Payment Method</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                    {["CASH", "UPI", "CARD", "INSURANCE", "CHEQUE", "ONLINE"].map(m => (
-                      <button key={m} className={`ph-method-btn${paymentForm.method === m ? " on" : ""}`} onClick={() => setPaymentForm(f => ({ ...f, method: m }))}>
-                        {m === "CASH" && <Banknote size={14} />}
-                        {m === "UPI" && <Wallet size={14} />}
-                        {m === "CARD" && <CreditCard size={14} />}
-                        {m === "INSURANCE" && <ShieldCheck size={14} />}
-                        {m === "CHEQUE" && <FileText size={14} />}
-                        {m === "ONLINE" && <Activity size={14} />}
-                        {m}
-                      </button>
+              {/* Row 1: 4 KPI Cards */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}}>
+                {kpiCards.map((c,i)=>(
+                  <div key={i}
+                    style={{background:"#fff",borderRadius:12,padding:12,border:"1px solid #e2e8f0",transition:"box-shadow .2s,transform .15s",display:"flex",alignItems:"center",gap:12}}
+                    onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.08)";e.currentTarget.style.transform="translateY(-1px)"}}
+                    onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform=""}}>
+                    <div style={{width:44,height:44,borderRadius:11,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.icon}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                        <div style={{fontSize:20,fontWeight:800,color:"#0f172a",lineHeight:1}}>{c.value}</div>
+                        {c.badge && <span style={{fontSize:8,fontWeight:700,color:c.badgeColor,background:c.badgeBg,padding:"2px 6px",borderRadius:10,border:`1px solid ${c.badgeBorder}`}}>{c.badge}</span>}
+                      </div>
+                      <div style={{fontSize:10,color:"#64748b"}}>{c.label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Row 2: 4 Secondary Chips */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+                {secondaryChips.map((chip,i)=>(
+                  <div key={i} style={{background:chip.bg,borderRadius:12,padding:"12px 16px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>{chip.icon}</div>
+                    <div>
+                      <div style={{fontSize:18,fontWeight:800,color:"#0f172a",lineHeight:1.2}}>{chip.value}</div>
+                      <div style={{fontSize:11,color:"#64748b"}}>{chip.label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Charts side by side */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:20}}>
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>Daily Revenue & Dispensing (Last 7 Days)</div>
+                  <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>Hover for details</div>
+                  <div style={{width:"100%",height:260}}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{top:5,right:10,left:-10,bottom:0}}>
+                        <defs>
+                          <linearGradient id="chartGrad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={.3}/><stop offset="100%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                          <linearGradient id="chartGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={ACCENT} stopOpacity={.25}/><stop offset="100%" stopColor={ACCENT} stopOpacity={0}/></linearGradient>
+                        </defs>
+                        <XAxis dataKey="label" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
+                        <YAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                        <YAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                        <Tooltip contentStyle={{borderRadius:10,border:"1px solid #e2e8f0",fontSize:11,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}} formatter={(val:any,name:any)=>[name==="Revenue (₹)"?`₹${Number(val).toLocaleString("en-IN")}`:val,name]}/>
+                        <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#chartGrad1)" strokeWidth={2.5} name="Revenue (₹)" dot={{r:4,fill:"#10b981",strokeWidth:2,stroke:"#fff"}} activeDot={{r:6}}/>
+                        <Area yAxisId="right" type="monotone" dataKey="count" stroke={ACCENT} fill="url(#chartGrad2)" strokeWidth={2.5} name="Dispensed" dot={{r:4,fill:ACCENT,strokeWidth:2,stroke:"#fff"}} activeDot={{r:6}}/>
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{display:"flex",gap:16,marginTop:10}}>
+                    {[{color:"#10b981",label:"Revenue"},{color:ACCENT,label:"Dispensed"}].map((l,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:5,fontSize:10,color:"#64748b",fontWeight:600}}>
+                        <span style={{width:10,height:3,borderRadius:2,background:l.color,display:"inline-block"}}/>{l.label}
+                      </div>
                     ))}
                   </div>
                 </div>
-                {["CARD", "UPI", "ONLINE", "CHEQUE"].includes(paymentForm.method) && (
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Transaction / Reference ID</label>
-                    <input className="ph-modal-input" placeholder="Enter transaction ID..." value={paymentForm.transactionId} onChange={e => setPaymentForm(f => ({ ...f, transactionId: e.target.value }))} />
-                  </div>
-                )}
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>Notes</label>
-                  <input className="ph-modal-input" placeholder="Optional notes..." value={paymentForm.notes} onChange={e => setPaymentForm(f => ({ ...f, notes: e.target.value }))} />
-                </div>
-              </div>
-            </div>
-            <div className="ph-modal-footer">
-              <button className="ph-btn-ghost" onClick={() => setPaymentModal(null)}>Cancel</button>
-              <button className="ph-btn-primary" onClick={handlePayment} disabled={payingBill || !paymentForm.amount || parseFloat(paymentForm.amount) <= 0}>
-                {payingBill ? <Loader2 size={14} className="ph-spin" /> : <CheckCircle2 size={14} />}
-                Record Payment - {fmtCurrency(parseFloat(paymentForm.amount) || 0)}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      
-      {tab === "reports" && (
-        <div className="ph-section">
-          <div className="ph-chart-header">
-            <div className="ph-chart-title">Pharmacy Reports</div>
-            <div className="ph-chart-subtitle">Dispensing analytics and inventory insights</div>
-          </div>
-
-          {statsLoading || !stats ? (
-            <div className="ph-loading"><Loader2 size={20} className="ph-spin" /> Loading reports...</div>
-          ) : (
-            <>
-              {/* Summary Cards */}
-              <div className="ph-stats-grid" style={{ marginBottom: 20 }}>
-                <div className="ph-stat-card">
-                  <div className="ph-stat-icon" style={{ background: LIGHT_BG }}><IndianRupee size={18} color={ACCENT} /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value">{fmtCurrency(stats.totalRevenue)}</div>
-                    <div className="ph-stat-label">Total Revenue</div>
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)",display:"flex",flexDirection:"column"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>Top Medicines by Quantity</div>
+                  <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>Top {pieData.length} medicines dispensed</div>
+                  <div style={{flex:1,width:"100%"}}>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <PieChart>
+                        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={88} paddingAngle={3} strokeWidth={0}>
+                          {pieData.map((s,i)=>(
+                            <Cell key={i} fill={s.fill}/>
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:11}}/>
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                </div>
-                <div className="ph-stat-card">
-                  <div className="ph-stat-icon" style={{ background: "#f0fdf4" }}><Package size={18} color="#16a34a" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value">{stats.totalItems}</div>
-                    <div className="ph-stat-label">Total Inventory Items</div>
-                  </div>
-                </div>
-                <div className="ph-stat-card">
-                  <div className="ph-stat-icon" style={{ background: "#fff5f5" }}><AlertTriangle size={18} color="#ef4444" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value">{stats.lowStockCount}</div>
-                    <div className="ph-stat-label">Low Stock Alerts</div>
-                  </div>
-                </div>
-                <div className="ph-stat-card">
-                  <div className="ph-stat-icon" style={{ background: "#fff7ed" }}><Clock size={18} color="#ea580c" /></div>
-                  <div className="ph-stat-info">
-                    <div className="ph-stat-value">{stats.expiringCount}</div>
-                    <div className="ph-stat-label">Expiring Soon</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 12px",marginTop:10}}>
+                    {pieData.map((s,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:10,color:"#64748b",fontWeight:600}}>
+                        <span style={{width:8,height:8,borderRadius:2,background:s.fill,flexShrink:0}}/>{s.name}: {s.value}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Charts Row: Revenue + Dispensing */}
-              <div className="ph-charts-row" style={{ marginBottom: 20 }}>
-                <div className="ph-chart-card">
-                  <div className="ph-chart-header">
-                    <div className="ph-chart-title">Daily Revenue (Last 7 Days)</div>
-                  </div>
-                  <div className="ph-bar-chart">
-                    {stats.chartData.map((d, i) => {
-                      const maxRev = Math.max(...stats.chartData.map(x => x.revenue), 1);
-                      const pct = (d.revenue / maxRev) * 100;
-                      return (
-                        <div key={i} className="ph-bar-col">
-                          <div className="ph-bar-value">{fmtCurrency(d.revenue)}</div>
-                          <div className="ph-bar-track">
-                            <div className="ph-bar-fill revenue" style={{ height: `${Math.max(pct, 4)}%` }} />
-                          </div>
-                          <div className="ph-bar-label">{d.label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="ph-chart-card">
-                  <div className="ph-chart-header">
-                    <div className="ph-chart-title">Dispensing Volume (Last 7 Days)</div>
-                  </div>
-                  <div className="ph-bar-chart">
-                    {stats.chartData.map((d, i) => {
-                      const maxCount = Math.max(...stats.chartData.map(x => x.count), 1);
-                      const pct = (d.count / maxCount) * 100;
-                      return (
-                        <div key={i} className="ph-bar-col">
-                          <div className="ph-bar-value">{d.count}</div>
-                          <div className="ph-bar-track">
-                            <div className="ph-bar-fill" style={{ height: `${Math.max(pct, 4)}%` }} />
-                          </div>
-                          <div className="ph-bar-label">{d.label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Profit Margin & Inventory Health */}
-              <div className="ph-charts-row" style={{ marginBottom: 20 }}>
+              {/* Row 3: Pharmacy Specific Insights */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
                 {/* Profit Margin */}
-                <div className="ph-chart-card">
-                  <div className="ph-chart-header">
-                    <div className="ph-chart-title">Profit Margin Analysis</div>
-                    <div className="ph-chart-subtitle">Based on inventory pricing</div>
-                  </div>
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>Profit Margin Analysis</div>
+                  <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>Based on inventory pricing</div>
                   {inventory.length === 0 ? (
-                    <div className="ph-empty-sm">Load inventory data to see margin analysis</div>
+                    <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:12}}>Load inventory data to see margin analysis</div>
                   ) : (
-                    <div className="ph-top-list">
-                      {inventory.filter(i => i.sellingPrice > 0 && i.purchasePrice > 0).slice(0, 8).map((item, idx) => {
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {inventory.filter(i => i.sellingPrice > 0 && i.purchasePrice > 0).slice(0, 5).map((item, idx) => {
                         const margin = ((item.sellingPrice - item.purchasePrice) / item.sellingPrice * 100);
-                        const totalStock = item.totalStock || item.batches?.reduce((s, b) => s + b.remainingQty, 0) || 0;
                         return (
-                          <div key={idx} className="ph-top-item">
-                            <div className="ph-top-rank" style={{ background: margin >= 30 ? "#f0fdf4" : margin >= 15 ? "#fffbeb" : "#fff5f5", color: margin >= 30 ? "#16a34a" : margin >= 15 ? "#ea580c" : "#ef4444" }}>
+                          <div key={idx} style={{display:"flex",alignItems:"center",gap:10,padding:10,borderRadius:10,background:"#fafbfc",border:"1px solid #f1f5f9"}}>
+                            <div style={{width:32,height:32,borderRadius:50,background:margin>=30?"#f0fdf4":margin>=15?"#fffbeb":"#fff5f5",color:margin>=30?"#16a34a":margin>=15?"#ea580c":"#ef4444",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0}}>
                               {margin.toFixed(0)}%
                             </div>
-                            <div className="ph-top-info">
-                              <div className="ph-top-name">{item.name}</div>
-                              <div className="ph-top-meta">Buy: {fmtCurrency(item.purchasePrice)} â†’ Sell: {fmtCurrency(item.sellingPrice)} &middot; Stock: {totalStock}</div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:12,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
+                              <div style={{fontSize:10,color:"#94a3b8"}}>Margin: {fmtCurrency(item.sellingPrice - item.purchasePrice)}</div>
                             </div>
-                            <div className="ph-top-revenue">{fmtCurrency((item.sellingPrice - item.purchasePrice) * totalStock)}</div>
                           </div>
                         );
                       })}
@@ -3819,11 +4347,9 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                 </div>
 
                 {/* Expiry Loss Risk */}
-                <div className="ph-chart-card">
-                  <div className="ph-chart-header">
-                    <div className="ph-chart-title">Expiry Loss Risk</div>
-                    <div className="ph-chart-subtitle">Items expiring within 30 days</div>
-                  </div>
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>Expiry Loss Risk</div>
+                  <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>Items expiring within 30 days</div>
                   {(() => {
                     const thirtyDays = new Date(); thirtyDays.setDate(thirtyDays.getDate() + 30);
                     const expiringItems = inventory.flatMap(item =>
@@ -3836,99 +4362,33 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     const totalLoss = expiringItems.reduce((s, e) => s + e.lossValue, 0);
 
                     return expiringItems.length === 0 ? (
-                      <div className="ph-empty-sm" style={{ color: "#16a34a" }}>
-                        <CheckCircle2 size={20} color="#16a34a" style={{ marginBottom: 4 }} />
+                      <div style={{textAlign:"center",padding:"40px 0",color:"#16a34a",fontSize:12}}>
+                        <CheckCircle2 size={24} color="#16a34a" style={{marginBottom:8}}/>
                         No items at risk of expiry loss
                       </div>
                     ) : (
-                      <>
-                        <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-                          <div style={{ padding: "8px 14px", background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#dc2626" }}>
-                            Potential Loss: {fmtCurrency(totalLoss)}
-                          </div>
-                          <div style={{ padding: "8px 14px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#ea580c" }}>
-                            {expiringItems.length} batch{expiringItems.length !== 1 ? "es" : ""} at risk
-                          </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                        <div style={{padding:"10px 14px",background:"#fff5f5",border:"1px solid #fecaca",borderRadius:10,fontSize:12,fontWeight:700,color:"#dc2626",marginBottom:4}}>
+                          Potential Loss: {fmtCurrency(totalLoss)}
                         </div>
-                        <div className="ph-top-list">
-                          {expiringItems.slice(0, 6).map((e, idx) => (
-                            <div key={idx} className="ph-top-item" style={{ borderColor: e.isExpired ? "#fecaca" : "#fed7aa" }}>
-                              <div className="ph-top-rank" style={{ background: e.isExpired ? "#fff5f5" : "#fff7ed", color: e.isExpired ? "#dc2626" : "#ea580c", fontSize: 8, width: 28, height: 28 }}>
-                                {e.isExpired ? "EXP" : "SOON"}
-                              </div>
-                              <div className="ph-top-info">
-                                <div className="ph-top-name">{e.name}</div>
-                                <div className="ph-top-meta">Batch: {e.batch} &middot; Qty: {e.qty} &middot; Exp: {fmtDate(e.expiry)}</div>
-                              </div>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: "#dc2626" }}>-{fmtCurrency(e.lossValue)}</div>
+                        {expiringItems.slice(0, 4).map((e, idx) => (
+                          <div key={idx} style={{display:"flex",alignItems:"center",gap:10,padding:10,borderRadius:10,background:e.isExpired?"#fff5f5":"#fff7ed",border:"1px solid "+(e.isExpired?"#fecaca":"#fed7aa")}}>
+                            <div style={{width:32,height:32,borderRadius:50,background:e.isExpired?"#dc2626":"#ea580c",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,flexShrink:0}}>
+                              {e.isExpired?"EXP":"SOON"}
                             </div>
-                          ))}
-                        </div>
-                      </>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:12,fontWeight:600,color:"#1e293b",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{e.name}</div>
+                              <div style={{fontSize:10,color:e.isExpired?"#dc2626":"#ea580c"}}>Loss: -{fmtCurrency(e.lossValue)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     );
                   })()}
                 </div>
               </div>
-
-              {/* Inventory Health Summary */}
-              <div className="ph-chart-card" style={{ marginBottom: 20 }}>
-                <div className="ph-chart-header">
-                  <div className="ph-chart-title">Inventory Health</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-                  {[
-                    { label: "In Stock", count: inventory.filter(i => (i.totalStock || i.batches?.reduce((s, b) => s + b.remainingQty, 0) || 0) > i.minStock).length, color: "#16a34a", bg: "#f0fdf4" },
-                    { label: "Low Stock", count: inventory.filter(i => { const t = i.totalStock || i.batches?.reduce((s, b) => s + b.remainingQty, 0) || 0; return t > 0 && t <= i.minStock; }).length, color: "#ea580c", bg: "#fff7ed" },
-                    { label: "Out of Stock", count: inventory.filter(i => (i.totalStock || i.batches?.reduce((s, b) => s + b.remainingQty, 0) || 0) === 0).length, color: "#dc2626", bg: "#fff5f5" },
-                    { label: "Expiring Soon", count: stats.expiringCount, color: "#9333ea", bg: "#faf5ff" },
-                    { label: "Active Items", count: inventory.filter(i => i.isActive).length, color: ACCENT, bg: LIGHT_BG },
-                    { label: "Inactive", count: inventory.filter(i => !i.isActive).length, color: "#94a3b8", bg: "#f8fafc" },
-                  ].map((s, i) => (
-                    <div key={i} style={{ padding: "14px 16px", background: s.bg, borderRadius: 12, textAlign: "center" }}>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.count}</div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: s.color, opacity: 0.8, marginTop: 2 }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Top Medicines Full List */}
-              <div className="ph-chart-card">
-                <div className="ph-chart-header">
-                  <div className="ph-chart-title">Medicine Usage Report</div>
-                  <div className="ph-chart-subtitle">Top dispensed medicines (last 30 days)</div>
-                </div>
-                {stats.topMedicines.length === 0 ? (
-                  <div className="ph-empty-sm">No dispensing data available</div>
-                ) : (
-                  <div className="ph-tbl-wrap" style={{ border: "none", boxShadow: "none" }}>
-                    <table className="ph-tbl">
-                      <thead>
-                        <tr>
-                          <th>Rank</th>
-                          <th>Medicine</th>
-                          <th>Category</th>
-                          <th>Units Dispensed</th>
-                          <th>Revenue</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stats.topMedicines.map((m, i) => (
-                          <tr key={i}>
-                            <td><span className="ph-rank">#{i + 1}</span></td>
-                            <td><strong>{m.name}</strong></td>
-                            <td><span className="ph-badge blue">{m.category}</span></td>
-                            <td>{m.qty}</td>
-                            <td><strong>{fmtCurrency(m.revenue)}</strong></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+            </>);
+          })())}
         </div>
       )}
 
@@ -4425,111 +4885,76 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
         </div>
       )}
 
-      {/* â”€â”€ Real-time New Prescription Notification Modal â”€â”€ */}
+      {/* ── Real-time New Prescription Notification Modal ── */}
       {newRxNotification && (
         <div className="ph-modal-overlay" style={{ zIndex: 10000 }} onClick={e => e.stopPropagation()}>
-          <div className="ph-modal" style={{ width: 600, maxHeight: "90vh", animation: "phSlideIn .3s ease" }}>
-            <div className="ph-modal-header" style={{ background: `linear-gradient(135deg, ${ACCENT}, #0A6B70)`, color: "#fff", borderBottom: "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Bell size={22} color="#fff" />
+          <div className="ph-modal" style={{ width: 480, maxHeight: "85vh", animation: "phSlideIn .3s ease", background: "#fff" }}>
+            {/* Header — plain white */}
+            <div className="ph-modal-header" style={{ background: "#fff", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Bell size={18} color="#16a34a" />
                 </div>
                 <div>
-                  <div className="ph-modal-title" style={{ color: "#fff", fontSize: 18 }}>New Prescription Received!</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,.8)", marginTop: 2 }}>
-                    From Dr. {newRxNotification.doctor?.name} &middot; {newRxNotification.prescriptionNo}
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>New Prescription Received</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>
+                    From Dr. {newRxNotification.doctor?.name || "—"} &middot; {newRxNotification.prescriptionNo}
                   </div>
                 </div>
               </div>
-              <button 
-                className="ph-icon-btn-sm" 
-                style={{ color: "#fff", background: "rgba(255,255,255,.15)" }}
-                onClick={() => setNewRxNotification(null)}
-              >
-                <X size={18} />
-              </button>
+              <button className="ph-icon-btn-sm" onClick={() => setNewRxNotification(null)}><X size={16} /></button>
             </div>
-            <div className="ph-modal-body" style={{ padding: "20px 24px" }}>
+
+            <div className="ph-modal-body" style={{ padding: "18px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Patient Info */}
-              <div style={{ display: "flex", gap: 14, padding: "14px 16px", background: LIGHT_BG, borderRadius: 12, border: `1px solid ${BORDER}`, marginBottom: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: ACCENT, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700 }}>
+              <div style={{ display: "flex", gap: 12, padding: "12px 14px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 11, background: ACCENT, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 700, flexShrink: 0 }}>
                   {(newRxNotification.patient?.name || "P")[0].toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{newRxNotification.patient?.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>{newRxNotification.patient?.name}</div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                     {newRxNotification.patient?.patientId} &middot; {newRxNotification.patient?.phone || "No phone"}
                   </div>
                   {newRxNotification.appointment?.tokenNumber && (
-                    <div style={{ marginTop: 6 }}>
-                      <span style={{ padding: "3px 10px", background: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, color: ACCENT, border: `1px solid ${BORDER}` }}>
-                        Token #{newRxNotification.appointment.tokenNumber}
-                      </span>
-                    </div>
+                    <span style={{ display: "inline-block", marginTop: 6, padding: "2px 9px", background: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, color: ACCENT, border: `1px solid ${BORDER}` }}>
+                      Token #{newRxNotification.appointment.tokenNumber}
+                    </span>
                   )}
                 </div>
               </div>
 
               {/* Diagnosis */}
               {newRxNotification.diagnosis && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>Diagnosis</div>
-                  <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13, color: "#334155" }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>Diagnosis</div>
+                  <div style={{ padding: "9px 13px", background: "#f8fafc", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, color: "#334155" }}>
                     {newRxNotification.diagnosis}
                   </div>
                 </div>
               )}
 
-              {/* Medications */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                    Medications ({newRxNotification.medicationCount})
+              {/* Medications — no prices */}
+              {newRxNotification.medications?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>
+                    Medications ({newRxNotification.medications.length})
                   </div>
-                  <span className="ph-badge" style={{ background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>
-                    Ready to Dispense
-                  </span>
-                </div>
-                <div style={{ maxHeight: 180, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 10 }}>
-                  {newRxNotification.medications?.map((med: any, idx: number) => (
-                    <div key={idx} style={{ padding: "10px 14px", borderBottom: idx < newRxNotification.medications.length - 1 ? "1px solid #f1f5f9" : "none", background: "#fff" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", maxHeight: 200, overflowY: "auto" }}>
+                    {newRxNotification.medications.map((med: any, idx: number) => (
+                      <div key={idx} style={{ padding: "10px 14px", borderBottom: idx < newRxNotification.medications.length - 1 ? "1px solid #f1f5f9" : "none", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{med.name || med.medicine}</div>
                           <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                            {med.dosage || med.dose} &middot; {med.frequency} &middot; {med.duration}
+                            {[med.dosage || med.dose, med.frequency, med.duration].filter(Boolean).join(" · ")}
                           </div>
                         </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#0A6B70" }}>
-                            {fmtCurrency((parseFloat(med.price) || 0) * (parseInt(med.quantity) || 1))}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#94a3b8" }}>Qty: {med.quantity}</div>
-                        </div>
+                        <div style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", marginLeft: 12 }}>Qty: {med.quantity || 1}</div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Billing Summary */}
-              <div style={{ padding: "14px 16px", background: "#f8fffe", borderRadius: 12, border: `2px solid ${BORDER}` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>Billing Summary</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, color: "#64748b" }}>Medicines Subtotal</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{fmtCurrency(newRxNotification.billing?.subtotal || 0)}</span>
-                </div>
-                {newRxNotification.billing?.charges?.length > 0 && newRxNotification.billing.charges.map((charge: any, idx: number) => (
-                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, color: "#64748b" }}>{charge.name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{fmtCurrency(charge.amount || 0)}</span>
+                    ))}
                   </div>
-                ))}
-                <div style={{ borderTop: `1px solid ${BORDER}`, marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Total Amount</span>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: ACCENT }}>{fmtCurrency(newRxNotification.billing?.total || 0)}</span>
                 </div>
-              </div>
+              )}
             </div>
             <div className="ph-modal-footer" style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
               <button 
@@ -4561,8 +4986,6 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                     if (item) {
                       setDispenseModalItem(item);
                       setDispensingId(null);
-                      setDispenseNotes("");
-                      setTransferTo("");
                     } else {
                       // If not in queue yet, refresh and then open
                       loadQueue().then(() => {
@@ -4571,8 +4994,6 @@ export default function PharmacyDashboard({ profile, user, activeTab }: { profil
                           if (refreshedItem) {
                             setDispenseModalItem(refreshedItem);
                             setDispensingId(null);
-                            setDispenseNotes("");
-                            setTransferTo("");
                           }
                         }, 500);
                       });
@@ -4600,8 +5021,7 @@ const pharmacyStyles = `
   .ph-nav-btn.on{color:${ACCENT};border-bottom-color:${ACCENT};background:${LIGHT_BG}}
 
   /* Section */
-  .ph-section{animation:phFadeIn .2s ease; padding: 24px;}
-  @media(max-width:600px){.ph-section{padding: 16px 12px;}}
+  .ph-section{animation:phFadeIn .2s ease}
   @keyframes phFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
   /* Stats Grid */

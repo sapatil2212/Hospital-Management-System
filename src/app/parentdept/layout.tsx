@@ -85,7 +85,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         if (d.data.role === "FINANCE_HEAD") { router.push("/finance/dashboard"); return; }
         if (d.data.role !== "DEPT_HEAD") { router.push("/login"); return; }
         setUser(d.data);
-        setLoading(false);
+        // Don't setLoading(false) yet — wait for dept type check first
         fetch("/api/parentdept/me", { credentials: "include" })
           .then(r => r.json())
           .then(pd => {
@@ -97,8 +97,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               if (t === "SUPPORT") { router.replace("/support/dashboard"); return; }
               if (t === "DIAGNOSTIC") { router.replace("/diagnostic/dashboard"); return; }
             }
+            // Only show parentdept layout if no type-based redirect
+            setLoading(false);
           })
-          .catch(() => { });
+          .catch(() => { setLoading(false); });
         fetch("/api/config/settings", { credentials: "include" })
           .then(r => r.json())
           .then(s => { if (s.success && s.data?.settings) setHospitalSettings(s.data.settings); })

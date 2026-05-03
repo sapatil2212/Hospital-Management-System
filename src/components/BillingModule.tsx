@@ -119,6 +119,7 @@ export default function BillingModule({ scope }: { scope?: "lab" | "pharmacy" } 
             dateTo={dateTo} setDateTo={setDateTo}
             onRefresh={()=>fetchBills(1)} onPageChange={fetchBills}
             onNew={()=>setView("create")} onOpen={openBill}
+            scope={scope}
           />
         )}
         {view === "create" && (
@@ -141,10 +142,26 @@ export default function BillingModule({ scope }: { scope?: "lab" | "pharmacy" } 
 }
 
 // ─── Bills List ───────────────────────────────────────────────────────────────
+function getPharmacyTotal(b: any): number {
+  return (b?.billItems || []).filter((it: any) => it.type === "PHARMACY").reduce((s: number, it: any) => s + (it.amount || 0), 0);
+}
 function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilter,setStatusFilter,
-  dateFrom,setDateFrom,dateTo,setDateTo,onRefresh,onPageChange,onNew,onOpen }:any) {
+  dateFrom,setDateFrom,dateTo,setDateTo,onRefresh,onPageChange,onNew,onOpen,scope }:any) {
   const [selectedBills, setSelectedBills] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [exportDropdown, setExportDropdown] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportDropdown(false);
+      }
+    };
+    if (exportDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [exportDropdown]);
 
   const toggleSelectAll = () => {
     if (selectedBills.length === bills.length) {
@@ -207,21 +224,27 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
               Download Selected ({selectedBills.length})
             </button>
           )}
-          <button className="bm-btn-primary" onClick={onNew}><Plus size={15}/>New Bill</button>
+          {scope !== "pharmacy" && <button className="bm-btn-primary" onClick={onNew}><Plus size={15}/>New Bill</button>}
         </div>
       </div>
 
       {/* Stats */}
-      <div className="bm-stats-row">
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
         {[
-          { label:"Today's Collection", val:fmtCur(stats.todayRevenue),  icon:<IndianRupee size={18}/>, bg:"#E6F4F4", ic:"#0E898F" },
-          { label:"Month Revenue",       val:fmtCur(stats.monthRevenue),  icon:<TrendingUpIcon/>,        bg:"#f0fdf4", ic:"#10b981" },
-          { label:"Pending Bills",       val:stats.pendingCount,          icon:<Clock size={18}/>,       bg:"#E6F4F4", ic:"#0E898F" },
-          { label:"Total Bills",         val:pagination.total,            icon:<Receipt size={18}/>,     bg:"#fdf4ff", ic:"#a855f7" },
+          { label:"Today's Collection", val:fmtCur(stats.todayRevenue),  icon:<IndianRupee size={20} color="#0E898F"/>, bg:"#E6F4F4" },
+          { label:"Month Revenue",       val:fmtCur(stats.monthRevenue),  icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, bg:"#f0fdf4" },
+          { label:"Pending Bills",       val:String(stats.pendingCount),  icon:<Clock size={20} color="#ea580c"/>,         bg:"#fff3e6" },
+          { label:"Total Bills",         val:String(pagination.total),    icon:<Receipt size={20} color="#a855f7"/>,        bg:"#fdf4ff" },
         ].map((s,i)=>(
-          <div key={i} className="bm-stat-card" style={{background:s.bg}}>
-            <div className="bm-stat-icon" style={{background:s.ic}}>{s.icon}</div>
-            <div><div className="bm-stat-lbl">{s.label}</div><div className="bm-stat-val">{s.val}</div></div>
+          <div key={i}
+            style={{background:"#fff",borderRadius:12,padding:12,border:"1px solid #e2e8f0",transition:"box-shadow .2s,transform .15s",display:"flex",alignItems:"center",gap:12}}
+            onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.08)";e.currentTarget.style.transform="translateY(-1px)";}}
+            onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="";}}>
+            <div style={{width:44,height:44,borderRadius:11,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{s.icon}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#0f172a",lineHeight:1}}>{s.val}</div>
+              <div style={{fontSize:10,color:"#64748b",marginTop:3}}>{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -241,14 +264,27 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
         <input type="date" className="bm-select" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} title="Date From"/>
         <input type="date" className="bm-select" value={dateTo}   onChange={e=>setDateTo(e.target.value)}   title="Date To"/>
         <button className="bm-icon-btn" onClick={onRefresh} title="Refresh"><RefreshCw size={14}/></button>
-        <a
-          href={exportUrl}
-          download
-          title="Export CSV"
-          style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",fontSize:12,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap"}}
-        >
-          <Download size={13}/>Export CSV
-        </a>
+        <div style={{position:"relative"}} ref={exportRef}>
+          <button
+            onClick={()=>setExportDropdown(!exportDropdown)}
+            style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}
+          >
+            <Download size={13}/>Export<ChevronDown size={13}/>
+          </button>
+          {exportDropdown && (
+            <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,boxShadow:"0 4px 12px rgba(0,0,0,.1)",zIndex:100,minWidth:140}}>
+              <a href={exportUrl} download onClick={()=>setExportDropdown(false)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",fontSize:12,color:"#475569",textDecoration:"none",borderBottom:"1px solid #f1f5f9",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
+                <FileSpreadsheet size={14} color="#10b981"/>Excel (CSV)
+              </a>
+              <button onClick={()=>{alert("PDF export coming soon");setExportDropdown(false);}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",fontSize:12,color:"#475569",background:"none",border:"none",width:"100%",textAlign:"left",cursor:"pointer",borderBottom:"1px solid #f1f5f9",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
+                <FileTextIcon size={14} color="#ef4444"/>PDF
+              </button>
+              <button onClick={()=>{alert("Word export coming soon");setExportDropdown(false);}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",fontSize:12,color:"#475569",background:"none",border:"none",width:"100%",textAlign:"left",cursor:"pointer",transition:"background .15s"}} onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
+                <FileJson size={14} color="#2563eb"/>Word (DOCX)
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -300,8 +336,8 @@ function BillsList({ bills,stats,pagination,loading,search,setSearch,statusFilte
                       </td>
                       <td style={{fontSize:12,color:"#64748b"}}>{fmtDate(b.createdAt)}</td>
                       <td style={{fontSize:12,color:"#64748b"}}>{b.billItems?.length || 0} item{(b.billItems?.length||0)!==1?"s":""}</td>
-                      <td style={{fontWeight:700,color:"#1e293b"}}>{fmtCur(b.total)}</td>
-                      <td style={{fontSize:12,color:"#10b981",fontWeight:600}}>{fmtCur(b.paidAmount)}</td>
+                      <td style={{fontWeight:700,color:"#1e293b"}}>{fmtCur(scope==="pharmacy" ? getPharmacyTotal(b) : b.total)}</td>
+                      <td style={{fontSize:12,color:"#10b981",fontWeight:600}}>{fmtCur(scope==="pharmacy" ? (b.status==="PAID" ? getPharmacyTotal(b) : 0) : b.paidAmount)}</td>
                       <td onClick={e=>e.stopPropagation()}>
                         <span className="bm-badge" style={{background:sc.bg,color:sc.color}}>{sc.label}</span>
                       </td>
@@ -1604,7 +1640,7 @@ function typeInfo(t:string){ return ITEM_TYPES.find(x=>x.value===t)||ITEM_TYPES[
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const BM_CSS = `
-.bm-wrap{padding:0}
+.bm-wrap{padding:0;background:#fff}
 .bm-page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:12;flex-wrap:wrap;gap:12px}
 .bm-page-title{font-size:22px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
 .bm-page-sub{font-size:13px;color:#94a3b8;margin-top:2px}

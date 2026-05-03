@@ -43,6 +43,7 @@ export const queryAppointmentSchema = z.object({
   doctorId: z.string().uuid().optional(),
   patientId: z.string().uuid().optional(),
   departmentId: z.string().uuid().optional(),
+  subDepartmentId: z.string().uuid().optional(),
   status: z
     .enum(["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"])
     .optional(),
@@ -51,7 +52,7 @@ export const queryAppointmentSchema = z.object({
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(500).default(20),
+  limit: z.coerce.number().min(1).max(1000).default(20),
   sortBy: z.enum(["appointmentDate", "createdAt", "timeSlot"]).default("appointmentDate"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });

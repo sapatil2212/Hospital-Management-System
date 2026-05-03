@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   ClipboardList, CalendarDays, UserRound, LogOut, Search, Bell,
   MessageSquare, HelpCircle, Plus, Check, X, Play, ChevronRight,
-  Clock, TrendingUp, Users, BarChart2, Pencil, Trash2, Menu
+  Clock, TrendingUp, Users, BarChart2, Pencil, Trash2, Menu, Stethoscope
 } from "lucide-react";
 import AppointmentAlertModal from "@/components/AppointmentAlertModal";
 
@@ -69,9 +69,17 @@ export default function ReceptionistDashboard() {
   const [booking, setBooking] = useState({patientName:"",mobile:"",dept:"Cardiology",doctor:"Dr. Priya Sharma",timeSlot:"09:00 AM",type:"OPD"});
   const [booked, setBooked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hospitalSettings, setHospitalSettings] = useState<any>(null);
 
   useEffect(()=>{
-    fetch("/api/auth/me",{credentials:"include"}).then(r=>r.json()).then(d=>{if(!d.success){router.push("/login");return;}setUser(d.data);setLoading(false);}).catch(()=>router.push("/login"));
+    fetch("/api/auth/me",{credentials:"include"}).then(r=>r.json()).then(d=>{
+      if(!d.success){router.push("/login");return;}
+      setUser(d.data);
+      setLoading(false);
+      fetch("/api/config/settings",{credentials:"include"}).then(r=>r.json()).then(s=>{
+        if(s.success && s.data?.settings) setHospitalSettings(s.data.settings);
+      }).catch(()=>{});
+    }).catch(()=>router.push("/login"));
   },[router]);
 
   const logout = async()=>{await fetch("/api/auth/logout",{method:"POST",credentials:"include"});router.push("/login");};
@@ -108,7 +116,7 @@ export default function ReceptionistDashboard() {
       .rec-sb{width:220px;background:#fff;border-right:1px solid #fef08a;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(234,179,8,0.07);transition:transform .25s cubic-bezier(.4,0,.2,1)}
       .rec-burger{display:none;width:36px;height:36px;border-radius:10px;background:#fefce8;border:1px solid #fef08a;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
       .rec-logo{padding:20px 20px 16px;border-bottom:1px solid #fefce8;display:flex;align-items:center;gap:10px}
-      .rec-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#eab308,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(234,179,8,0.3)}
+      .rec-logo-ic{width:36px;height:36px;background:linear-gradient(135deg,#0E898F,#07595D);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(14,137,143,0.3)}
       .rec-logo-tx{font-size:14px;font-weight:800;color:#1e293b;letter-spacing:-.02em}
       .rec-logo-sub{font-size:10px;color:#94a3b8;margin-top:0px}
       .rec-nav{flex:1;padding:12px 12px;overflow-y:auto}
@@ -202,8 +210,14 @@ export default function ReceptionistDashboard() {
       {sidebarOpen && <div className="rec-overlay open" onClick={() => setSidebarOpen(false)} />}
       <aside className={`rec-sb${sidebarOpen ? " open" : ""}`}>
         <div className="rec-logo">
-          <div className="rec-logo-ic"><CalendarDays size={18} color="white"/></div>
-          <div><div className="rec-logo-tx">MediCare+</div><div className="rec-logo-sub">Front Desk</div></div>
+          {hospitalSettings?.logo ? (
+            <img src={hospitalSettings.logo} alt="Hospital Logo" style={{ width: "100%", maxHeight: 44, objectFit: "contain", display: "block" }} />
+          ) : (
+            <>
+              <div className="rec-logo-ic"><Stethoscope size={18} color="white"/></div>
+              <div><div className="rec-logo-tx">{hospitalSettings?.hospitalName || user?.hospital?.name || "MediCare+"}</div><div className="rec-logo-sub">Front Desk</div></div>
+            </>
+          )}
         </div>
         <nav className="rec-nav">
           <div className="rec-nav-sec">Front Desk</div>

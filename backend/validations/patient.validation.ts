@@ -7,6 +7,7 @@ import { z } from "zod";
 export const createPatientSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   phone: z.string().min(7, "Phone must be at least 7 characters").max(20),
+  whatsapp: z.string().max(20).optional().nullable(),
   email: z.string().email("Invalid email").optional().nullable(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().nullable(),
   dateOfBirth: z.coerce.date().optional().nullable(),
@@ -32,6 +33,7 @@ export const queryPatientSchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
   sortBy: z.enum(["name", "phone", "createdAt", "patientId"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  departmentId: z.string().optional(),
 });
 
 export type QueryPatientInput = z.infer<typeof queryPatientSchema>;

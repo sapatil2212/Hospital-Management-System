@@ -433,6 +433,8 @@ input, textarea {
   to { transform: rotate(360deg); }
 }
 .spin-anim { animation: spin .7s linear infinite; }
+.opd2-spin { animation: spin .7s linear infinite; }
+.cl-spin { animation: spin .7s linear infinite; }
 
 /*!********************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/ai-chatbot.module.css ***!

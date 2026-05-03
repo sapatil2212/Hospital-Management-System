@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
     const queue = await getBillingQueue(auth.hospitalId, {
       search: url.searchParams.get("search") || undefined,
       date: url.searchParams.get("date") || undefined,
+      procedureOnly: url.searchParams.get("procedureOnly") === "true",
+      subDeptId: url.searchParams.get("subDeptId") || undefined,
     });
     return successResponse(queue, "Billing queue fetched");
   } catch (e: any) {

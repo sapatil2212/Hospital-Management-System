@@ -740,9 +740,7 @@ export default function SubDepartmentPanel() {
     setShowExport(false);
   };
 
-  return (
-    <>
-      <style>{`
+  const SD_STYLES = `
         .sd-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
         .sd-search-wrap{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;min-width:260px}
         .sd-search-input{background:none;border:none;outline:none;font-size:13px;color:#334155;width:100%}
@@ -802,17 +800,17 @@ export default function SubDepartmentPanel() {
         .sd-modal{background:#fff;border-radius:18px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:92vh;overflow:hidden;display:flex;flex-direction:column}
         .sd-modal-lg{max-width:720px}
         .sd-modal-sm{max-width:420px;padding:28px;text-align:center}
-        .sd-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0}
-        .sd-modal-title{font-size:16px;font-weight:800;color:#1e293b}
-        .sd-modal-body{padding:18px 22px;overflow-y:auto;flex:1}
-        .sd-modal-foot{padding:14px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;flex-shrink:0}
-        .sd-section{margin-bottom:16px}
+        .sd-modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e2e8f0;background:#fff;flex-shrink:0}
+        .sd-modal-title{font-size:13px;font-weight:700;color:#1e293b}
+        .sd-modal-body{padding:14px 18px;overflow-y:auto;flex:1}
+        .sd-modal-foot{padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;background:#fff;flex-shrink:0}
+        .sd-section{margin-bottom:14px}
         .sd-section:last-child{margin-bottom:0}
-        .sd-section-title{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
+        .sd-section-title{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:5px}
         .sd-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         .sd-field{display:flex;flex-direction:column;gap:3px}
         .sd-field.full{grid-column:1/-1}
-        .sd-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
+        .sd-lbl{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8}
         .sd-input{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;color:#1e293b;outline:none;transition:border-color .2s;width:100%}
         .sd-input:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,.2)}
         .sd-input::placeholder{color:#94a3b8}
@@ -915,7 +913,10 @@ export default function SubDepartmentPanel() {
         .sd-del-confirm-btn{padding:10px 20px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
         .sd-del-confirm-btn:hover{background:#dc2626;transform:translateY(-1px)}
         .sd-del-confirm-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
-      `}</style>
+  `;
+  return (
+    <>
+      <style>{SD_STYLES}</style>
 
       <ToastContainer toasts={toasts} onRemove={id => setToasts(t => t.filter(x => x.id !== id))} />
 
@@ -1104,7 +1105,7 @@ export default function SubDepartmentPanel() {
 
             {/* Pagination */}
             <div className="sd-pagination" style={{padding:"14px 16px",background:"#fff",borderTop:"1px solid #f1f5f9"}}>
-              <div className="sd-pagination-info">Showing {(pagination.page - 1) * pagination.limit + 1}\u2013{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}</div>
+              <div className="sd-pagination-info">Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}</div>
               <div className="sd-pagination-btns">
                 <button className="sd-page-btn" disabled={pagination.page === 1} onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}><ChevronLeft size={14} /></button>
                 {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
@@ -1134,7 +1135,7 @@ export default function SubDepartmentPanel() {
               <div className="sd-modal-body">
                 {/* Section 1+2: Parent Department + Sub-Department Type side by side */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><Building2 size={14} />Department Setup</div>
+                  <div className="sd-section-title"><Building2 size={10}/>Department Setup</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                     <div className="sd-field">
                       <label className="sd-lbl">Parent Department</label>
@@ -1170,7 +1171,7 @@ export default function SubDepartmentPanel() {
 
                 {/* Section 3: Basic Info */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><FlaskConical size={14} />Basic Info</div>
+                  <div className="sd-section-title"><FlaskConical size={10}/>Basic Info</div>
                   <div className="sd-form-grid">
                     <div className="sd-field">
                       <label className="sd-lbl">Name *</label>
@@ -1186,7 +1187,7 @@ export default function SubDepartmentPanel() {
                     </div>
                     <div className="sd-field full">
                       <div className="sd-toggle-wrap">
-                        <div><div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>Active</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Accept patients and appointments</div></div>
+                        <div><div style={{ fontSize: 11, fontWeight: 600, color: "#1e293b" }}>Active</div><div style={{ fontSize: 10, color: "#94a3b8" }}>Accept patients and appointments</div></div>
                         <button type="button" className={`sd-toggle ${form.isActive ? "on" : ""}`} onClick={() => setForm((f: any) => ({ ...f, isActive: !f.isActive }))}><span className="sd-toggle-thumb" /></button>
                       </div>
                     </div>
@@ -1197,10 +1198,10 @@ export default function SubDepartmentPanel() {
                 {/* HOD */}
                 <div className="sd-section">
                   <div className="sd-section-title" style={{ justifyContent: "space-between" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}><User size={14} />Head of Department (HOD)</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 5 }}><User size={10}/>Head of Department (HOD)</span>
                     <a href="/hospitaladmin/configure?tab=staff" target="_blank" rel="noreferrer"
-                      style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#0E898F", textDecoration: "none", padding: "3px 8px", borderRadius: 6, background: "#E6F4F4", border: "1px solid #B3E0E0" }}>
-                      <UserPlus size={11} />Create New<ExternalLink size={9} />
+                      style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: "#0E898F", textDecoration: "none", padding: "2px 7px", borderRadius: 5, background: "#E6F4F4", border: "1px solid #B3E0E0" }}>
+                      <UserPlus size={10}/>Create New<ExternalLink size={8}/>
                     </a>
                   </div>
 
@@ -1234,8 +1235,8 @@ export default function SubDepartmentPanel() {
                               {h.kind === "DOCTOR" ? <Stethoscope size={14} color="#0E898F" /> : <User size={14} color="#8b5cf6" />}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{h.name}</div>
-                              <div style={{ fontSize: 11, color: "#94a3b8" }}>{h.role}{h.email ? ` · ${h.email}` : ""}</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{h.name}</div>
+                              <div style={{ fontSize: 10, color: "#94a3b8" }}>{h.role}{h.email ? ` · ${h.email}` : ""}</div>
                             </div>
                             <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, background: h.kind === "DOCTOR" ? "#E6F4F4" : "#f5f3ff", color: h.kind === "DOCTOR" ? "#0E898F" : "#8b5cf6", border: "1px solid", borderColor: h.kind === "DOCTOR" ? "#B3E0E0" : "#ddd6fe" }}>{h.kind}</span>
                           </div>
@@ -1262,8 +1263,8 @@ export default function SubDepartmentPanel() {
 
                 {/* Login Credentials (Admin only) */}
                 <div className="sd-section">
-                  <div className="sd-section-title"><ShieldCheck size={14} />Dashboard Login Credentials
-                    <span style={{ marginLeft: "auto", fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 100, fontWeight: 700, border: "1px solid #fde68a" }}>Admin Only</span>
+                  <div className="sd-section-title"><ShieldCheck size={10}/>Dashboard Login Credentials
+                    <span style={{ marginLeft: "auto", fontSize: 9, background: "#fef3c7", color: "#92400e", padding: "2px 7px", borderRadius: 100, fontWeight: 700, border: "1px solid #fde68a" }}>Admin Only</span>
                   </div>
                   <div className="sd-form-grid">
                     <div className="sd-field full">
@@ -1273,16 +1274,16 @@ export default function SubDepartmentPanel() {
                         value={form.loginEmail}
                         onChange={e => setForm((f: any) => ({ ...f, loginEmail: e.target.value }))}
                       />
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                        <Lock size={10} />Login at <strong>http://localhost:3000/login</strong> · Credentials created automatically on save
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                        <Lock size={9}/>Login at <strong>http://localhost:3000/login</strong> · Credentials created automatically on save
                       </div>
                     </div>
                     <div className="sd-field full">
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                         <label className="sd-lbl" style={{ margin: 0 }}>Password</label>
                         <button type="button" onClick={() => setForm((f: any) => ({ ...f, loginPassword: generatePassword(f.hodName || f.name || "Dept") }))}
-                          style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}>
-                          <RefreshCw size={11} />Regenerate
+                          style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, fontWeight: 600 }}>
+                          <RefreshCw size={10}/>Regenerate
                         </button>
                       </div>
                       <div style={{ position: "relative" }}>
@@ -1302,15 +1303,15 @@ export default function SubDepartmentPanel() {
                           </button>
                         </div>
                       </div>
-                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Pattern: <code style={{ background: "#f1f5f9", padding: "1px 5px", borderRadius: 4, color: "#334155" }}>DeptName@Year</code> · e.g. <em>Dental@2026</em></div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>Pattern: <code style={{ background: "#f1f5f9", padding: "1px 5px", borderRadius: 4, color: "#334155", fontSize: 10 }}>DeptName@Year</code> · e.g. <em>Dental@2026</em></div>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="sd-modal-foot">
-                <button type="button" className="sd-btn-ghost" onClick={() => setModal(false)}>Cancel</button>
-                <button type="submit" className="sd-btn-primary" disabled={saving}>
-                  {saving && <Loader2 size={14} className="sd-spin" />}{editItem ? "Update" : "Create"}
+                <button type="button" className="sd-btn-ghost" style={{padding:"7px 14px",fontSize:12}} onClick={() => setModal(false)}>Cancel</button>
+                <button type="submit" className="sd-btn-primary" style={{padding:"7px 14px",fontSize:12}} disabled={saving}>
+                  {saving && <Loader2 size={13} className="sd-spin" />}{editItem ? "Update" : "Create"}
                 </button>
               </div>
             </form>
@@ -1407,84 +1408,156 @@ export default function SubDepartmentPanel() {
       )}
 
       {/* View Details Modal */}
-      {viewItem && (
-        <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewItem(null)}>
-          <div className="sd-modal">
-            <div className="sd-modal-head">
-              <span className="sd-modal-title">Sub-Department Details</span>
-              <button className="sd-icon-btn" onClick={() => setViewItem(null)}><X size={16} /></button>
-            </div>
-            <div className="sd-view-modal-body">
-              <div className="sd-view-grid">
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Name</span>
-                  <span className="sd-view-value">{viewItem.name}</span>
+      {viewItem && (() => {
+        const typeInfo = getTypeInfo(viewItem.type);
+        const accentColor = viewItem.color || typeInfo.color;
+        const TypeIcon = typeInfo.Icon;
+        let parsedFeatures: string[] = [];
+        try { parsedFeatures = viewItem.accessFeatures ? JSON.parse(viewItem.accessFeatures) : []; } catch { parsedFeatures = []; }
+        return (
+          <div className="sd-overlay" onClick={e => e.target === e.currentTarget && setViewItem(null)}>
+            <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:660,boxShadow:"0 8px 32px rgba(0,0,0,.12)",maxHeight:"92vh",overflow:"hidden",display:"flex",flexDirection:"column",animation:"sdDelFadeIn .2s ease"}}>
+
+              {/* Header */}
+              <div style={{padding:"16px 20px",borderBottom:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#fff"}}>
+                <div style={{width:36,height:36,borderRadius:10,background:"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <TypeIcon size={18} style={{color:accentColor}}/>
                 </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Code</span>
-                  <span className="sd-view-value">{viewItem.code || "-"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Type</span>
-                  <span className="sd-view-value"><span className={`sd-badge`} style={{background:getTypeInfo(viewItem.type).color+"20",color:getTypeInfo(viewItem.type).color,border:`1px solid ${getTypeInfo(viewItem.type).color}40`}}>{viewItem.type==="CUSTOM"&&viewItem.customName?viewItem.customName:getTypeInfo(viewItem.type).label}</span></span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Status</span>
-                  <span className="sd-view-value"><span className={`sd-badge ${viewItem.isActive?"green":"red"}`}>{viewItem.isActive?"Active":"Inactive"}</span></span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Parent Department</span>
-                  <span className="sd-view-value">{viewItem.department?.name||"None / Independent"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Head of Department</span>
-                  <span className="sd-view-value">{viewItem.hodName||"-"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">HOD Email</span>
-                  <span className="sd-view-value">{viewItem.hodEmail||"-"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">HOD Phone</span>
-                  <span className="sd-view-value">{viewItem.hodPhone||"-"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Login Email</span>
-                  <span className="sd-view-value">{viewItem.loginEmail||"\u2014"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Credentials Sent</span>
-                  <span className="sd-view-value">{viewItem.credentialsSent?"Yes":"No"}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Procedures</span>
-                  <span className="sd-view-value">{viewItem._count?.procedures||viewItem.procedures?.length||0}</span>
-                </div>
-                <div className="sd-view-item">
-                  <span className="sd-view-label">Accent Color</span>
-                  <span className="sd-view-value" style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:14,height:14,borderRadius:4,background:viewItem.color||getTypeInfo(viewItem.type).color,display:"inline-block"}} />{viewItem.color||getTypeInfo(viewItem.type).color}</span>
-                </div>
-                {viewItem.description && (
-                  <div className="sd-view-item full">
-                    <span className="sd-view-label">Description</span>
-                    <span className="sd-view-value">{viewItem.description}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{viewItem.name}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3,flexWrap:"wrap"}}>
+                    <span style={{fontSize:10,fontWeight:600,color:"#64748b",background:"#f1f5f9",padding:"2px 7px",borderRadius:4,border:"1px solid #e2e8f0"}}>
+                      {viewItem.type==="CUSTOM"&&viewItem.customName?viewItem.customName:typeInfo.label}
+                    </span>
+                    <span className={`sd-badge ${viewItem.isActive?"green":"red"}`} style={{fontSize:10}}>{viewItem.isActive?"Active":"Inactive"}</span>
+                    {viewItem.code&&<span style={{fontFamily:"monospace",fontSize:10,color:"#94a3b8",background:"#f8fafc",padding:"2px 6px",borderRadius:4,border:"1px solid #e2e8f0"}}>{viewItem.code}</span>}
                   </div>
-                )}
-                {viewItem.flow && (
-                  <div className="sd-view-item full">
-                    <span className="sd-view-label">Patient Flow</span>
-                    <span className="sd-view-value">{viewItem.flow}</span>
-                  </div>
-                )}
+                </div>
+                <button className="sd-icon-btn" onClick={()=>setViewItem(null)}><X size={15}/></button>
               </div>
-              <div style={{marginTop:20,display:"flex",justifyContent:"flex-end",gap:10}}>
-                <button className="sd-btn-ghost" onClick={()=>setViewItem(null)}>Close</button>
-                <button className="sd-btn-primary" onClick={()=>{openEdit(viewItem);setViewItem(null);}}>Edit Sub-Department</button>
+
+              {/* Body */}
+              <div style={{overflowY:"auto",flex:1,padding:"16px 20px",display:"flex",flexDirection:"column",gap:16}}>
+
+                {/* Identity */}
+                <div>
+                  <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:"#94a3b8",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+                    <Building2 size={10}/> Identity
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    {[
+                      {label:"Name", val:viewItem.name},
+                      {label:"Short Code", val:viewItem.code||"—", mono:!!viewItem.code},
+                      {label:"Parent Department", val:viewItem.department?.name||"None / Independent"},
+                      {label:"Accent Color", val:(
+                        <span style={{display:"flex",alignItems:"center",gap:6}}>
+                          <span style={{width:12,height:12,borderRadius:3,background:accentColor,display:"inline-block",border:"1px solid rgba(0,0,0,.1)",flexShrink:0}}/>
+                          <span style={{fontFamily:"monospace",fontSize:10,color:"#475569"}}>{accentColor}</span>
+                        </span>
+                      )},
+                    ].map(({label,val,mono})=>(
+                      <div key={label} style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                        <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>{label}</div>
+                        <div style={{fontSize:11,fontWeight:600,color:"#334155",fontFamily:mono?"monospace":"inherit"}}>{val}</div>
+                      </div>
+                    ))}
+                    {viewItem.description&&(
+                      <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0",gridColumn:"1/-1"}}>
+                        <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Description</div>
+                        <div style={{fontSize:11,color:"#475569",lineHeight:1.6}}>{viewItem.description}</div>
+                      </div>
+                    )}
+                    {viewItem.flow&&(
+                      <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0",gridColumn:"1/-1"}}>
+                        <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Patient Flow / Notes</div>
+                        <div style={{fontSize:11,color:"#475569",lineHeight:1.6,fontStyle:"italic"}}>{viewItem.flow}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* HOD */}
+                <div>
+                  <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:"#94a3b8",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+                    <User size={10}/> Head of Department
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                    <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                      <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Name</div>
+                      <div style={{fontSize:11,fontWeight:600,color:"#334155"}}>{viewItem.hodName||<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}</div>
+                    </div>
+                    <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                      <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Email</div>
+                      <div style={{fontSize:11,color:"#334155",wordBreak:"break-all"}}>
+                        {viewItem.hodEmail?<a href={`mailto:${viewItem.hodEmail}`} style={{color:"#0E898F",textDecoration:"none",fontWeight:600}}>{viewItem.hodEmail}</a>:<span style={{color:"#cbd5e1"}}>—</span>}
+                      </div>
+                    </div>
+                    <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                      <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Phone</div>
+                      <div style={{fontSize:11,fontWeight:600,color:"#334155"}}>{viewItem.hodPhone||<span style={{color:"#cbd5e1",fontWeight:400}}>—</span>}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Credentials */}
+                <div>
+                  <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:"#94a3b8",marginBottom:8,display:"flex",alignItems:"center",gap:5}}>
+                    <ShieldCheck size={10}/> Access & Credentials
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                      <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Login Email</div>
+                      <div style={{fontSize:11,fontWeight:600,color:"#334155",wordBreak:"break-all"}}>{viewItem.loginEmail||<span style={{color:"#cbd5e1",fontWeight:400}}>Not configured</span>}</div>
+                    </div>
+                    <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0"}}>
+                      <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>Credentials</div>
+                      <span className={`sd-badge ${viewItem.credentialsSent?"green":"red"}`} style={{fontSize:10}}>{viewItem.credentialsSent?"Sent":"Pending"}</span>
+                    </div>
+                    {parsedFeatures.length>0&&(
+                      <div style={{background:"#f8fafc",borderRadius:8,padding:"8px 11px",border:"1px solid #e2e8f0",gridColumn:"1/-1"}}>
+                        <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".05em",marginBottom:6}}>Access Features</div>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                          {parsedFeatures.map((f:string)=>(
+                            <span key={f} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"2px 8px",borderRadius:4,fontSize:10,fontWeight:600,background:"#f1f5f9",color:"#475569",border:"1px solid #e2e8f0"}}>
+                              <Check size={8}/>{FEATURE_LABELS[f]||f}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Summary strip */}
+                <div style={{display:"flex",gap:0,border:"1px solid #e2e8f0",borderRadius:8,overflow:"hidden"}}>
+                  <div style={{flex:1,padding:"10px 14px",textAlign:"center",borderRight:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:16,fontWeight:800,color:"#1e293b"}}>{viewItem._count?.procedures||viewItem.procedures?.length||0}</div>
+                    <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Procedures</div>
+                  </div>
+                  <div style={{flex:1,padding:"10px 14px",textAlign:"center",borderRight:"1px solid #e2e8f0"}}>
+                    <div style={{fontSize:11,fontWeight:700,color:viewItem.isActive?"#16a34a":"#ef4444",marginTop:2}}>{viewItem.isActive?"Active":"Inactive"}</div>
+                    <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Status</div>
+                  </div>
+                  <div style={{flex:1,padding:"10px 14px",textAlign:"center"}}>
+                    <div style={{fontSize:11,fontWeight:700,color:viewItem.credentialsSent?"#16a34a":"#92400e",marginTop:2}}>{viewItem.credentialsSent?"Sent":"Pending"}</div>
+                    <div style={{fontSize:9,color:"#94a3b8",marginTop:2,fontWeight:500,textTransform:"uppercase",letterSpacing:".04em"}}>Credentials</div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div style={{padding:"12px 20px",borderTop:"1px solid #e2e8f0",display:"flex",justifyContent:"flex-end",gap:8,flexShrink:0}}>
+                <button className="sd-btn-ghost" style={{padding:"7px 14px",fontSize:12}} onClick={()=>setViewItem(null)}>Close</button>
+                <button className="sd-btn-primary" style={{padding:"7px 14px",fontSize:12}} onClick={()=>{openEdit(viewItem);setViewItem(null);}}>
+                  <Pencil size={12}/>Edit
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
 
       {/* Delete Confirm */}
       {deleteTarget && (

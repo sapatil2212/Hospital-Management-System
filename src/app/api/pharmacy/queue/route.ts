@@ -3,6 +3,7 @@ import { requireRole } from "../../../../../backend/middlewares/role.middleware"
 import { successResponse, errorResponse } from "../../../../../backend/utils/response";
 import { Role } from "@prisma/client";
 import prisma from "../../../../../backend/config/db";
+import { addWorkflowChargesToBill, recalculateBill } from "../../../../../backend/services/billing.service";
 
 const px = prisma as any;
 
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || ""; // PENDING, IN_PROGRESS, COMPLETED, all
     const date = searchParams.get("date") || new Date().toISOString().slice(0, 10);
+    const allDates = searchParams.get("allDates") === "true"; // skip all date filtering — return full history
 
     // Get the pharmacy sub-department for this user
     let pharmacySubDeptId: string | null = null;
@@ -30,6 +32,14 @@ export async function GET(req: NextRequest) {
       });
       if (subDept) pharmacySubDeptId = subDept.id;
     }
+    // Fallback: if sub-dept not found by userId (or admin role), find by PHARMACY type
+    // This must match the same lookup used in completePrescription() for auto-routing
+    if (!pharmacySubDeptId) {
+      const phByType = await px.subDepartment.findFirst({
+        where: { hospitalId: auth.hospitalId, type: "PHARMACY" },
+      });
+      if (phByType) pharmacySubDeptId = phByType.id;
+    }
 
     // Build date range
     const startDate = new Date(date);
@@ -38,14 +48,21 @@ export async function GET(req: NextRequest) {
     endDate.setHours(23, 59, 59, 999);
 
     // Query 1: Prescription workflows assigned to this pharmacy
+    // For active workflows (PENDING/IN_PROGRESS/HOLD), don't restrict by date — show all pending regardless of when assigned
+    // For COMPLETED or "all", restrict by date so the history doesn't flood the queue
+    const isActiveFilter = !status || status === ""; // default = pending filter
     const workflowWhere: any = {
       hospitalId: auth.hospitalId,
       ...(pharmacySubDeptId ? { subDepartmentId: pharmacySubDeptId } : {}),
-      createdAt: { gte: startDate, lte: endDate },
+      // Only apply date filter for completed/historical queries, not for active pending queue
+      ...(isActiveFilter || allDates ? {} : { createdAt: { gte: startDate, lte: endDate } }),
     };
 
     if (status === "all") {
-      // No status filter — show everything
+      if (!allDates) workflowWhere.createdAt = { gte: startDate, lte: endDate };
+    } else if (status === "COMPLETED") {
+      workflowWhere.status = "COMPLETED";
+      if (!allDates) workflowWhere.createdAt = { gte: startDate, lte: endDate };
     } else if (status) {
       workflowWhere.status = status;
     } else {
@@ -67,13 +84,21 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "asc" },
     });
 
-    // Query 2: Also fetch prescriptions with medications that haven't been dispensed
-    // (prescriptions completed today with medications field populated)
+    // Query 2: Also fetch prescriptions with medications using updatedAt (set when doctor completes Rx)
+    // Using updatedAt instead of createdAt so prescriptions created on previous days but completed today appear
     const rxWhere: any = {
       hospitalId: auth.hospitalId,
       medications: { not: null },
-      createdAt: { gte: startDate, lte: endDate },
+      ...(allDates ? {} : { updatedAt: { gte: startDate, lte: endDate } }),
       status: { in: ["COMPLETED", "IN_WORKFLOW", "BILLING_PENDING"] },
+    };
+
+    // Query 2b: Also pick up IN_WORKFLOW prescriptions currently at this pharmacy (regardless of date)
+    const inWorkflowWhere: any = {
+      hospitalId: auth.hospitalId,
+      medications: { not: null },
+      status: "IN_WORKFLOW",
+      ...(pharmacySubDeptId ? { currentDeptId: pharmacySubDeptId } : {}),
     };
 
     if (search) {
@@ -85,30 +110,39 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const prescriptions = await px.prescription.findMany({
-      where: rxWhere,
-      include: {
-        patient: { select: { id: true, name: true, patientId: true, phone: true, gender: true, dateOfBirth: true } },
-        doctor: { select: { id: true, name: true, specialization: true } },
-        appointment: { select: { id: true, appointmentDate: true, timeSlot: true, type: true, tokenNumber: true } },
-        workflows: {
-          where: pharmacySubDeptId ? { subDepartmentId: pharmacySubDeptId } : {},
-          include: { subDepartment: { select: { id: true, name: true, type: true } } },
-        },
+    const prescriptionInclude = {
+      patient: { select: { id: true, name: true, patientId: true, phone: true, gender: true, dateOfBirth: true } },
+      doctor: { select: { id: true, name: true, specialization: true } },
+      appointment: { select: { id: true, appointmentDate: true, timeSlot: true, type: true, tokenNumber: true } },
+      workflows: {
+        where: pharmacySubDeptId ? { subDepartmentId: pharmacySubDeptId } : {},
+        include: { subDepartment: { select: { id: true, name: true, type: true } } },
       },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    };
+
+    // Run Query 2 (updated today by doctor completing) + Query 2b (IN_WORKFLOW at this pharmacy) in parallel
+    const [prescriptions, inWorkflowPrescriptions] = await Promise.all([
+      px.prescription.findMany({ where: rxWhere, include: prescriptionInclude, orderBy: { updatedAt: "desc" }, take: 100 }),
+      px.prescription.findMany({ where: inWorkflowWhere, include: prescriptionInclude, orderBy: { updatedAt: "desc" }, take: 100 }),
+    ]);
+
+    // Merge both prescription result sets (deduplicated by id)
+    const allPrescriptions = [...prescriptions];
+    const seenIds = new Set(prescriptions.map((p: any) => p.id));
+    for (const rx of inWorkflowPrescriptions) {
+      if (!seenIds.has(rx.id)) { allPrescriptions.push(rx); seenIds.add(rx.id); }
+    }
 
     // Filter out prescriptions that have been removed from pharmacy queue
-    // (prescriptions with no active pharmacy workflow and status COMPLETED without pending workflows)
     const activePrescriptionIds = new Set(workflows.map((w: any) => w.prescriptionId));
-    const filteredPrescriptions = prescriptions.filter((rx: any) => {
-      // Keep if it has an active workflow
+    const filteredPrescriptions = allPrescriptions.filter((rx: any) => {
+      // Keep if it has an active workflow found by Query 1
       if (activePrescriptionIds.has(rx.id)) return true;
-      // Keep if it has a pharmacy workflow entry (even if not in our initial query due to date filter)
+      // Keep if it has a pharmacy workflow entry (any date)
       if (rx.workflows && rx.workflows.length > 0) return true;
-      // Exclude if status is COMPLETED and no pharmacy workflow (was removed from queue)
+      // Keep doctor-issued prescriptions with medications (not yet fully processed)
+      // BILLED/CLOSED/CANCELLED = explicitly done, exclude them
+      if (rx.medications && rx.status !== "BILLED" && rx.status !== "CLOSED" && rx.status !== "CANCELLED") return true;
       return false;
     });
 
@@ -166,6 +200,34 @@ export async function GET(req: NextRequest) {
     }
 
     const queue = Array.from(queueMap.values());
+
+    // Attach bills for dispensed items
+    const dispensedItems = queue.filter((q: any) => q.dispensed);
+    if (dispensedItems.length > 0) {
+      const apptIds = dispensedItems.filter((q: any) => q.appointment?.id).map((q: any) => q.appointment.id);
+      const rxIds   = dispensedItems.map((q: any) => q.id);
+      const bills: any[] = await px.bill.findMany({
+        where: {
+          hospitalId: auth.hospitalId,
+          OR: [
+            ...(apptIds.length > 0 ? [{ visitId: { in: apptIds } }] : []),
+            { prescriptionId: { in: rxIds } },
+          ],
+        },
+        include: {
+          billItems: true,
+          payments: { select: { id: true, amount: true, method: true, status: true, createdAt: true } },
+        },
+      });
+      for (const item of queue) {
+        if (!item.dispensed) continue;
+        const bill = bills.find((b: any) =>
+          (item.appointment?.id && b.visitId === item.appointment.id) ||
+          b.prescriptionId === item.id
+        );
+        if (bill) item.bill = bill;
+      }
+    }
 
     // Stats
     const pending = queue.filter(q => !q.dispensed).length;
@@ -379,6 +441,124 @@ export async function PATCH(req: NextRequest) {
     const { prescriptionId, dispensedItems, notes, totalCharge, action } = body;
     let { workflowId } = body;
 
+    // ── Revoke Dispense — revert a completed dispense back to PENDING ──
+    if (action === "revoke_dispense") {
+      if (!prescriptionId) return errorResponse("prescriptionId is required", 400);
+
+      // 1. Find the pharmacy workflow for this prescription
+      let wfId = workflowId;
+      if (!wfId) {
+        const wf = await px.prescriptionWorkflow.findFirst({
+          where: { prescriptionId, hospitalId: auth.hospitalId, status: "COMPLETED" },
+          orderBy: { sequence: "asc" },
+        });
+        wfId = wf?.id || null;
+      }
+
+      // 2. Find the bill linked to this prescription
+      const rx = await px.prescription.findFirst({
+        where: { id: prescriptionId, hospitalId: auth.hospitalId },
+        select: { appointmentId: true, patientId: true },
+      });
+      let billId: string | null = null;
+      if (rx?.appointmentId) {
+        const b = await (px as any).bill.findFirst({ where: { visitId: rx.appointmentId, hospitalId: auth.hospitalId }, select: { id: true } });
+        billId = b?.id || null;
+      }
+      if (!billId) {
+        const b = await (px as any).bill.findFirst({ where: { prescriptionId, hospitalId: auth.hospitalId }, select: { id: true } });
+        billId = b?.id || null;
+      }
+
+      // 3. Delete PHARMACY BillItems linked to this workflow
+      if (billId && wfId) {
+        await (px as any).billItem.deleteMany({ where: { billId, referenceId: wfId, type: "PHARMACY" } });
+      } else if (billId) {
+        await (px as any).billItem.deleteMany({ where: { billId, type: "PHARMACY" } });
+      }
+
+      // 4. Delete Revenue records created by this pharmacy dispense
+      if (billId) {
+        await (px as any).revenue.deleteMany({
+          where: { hospitalId: auth.hospitalId, referenceId: billId, sourceType: "PHARMACY" },
+        }).catch(() => {});
+      }
+
+      // 5. Delete Payment records created by pharmacy dispense on this bill
+      if (billId) {
+        await (px as any).payment.deleteMany({
+          where: { billId, notes: "Pharmacy dispense payment" },
+        }).catch(() => {});
+
+        // 6. Recalculate bill; revert to PENDING if no payment remains
+        await recalculateBill(billId, auth.hospitalId).catch(() => {});
+        const remainingPmts = await (px as any).payment.aggregate({
+          where: { billId, status: "SUCCESS" },
+          _sum: { amount: true },
+        });
+        const paidAmt = remainingPmts._sum.amount || 0;
+        await (px as any).bill.update({
+          where: { id: billId },
+          data: {
+            status: paidAmt > 0 ? "PARTIALLY_PAID" : "PENDING",
+            paidAmount: paidAmt,
+            paidAt: paidAmt > 0 ? undefined : null,
+            paymentMethod: paidAmt > 0 ? undefined : null,
+          },
+        });
+      }
+
+      // 7. Reset workflow status back to PENDING so it can be dispensed again
+      if (wfId) {
+        await px.prescriptionWorkflow.update({
+          where: { id: wfId },
+          data: { status: "PENDING", completedAt: null, completedBy: null, charges: null, totalCharge: 0 },
+        });
+      }
+
+      // 8. Reset prescription status back to IN_WORKFLOW
+      await px.prescription.update({
+        where: { id: prescriptionId },
+        data: { status: "IN_WORKFLOW" },
+      });
+
+      // 9. Reset billingTransferred on the appointment if it was set
+      if (rx?.appointmentId) {
+        await (px as any).appointment.update({
+          where: { id: rx.appointmentId },
+          data: { billingTransferred: false },
+        }).catch(() => {});
+      }
+
+      // 10. Restore stock — find PHARMACY_DISPENSE movements for this prescription and reverse them
+      try {
+        const movements = await (px as any).stockMovement.findMany({
+          where: { hospitalId: auth.hospitalId, source: "PHARMACY_DISPENSE", referenceId: prescriptionId, type: "OUT" },
+        });
+        for (const mv of movements) {
+          await (px as any).stockBatch.update({
+            where: { id: mv.batchId },
+            data: { remainingQty: { increment: mv.quantity } },
+          }).catch(() => {});
+          await (px as any).stockMovement.create({
+            data: {
+              hospitalId: auth.hospitalId,
+              itemId: mv.itemId,
+              batchId: mv.batchId,
+              type: "IN",
+              quantity: mv.quantity,
+              source: "REVOKE_DISPENSE",
+              referenceId: prescriptionId,
+              performedBy: auth.user.userId || "pharmacy",
+            },
+          }).catch(() => {});
+          await (px as any).stockMovement.delete({ where: { id: mv.id } }).catch(() => {});
+        }
+      } catch (_) { /* non-blocking */ }
+
+      return successResponse({ revoked: true }, "Dispense revoked — prescription reset to pending");
+    }
+
     // ── Skip / Hold / Resume actions ──
     if (action === "skip" || action === "hold" || action === "resume") {
       if (!workflowId && prescriptionId) {
@@ -529,6 +709,188 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    // ── Post-dispense: collect payment or transfer patient ──
+    const { paymentAction, paymentMethod, transactionId, discount, transferDeptId, transferNote } = body;
+
+    if (paymentAction === "collect" && totalCharge > 0) {
+      try {
+        const discountAmt = parseFloat(discount) || 0;
+
+        // Look up the prescription to get appointmentId + patientId
+        const rxForBill = await px.prescription.findFirst({
+          where: { id: prescriptionId, hospitalId: auth.hospitalId },
+          select: { id: true, appointmentId: true, patientId: true, prescriptionNo: true },
+        });
+
+        let billId: string | null = null;
+
+        // 1. Try to find the existing appointment bill (visitId = appointmentId)
+        if (rxForBill?.appointmentId) {
+          const existingBill = await (px as any).bill.findFirst({
+            where: { visitId: rxForBill.appointmentId, hospitalId: auth.hospitalId },
+            select: { id: true },
+          });
+          billId = existingBill?.id || null;
+        }
+        // 2. Fall back: look up by prescriptionId
+        if (!billId) {
+          const rxBill = await (px as any).bill.findFirst({
+            where: { prescriptionId, hospitalId: auth.hospitalId },
+            select: { id: true },
+          });
+          billId = rxBill?.id || null;
+        }
+
+        if (!billId) {
+          // 3. No bill exists yet — create an empty shell (addWorkflowChargesToBill will populate it)
+          const billCount = await (px as any).bill.count({ where: { hospitalId: auth.hospitalId } });
+          const billNo = `PH-${String(billCount + 1).padStart(5, "0")}`;
+          const newBill = await (px as any).bill.create({
+            data: {
+              hospitalId: auth.hospitalId,
+              billNo,
+              prescriptionId,
+              patientId: rxForBill?.patientId,
+              visitId: rxForBill?.appointmentId || null,
+              items: JSON.stringify([]),
+              subtotal: 0,
+              discount: discountAmt,
+              tax: 0,
+              total: 0,
+              paidAmount: 0,
+              status: "PENDING",
+              isGst: false,
+              cgst: 0,
+              sgst: 0,
+              notes: `Pharmacy dispense — ${rxForBill?.prescriptionNo || prescriptionId}`,
+            },
+          });
+          billId = newBill.id;
+        }
+
+        // Ensure prescription is linked to the bill and discount is saved
+        await (px as any).bill.update({
+          where: { id: billId },
+          data: { prescriptionId, discount: discountAmt },
+        });
+
+        // ── KEY FIX: sync all workflow charges (consultation + pharmacy medicines) as BillItems ──
+        // addWorkflowChargesToBill reads completed PrescriptionWorkflow steps with totalCharge > 0,
+        // creates a BillItem for each (type=PHARMACY), then calls recalculateBill which reads
+        // bill.discount and produces the correct subtotal/total inclusive of all charges.
+        await addWorkflowChargesToBill(billId!, auth.hospitalId);
+
+        // Read the recalculated total from the bill
+        const updatedBill = await (px as any).bill.findFirst({
+          where: { id: billId },
+          select: { total: true, subtotal: true },
+        });
+        const finalTotal = Math.max(0, updatedBill?.total ?? 0);
+
+        // Mark bill as PAID with the correct total (consultation + medicines)
+        await (px as any).bill.update({
+          where: { id: billId },
+          data: { status: "PAID", paidAt: new Date(), paymentMethod: paymentMethod || "CASH", paidAmount: finalTotal },
+        });
+
+        // Create payment record
+        if (finalTotal > 0) {
+          await (px as any).payment.create({
+            data: {
+              hospitalId: auth.hospitalId,
+              billId,
+              amount: finalTotal,
+              method: paymentMethod || "CASH",
+              transactionId: transactionId || null,
+              status: "SUCCESS",
+              paidAt: new Date(),
+              notes: `Pharmacy dispense payment`,
+            },
+          });
+
+          // Log revenue
+          try {
+            await (px as any).revenue.create({
+              data: {
+                hospitalId: auth.hospitalId,
+                sourceType: "PHARMACY",
+                referenceId: billId,
+                referenceType: "Bill",
+                amount: finalTotal,
+                description: `Pharmacy dispense — ${prescriptionId}`,
+              },
+            });
+          } catch (_) { /* non-blocking */ }
+        }
+
+        // Mark prescription as BILLED
+        await px.prescription.update({
+          where: { id: prescriptionId },
+          data: { status: "BILLED", currentDeptId: null },
+        });
+
+      } catch (payErr: any) {
+        console.warn("[pharmacy/dispense] Payment recording failed:", payErr.message);
+        // Non-blocking — dispensing already succeeded
+      }
+
+    } else if (paymentAction === "transfer_billing") {
+      // Transfer to central billing counter — sync pharmacy charges to bill first
+      try {
+        const rxForTransfer = await px.prescription.findFirst({
+          where: { id: prescriptionId, hospitalId: auth.hospitalId },
+          select: { appointmentId: true },
+        });
+        // Sync pharmacy medicine charges onto the appointment bill before sending to billing
+        if (rxForTransfer?.appointmentId) {
+          const billForSync = await (px as any).bill.findFirst({
+            where: { visitId: rxForTransfer.appointmentId, hospitalId: auth.hospitalId },
+            select: { id: true },
+          });
+          if (billForSync?.id) {
+            await addWorkflowChargesToBill(billForSync.id, auth.hospitalId).catch(() => {});
+          }
+          await (px as any).appointment.update({
+            where: { id: rxForTransfer.appointmentId },
+            data: {
+              billingTransferred: true,
+              billingNote: transferNote || "Transferred from Pharmacy after dispensing",
+            },
+          });
+        }
+        await px.prescription.update({
+          where: { id: prescriptionId },
+          data: { status: "BILLING_PENDING", currentDeptId: null },
+        });
+      } catch (trErr: any) {
+        console.warn("[pharmacy/dispense] Billing transfer failed:", trErr.message);
+      }
+
+    } else if (paymentAction === "transfer_dept" && transferDeptId) {
+      // Transfer to another sub-department
+      try {
+        const rxForTransfer = await px.prescription.findFirst({
+          where: { id: prescriptionId, hospitalId: auth.hospitalId },
+          select: { appointmentId: true },
+        });
+        if (rxForTransfer?.appointmentId) {
+          await (px as any).appointment.update({
+            where: { id: rxForTransfer.appointmentId },
+            data: {
+              subDepartmentId: transferDeptId,
+              subDeptNote: transferNote || "Transferred from Pharmacy after dispensing",
+            },
+          });
+        }
+        await px.prescription.update({
+          where: { id: prescriptionId },
+          data: { status: "IN_WORKFLOW", currentDeptId: transferDeptId },
+        });
+      } catch (trErr: any) {
+        console.warn("[pharmacy/dispense] Dept transfer failed:", trErr.message);
+      }
+    }
+
     return successResponse({ dispensed: true }, "Medication dispensed successfully");
   } catch (error: any) {
     console.error("[pharmacy/queue PATCH] Error:", error);
@@ -588,7 +950,7 @@ export async function DELETE(req: NextRequest) {
     // Check if this was a manually-created prescription (no appointmentId, manually added via pharmacy)
     const rx = await px.prescription.findFirst({
       where: { id: prescriptionId, hospitalId: auth.hospitalId },
-      select: { id: true, appointmentId: true, prescriptionNo: true, status: true },
+      select: { id: true, appointmentId: true, prescriptionNo: true, status: true, doctorNotes: true },
     });
 
     if (rx && !rx.appointmentId && rx.prescriptionNo?.startsWith("RX-")) {
@@ -598,24 +960,14 @@ export async function DELETE(req: NextRequest) {
         await px.prescription.deleteMany({ where: { id: prescriptionId, hospitalId: auth.hospitalId } });
       }
     } else if (rx && rx.appointmentId) {
-      // Doctor-issued Rx — reset status to COMPLETED so doctor can prescribe again
-      // This removes it from pharmacy queue but keeps the prescription record
-      // The doctor can create a new prescription for the patient if needed
+      // Doctor-issued Rx — mark as BILLED so it doesn't reappear in pharmacy queue
+      // The prescription record is preserved for audit; doctor can issue a new Rx if needed
       await px.prescription.update({
         where: { id: prescriptionId },
         data: { 
-          status: "COMPLETED",
+          status: "BILLED",
           currentDeptId: null,
           doctorNotes: `${rx.doctorNotes || ""}\n[${new Date().toISOString()}] Removed from pharmacy queue. Reason: ${remark}`.trim(),
-        },
-      });
-      
-      // Also update the appointment to allow new prescriptions
-      await px.appointment.update({
-        where: { id: rx.appointmentId },
-        data: {
-          subDepartmentId: null,
-          subDeptNote: null,
         },
       });
     }

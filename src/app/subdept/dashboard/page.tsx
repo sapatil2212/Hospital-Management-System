@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ViewRecordModal, EditRecordModal, TransferPatientModal, ViewPrescriptionModal } from "./modals";
 import NotificationBell from "@/components/NotificationBell";
+import { BookingWizard } from "@/components/AppointmentPanel";
 import Preloader from "@/components/Preloader";
 import {
   ResponsiveContainer as RechartsResponsiveContainer,
@@ -16,6 +17,7 @@ import {
   Pie as RechartsPie,
   Cell as RechartsCell,
   ComposedChart as RechartsComposedChart,
+  BarChart as RechartsBarChart,
   Bar as RechartsBar,
   Line as RechartsLine,
 } from "recharts";
@@ -24,9 +26,9 @@ import {
   LogOut, Loader2, Bell, User, Phone, Mail, Activity, LayoutDashboard, Truck,
   Layers, ArrowRight, CheckCircle, Clock, Stethoscope, Settings,
   Users, ClipboardList, Building2, Search, RefreshCw, X, ChevronRight,
-  Smile, Sparkles, Scissors, Heart, Microscope, Pill, Receipt, Scan,
+  Smile, Sparkles, Wand2, Scissors, Heart, Microscope, Pill, Receipt, Scan,
   TestTube2, HelpCircle, PlayCircle, CheckCircle2, AlertCircle,
-  CalendarDays, FileText, TrendingUp, FlaskConical,
+  CalendarDays, FileText, TrendingUp, TrendingDown, FlaskConical,
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, IndianRupee,
   Save, Ban, ChevronDown, ChevronUp, MessageSquare, UserCheck, Eye, Download,
   ShieldCheck, BarChart2, Package, UserPlus, ArrowUpDown, FileSpreadsheet,
@@ -36,6 +38,8 @@ import {
 const BillingQueueLazy = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Billing Queue...</span></div> });
 const AppointmentPanelLazy = dynamic(() => import("@/components/AppointmentPanel"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Appointments...</span></div> });
 const PatientsManagementPanelLazy = dynamic(() => import("./PatientsManagementPanel").then(mod => mod.PatientsManagementPanel), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Patient Management...</span></div> });
+const AdminInventoryPanelLazy = dynamic(() => import("@/components/AdminInventoryPanel"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Inventory...</span></div> });
+const DoctorPanelLazy = dynamic(() => import("@/components/DoctorPanel"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Doctors...</span></div> });
 const PharmacyDashboardLazy = dynamic(() => import("@/components/PharmacyDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Pharmacy Dashboard...</span></div> });
 const NursingDashboardLazy = dynamic(() => import("@/components/NursingDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Nursing Dashboard...</span></div> });
 const HousekeepingDashboardLazy = dynamic(() => import("@/components/HousekeepingDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Housekeeping Dashboard...</span></div> });
@@ -44,6 +48,7 @@ const BiomedicalDashboardLazy = dynamic(() => import("@/components/BiomedicalDas
 const LabDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/LabDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Lab Dashboard...</span></div> });
 const CriticalCareDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/CriticalCareDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Critical Care Dashboard...</span></div> });
 const SpecialtyClinicDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/SpecialtyClinicDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Specialty Dashboard...</span></div> });
+const DentalOPDDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void; meta?: any }>(() => import("@/components/DentalOPDDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Dental OPD Dashboard...</span></div> });
 const OPDDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void; meta?: any }>(() => import("@/components/OPDDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading OPD Dashboard...</span></div> });
 const PathologyDashboardLazy = dynamic<{ profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void }>(() => import("@/components/PathologyDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Pathology Dashboard...</span></div> });
 const BillingDepartmentDashboardLazy = dynamic<{ profile: any; user: any; activeTab: string; onTabChange: (t: string) => void; meta: any }>(() => import("@/components/BillingDepartmentDashboard"), { ssr: false, loading: () => <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",width:"100%"}}><span style={{fontSize:13,color:"#94a3b8",display:"flex",alignItems:"center",gap:8}}><Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading Billing Dashboard...</span></div> });
@@ -60,11 +65,11 @@ const SUB_DEPT_META: Record<string, DeptMeta> = {
   CARDIOLOGY:  { Icon: Heart,       gradient: "linear-gradient(135deg,#ef4444,#b91c1c)", accent: "#b91c1c", lightBg: "#fff5f5", borderColor: "#fecaca" },
   PATHOLOGY:   { Icon: Microscope,  gradient: "linear-gradient(135deg,#10b981,#047857)", accent: "#047857", lightBg: "#f0fdf4", borderColor: "#a7f3d0" },
   PHARMACY:    { Icon: Pill,        gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#07595D", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
-  BILLING:     { Icon: Receipt,     gradient: "linear-gradient(135deg,#f59e0b,#b45309)", accent: "#b45309", lightBg: "#fffbeb", borderColor: "#fde68a" },
+  BILLING:     { Icon: Receipt,     gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0E898F", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
   RADIOLOGY:   { Icon: Scan,        gradient: "linear-gradient(135deg,#6366f1,#4338ca)", accent: "#4338ca", lightBg: "#eef2ff", borderColor: "#c7d2fe" },
   LABORATORY:  { Icon: TestTube2,   gradient: "linear-gradient(135deg,#14b8a6,#0f766e)", accent: "#0f766e", lightBg: "#f0fdfa", borderColor: "#99f6e4" },
   PROCEDURE:   { Icon: Stethoscope, gradient: "linear-gradient(135deg,#84cc16,#4d7c0f)", accent: "#4d7c0f", lightBg: "#f7fee7", borderColor: "#d9f99d" },
-  RECEPTION:   { Icon: Users,       gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", accent: "#1d4ed8", lightBg: "#eff6ff", borderColor: "#bfdbfe" },
+  RECEPTION:   { Icon: Users,       gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0E898F", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
   OPD:              { Icon: Building2,   gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0E898F", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
   GENERAL_MEDICINE: { Icon: Stethoscope, gradient: "linear-gradient(135deg,#0E898F,#07595D)", accent: "#0E898F", lightBg: "#E6F4F4", borderColor: "#B3E0E0" },
   NURSING:     { Icon: Heart,       gradient: "linear-gradient(135deg,#ec4899,#be185d)", accent: "#be185d", lightBg: "#fdf2f8", borderColor: "#fbcfe8" },
@@ -103,7 +108,8 @@ function SubDeptDashboardContent() {
   const [profile, setProfile] = useState<any>(null);
   const [user,    setUser]    = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"billing-queue"|"all-bills"|"finance"|"revenue"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept"|"account-settings"|"staff"|"counter-sell">("overview");
+  const [pharmacyReady, setPharmacyReady] = useState(false);
+  const [tab, setTab] = useState<"overview"|"queue"|"procedures"|"records"|"billing"|"billing-queue"|"all-bills"|"finance"|"revenue"|"expense"|"doctors"|"patients"|"inventory"|"reports"|"appointments"|"dept"|"account-settings"|"staff"|"counter-sell">("overview");
 
   // Sync tab from URL on mount
   useEffect(() => {
@@ -161,6 +167,22 @@ function SubDeptDashboardContent() {
   const [deleteCompletedTarget, setDeleteCompletedTarget] = useState<any>(null);
   const [deletingCompleted, setDeletingCompleted] = useState(false);
 
+  // Overview: Clinical Procedure referral table
+  const [overviewRefSearch, setOverviewRefSearch] = useState("");
+  const [overviewDetailItem, setOverviewDetailItem] = useState<any>(null);
+
+  // Queue: Problem / No-show modal
+  const [queueProblemTarget, setQueueProblemTarget] = useState<any>(null);
+  const [queueProblemForm, setQueueProblemForm] = useState({ status: "NO_SHOW", remarks: "", rescheduleDate: "", rescheduleTime: "" });
+  const [queueProblemSaving, setQueueProblemSaving] = useState(false);
+
+  // Queue: Consent form upload modal
+  const [consentUploadTarget, setConsentUploadTarget] = useState<any>(null);
+  const [consentFile, setConsentFile] = useState<File | null>(null);
+  const [consentUrl, setConsentUrl] = useState<string>("");
+  const [consentUploading, setConsentUploading] = useState(false);
+  const [consentUploadMsg, setConsentUploadMsg] = useState("");
+
   // Procedures CRUD
   const [procs, setProcs]             = useState<any[]>([]);
   const [procsLoading, setProcsLoading] = useState(false);
@@ -177,6 +199,18 @@ function SubDeptDashboardContent() {
   const [bulkDeletingProcs, setBulkDeletingProcs] = useState(false);
   const [procSearch, setProcSearch] = useState("");
 
+  // AI Auto-Add state
+  const [aiAdding, setAiAdding] = useState(false);
+  const [aiMsg, setAiMsg] = useState<{ type: "success" | "info" | "error"; text: string } | null>(null);
+  const aiMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear AI message timer on unmount
+  useEffect(() => {
+    return () => {
+      if (aiMsgTimerRef.current) clearTimeout(aiMsgTimerRef.current);
+    };
+  }, []);
+
   // Upcoming Sessions
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading]   = useState(false);
@@ -190,6 +224,9 @@ function SubDeptDashboardContent() {
   const [recordForm, setRecordForm]         = useState<any>(BLANK_REC);
   const [recordSaving, setRecordSaving]     = useState(false);
   const [recordMsg, setRecordMsg]           = useState("");
+  const [recordSuccessData, setRecordSuccessData] = useState<any>(null);
+  const [recordSuccessBill, setRecordSuccessBill] = useState<any>(null);
+  const [autoCollectBillId, setAutoCollectBillId] = useState<string | undefined>(undefined);
   const [patientResults, setPatientResults] = useState<any[]>([]);
   const [viewingRecord, setViewingRecord]   = useState<any>(null);
   const [editingRecord, setEditingRecord]   = useState<any>(null);
@@ -210,6 +247,11 @@ function SubDeptDashboardContent() {
   // Reports
   const [reportData, setReportData] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [billingReportData, setBillingReportData] = useState<any>(null);
+  const [billingReportLoading, setBillingReportLoading] = useState(false);
+  const [recentSearch, setRecentSearch] = useState("");
+  const [recentSortField, setRecentSortField] = useState("performedAt");
+  const [recentSortDir, setRecentSortDir] = useState<"asc"|"desc">("desc");
 
   // Revenue / Expense tab
   const [revExpData, setRevExpData] = useState<any>(null);
@@ -392,6 +434,71 @@ function SubDeptDashboardContent() {
     setQueueExportOpen(false);
   };
 
+  // ── Queue: Problem / No-show handler ──
+  const handleQueueProblem = async () => {
+    if (!queueProblemTarget) return;
+    if (queueProblemForm.status === "RESCHEDULED" && (!queueProblemForm.rescheduleDate || !queueProblemForm.rescheduleTime)) {
+      alert("Please select a new date and time for the reschedule.");
+      return;
+    }
+    setQueueProblemSaving(true);
+    try {
+      const res = await fetch("/api/subdept/queue", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentId: queueProblemTarget.id,
+          status: queueProblemForm.status,
+          remarks: queueProblemForm.remarks,
+          newDate: queueProblemForm.rescheduleDate || undefined,
+          newTimeSlot: queueProblemForm.rescheduleTime || undefined,
+          patientName: queueProblemTarget.patient?.name,
+          patientPhone: queueProblemTarget.patient?.phone,
+        }),
+      }).then(r => r.json());
+      if (res.success) {
+        setQueueProblemTarget(null);
+        setQueueProblemForm({ status: "NO_SHOW", remarks: "", rescheduleDate: "", rescheduleTime: "" });
+        loadQueue();
+      } else {
+        alert(res.message || "Failed to update status");
+      }
+    } catch { alert("Network error"); }
+    finally { setQueueProblemSaving(false); }
+  };
+
+  // ── Queue: Consent form upload ──
+  const handleConsentUpload = async (file: File) => {
+    setConsentUploading(true);
+    setConsentUploadMsg("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", "document");
+      const res = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd }).then(r => r.json());
+      if (res.success) {
+        setConsentUrl(res.data.url);
+        setConsentUploadMsg("✓ Consent form uploaded successfully");
+      } else {
+        setConsentUploadMsg(res.message || "Upload failed");
+      }
+    } catch { setConsentUploadMsg("Network error during upload"); }
+    finally { setConsentUploading(false); }
+  };
+
+  const proceedAfterConsent = () => {
+    if (!consentUploadTarget || consentUploading) return;
+    const q = consentUploadTarget;
+    setConsentUploadTarget(null);
+    setConsentFile(null);
+    setConsentUrl("");
+    setConsentUploadMsg("");
+    setRecordForm({ ...BLANK_REC, patientId: q.patient?.id || "", patientSearch: q.patient?.name || "", appointmentId: q.id, amount: q.suggestedProcedures?.[0]?.fee || "", procedureId: q.suggestedProcedures?.[0]?.id || "" });
+    setShowRecordForm(true);
+    setTab("records");
+  };
+
   // ── Completed record CRUD helpers ──
   const openEditCompleted = (c: any) => {
     const pr = c.procedureRecords?.[0];
@@ -449,7 +556,58 @@ function SubDeptDashboardContent() {
     setReportLoading(false);
   }, []);
 
-  useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
+  useEffect(() => { if (tab === "reports" && profile?.type !== "BILLING") loadReports(); }, [tab, profile?.type, loadReports]);
+
+  const loadBillingReports = useCallback(async () => {
+    setBillingReportLoading(true);
+    try {
+      const [billRes] = await Promise.all([
+        fetch("/api/billing?page=1&limit=200", { credentials: "include" }).then(r => r.json()),
+      ]);
+      const bills: any[] = billRes.data?.bills || [];
+      const stats = billRes.data?.stats || {};
+      const pagination = billRes.data?.pagination || {};
+      const today = new Date();
+      const dailyTrend = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - (6 - i));
+        const dateStr = d.toISOString().split("T")[0];
+        const dayBills = bills.filter((b: any) => (b.createdAt || "").startsWith(dateStr));
+        const paidBills = dayBills.filter((b: any) => b.status === "PAID");
+        return {
+          label: d.toLocaleDateString("en-IN", { weekday: "short" }),
+          revenue: paidBills.reduce((s: number, b: any) => s + (b.paidAmount || b.total || 0), 0),
+          count: dayBills.length,
+        };
+      });
+      const statusMap: Record<string, number> = {};
+      bills.forEach((b: any) => { const s = b.status || "UNKNOWN"; statusMap[s] = (statusMap[s] || 0) + 1; });
+      const STATUS_COLORS: Record<string, string> = { PAID: "#10b981", PENDING: "#f59e0b", CANCELLED: "#ef4444", DRAFT: "#94a3b8", PARTIAL: "#6366f1" };
+      const byStatus = Object.entries(statusMap).map(([name, value]) => ({ name, value, fill: STATUS_COLORS[name] || "#94a3b8" }));
+      const totalBills = pagination.total || bills.length;
+      const paidCount = bills.filter((b: any) => b.status === "PAID").length;
+      const pendingCount = stats.pendingCount || (statusMap["PENDING"] || 0);
+      const pendingAmount = bills.filter((b: any) => b.status !== "PAID").reduce((s: number, b: any) => s + Math.max(0, (b.total || 0) - (b.paidAmount || 0)), 0);
+      setBillingReportData({
+        stats: {
+          todayRevenue: stats.todayRevenue || 0,
+          monthRevenue: stats.monthRevenue || 0,
+          pendingCount,
+          totalBills,
+          paidCount,
+          pendingAmount,
+          collectionRate: totalBills > 0 ? Math.round((paidCount / totalBills) * 100) : 0,
+        },
+        dailyTrend,
+        byStatus,
+      });
+    } catch {}
+    setBillingReportLoading(false);
+  }, []);
+
+  useEffect(() => { if (tab === "reports" && profile?.type === "BILLING") loadBillingReports(); }, [tab, profile?.type, loadBillingReports]);
+
+  const [showQuickBook, setShowQuickBook] = useState(false);
 
   // ── Load records ──
   const loadRecords = useCallback(async (search = "") => {
@@ -486,8 +644,15 @@ function SubDeptDashboardContent() {
     if (tab === "overview" && profile?.type === "RECEPTION") {
       loadRecentAppointments();
       loadBillingQueue();
+      loadReports();
+      loadRecords();
     }
-  }, [tab, profile, loadRecentAppointments, loadBillingQueue]);
+    if (tab === "overview" && profile?.type === "CLINICAL_PROCEDURE") {
+      loadQueue();
+      loadProcs();
+      loadRecords();
+    }
+  }, [tab, profile, loadRecentAppointments, loadBillingQueue, loadReports, loadRecords, loadQueue, loadProcs]);
 
   // ── Procedure CRUD ──
   const openAddProc  = () => { setEditingProc(null); setProcForm(BLANK_PROC); setProcMsg(""); setShowProcForm(true); };
@@ -543,6 +708,34 @@ function SubDeptDashboardContent() {
     setBulkDeletingProcs(false);
     await loadProcs();
   };
+
+  // ── AI Auto-Add handler ──
+  const handleAiAutoAdd = async () => {
+    setAiAdding(true);
+    if (aiMsgTimerRef.current) clearTimeout(aiMsgTimerRef.current);
+    setAiMsg(null);
+    try {
+      const res = await fetch("/api/subdept/procedures/ai-suggest", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAiMsg({ type: "error", text: data?.message || "AI Auto-Add failed. Please try again." });
+      } else if (data?.data?.added > 0) {
+        await loadProcs();
+        setAiMsg({ type: "success", text: `${data.data.added} procedure${data.data.added === 1 ? "" : "s"} added by AI` });
+      } else {
+        setAiMsg({ type: "info", text: "All suggested procedures already exist" });
+      }
+    } catch {
+      setAiMsg({ type: "error", text: "Network error. Please check your connection and try again." });
+    } finally {
+      setAiAdding(false);
+      aiMsgTimerRef.current = setTimeout(() => setAiMsg(null), 5000);
+    }
+  };
+
   const getProcExportData = () => {
     const src = selectedProcs.size > 0 ? displayProcs.filter((p: any) => selectedProcs.has(p.id)) : filteredProcs;
     const headers = ["#", "Name", "Description", "Type", "Fee (₹)", "Duration (min)", "Status"];
@@ -602,9 +795,83 @@ function SubDeptDashboardContent() {
     if (!recordForm.patientId || !recordForm.procedureId || !recordForm.amount) { setRecordMsg("Patient, procedure and amount are required"); return; }
     setRecordSaving(true); setRecordMsg("");
     const res = await fetch("/api/subdept/records", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(recordForm) }).then(r => r.json());
-    if (res.success) { setShowRecordForm(false); setRecordForm(BLANK_REC); setRecordingFor(null); await loadRecords(); }
-    else setRecordMsg(res.message || "Failed to save");
+    if (res.success) {
+      setRecordSuccessData(res.data);
+      setRecordSuccessBill(res.data?.bill || null);
+      setRecordingFor(null);
+      await loadRecords();
+    } else {
+      setRecordMsg(res.message || "Failed to save");
+    }
     setRecordSaving(false);
+  };
+
+  // ── Close record modal (clear all state) ──
+  const closeRecordModal = () => {
+    setShowRecordForm(false);
+    setRecordForm(BLANK_REC);
+    setRecordMsg("");
+    setRecordSuccessData(null);
+    setRecordSuccessBill(null);
+  };
+
+  // ── Download bill receipt PDF after record save ──
+  const downloadBillReceiptPDF = async () => {
+    if (!recordSuccessBill) return;
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    const bill = recordSuccessBill;
+    const patient = recordSuccessData?.patient;
+    const mx = 14; const pw = doc.internal.pageSize.getWidth();
+    let y = 18;
+    // Header
+    doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(14, 137, 143);
+    doc.text(profile?.name || deptName || "Procedure Dept", mx, y); y += 7;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text("Procedure Bill Receipt", mx, y); y += 10;
+    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.4); doc.line(mx, y, pw - mx, y); y += 8;
+    // Bill meta
+    doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+    doc.text(`Bill No: ${bill.billNo || "—"}`, mx, y);
+    doc.text(`Date: ${new Date(bill.createdAt || Date.now()).toLocaleDateString("en-IN")}`, pw - mx, y, { align: "right" });
+    y += 6;
+    doc.text(`Status: ${bill.status || "PENDING"}`, mx, y); y += 10;
+    // Patient
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
+    doc.text("Patient Details", mx, y); y += 6;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+    doc.text(`Name: ${patient?.name || "—"}`, mx, y); y += 5;
+    doc.text(`Patient ID: ${patient?.patientId || "—"}`, mx, y); y += 5;
+    if (patient?.phone) { doc.text(`Phone: ${patient.phone}`, mx, y); y += 5; }
+    y += 6;
+    // Procedure items table
+    const procItems = (bill.billItems || []).filter((bi: any) => bi.type === "PROCEDURE");
+    const rows = procItems.map((bi: any, i: number) => [String(i + 1), bi.name, "1", `Rs. ${Number(bi.unitPrice || 0).toFixed(2)}`, `Rs. ${Number(bi.amount || 0).toFixed(2)}`]);
+    if (rows.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        head: [["#", "Procedure", "Qty", "Rate", "Amount"]],
+        body: rows,
+        theme: "striped",
+        headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 9, textColor: [51, 65, 85] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: mx, right: mx },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+    }
+    // Total box
+    const procTotal = procItems.reduce((s: number, bi: any) => s + Number(bi.amount || 0), 0);
+    const sW = 70; const sX = pw - mx - sW;
+    doc.setFillColor(240, 253, 244); doc.roundedRect(sX, y, sW, 13, 2, 2, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(5, 150, 105);
+    doc.text("Total Amount", sX + 4, y + 8.5);
+    doc.text(`Rs. ${procTotal.toFixed(2)}`, sX + sW - 4, y + 8.5, { align: "right" });
+    y += 22;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
+    doc.text("This is a computer-generated bill receipt.", pw / 2, y, { align: "center" });
+    doc.save(`Bill-${bill.billNo || "receipt"}-${(patient?.name || "patient").replace(/\s+/g, "_")}.pdf`);
   };
 
   // ── Edit record ──
@@ -762,6 +1029,16 @@ function SubDeptDashboardContent() {
     else { setSortField(field); setSortDir("desc"); }
   };
 
+  const handleRecentSort = (field: string) => {
+    if (recentSortField === field) setRecentSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setRecentSortField(field); setRecentSortDir("desc"); }
+  };
+
+  const sortIcon = (field: string, active: string, dir: "asc"|"desc") =>
+    active === field
+      ? (dir === "asc" ? <ChevronUp size={12}/> : <ChevronDown size={12}/>)
+      : <ArrowUpDown size={10} style={{opacity:.35}}/>;
+
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/login");
@@ -797,51 +1074,51 @@ function SubDeptDashboardContent() {
   // Type-based predefined tabs
   const deptType = profile?.type || "OTHER";
   const TYPE_TABS: Record<string, string[]> = {
-    DENTAL:           ["overview","queue","procedures","records","inventory","reports","dept"],
-    DERMATOLOGY:      ["overview","queue","procedures","records","inventory","reports","dept"],
-    HAIR:             ["overview","queue","procedures","records","inventory","reports","dept"],
-    ONCOLOGY:         ["overview","queue","procedures","records","inventory","reports","dept"],
-    CARDIOLOGY:       ["overview","queue","procedures","records","inventory","reports","dept"],
-    COSMETIC:         ["overview","queue","procedures","records","inventory","reports","dept"],
-    PHYSIOTHERAPY:    ["overview","queue","procedures","records","inventory","reports","dept"],
-    DIALYSIS:         ["overview","queue","procedures","records","inventory","reports","dept"],
-    GYNECOLOGY:       ["overview","queue","procedures","records","inventory","reports","dept"],
-    PEDIATRICS:       ["overview","queue","procedures","records","inventory","reports","dept"],
-    RECEPTION:        ["overview","appointments","billing","patients","doctors","inventory","reports","dept"],
-    PHARMACY:         ["overview","queue","counter-sell","inventory","billing","revenue","reports","dept"],
-    NURSING:          ["overview","inventory","dept"],
-    HOUSEKEEPING:     ["overview","inventory","dept"],
-    AMBULANCE:        ["overview","inventory","dept"],
-    BIOMEDICAL:       ["overview","inventory","dept"],
-    BILLING:          ["overview","billing-queue","finance","inventory","reports","dept"],
+    DENTAL:           ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    DERMATOLOGY:      ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    HAIR:             ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    ONCOLOGY:         ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    CARDIOLOGY:       ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    COSMETIC:         ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    PHYSIOTHERAPY:    ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    DIALYSIS:         ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    GYNECOLOGY:       ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    PEDIATRICS:       ["overview","appointments","queue","patients","records","inventory","reports","account-settings"],
+    RECEPTION:        ["overview","appointments","billing","patients","doctors","inventory","reports","account-settings"],
+    PHARMACY:         ["overview","queue","counter-sell","inventory","billing","revenue","expense","reports","account-settings"],
+    NURSING:          ["overview","inventory","account-settings"],
+    HOUSEKEEPING:     ["overview","inventory","account-settings"],
+    AMBULANCE:        ["overview","inventory","account-settings"],
+    BIOMEDICAL:       ["overview","inventory","account-settings"],
+    BILLING:          ["overview","billing-queue","finance","inventory","reports","account-settings"],
     PATHOLOGY:        ["overview","orders","samples","results","reports","revenue","tests","panels","analytics"],
-    RADIOLOGY:        ["overview","queue","records","reports","dept"],
-    LABORATORY:       ["overview","queue","records","reports","dept"],
-    BLOOD_BANK:       ["overview","queue","records","reports","dept"],
-    ECG:              ["overview","queue","records","reports","dept"],
-    ENDOSCOPY:        ["overview","queue","records","reports","dept"],
-    ICU:              ["overview","queue","records","reports","dept"],
-    EMERGENCY:        ["overview","queue","records","reports","dept"],
-    IPD:              ["overview","queue","records","reports","dept"],
-    OPD:              ["overview","appointments","queue","patients","consultations","records","reports","dept"],
-    GENERAL_MEDICINE: ["overview","appointments","queue","patients","consultations","records","reports","dept"],
-    OT:               ["overview","queue","procedures","records","reports","dept"],
-    SURGERY:          ["overview","queue","procedures","records","reports","dept"],
-    CLINICAL_PROCEDURE:["overview","queue","procedures","records","reports","dept"],
+    RADIOLOGY:        ["overview","queue","records","reports","account-settings"],
+    LABORATORY:       ["overview","queue","records","reports","account-settings"],
+    BLOOD_BANK:       ["overview","queue","records","reports","account-settings"],
+    ECG:              ["overview","queue","records","reports","account-settings"],
+    ENDOSCOPY:        ["overview","queue","records","reports","account-settings"],
+    ICU:              ["overview","queue","records","reports","account-settings"],
+    EMERGENCY:        ["overview","queue","records","reports","account-settings"],
+    IPD:              ["overview","queue","records","reports","account-settings"],
+    OPD:              ["overview","appointments","queue","patients","records","revenue","expenses","reports","account-settings"],
+    GENERAL_MEDICINE: ["overview","appointments","queue","patients","records","revenue","expenses","reports","account-settings"],
+    OT:               ["overview","queue","procedures","records","billing","reports","account-settings"],
+    SURGERY:          ["overview","queue","procedures","records","billing","reports","account-settings"],
+    CLINICAL_PROCEDURE:["overview","queue","procedures","records","billing","reports","account-settings"],
     HR:               ["overview","staff","doctors"],
-    ACCOUNTS:         ["overview","queue","procedures","records","reports","dept"],
-    PROCEDURE:        ["overview","queue","procedures","records","inventory","reports","dept"],
-    OTHER:            ["overview","queue","procedures","records","inventory","reports","dept"],
-    CUSTOM:           ["overview","queue","procedures","records","inventory","reports","dept"],
+    ACCOUNTS:         ["overview","queue","procedures","records","billing","reports","account-settings"],
+    PROCEDURE:        ["overview","queue","procedures","records","billing","inventory","reports","account-settings"],
+    OTHER:            ["overview","queue","procedures","records","billing","inventory","reports","account-settings"],
+    CUSTOM:           ["overview","queue","procedures","records","billing","inventory","reports","account-settings"],
   };
   const enabledTabs = new Set(TYPE_TABS[deptType] || TYPE_TABS.OTHER);
 
   const allNavItems: {id:string;label:string;icon:any;badge?:any}[] = [
     { id: "overview",      label: "Overview",           icon: <LayoutDashboard size={16}/> },
-    { id: "queue",         label: deptType === "PHARMACY" ? "Rx Queue" : ["OPD","GENERAL_MEDICINE"].includes(deptType) ? "Queue / Tokens" : "Referrals Today", icon: <UserCheck size={16}/>, badge: deptType === "PHARMACY" ? null : (queue.length || null) },
+    { id: "queue",         label: deptType === "PHARMACY" ? "Rx Queue" : ["OPD","GENERAL_MEDICINE"].includes(deptType) ? "Queue / Tokens" : "Referrals Today", icon: <UserCheck size={16}/> },
     { id: "consultations",  label: "Consultations",       icon: <Stethoscope size={16}/> },
     { id: "procedures",    label: "Procedures",         icon: <ClipboardList size={16}/> },
-    { id: "records",       label: "Patient Records",    icon: <IndianRupee size={16}/>,    badge: recordsMeta.todayRecords || null },
+    { id: "records",       label: "Patient Records",    icon: <IndianRupee size={16}/> },
     { id: "appointments",  label: "Appointments",       icon: <CalendarDays size={16}/> },
     { id: "billing",       label: "Billing",            icon: <Receipt size={16}/> },
     { id: "counter-sell",  label: "Counter Sell",       icon: <ShoppingCart size={16}/> },
@@ -853,7 +1130,9 @@ function SubDeptDashboardContent() {
         { id: "staff",          label: "Staff Management",   icon: <Users size={16}/> },
     { id: "purchases",    label: "Purchases",          icon: <Package size={16}/> },
     { id: "reports",       label: deptType==="PATHOLOGY" ? "Report & Deliver" : "Reports", icon: <BarChart2 size={16}/> },
-    { id: "revenue",       label: "Revenue / Expense",  icon: <IndianRupee size={16}/> },
+    { id: "revenue",       label: "Revenue",            icon: <IndianRupee size={16}/> },
+    { id: "expenses",      label: "Expenses",           icon: <TrendingDown size={16}/> },
+    { id: "expense",       label: "Expense",            icon: <TrendingDown size={16}/> },
     { id: "finance",       label: "Finance",            icon: <TrendingUp size={16}/> },
     // Pathology LIS tabs
     { id: "orders",        label: "Lab Orders",        icon: <ClipboardList size={16}/> },
@@ -862,7 +1141,7 @@ function SubDeptDashboardContent() {
     { id: "tests",         label: "Test Master",        icon: <TestTube2 size={16}/> },
     { id: "panels",        label: "Test Panels",        icon: <Layers size={16}/> },
     { id: "analytics",     label: "Analytics",          icon: <TrendingUp size={16}/> },
-    { id: "dept",          label: deptType==="PATHOLOGY" ? "Settings" : "Department", icon: <Building2 size={16}/> },
+    { id: "account-settings", label: "Account Settings", icon: <Settings size={16}/> },
   ];
   const navItems = (TYPE_TABS[deptType] || TYPE_TABS.OTHER)
     .map(id => allNavItems.find(n => n.id === id))
@@ -875,11 +1154,11 @@ function SubDeptDashboardContent() {
       String(q.tokenNumber || "").includes(queueSearch);
   });
 
-  const TAB_TITLES: Record<string,string> = {"billing-queue":"Billing Queue","all-bills":"All Bills",overview:"Overview",queue:"Patient Queue",procedures:"Procedures",records:"Patient Records",appointments:"Appointments",billing:"Billing",finance:"Finance",doctors:"Doctors",patients:"Patient Management",inventory:"Inventory",reports:"Reports",revenue:"Revenue / Expense",dept:"Department Info",staff:"Staff Management","counter-sell":"Counter Sell"};
+  const TAB_TITLES: Record<string,string> = {"billing-queue":"Billing Queue","all-bills":"All Bills",overview:"Overview",queue:"Patient Queue",procedures:"Procedures",records:"Patient Records",appointments:"Appointments",billing:"Billing",finance:"Finance",doctors:"Doctors",patients:"Patient Management",inventory:"Inventory",reports:"Reports",revenue:"Revenue",expenses:"Expenses",expense:"Expense",dept:"Department Info",staff:"Staff Management","counter-sell":"Counter Sell","account-settings":"Account Settings"};
 
   return (
     <>
-      <Preloader loading={loading} />
+      <Preloader loading={loading || (deptType === "PHARMACY" && !loading && !pharmacyReady && tab !== "account-settings")} />
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
       <style>{`
@@ -888,7 +1167,7 @@ function SubDeptDashboardContent() {
         body{font-family:'Inter',sans-serif}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        .sd2{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#f0f4f8}
+        .sd2{display:flex;height:100vh;overflow:hidden;font-family:'Inter',sans-serif;background:#fff}
         .sd2-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:45;backdrop-filter:blur(2px)}
         .sd2-overlay.open{display:block}
         .sd2-sb{width:224px;background:#fff;border-right:1px solid var(--bc);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:50;box-shadow:2px 0 8px rgba(0,0,0,0.04);transition:transform .25s cubic-bezier(.4,0,.2,1)}
@@ -916,7 +1195,7 @@ function SubDeptDashboardContent() {
         .sd2-search{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;width:260px}
         .sd2-search input{background:none;border:none;outline:none;font-size:12px;color:#334155;width:100%}
         .sd2-search input::placeholder{color:#94a3b8}
-        .sd2-body{padding:0;overflow-y:auto;flex:1;animation:fadeUp .35s ease}
+        .sd2-body{padding:24px;overflow-y:auto;flex:1;animation:fadeUp .35s ease}
         .sd2-card{background:#fff;border-radius:14px;border:1px solid var(--bc);box-shadow:0 1px 4px rgba(0,0,0,.04);overflow:hidden;margin-bottom:18px}
         .sd2-card-hd{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
         .sd2-card-title{font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px}
@@ -957,7 +1236,7 @@ function SubDeptDashboardContent() {
         }
         @media(max-width:600px){
           .sd2-topbar{padding:0 14px;gap:8px}
-          .sd2-body{padding:0}
+          .sd2-body{padding:16px 12px}
           .sd2-search{width:160px}
         }
       `}</style>
@@ -1005,7 +1284,7 @@ function SubDeptDashboardContent() {
         <main className="sd2-main">
 
           {/* Top Bar */}
-          <header className="sd2-topbar">
+          <header className="sd2-topbar" style={(tab === "reports" && (deptType === "BILLING" || deptType === "RECEPTION")) ? {display:"none"} : {}}>
             <button className="sd2-burger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle sidebar">
               {sidebarOpen ? <X size={18} color="var(--acc)" /> : <Menu size={18} color="#64748b" />}
             </button>
@@ -1111,15 +1390,15 @@ function SubDeptDashboardContent() {
             </div>
           </header>
 
-          <div className="sd2-body">
+          <div className="sd2-body" style={tab === "inventory" ? { padding: "32px 20px" } : (tab === "billing-queue" || tab === "reports" || tab === "billing" || tab === "revenue") ? { padding: 0 } : {}}>
 
             {/* ═══════════════════ SUPPORT DEPARTMENT DASHBOARDS ═══════════════════ */}
-            {deptType === "PATHOLOGY" && tab !== "dept" && tab !== "account-settings" ? (
+            {deptType === "PATHOLOGY" && tab !== "account-settings" ? (
               <PathologyDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} />
             ) : tab === "account-settings" ? (
               <AccountSettingsPanelLazy user={user} />
-            ) : deptType === "PHARMACY" && tab !== "dept" ? (
-              <PharmacyDashboardLazy profile={profile} user={user} activeTab={tab} />
+            ) : deptType === "PHARMACY" ? (
+              <PharmacyDashboardLazy profile={profile} user={user} activeTab={tab} onReady={() => setPharmacyReady(true)} />
             ) : deptType === "NURSING" ? (
               <NursingDashboardLazy profile={profile} user={user} />
             ) : deptType === "HOUSEKEEPING" ? (
@@ -1128,9 +1407,15 @@ function SubDeptDashboardContent() {
               <AmbulanceDashboardLazy profile={profile} user={user} />
             ) : deptType === "BIOMEDICAL" ? (
               <BiomedicalDashboardLazy profile={profile} user={user} />
-            ) : ["OPD","GENERAL_MEDICINE"].includes(deptType) ? (
-              <OPDDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
-            ) : deptType === "HR" && ["overview","staff","doctors"].includes(tab) ? (
+            ) : ["OPD", "GENERAL_MEDICINE", "DENTAL", "DERMATOLOGY", "HAIR", "ONCOLOGY", "CARDIOLOGY", "COSMETIC", "PHYSIOTHERAPY", "DIALYSIS", "GYNECOLOGY", "PEDIATRICS"].includes(deptType) ? (
+              // Use DentalOPDDashboard for: Clinical OPD subdepartments OR departments with "dental" in name
+              (profile?.department?.type === "CLINICAL" && deptType === "OPD") || 
+              (profile?.name?.toLowerCase()?.includes("dental") || profile?.customName?.toLowerCase()?.includes("dental")) ? (
+                <DentalOPDDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
+              ) : (
+                <OPDDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
+              )
+            ) : deptType === "HR" && ["overview", "staff", "doctors"].includes(tab) ? (
               <HRDepartmentDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
             ) : deptType === "BILLING" && ["overview","billing-queue","finance","inventory"].includes(tab) ? (
               <BillingDepartmentDashboardLazy profile={profile} user={user} activeTab={tab} onTabChange={(t: string) => setTab(t as any)} meta={meta} />
@@ -1138,117 +1423,222 @@ function SubDeptDashboardContent() {
 
             {/* ═══════════════════ OVERVIEW ═══════════════════ */}
             {tab==="overview" && (<>
-              {/* Hero Banner */}
-              <div style={{background:meta.gradient,borderRadius:18,padding:"26px 28px",marginBottom:20,color:"#fff",position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",right:-20,top:-20,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,.07)"}}/>
-                <div style={{position:"absolute",right:70,bottom:-35,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,.05)"}}/>
-                <div style={{position:"relative",display:"flex",alignItems:"center",gap:20}}>
-                  <div style={{width:60,height:60,borderRadius:16,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <DeptIcon size={28} color="#fff"/>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",opacity:.75,marginBottom:4}}>{profile?.type?.replace(/_/g," ")} Department</div>
-                    <h1 style={{fontSize:22,fontWeight:800,marginBottom:4,lineHeight:1.2}}>{deptName}</h1>
-                    {profile?.description && <p style={{fontSize:12,opacity:.82,maxWidth:520}}>{profile.description}</p>}
-                  </div>
-                  <div style={{flexShrink:0,textAlign:"right", display:"flex", gap:10}}>
-                    <button 
-                      onClick={() => setTab("billing")} 
-                      style={{
-                        background: "rgba(255,255,255,.2)", 
-                        padding: "10px 18px", 
-                        borderRadius: 100, 
-                        fontSize:12, 
-                        fontWeight: 700, 
-                        border: "1px solid rgba(255,255,255,.3)",
-                        color: "#fff",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        backdropFilter: "blur(4px)"
-                      }}
-                    >
-                      <Receipt size={16} />
-                      Collect Bill
-                    </button>
-                    <button 
-                      onClick={() => setTab("appointments")} 
-                      style={{
-                        background: meta.accent, 
-                        padding: "10px 18px", 
-                        borderRadius: 100, 
-                        fontSize:12, 
-                        fontWeight: 700, 
-                        border: "1px solid rgba(255,255,255,.3)",
-                        color: "#fff",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-                      }}
-                    >
-                      <CalendarDays size={16} />
-                      Book Appointment
-                    </button>
+              {/* Header: title + live indicator + refresh */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-.02em" }}>{deptName} Dashboard</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 3px #dcfce7", flexShrink: 0 }} />
+                    Live &middot; Updated {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 </div>
-                {profile?.flow && (
-                  <div style={{marginTop:16,display:"flex",alignItems:"center",flexWrap:"wrap",gap:4}}>
-                    {profile.flow.split("→").map((step: string, i: number, arr: string[]) => (
-                      <span key={i} style={{display:"flex",alignItems:"center",gap:4}}>
-                        <span style={{background:"rgba(255,255,255,.15)",padding:"4px 10px",borderRadius:8,fontSize:10,fontWeight:600,whiteSpace:"nowrap"}}>{step.trim()}</span>
-                        {i < arr.length-1 && <ChevronRight size={12} color="rgba(255,255,255,.7)"/>}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {profile?.type === "RECEPTION" && (
+                    <button
+                      onClick={() => { setShowQuickBook(true); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 12,
+                        border: "none", background: "linear-gradient(135deg, #0E898F, #0A6B70)",
+                        color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
+                    >
+                      <Plus size={16} strokeWidth={3} />
+                      New Appointment
+                    </button>
+                  )}
+                  <button
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}
+                    onClick={() => window.location.reload()}
+                  >
+                    <RefreshCw size={13} /> Refresh
+                  </button>
+                </div>
               </div>
 
-              {/* Stats */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:20}}>
+              {/* Stats Grid - One horizontal line for Reception */}
+              <div style={{
+                display:"grid",
+                gridTemplateColumns: profile?.type === "RECEPTION" ? "repeat(5, 1fr)" : "repeat(4, 1fr)",
+                gap:10,
+                marginBottom:20
+              }}>
                 {(profile?.type === "RECEPTION" ? [
                   { label:"Today's Appts", value:recentAppointments.length, Icon:CalendarDays, color:meta.accent, bg:meta.lightBg,
+                    badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>setTab("appointments") },
-                  { label:"Pending Bills", value:pendingBillingQueue.length, Icon:Clock, color:"#f59e0b", bg:"#fffbeb",
+                  { label:"Pending Bills", value:pendingBillingQueue.length, Icon:Clock, color:pendingBillingQueue.length > 0 ? "#ea580c" : meta.accent, bg:pendingBillingQueue.length > 0 ? "#fff7ed" : meta.lightBg,
+                    badge: pendingBillingQueue.length > 0 ? { text: "URGENT", bg: "#fff3e6", color: "#ea580c", border: "#fed7aa" } : { text: "CLEAR", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>setTab("billing") },
-                  { label:"New Patients Today", value:recordsMeta.todayRecords||0, Icon:UserPlus, color:"#10b981", bg:"#f0fdf4",
+                  { label:"New Patients Today", value:recordsMeta.todayRecords||0, Icon:UserPlus, color:meta.accent, bg:meta.lightBg,
+                    badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>setTab("patients") },
-                  { label:"Billing Today",     value:`₹${(recordsMeta.todayRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#10b981", bg:"#f0fdf4",
+                  { label:"Billing Today",     value:`₹${(recordsMeta.todayRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#16a34a", bg:"#f0fdf4",
+                    badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>setTab("billing") },
-                  { label:"Total Records",     value:recordsMeta.totalRecords||0, Icon:Layers, color:"#6366f1", bg:"#eef2ff",
-                    onClick:()=>setTab("records") },
                   { label:"Total Revenue",     value:`₹${(recordsMeta.totalRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#059669", bg:"#f0fdf4",
                     onClick:()=>setTab("records") },
                 ] : [
                   { label:"Active Procedures", value:activeProcs.length, Icon:ClipboardList, color:meta.accent, bg:meta.lightBg },
-                  { label:"Total Procedures",  value:displayProcs.length, Icon:Layers,       color:"#6366f1",  bg:"#eef2ff" },
-                  { label:"Referrals Today",   value:queue.length||"—",  Icon:UserCheck,     color:"#10b981",  bg:"#f0fdf4",
+                  { label:"Referrals Today",   value:queue.length||"—",  Icon:UserCheck,     color:meta.accent, bg:meta.lightBg,
+                    badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>{setTab("queue");loadQueue();} },
-                  { label:"Records Today",     value:recordsMeta.todayRecords||0, Icon:ClipboardList, color:"#f59e0b", bg:"#fffbeb",
-                    onClick:()=>{setTab("records");loadRecords();} },
-                  { label:"Total Records",     value:recordsMeta.totalRecords||0, Icon:Layers, color:"#6366f1", bg:"#eef2ff",
+                  { label:"Records Today",     value:recordsMeta.todayRecords||0, Icon:ClipboardList, color:meta.accent, bg:meta.lightBg,
+                    badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>{setTab("records");loadRecords();} },
                   { label:"Today Revenue",     value:`₹${(recordsMeta.todayRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#10b981", bg:"#f0fdf4",
-                    onClick:()=>{setTab("records");loadRecords();} },
-                  { label:"Total Revenue",     value:`₹${(recordsMeta.totalRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#059669", bg:"#f0fdf4",
+                    badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
                     onClick:()=>{setTab("records");loadRecords();} },
                 ]).map((s,i)=>{
                   const SI = s.Icon;
                   return (
-                    <div key={i} className="sd2-sc" onClick={s.onClick} style={{cursor:s.onClick?"pointer":"default", padding: 14, gap: 12}}>
+                    <div key={i} className="sd2-sc" onClick={s.onClick} style={{
+                      cursor:s.onClick?"pointer":"default", 
+                      padding: "10px 12px", 
+                      gap: 10,
+                      background: "#fff",
+                      borderRadius: 12,
+                      border: `1px solid ${s.badge?.color === "#ea580c" ? "#fed7aa" : "var(--bc)"}`,
+                    }}>
                       <div style={{width:38,height:38,borderRadius:10,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                         <SI size={18} color={s.color}/>
                       </div>
-                      <div>
-                        <div style={{fontSize:19,fontWeight:800,color:"#1e293b"}}>{s.value}</div>
-                        <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{s.label}</div>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{display:"flex", alignItems:"center", gap:4, marginBottom:1}}>
+                          <div style={{fontSize:16,fontWeight:800,color:"#1e293b", lineHeight: 1.1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.value}</div>
+                          {s.badge && (
+                            <span style={{
+                              fontSize: 7, 
+                              fontWeight: 700, 
+                              color: s.badge.color, 
+                              background: s.badge.bg, 
+                              padding: "1px 4px", 
+                              borderRadius: 8, 
+                              border: `1px solid ${s.badge.border}`,
+                              flexShrink: 0
+                            }}>
+                              {s.badge.text}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{fontSize:9,color:"#64748b", lineHeight: 1.2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{s.label}</div>
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {/* Row 2: Secondary Chips for Non-Reception */}
+              {profile?.type !== "RECEPTION" && (
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:12,marginBottom:20}}>
+                  {[
+                    { label:"Total Procedures",  value:displayProcs.length, Icon:Layers,       color:meta.accent, bg:meta.lightBg },
+                    { label:"Total Records",     value:recordsMeta.totalRecords||0, Icon:Layers, color:meta.accent, bg:meta.lightBg,
+                      onClick:()=>{setTab("records");loadRecords();} },
+                    { label:"Total Revenue",     value:`₹${(recordsMeta.totalRevenue||0).toLocaleString("en-IN")}`, Icon:IndianRupee, color:"#059669", bg:"#f0fdf4",
+                      onClick:()=>{setTab("records");loadRecords();} },
+                    { label:"Active Staff",      value:profile?.staffCount||"—", Icon:Users, color:"#6366f1", bg:"#eef2ff" },
+                  ].map((s,i)=>{
+                    const SI = s.Icon;
+                    return (
+                      <div key={i} className="sd2-sc" onClick={s.onClick} style={{
+                        cursor:s.onClick?"pointer":"default", 
+                        padding: "12px 16px", 
+                        gap: 12,
+                        borderRadius: 12,
+                        background: s.bg,
+                        border: "1px solid var(--bc)"
+                      }}>
+                        <div style={{width:36,height:36,borderRadius:10,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+                          <SI size={16} color={s.color}/>
+                        </div>
+                        <div>
+                          <div style={{fontSize:18,fontWeight:800,color:"#1e293b", lineHeight: 1.2}}>{s.value}</div>
+                          <div style={{fontSize:11,color:"#64748b"}}>{s.label}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Charts for Reception Overview */}
+              {profile?.type === "RECEPTION" && (
+                reportLoading || !reportData ? (
+                  <div style={{height:280,background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:20,color:"#94a3b8",fontSize:12,gap:8}}>
+                    <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading dashboard analytics...
+                  </div>
+                ) : (
+                  <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:18,marginBottom:20}}>
+                    {/* Daily Trend Chart */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"18px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>Daily Patient Flow & Revenue</div>
+                          <div style={{fontSize:10,color:"#94a3b8"}}>Activity trend for the last 7 days</div>
+                        </div>
+                        <div style={{display:"flex",gap:10}}>
+                          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:9,color:"#64748b"}}>
+                            <span style={{width:8,height:8,borderRadius:2,background:meta.accent}}/> Patients
+                          </div>
+                          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:9,color:"#64748b"}}>
+                            <span style={{width:8,height:8,borderRadius:2,background:"#10b981"}}/> Revenue
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{width:"100%",height:220}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsAreaChart data={reportData?.dailyTrend?.slice(-8)||[]} margin={{top:5,right:10,left:-15,bottom:0}}>
+                            <defs>
+                              <linearGradient id="gradOverCount" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={meta.accent} stopOpacity={.3}/><stop offset="100%" stopColor={meta.accent} stopOpacity={0}/></linearGradient>
+                              <linearGradient id="gradOverRev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity={.25}/><stop offset="100%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
+                            </defs>
+                            <RechartsXAxis dataKey="label" tick={{fontSize:9,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
+                            <RechartsYAxis yAxisId="left" tick={{fontSize:9,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:9,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #e2e8f0",fontSize:10,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}}/>
+                            <RechartsArea yAxisId="left" type="monotone" dataKey="count" stroke={meta.accent} fill="url(#gradOverCount)" strokeWidth={2.5} name="Patients" dot={{r:4,fill:meta.accent,strokeWidth:2,stroke:"#fff"}} activeDot={{r:6}}/>
+                            <RechartsArea yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#gradOverRev)" strokeWidth={2.5} name="Revenue" dot={{r:4,fill:"#10b981",strokeWidth:2,stroke:"#fff"}} activeDot={{r:6}}/>
+                          </RechartsAreaChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Distribution Pie Chart */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"18px 20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:14}}>Activity Distribution</div>
+                      <div style={{width:"100%",height:160}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsPieChart>
+                            <RechartsPie 
+                              data={reportData?.dailyTrend?.slice(-8).map((d:any,i:number)=>({name:d.label,value:d.count,fill:[meta.accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"][i%8]}))||[]} 
+                              dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={4} strokeWidth={0}
+                            >
+                              {(reportData?.dailyTrend?.slice(-8)||[]).map((_:any,i:number)=>(
+                                <RechartsCell key={i} fill={[meta.accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"][i%8]}/>
+                              ))}
+                            </RechartsPie>
+                            <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:10}}/>
+                          </RechartsPieChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 12px",marginTop:10}}>
+                        {reportData?.dailyTrend?.slice(-8).map((d:any,i:number)=>(
+                          <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:9,color:"#64748b"}}>
+                            <span style={{display:"flex",alignItems:"center",gap:5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
+                              <span style={{width:6,height:6,borderRadius:1,background:[meta.accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"][i%8],flexShrink:0}}/>
+                              {d.label}
+                            </span>
+                            <span style={{fontWeight:700,color:"#1e293b"}}>{d.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
 
               {/* Bottom: Recent Activity for Reception */}
               {profile?.type === "RECEPTION" && (
@@ -1296,7 +1686,7 @@ function SubDeptDashboardContent() {
                   {/* Pending Billing Queue */}
                   <div className="sd2-card">
                     <div className="sd2-card-hd">
-                      <span className="sd2-card-title"><Receipt size={15} color="#f59e0b"/>Pending Bills</span>
+                      <span className="sd2-card-title"><Receipt size={15} color={meta.accent}/>Pending Bills</span>
                       <span style={{fontSize:10,color:"#94a3b8"}}>{pendingBillingQueue.length} pending</span>
                     </div>
                     <div style={{padding:"10px 0"}}>
@@ -1307,8 +1697,8 @@ function SubDeptDashboardContent() {
                       ) : pendingBillingQueue.length > 0 ? (
                         pendingBillingQueue.slice(0, 5).map((item: any) => (
                           <div key={item.id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 18px",borderBottom:"1px solid #f8fafc"}}>
-                            <div style={{width:32,height:32,borderRadius:8,background:"#fffbeb",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              <IndianRupee size={14} color="#f59e0b"/>
+                            <div style={{width:32,height:32,borderRadius:8,background:meta.lightBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <IndianRupee size={14} color={meta.accent}/>
                             </div>
                             <div style={{flex:1}}>
                               <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{item.patient?.name}</div>
@@ -1319,12 +1709,13 @@ function SubDeptDashboardContent() {
                               <div style={{
                                 fontSize:10, 
                                 fontWeight: 700,
-                                color: item.bill?.status === "PARTIALLY_PAID" ? "#b45309" : "#c2410c",
-                                background: item.bill?.status === "PARTIALLY_PAID" ? "#fef3c7" : "#fff7ed",
+                                color: meta.accent,
+                                background: meta.lightBg,
                                 padding: "2px 6px",
                                 borderRadius: 4,
                                 marginTop: 2,
-                                display: "inline-block"
+                                display: "inline-block",
+                                border: `1px solid ${meta.borderColor}`
                               }}>
                                 {item.bill?.status === "PARTIALLY_PAID" ? "Partial" : "Pending"}
                               </div>
@@ -1342,8 +1733,243 @@ function SubDeptDashboardContent() {
                 </div>
               )}
 
-              {/* Bottom: Procedures preview + HOD (For Non-Reception) */}
-              {profile?.type !== "RECEPTION" && (
+              {/* ── CLINICAL_PROCEDURE: Status Chips + Full Referral Table ── */}
+              {profile?.type === "CLINICAL_PROCEDURE" && (() => {
+                const allRefs = [...queue, ...completedQueue];
+                const q = overviewRefSearch.trim().toLowerCase();
+                const filtered = q
+                  ? allRefs.filter(r =>
+                      (r.patient?.name||"").toLowerCase().includes(q) ||
+                      (r.patient?.patientId||"").toLowerCase().includes(q) ||
+                      (r.doctor?.name||"").toLowerCase().includes(q) ||
+                      String(r.tokenNumber||"").includes(q)
+                    )
+                  : allRefs;
+
+                const statusCounts: Record<string,number> = {};
+                for (const r of allRefs) statusCounts[r.status] = (statusCounts[r.status]||0)+1;
+
+                const statusChips = [
+                  { key:"SCHEDULED",   label:"Scheduled",   bg:"#f8fafc", color:"#475569", border:"#e2e8f0" },
+                  { key:"CONFIRMED",   label:"Confirmed",   bg:"#f0fdf4", color:"#16a34a", border:"#bbf7d0" },
+                  { key:"IN_PROGRESS", label:"In Progress", bg:"#E6F4F4", color:"#0A6B70", border:"#B3E0E0" },
+                  { key:"COMPLETED",   label:"Completed",   bg:"#f0fdf4", color:"#059669", border:"#a7f3d0" },
+                  { key:"NO_SHOW",     label:"No Show",     bg:"#fff7ed", color:"#c2410c", border:"#fed7aa" },
+                  { key:"CANCELLED",   label:"Cancelled",   bg:"#fff5f5", color:"#ef4444", border:"#fecaca" },
+                ];
+
+                return (
+                  <>
+                    {/* Status summary chips */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:18}}>
+                      {statusChips.map(sc=>(
+                        <div key={sc.key} style={{background:"#fff",borderRadius:12,border:`1px solid ${statusCounts[sc.key]>0?sc.border:"#e2e8f0"}`,padding:"12px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.03)"}}>
+                          <div style={{fontSize:22,fontWeight:800,color:statusCounts[sc.key]>0?sc.color:"#cbd5e1",lineHeight:1}}>{statusCounts[sc.key]||0}</div>
+                          <div style={{fontSize:10,color:"#64748b",marginTop:4,fontWeight:500}}>{sc.label}</div>
+                          <div style={{height:3,borderRadius:3,marginTop:8,background:statusCounts[sc.key]>0?sc.color:"#e2e8f0",opacity:statusCounts[sc.key]>0?.7:.3}}/>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Full referral table */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",boxShadow:"0 1px 6px rgba(0,0,0,.04)",overflow:"hidden"}}>
+                      {/* Table header */}
+                      <div style={{padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #f1f5f9",gap:12,flexWrap:"wrap"}}>
+                        <span style={{fontSize:14,fontWeight:800,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}>
+                          <UserCheck size={16} color={meta.accent}/>All Referred Patients
+                          <span style={{fontSize:11,fontWeight:600,color:meta.accent,background:meta.lightBg,border:`1px solid ${meta.borderColor}`,padding:"2px 8px",borderRadius:100}}>{allRefs.length}</span>
+                        </span>
+                        <div style={{display:"flex",alignItems:"center",gap:10,flex:1,justifyContent:"flex-end"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:7,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:9,padding:"7px 12px",minWidth:220}}>
+                            <Search size={12} color="#94a3b8"/>
+                            <input
+                              placeholder="Search patient, doctor, token..."
+                              value={overviewRefSearch}
+                              onChange={e=>setOverviewRefSearch(e.target.value)}
+                              style={{border:"none",outline:"none",background:"none",fontSize:12,color:"#334155",width:"100%",fontFamily:"inherit"}}
+                            />
+                            {overviewRefSearch && <button onClick={()=>setOverviewRefSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={11} color="#94a3b8"/></button>}
+                          </div>
+                          {queueLoading && <Loader2 size={14} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/>}
+                          <button onClick={()=>{setTab("queue");loadQueue();}}
+                            style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:9,border:`1px solid ${meta.borderColor}`,background:meta.lightBg,color:meta.accent,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+                            Queue Tab <ChevronRight size={13}/>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Table */}
+                      {queueLoading ? (
+                        <div style={{padding:"48px",textAlign:"center",color:"#94a3b8",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                          <Loader2 size={16} style={{animation:"spin .7s linear infinite"}}/>Loading referrals...
+                        </div>
+                      ) : filtered.length === 0 ? (
+                        <div style={{padding:"56px 20px",textAlign:"center"}}>
+                          <UserCheck size={40} color="#e2e8f0" style={{margin:"0 auto 12px"}}/>
+                          <div style={{fontSize:13,fontWeight:600,color:"#94a3b8"}}>{overviewRefSearch ? "No results match your search" : "No referred patients yet"}</div>
+                          <div style={{fontSize:11,color:"#cbd5e1",marginTop:4}}>Referrals appear here when doctors send patients to this department</div>
+                        </div>
+                      ) : (
+                        <div style={{overflowX:"auto"}}>
+                          <table style={{width:"100%",borderCollapse:"collapse"}}>
+                            <thead>
+                              <tr style={{background:"#f8fafc",borderBottom:"1px solid #e2e8f0"}}>
+                                {["#","Patient","Referred By","Date","Time","Procedures","Status","Actions"].map(h=>(
+                                  <th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:".06em",whiteSpace:"nowrap"}}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filtered.map((r:any, idx:number)=>{
+                                const sc = STATUS_CFG[r.status] || { label:r.status, bg:"#f1f5f9", color:"#475569", border:"#e2e8f0" };
+                                const apptDate = r.appointmentDate ? new Date(r.appointmentDate).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—";
+                                return (
+                                  <tr key={r.id} style={{borderBottom:"1px solid #f8fafc",transition:"background .1s"}}
+                                    onMouseEnter={e=>(e.currentTarget.style.background="#fafbfc")}
+                                    onMouseLeave={e=>(e.currentTarget.style.background="")}>
+                                    <td style={{padding:"11px 14px",fontSize:11,color:"#94a3b8",fontWeight:600}}>{idx+1}</td>
+                                    <td style={{padding:"11px 14px"}}>
+                                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                        <div style={{width:34,height:34,borderRadius:9,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:"#fff",flexShrink:0}}>
+                                          {(r.patient?.name||"P").charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                          <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{r.patient?.name||"—"}</div>
+                                          <div style={{fontSize:10,color:"#94a3b8"}}>{r.patient?.patientId||""}{r.patient?.gender?` · ${r.patient.gender}`:""}</div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td style={{padding:"11px 14px"}}>
+                                      <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{r.doctor?.name||"—"}</div>
+                                      <div style={{fontSize:10,color:"#94a3b8"}}>{r.doctor?.specialization||""}</div>
+                                    </td>
+                                    <td style={{padding:"11px 14px",fontSize:12,color:"#334155",fontWeight:600,whiteSpace:"nowrap"}}>{apptDate}</td>
+                                    <td style={{padding:"11px 14px",fontSize:12,color:"#334155"}}>{r.timeSlot||"—"}</td>
+                                    <td style={{padding:"11px 14px"}}>
+                                      {r.suggestedProcedures?.length>0
+                                        ? r.suggestedProcedures.slice(0,2).map((p:any,i:number)=>(
+                                            <span key={i} style={{display:"inline-block",marginRight:3,marginBottom:2,padding:"2px 7px",borderRadius:100,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"18",color:PROC_TYPE_COLOR[p.type]||"#94a3b8",fontSize:10,fontWeight:700}}>{p.name}</span>
+                                          ))
+                                        : <span style={{fontSize:10,color:"#94a3b8"}}>—</span>
+                                      }
+                                    </td>
+                                    <td style={{padding:"11px 14px"}}>
+                                      <span style={{display:"inline-flex",alignItems:"center",padding:"3px 10px",borderRadius:100,background:sc.bg,color:sc.color,border:`1px solid ${sc.border}`,fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>{sc.label}</span>
+                                    </td>
+                                    <td style={{padding:"11px 14px"}} onClick={e=>e.stopPropagation()}>
+                                      <div style={{display:"flex",gap:5}}>
+                                        <button
+                                          onClick={()=>setOverviewDetailItem(r)}
+                                          style={{width:28,height:28,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                          title="View Details"><Eye size={13}/></button>
+                                        {!["COMPLETED","CANCELLED","NO_SHOW"].includes(r.status) && (<>
+                                          <button
+                                            onClick={()=>{ setConsentUploadTarget(r); setConsentFile(null); setConsentUrl(""); setConsentUploadMsg(""); }}
+                                            style={{width:28,height:28,borderRadius:8,border:"none",background:"#f0fdf4",color:"#16a34a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                            title="Record Procedure (Consent First)"><Plus size={13}/></button>
+                                          <button
+                                            onClick={()=>{ setQueueProblemTarget(r); setQueueProblemForm({status:"NO_SHOW",remarks:"",rescheduleDate:"",rescheduleTime:""}); }}
+                                            style={{width:28,height:28,borderRadius:8,border:"none",background:"#fff7ed",color:"#c2410c",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                            title="Mark No-Show / Problem"><AlertTriangle size={13}/></button>
+                                          <button
+                                            onClick={()=>{ setQueueProblemTarget(r); setQueueProblemForm({status:"RESCHEDULED",remarks:"",rescheduleDate:"",rescheduleTime:""}); }}
+                                            style={{width:28,height:28,borderRadius:8,border:"none",background:"#eff6ff",color:"#2563eb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                            title="Reschedule"><Edit2 size={13}/></button>
+                                        </>)}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      <div style={{padding:"10px 18px",borderTop:"1px solid #f1f5f9",fontSize:11,color:"#94a3b8",display:"flex",justifyContent:"space-between"}}>
+                        <span>Showing {filtered.length} of {allRefs.length} referral{allRefs.length!==1?"s":""}</span>
+                        <span>{queue.length} pending · {completedQueue.length} completed</span>
+                      </div>
+                    </div>
+
+                    {/* View Detail Modal */}
+                    {overviewDetailItem && (
+                      <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                        onClick={()=>setOverviewDetailItem(null)}>
+                        <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:18,padding:28,width:"100%",maxWidth:520,border:"1px solid #e2e8f0",boxShadow:"0 20px 60px rgba(0,0,0,.14)",maxHeight:"90vh",overflowY:"auto"}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                            <div style={{fontSize:15,fontWeight:800,color:"#1e293b"}}>Referral Details</div>
+                            <button onClick={()=>setOverviewDetailItem(null)} style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={13} color="#94a3b8"/></button>
+                          </div>
+                          {/* Patient card */}
+                          <div style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:meta.lightBg,borderRadius:12,border:`1px solid ${meta.borderColor}`,marginBottom:16}}>
+                            <div style={{width:46,height:46,borderRadius:12,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:"#fff",flexShrink:0}}>
+                              {(overviewDetailItem.patient?.name||"P").charAt(0).toUpperCase()}
+                            </div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14,fontWeight:800,color:"#1e293b"}}>{overviewDetailItem.patient?.name||"—"}</div>
+                              <div style={{fontSize:11,color:"#64748b"}}>{overviewDetailItem.patient?.patientId||""}{overviewDetailItem.patient?.phone?` · ${overviewDetailItem.patient.phone}`:""}{overviewDetailItem.patient?.gender?` · ${overviewDetailItem.patient.gender}`:""}</div>
+                            </div>
+                            {(() => { const sc2=STATUS_CFG[overviewDetailItem.status]||{label:overviewDetailItem.status,bg:"#f1f5f9",color:"#475569",border:"#e2e8f0"}; return <span style={{padding:"4px 12px",borderRadius:100,background:sc2.bg,color:sc2.color,border:`1px solid ${sc2.border}`,fontSize:11,fontWeight:700}}>{sc2.label}</span>; })()}
+                          </div>
+                          {/* Info grid */}
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+                            {[
+                              ["Referred By", overviewDetailItem.doctor?.name||"—"],
+                              ["Specialization", overviewDetailItem.doctor?.specialization||"—"],
+                              ["Appointment Date", overviewDetailItem.appointmentDate ? new Date(overviewDetailItem.appointmentDate).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : "—"],
+                              ["Time Slot", overviewDetailItem.timeSlot||"—"],
+                              ["Token No.", overviewDetailItem.tokenNumber||"—"],
+                              ["Type", overviewDetailItem.type||"—"],
+                            ].map(([k,v])=>(
+                              <div key={k} style={{background:"#f8fafc",borderRadius:9,padding:"10px 12px",border:"1px solid #f1f5f9"}}>
+                                <div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:".04em"}}>{k}</div>
+                                <div style={{fontSize:12,fontWeight:600,color:"#334155",marginTop:2}}>{v}</div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Referral notes */}
+                          {overviewDetailItem.subDeptNote && (
+                            <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+                              <div style={{fontSize:10,fontWeight:700,color:"#16a34a",marginBottom:5,textTransform:"uppercase",letterSpacing:".04em"}}>Referral Instructions</div>
+                              <div style={{fontSize:12,color:"#334155",lineHeight:1.7}}>{overviewDetailItem.subDeptNote}</div>
+                            </div>
+                          )}
+                          {/* Suggested procedures */}
+                          {overviewDetailItem.suggestedProcedures?.length>0 && (
+                            <div style={{marginBottom:16}}>
+                              <div style={{fontSize:10,fontWeight:700,color:"#475569",marginBottom:8,textTransform:"uppercase",letterSpacing:".04em"}}>Suggested Procedures</div>
+                              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                                {overviewDetailItem.suggestedProcedures.map((p:any,i:number)=>(
+                                  <div key={i} style={{padding:"6px 12px",borderRadius:9,background:(PROC_TYPE_COLOR[p.type]||"#94a3b8")+"14",border:`1px solid ${(PROC_TYPE_COLOR[p.type]||"#94a3b8")}30`,display:"flex",alignItems:"center",gap:6}}>
+                                    <span style={{fontSize:11,fontWeight:700,color:PROC_TYPE_COLOR[p.type]||"#94a3b8"}}>{p.name}</span>
+                                    {p.fee!=null && <span style={{fontSize:10,color:"#64748b"}}>₹{p.fee}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Action buttons */}
+                          {!["COMPLETED","CANCELLED","NO_SHOW"].includes(overviewDetailItem.status) && (
+                            <div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:14,borderTop:"1px solid #f1f5f9"}}>
+                              <button onClick={()=>{ setOverviewDetailItem(null); setConsentUploadTarget(overviewDetailItem); setConsentFile(null); setConsentUrl(""); setConsentUploadMsg(""); }}
+                                style={{display:"flex",alignItems:"center",gap:6,padding:"8px 16px",borderRadius:10,border:"none",background:"#f0fdf4",color:"#16a34a",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                                <Plus size={13}/>Record Procedure
+                              </button>
+                              <button onClick={()=>{ setOverviewDetailItem(null); setQueueProblemTarget(overviewDetailItem); setQueueProblemForm({status:"NO_SHOW",remarks:"",rescheduleDate:"",rescheduleTime:""}); }}
+                                style={{display:"flex",alignItems:"center",gap:6,padding:"8px 16px",borderRadius:10,border:"none",background:"#fff7ed",color:"#c2410c",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                                <AlertTriangle size={13}/>Mark Issue
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Bottom: Procedures preview + HOD (For Non-Reception, Non-Clinical-Procedure) */}
+              {profile?.type !== "RECEPTION" && profile?.type !== "CLINICAL_PROCEDURE" && (
                 <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:18}}>
                   <div className="sd2-card">
                     <div className="sd2-card-hd">
@@ -1405,7 +2031,7 @@ function SubDeptDashboardContent() {
               )}
 
               {/* Upcoming Treatment Plans */}
-              {profile?.type !== "RECEPTION" && (
+              {profile?.type !== "RECEPTION" && profile?.type !== "CLINICAL_PROCEDURE" && (
                 <div className="sd2-card" style={{marginTop:18}}>
                   <div className="sd2-card-hd">
                     <span className="sd2-card-title"><Activity size={15} color={meta.accent}/>Active Treatment Plans</span>
@@ -1452,19 +2078,6 @@ function SubDeptDashboardContent() {
 
             {/* ═══════════════════ DOCTOR REFERRALS QUEUE ═══════════════════ */}
             {tab==="queue" && (<>
-              {/* Info banner */}
-              <div style={{background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1.5px solid #bbf7d0",borderRadius:14,padding:"14px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
-                <UserCheck size={20} color="#16a34a"/>
-                <div>
-                  <div style={{fontSize:12,fontWeight:700,color:"#166534"}}>Doctor-Referred Patients Only</div>
-                  <div style={{fontSize:11,color:"#16a34a",marginTop:2}}>Only patients whose consultation is <strong>completed</strong> and doctor has explicitly referred to <strong>{deptName}</strong> appear here.</div>
-                </div>
-                <div style={{marginLeft:"auto",textAlign:"right"}}>
-                  <div style={{fontSize:22,fontWeight:800,color:"#16a34a"}}>{queue.length}</div>
-                  <div style={{fontSize:10,color:"#16a34a"}}>Today&apos;s referrals</div>
-                </div>
-              </div>
-
               {/* Toolbar — matches hospitaladmin/appointments style */}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"8px 14px",flex:1,minWidth:200}}>
@@ -1587,11 +2200,22 @@ function SubDeptDashboardContent() {
                                   }
                                 </td>
                                 <td style={{padding:"12px 14px"}} onClick={e=>e.stopPropagation()}>
-                                  <div style={{display:"flex",gap:6}}>
-                                    <button onClick={()=>{ setRecordForm({...BLANK_REC, patientId:q.patient?.id||"" , patientSearch:q.patient?.name||"" , appointmentId:q.id, amount:q.suggestedProcedures?.[0]?.fee||"" , procedureId:q.suggestedProcedures?.[0]?.id||""}); setShowRecordForm(true); setTab("records"); }}
-                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#f0fdf4",color:"#16a34a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Record Procedure"><Plus size={13}/></button>
+                                  <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                                    <button
+                                      onClick={()=>{ setConsentUploadTarget(q); setConsentFile(null); setConsentUrl(""); setConsentUploadMsg(""); }}
+                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#f0fdf4",color:"#16a34a",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                      title="Record Procedure (Upload Consent First)"><Plus size={13}/></button>
                                     <button onClick={()=>setExpandedRow(exp?null:q.id)}
-                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#f8fafc",color:"#64748b",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title={exp?"Hide Details":"View Details"}><Eye size={13}/></button>
+                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#f8fafc",color:"#64748b",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                      title={exp?"Hide Details":"View Details"}><Eye size={13}/></button>
+                                    <button
+                                      onClick={()=>{ setQueueProblemTarget(q); setQueueProblemForm({ status:"NO_SHOW", remarks:"", rescheduleDate:"", rescheduleTime:"" }); }}
+                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#fff7ed",color:"#c2410c",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                      title="Mark No-Show / Problem"><AlertTriangle size={13}/></button>
+                                    <button
+                                      onClick={()=>{ setQueueProblemTarget(q); setQueueProblemForm({ status:"RESCHEDULED", remarks:"", rescheduleDate:"", rescheduleTime:"" }); }}
+                                      style={{width:28,height:28,borderRadius:8,border:"none",background:"#eff6ff",color:"#2563eb",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                                      title="Edit / Reschedule"><Edit2 size={13}/></button>
                                   </div>
                                 </td>
                               </tr>
@@ -1756,6 +2380,177 @@ function SubDeptDashboardContent() {
                 })()}
               </>)}
 
+              {/* ── Problem / No-show Modal ── */}
+              {queueProblemTarget && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.55)",backdropFilter:"blur(4px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={()=>setQueueProblemTarget(null)}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:18,padding:28,width:"100%",maxWidth:460,border:"1px solid #e2e8f0",boxShadow:"0 20px 60px rgba(0,0,0,.15)"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:"#fff7ed",border:"1.5px solid #fed7aa",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          <AlertTriangle size={16} color="#c2410c"/>
+                        </div>
+                        <div>
+                          <div style={{fontSize:14,fontWeight:800,color:"#1e293b"}}>Mark Patient Issue</div>
+                          <div style={{fontSize:11,color:"#94a3b8"}}>{queueProblemTarget.patient?.name} · {queueProblemTarget.patient?.patientId}</div>
+                        </div>
+                      </div>
+                      <button onClick={()=>setQueueProblemTarget(null)} style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={13} color="#94a3b8"/></button>
+                    </div>
+
+                    <div style={{marginBottom:16}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#475569",marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>Reason / Status</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        {[
+                          { value:"NO_SHOW",    label:"No Show",          bg:"#fff7ed", color:"#c2410c", border:"#fed7aa" },
+                          { value:"CANCELLED",  label:"Patient Cancelled", bg:"#fff5f5", color:"#ef4444", border:"#fecaca" },
+                          { value:"RESCHEDULED",label:"Reschedule",        bg:"#eff6ff", color:"#2563eb", border:"#bfdbfe" },
+                          { value:"CONFIRMED",  label:"Arrived (Confirm)", bg:"#f0fdf4", color:"#16a34a", border:"#bbf7d0" },
+                        ].map(opt=>(
+                          <button key={opt.value}
+                            onClick={()=>setQueueProblemForm(f=>({...f,status:opt.value}))}
+                            style={{padding:"10px 12px",borderRadius:10,border:`2px solid ${queueProblemForm.status===opt.value ? opt.color : opt.border}`,background:queueProblemForm.status===opt.value ? opt.bg : "#fff",cursor:"pointer",textAlign:"left",transition:"all .12s"}}>
+                            <div style={{fontSize:12,fontWeight:700,color:opt.color}}>{opt.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Reschedule date/time pickers */}
+                    {queueProblemForm.status === "RESCHEDULED" && (
+                      <div style={{marginBottom:16,background:"#eff6ff",border:"1.5px solid #bfdbfe",borderRadius:12,padding:"14px 16px"}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#1d4ed8",marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+                          <CalendarDays size={13}/>New Procedure Date &amp; Time
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <div>
+                            <div style={{fontSize:10,fontWeight:600,color:"#475569",marginBottom:4}}>Date</div>
+                            <input
+                              type="date"
+                              min={new Date().toISOString().slice(0,10)}
+                              value={queueProblemForm.rescheduleDate}
+                              onChange={e=>setQueueProblemForm(f=>({...f,rescheduleDate:e.target.value}))}
+                              style={{width:"100%",border:"1.5px solid #bfdbfe",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#1e293b",background:"#fff",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}
+                            />
+                          </div>
+                          <div>
+                            <div style={{fontSize:10,fontWeight:600,color:"#475569",marginBottom:4}}>Time</div>
+                            <input
+                              type="time"
+                              value={queueProblemForm.rescheduleTime}
+                              onChange={e=>setQueueProblemForm(f=>({...f,rescheduleTime:e.target.value}))}
+                              style={{width:"100%",border:"1.5px solid #bfdbfe",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#1e293b",background:"#fff",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}
+                            />
+                          </div>
+                        </div>
+                        <div style={{fontSize:10,color:"#3b82f6",marginTop:8}}>A confirmation email will be sent to the patient after rescheduling.</div>
+                      </div>
+                    )}
+
+                    <div style={{marginBottom:20}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#475569",marginBottom:6,textTransform:"uppercase",letterSpacing:".05em"}}>Notes / Remarks</div>
+                      <textarea
+                        value={queueProblemForm.remarks}
+                        onChange={e=>setQueueProblemForm(f=>({...f,remarks:e.target.value}))}
+                        placeholder={queueProblemForm.status==="RESCHEDULED" ? "Optional: additional instructions for the patient..." : "Add any notes, reason for cancellation, etc..."}
+                        style={{width:"100%",minHeight:80,border:"1.5px solid #e2e8f0",borderRadius:10,padding:"10px 12px",fontSize:12,color:"#334155",resize:"vertical",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}
+                      />
+                    </div>
+
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>{ setQueueProblemTarget(null); setQueueProblemForm({status:"NO_SHOW",remarks:"",rescheduleDate:"",rescheduleTime:""}); }}
+                        style={{padding:"9px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                        Cancel
+                      </button>
+                      <button onClick={handleQueueProblem} disabled={queueProblemSaving}
+                        style={{padding:"9px 20px",borderRadius:10,border:"none",background:queueProblemForm.status==="RESCHEDULED"?"linear-gradient(135deg,#3b82f6,#1d4ed8)":"linear-gradient(135deg,#f97316,#c2410c)",color:"#fff",fontSize:12,fontWeight:700,cursor:queueProblemSaving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6,opacity:queueProblemSaving?0.7:1}}>
+                        {queueProblemSaving
+                          ? <><Loader2 size={13} style={{animation:"spin .7s linear infinite"}}/>Saving...</>
+                          : queueProblemForm.status==="RESCHEDULED" ? "Reschedule & Send Email" : "Save Status"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Consent Form Upload Modal ── */}
+              {consentUploadTarget && (
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.55)",backdropFilter:"blur(4px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+                  onClick={()=>{setConsentUploadTarget(null);setConsentFile(null);setConsentUrl("");setConsentUploadMsg("");}}>
+                  <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:18,padding:28,width:"100%",maxWidth:480,border:"1px solid #e2e8f0",boxShadow:"0 20px 60px rgba(0,0,0,.15)"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:"#eff6ff",border:"1.5px solid #bfdbfe",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          <FileText size={16} color="#2563eb"/>
+                        </div>
+                        <div>
+                          <div style={{fontSize:14,fontWeight:800,color:"#1e293b"}}>Upload Consent Form</div>
+                          <div style={{fontSize:11,color:"#94a3b8"}}>{consentUploadTarget.patient?.name} · {consentUploadTarget.patient?.patientId}</div>
+                        </div>
+                      </div>
+                      <button onClick={()=>{setConsentUploadTarget(null);setConsentFile(null);setConsentUrl("");setConsentUploadMsg("");}}
+                        style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={13} color="#94a3b8"/></button>
+                    </div>
+                    <div style={{fontSize:11,color:"#64748b",marginBottom:20}}>A signed consent form is required before recording a procedure. Accepted formats: PDF, JPG, PNG (max 10 MB).</div>
+
+                    {/* Drop zone */}
+                    <label style={{display:"block",border:`2px dashed ${consentUrl?"#16a34a":"#cbd5e1"}`,borderRadius:12,padding:"28px 20px",textAlign:"center",cursor:"pointer",background:consentUrl?"#f0fdf4":"#f8fafc",transition:"all .15s",marginBottom:14}}>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:"none"}}
+                        onChange={e=>{const f=e.target.files?.[0];if(f){setConsentFile(f);handleConsentUpload(f);}}}/>
+                      {consentUploading ? (
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,color:"#2563eb"}}>
+                          <Loader2 size={18} style={{animation:"spin .7s linear infinite"}}/>Uploading...
+                        </div>
+                      ) : consentUrl ? (
+                        <div>
+                          <CheckCircle size={24} color="#16a34a" style={{marginBottom:6}}/>
+                          <div style={{fontSize:12,fontWeight:700,color:"#16a34a"}}>{consentFile?.name}</div>
+                          <div style={{fontSize:10,color:"#86efac",marginTop:2}}>Click to replace</div>
+                        </div>
+                      ) : (
+                        <div>
+                          <FileText size={24} color="#94a3b8" style={{marginBottom:8}}/>
+                          <div style={{fontSize:12,fontWeight:600,color:"#475569"}}>Click to upload or drag & drop</div>
+                          <div style={{fontSize:10,color:"#94a3b8",marginTop:4}}>PDF, JPG, PNG — max 10 MB</div>
+                        </div>
+                      )}
+                    </label>
+
+                    {consentUploadMsg && (
+                      <div style={{fontSize:11,padding:"8px 12px",borderRadius:8,marginBottom:14,background:consentUrl?"#f0fdf4":"#fff5f5",color:consentUrl?"#16a34a":"#ef4444",border:`1px solid ${consentUrl?"#bbf7d0":"#fecaca"}`}}>
+                        {consentUploadMsg}
+                      </div>
+                    )}
+
+                    {consentUrl && (
+                      <div style={{marginBottom:14}}>
+                        <a href={consentUrl} target="_blank" rel="noreferrer"
+                          style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:11,color:"#2563eb",textDecoration:"underline"}}>
+                          <Eye size={12}/>Preview uploaded file
+                        </a>
+                      </div>
+                    )}
+
+                    <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                      <button onClick={()=>{setConsentUploadTarget(null);setConsentFile(null);setConsentUrl("");setConsentUploadMsg("");}}
+                        style={{padding:"9px 16px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                        Cancel
+                      </button>
+                      {!consentUrl && (
+                        <button onClick={proceedAfterConsent}
+                          style={{padding:"9px 16px",borderRadius:10,border:"1px solid #fed7aa",background:"#fff7ed",color:"#c2410c",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                          Skip &amp; Proceed
+                        </button>
+                      )}
+                      <button onClick={proceedAfterConsent} disabled={!consentUrl && !consentFile}
+                        style={{padding:"9px 20px",borderRadius:10,border:"none",background:consentUrl?"linear-gradient(135deg,#22c55e,#16a34a)":"linear-gradient(135deg,#64748b,#475569)",color:"#fff",fontSize:12,fontWeight:700,cursor:consentUrl?"pointer":"not-allowed",display:"flex",alignItems:"center",gap:6}}>
+                        <CheckCircle size={13}/>Proceed to Record
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ── View Completed Modal ── */}
               {viewCompletedItem && (
                 <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
@@ -1912,8 +2707,146 @@ function SubDeptDashboardContent() {
               )}
             </>)}
 
-            {/* ═══════════════════ REPORTS ═══════════════════ */}
-            {tab==="reports" && (<>
+            {/* ═══════════════════ BILLING & RECEPTION REPORTS ═══════════════════ */}
+            {tab==="reports" && (deptType==="BILLING" || deptType==="RECEPTION") && (<div style={{padding:24,background:"#fff",minHeight:"100%",boxSizing:"border-box"}}>
+              {(deptType==="BILLING" ? (billingReportLoading || !billingReportData) : (reportLoading || !reportData)) ? (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"80px 0",color:"#94a3b8"}}>
+                  <Loader2 size={22} style={{animation:"spin .7s linear infinite"}}/>Loading {deptType==="RECEPTION"?"reception":"billing"} reports...
+                </div>
+              ) : (()=>{
+                const isRec = deptType === "RECEPTION";
+                const data  = isRec ? reportData : billingReportData;
+                const stats = isRec ? (data.summary || {}) : (data.stats || {});
+                const fmtC = (v:number) => `₹${Number(v||0).toLocaleString("en-IN",{minimumFractionDigits:0})}`;
+                
+                // Define KPI Cards based on dept
+                const kpiCards = isRec ? [
+                  {icon:<CalendarDays size={20} color="#2563eb"/>,bg:"#eff6ff",value:String(stats.todayAppointments||0),label:"Today's Appointments",badge:"TODAY",badgeBg:"#eff6ff",badgeColor:"#2563eb",badgeBorder:"#bfdbfe"},
+                  {icon:<Users size={20} color="#16a34a"/>,bg:"#f0fdf4",value:String(stats.todayPatients||0),label:"New Patients (Today)",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+                  {icon:<ClipboardList size={20} color="#9333ea"/>,bg:"#faf5ff",value:String(stats.totalAppointments||0),label:"Total Appointments",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+                  {icon:<UserPlus size={20} color="#ea580c"/>,bg:"#fff7ed",value:String(stats.totalPatients||0),label:"Total Patients Registered",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+                ] : [
+                  {icon:<IndianRupee size={20} color="#16a34a"/>,bg:"#f0fdf4",value:fmtC(stats.todayRevenue),label:"Today's Revenue",badge:"TODAY",badgeBg:"#f0fdf4",badgeColor:"#16a34a",badgeBorder:"#bbf7d0"},
+                  {icon:<FileText size={20} color="#2563eb"/>,bg:"#eff6ff",value:String(stats.totalBills),label:"Total Bills",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+                  {icon:<Clock size={20} color={stats.pendingCount>0?"#ea580c":"#94a3b8"}/>,bg:stats.pendingCount>0?"#fff3e6":"#f8fafc",value:String(stats.pendingCount),label:"Pending Bills",badge:stats.pendingCount>0?"PENDING":null as null,badgeBg:"#fff3e6",badgeColor:"#ea580c",badgeBorder:"#fed7aa"},
+                  {icon:<TrendingUp size={20} color={meta.accent}/>,bg:meta.lightBg,value:fmtC(stats.monthRevenue),label:"Monthly Revenue",badge:null as null,badgeBg:"",badgeColor:"",badgeBorder:""},
+                ];
+
+                const secondaryChips = isRec ? [
+                  {icon:<Activity size={16} color="#3b82f6"/>,value:String(stats.avgApptsPerDay||0),label:"Avg Appointments/Day",bg:"#eff6ff"},
+                  {icon:<CheckCircle2 size={16} color="#16a34a"/>,value:String((data.byStatus||[]).find((s:any)=>s.name==="COMPLETED")?.value || 0),label:"Completed Appts",bg:"#f0fdf4"},
+                  {icon:<Clock size={16} color="#f59e0b"/>,value:String((data.byStatus||[]).find((s:any)=>s.name==="BOOKED"||s.name==="ARRIVED")?.value || 0),label:"Waiting/Scheduled",bg:"#fffbeb"},
+                  {icon:<AlertCircle size={16} color="#ef4444"/>,value:String((data.byStatus||[]).find((s:any)=>s.name==="CANCELLED")?.value || 0),label:"Cancelled Appts",bg:"#fef2f2"},
+                ] : [
+                  {icon:<CheckCircle2 size={16} color="#16a34a"/>,value:String(stats.paidCount),label:"Paid Bills",bg:"#f0fdf4"},
+                  {icon:<AlertCircle size={16} color="#ea580c"/>,value:fmtC(stats.pendingAmount),label:"Pending Amount",bg:"#fff7ed"},
+                  {icon:<Activity size={16} color="#9333ea"/>,value:`${stats.collectionRate}%`,label:"Collection Rate",bg:"#faf5ff"},
+                  {icon:<TrendingUp size={16} color={meta.accent}/>,value:fmtC(stats.monthRevenue),label:"Month Collection",bg:meta.lightBg},
+                ];
+
+                return (<>
+                  {/* Header */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                    <div>
+                      <div style={{fontSize:22,fontWeight:800,color:"#0f172a",letterSpacing:"-.02em"}}>{isRec?"Reception":"Billing"} Reports & Analytics</div>
+                      <div style={{fontSize:12,color:"#64748b",marginTop:3,display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{width:7,height:7,borderRadius:"50%",background:"#22c55e",display:"inline-block",boxShadow:"0 0 0 3px #dcfce7",flexShrink:0}}/>
+                        Live &middot; {deptName}
+                      </div>
+                    </div>
+                    <button onClick={isRec ? loadReports : loadBillingReports} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",fontSize:12,fontWeight:600,color:"#475569",cursor:"pointer"}}>
+                      <RefreshCw size={13}/>Refresh
+                    </button>
+                  </div>
+                  {/* Row 1: 4 KPI Cards */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}}>
+                    {kpiCards.map((c,i)=>(
+                      <div key={i}
+                        style={{background:"#fff",borderRadius:12,padding:12,border:"1px solid #e2e8f0",transition:"box-shadow .2s,transform .15s",display:"flex",alignItems:"center",gap:12}}
+                        onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.08)";e.currentTarget.style.transform="translateY(-1px)"}}
+                        onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform=""}}>
+                        <div style={{width:44,height:44,borderRadius:11,background:c.bg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.icon}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                            <div style={{fontSize:20,fontWeight:800,color:"#0f172a",lineHeight:1}}>{c.value}</div>
+                            {c.badge && <span style={{fontSize:8,fontWeight:700,color:c.badgeColor,background:c.badgeBg,padding:"2px 6px",borderRadius:10,border:`1px solid ${c.badgeBorder}`}}>{c.badge}</span>}
+                          </div>
+                          <div style={{fontSize:10,color:"#64748b"}}>{c.label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Row 2: 4 Secondary Chips */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+                    {secondaryChips.map((chip,i)=>(
+                      <div key={i} style={{background:chip.bg,borderRadius:12,padding:"12px 16px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:12}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>{chip.icon}</div>
+                        <div>
+                          <div style={{fontSize:18,fontWeight:800,color:"#0f172a",lineHeight:1.2}}>{chip.value}</div>
+                          <div style={{fontSize:11,color:"#64748b"}}>{chip.label}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Charts side by side */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>{isRec?"Daily Appointments & Registrations":"Daily Revenue & Bills"} (Last 30 Days)</div>
+                      <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>Hover for details</div>
+                      <div style={{width:"100%",height:260}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsAreaChart data={data.dailyTrend||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                            <defs>
+                              <linearGradient id="chartGrad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={isRec?"#3b82f6":"#10b981"} stopOpacity={.3}/><stop offset="100%" stopColor={isRec?"#3b82f6":"#10b981"} stopOpacity={0}/></linearGradient>
+                              <linearGradient id="chartGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={isRec?"#ea580c":meta.accent} stopOpacity={.25}/><stop offset="100%" stopColor={isRec?"#ea580c":meta.accent} stopOpacity={0}/></linearGradient>
+                            </defs>
+                            <RechartsXAxis dataKey="label" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}} interval={isRec?4:0}/>
+                            <RechartsYAxis yAxisId="left" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsYAxis yAxisId="right" orientation="right" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsTooltip contentStyle={{borderRadius:10,border:"1px solid #e2e8f0",fontSize:11,boxShadow:"0 4px 12px rgba(0,0,0,.08)"}} formatter={isRec ? undefined : (val:any,name:any)=>[name==="Revenue (₹)"?`₹${Number(val).toLocaleString("en-IN")}`:val,name]}/>
+                            <RechartsArea yAxisId="left" type="monotone" dataKey="count" stroke={isRec?"#3b82f6":"#10b981"} fill="url(#chartGrad1)" strokeWidth={2.5} name={isRec?"Appointments":"Revenue (₹)"} dot={isRec?false:{r:4,fill:isRec?"#3b82f6":"#10b981",strokeWidth:2,stroke:"#fff"}} activeDot={{r:6}}/>
+                            <RechartsArea yAxisId="right" type="monotone" dataKey={isRec?"patients":"count"} stroke={isRec?"#ea580c":meta.accent} fill="url(#chartGrad2)" strokeWidth={2.5} name={isRec?"New Patients":"Bills"} dot={isRec?false:{r:4,fill:isRec?"#ea580c":meta.accent,strokeWidth:2,stroke:"#fff"}} activeDot={{r:6}}/>
+                          </RechartsAreaChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                      <div style={{display:"flex",gap:16,marginTop:10}}>
+                        {[{color:isRec?"#3b82f6":"#10b981",label:isRec?"Appointments":"Revenue"},{color:isRec?"#ea580c":meta.accent,label:isRec?"Patients":"Bill Count"}].map((l,i)=>(
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:5,fontSize:10,color:"#64748b",fontWeight:600}}>
+                            <span style={{width:10,height:3,borderRadius:2,background:l.color,display:"inline-block"}}/>{l.label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)",display:"flex",flexDirection:"column"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>{isRec?"Appointment Status Distribution":"Bill Status Distribution"}</div>
+                      <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>All time &middot; Total: {isRec?stats.totalAppointments:stats.totalBills}</div>
+                      <div style={{flex:1,width:"100%"}}>
+                        <RechartsResponsiveContainer width="100%" height={220}>
+                          <RechartsPieChart>
+                            <RechartsPie data={data.byStatus||[]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={88} paddingAngle={3} strokeWidth={0}>
+                              {(data.byStatus||[]).map((_:any,i:number)=>(
+                                <RechartsCell key={i} fill={(data.byStatus||[])[i]?.fill||"#94a3b8"}/>
+                              ))}
+                            </RechartsPie>
+                            <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:11}}/>
+                          </RechartsPieChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 12px",marginTop:10}}>
+                        {(data.byStatus||[]).map((s:any,i:number)=>(
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:10,color:"#64748b",fontWeight:600}}>
+                            <span style={{width:8,height:8,borderRadius:2,background:s.fill,flexShrink:0}}/>{s.name}: {s.value}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>);
+              })()}
+            </div>)}
+
+            {/* ═══════════════════ REPORTS (non-billing depts) ═══════════════════ */}
+            {tab==="reports" && deptType!=="BILLING" && deptType!=="RECEPTION" && (<div style={{padding:24,background:"#fff",minHeight:"100%",boxSizing:"border-box"}}>
               {reportLoading || !reportData ? (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"80px 0",color:"#94a3b8"}}>
                   <Loader2 size={22} style={{animation:"spin .7s linear infinite"}}/>Loading reports...
@@ -1922,6 +2855,7 @@ function SubDeptDashboardContent() {
                 const s = reportData.summary || {};
                 const CHART_COLORS = [meta.accent,"#6366f1","#f59e0b","#ef4444","#10b981","#ec4899","#8b5cf6","#06b6d4"];
                 const TYPE_COLORS: Record<string,string> = {DIAGNOSTIC:"#6366f1",THERAPEUTIC:"#10b981",SURGICAL:"#ef4444",COSMETIC:"#ec4899",PREVENTIVE:"#f59e0b",EMERGENCY:"#dc2626",REHABILITATIVE:"#06b6d4",OTHER:"#94a3b8"};
+                const GENDER_COLORS: Record<string,string> = {MALE:"#3b82f6",FEMALE:"#ec4899",OTHER:"#8b5cf6",Unknown:"#94a3b8"};
 
                 return (<>
                   {/* Header + Refresh */}
@@ -2126,44 +3060,138 @@ function SubDeptDashboardContent() {
                     </div>
                   </div>
 
-                  {/* Recent Records Table */}
-                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-                    <div style={{padding:"16px 18px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Clock size={15} color="#f59e0b"/>Recent Procedure Records</div>
-                      <button onClick={()=>setTab("records")} style={{fontSize:11,fontWeight:600,color:meta.accent,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={12}/></button>
+                  {/* Charts Row 3: Peak Hours + Patient Demographics */}
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18,marginBottom:24}}>
+                    {/* Peak Hours Bar */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 20px 14px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>Peak Hours Distribution</div>
+                      <div style={{fontSize:10,color:"#94a3b8",marginBottom:14}}>When procedures are performed most</div>
+                      <div style={{width:"100%",height:200}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsBarChart data={reportData.hourlyDistribution||[]} margin={{top:5,right:10,left:-10,bottom:0}}>
+                            <RechartsXAxis dataKey="hour" tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={{stroke:"#f1f5f9"}}/>
+                            <RechartsYAxis tick={{fontSize:10,fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                            <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:10}}/>
+                            <RechartsBar dataKey="count" fill={meta.accent} radius={[4,4,0,0]} name="Procedures" opacity={0.85} barSize={24}/>
+                          </RechartsBarChart>
+                        </RechartsResponsiveContainer>
+                      </div>
                     </div>
-                    <div style={{overflowX:"auto"}}>
-                      <table style={{width:"100%",borderCollapse:"collapse"}}>
-                        <thead>
-                          <tr style={{background:"#f8fafc"}}>
-                            {["Patient","Procedure","Type","Amount","Status","Performed By","Date"].map(h=>(
-                              <th key={h} style={{textAlign:"left",fontSize:10,fontWeight:600,color:"#94a3b8",padding:"10px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(reportData.recentRecords||[]).map((r:any,i:number)=>{
-                            const stClr = r.status==="COMPLETED"?"#10b981":r.status==="PENDING"?"#f59e0b":"#ef4444";
-                            return (
-                              <tr key={i} style={{borderBottom:"1px solid #f8fafc"}} onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                                <td style={{padding:"10px 14px",fontSize:12,fontWeight:600,color:"#1e293b"}}>{r.patientName}</td>
-                                <td style={{padding:"10px 14px",fontSize:12,color:"#334155"}}>{r.procedureName}</td>
-                                <td style={{padding:"10px 14px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:100,fontWeight:700,background:(TYPE_COLORS[r.procedureType]||"#94a3b8")+"18",color:TYPE_COLORS[r.procedureType]||"#94a3b8"}}>{r.procedureType}</span></td>
-                                <td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:"#0A6B70"}}>₹{(r.amount||0).toLocaleString("en-IN")}</td>
-                                <td style={{padding:"10px 14px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:100,fontWeight:700,background:stClr+"18",color:stClr}}>{r.status}</span></td>
-                                <td style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>{r.performedBy}</td>
-                                <td style={{padding:"10px 14px",fontSize:11,color:"#64748b",whiteSpace:"nowrap"}}>{r.performedAt ? new Date(r.performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—"}</td>
-                              </tr>
-                            );
-                          })}
-                          {(reportData.recentRecords||[]).length===0 && <tr><td colSpan={7} style={{padding:30,textAlign:"center",color:"#94a3b8",fontSize:11}}>No records yet</td></tr>}
-                        </tbody>
-                      </table>
+
+                    {/* Patient Demographics Pie */}
+                    <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:14}}>Patient Demographics</div>
+                      <div style={{width:"100%",height:160}}>
+                        <RechartsResponsiveContainer width="100%" height="100%">
+                          <RechartsPieChart>
+                            <RechartsPie data={reportData.genderDistribution||[]} dataKey="count" nameKey="gender" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3} strokeWidth={0}>
+                              {(reportData.genderDistribution||[]).map((_:any,i:number)=>(
+                                <RechartsCell key={i} fill={GENDER_COLORS[(reportData.genderDistribution||[])[i]?.gender]||CHART_COLORS[i%CHART_COLORS.length]}/>
+                              ))}
+                            </RechartsPie>
+                            <RechartsTooltip contentStyle={{borderRadius:8,border:"1px solid #e2e8f0",fontSize:10}}/>
+                          </RechartsPieChart>
+                        </RechartsResponsiveContainer>
+                      </div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:6,justifyContent:"center"}}>
+                        {(reportData.genderDistribution||[]).map((g:any,i:number)=>(
+                          <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:600,color:"#64748b"}}>
+                            <span style={{width:8,height:8,borderRadius:2,background:GENDER_COLORS[g.gender]||CHART_COLORS[i%CHART_COLORS.length],flexShrink:0}}/>
+                            {g.gender} ({g.count})
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Recent Records Table — searchable + sortable */}
+                  {(()=>{
+                    const allRecent = reportData.recentRecords||[];
+                    const filtered = allRecent.filter((r:any)=>{
+                      if(!recentSearch) return true;
+                      const q = recentSearch.toLowerCase();
+                      return (r.patientName||"").toLowerCase().includes(q)
+                        || (r.patientId||"").toLowerCase().includes(q)
+                        || (r.procedureName||"").toLowerCase().includes(q)
+                        || (r.procedureType||"").toLowerCase().includes(q)
+                        || (r.performedBy||"").toLowerCase().includes(q);
+                    });
+                    const sorted = [...filtered].sort((a:any,b:any)=>{
+                      const d = recentSortDir==="asc"?1:-1;
+                      if(recentSortField==="patient") return d*((a.patientName||"").localeCompare(b.patientName||""));
+                      if(recentSortField==="patientId") return d*((a.patientId||"").localeCompare(b.patientId||""));
+                      if(recentSortField==="procedure") return d*((a.procedureName||"").localeCompare(b.procedureName||""));
+                      if(recentSortField==="type") return d*((a.procedureType||"").localeCompare(b.procedureType||""));
+                      if(recentSortField==="amount") return d*((a.amount||0)-(b.amount||0));
+                      if(recentSortField==="performedBy") return d*((a.performedBy||"").localeCompare(b.performedBy||""));
+                      if(recentSortField==="performedAt") return d*(new Date(a.performedAt||0).getTime()-new Date(b.performedAt||0).getTime());
+                      return 0;
+                    });
+                    const STATUS_CLR: Record<string,string> = {COMPLETED:"#10b981",PENDING:"#f59e0b",CANCELLED:"#ef4444",IN_PROGRESS:"#6366f1"};
+                    return (
+                      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+                        <div style={{padding:"16px 18px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{fontSize:13,fontWeight:700,color:"#1e293b",display:"flex",alignItems:"center",gap:8}}><Clock size={15} color="#f59e0b"/>Recent Procedure Records</div>
+                          <button onClick={()=>setTab("records")} style={{fontSize:11,fontWeight:600,color:meta.accent,background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>View All <ArrowRight size={12}/></button>
+                        </div>
+                        {/* Search toolbar */}
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 18px",borderBottom:"1px solid #f1f5f9",flexWrap:"wrap"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10,padding:"6px 12px",flex:1,minWidth:160}}>
+                            <input style={{background:"none",border:"none",outline:"none",fontSize:11,color:"#334155",width:"100%",fontFamily:"inherit"}} placeholder="Search patient, procedure, type..." value={recentSearch} onChange={e=>setRecentSearch(e.target.value)}/>
+                            {recentSearch && <button onClick={()=>setRecentSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><X size={11} color="#94a3b8"/></button>}
+                          </div>
+                          <div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{sorted.length} records</div>
+                        </div>
+                        <div style={{overflowX:"auto"}}>
+                          <table style={{width:"100%",borderCollapse:"collapse"}}>
+                            <thead>
+                              <tr style={{background:"#f8fafc"}}>
+                                {[
+                                  {k:"patient",l:"Patient"},
+                                  {k:"patientId",l:"Patient ID"},
+                                  {k:"procedure",l:"Procedure"},
+                                  {k:"type",l:"Type"},
+                                  {k:"amount",l:"Amount"},
+                                  {k:"performedBy",l:"Performed By"},
+                                  {k:"performedAt",l:"Date"},
+                                ].map(c=>(
+                                  <th key={c.k} onClick={()=>handleRecentSort(c.k)} style={{textAlign:"left",fontSize:10,fontWeight:600,color:"#94a3b8",padding:"10px 14px",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap",cursor:"pointer",userSelect:"none"}}>
+                                    <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{c.l} {sortIcon(c.k,recentSortField,recentSortDir)}</span>
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sorted.map((r:any,i:number)=>{
+                                const stClr = STATUS_CLR[r.status]||"#94a3b8";
+                                return (
+                                  <tr key={i} style={{borderBottom:"1px solid #f8fafc"}} onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                                    <td style={{padding:"10px 14px",fontSize:12,fontWeight:600,color:"#1e293b"}}>{r.patientName}</td>
+                                    <td style={{padding:"10px 14px"}}><span style={{fontFamily:"monospace",fontWeight:700,color:"#0369a1",background:"#f0f9ff",padding:"3px 8px",borderRadius:6,fontSize:10}}>{r.patientId||"—"}</span></td>
+                                    <td style={{padding:"10px 14px",fontSize:12,color:"#334155"}}>{r.procedureName}</td>
+                                    <td style={{padding:"10px 14px"}}><span style={{fontSize:10,padding:"2px 8px",borderRadius:6,fontWeight:700,background:(TYPE_COLORS[r.procedureType]||"#94a3b8")+"18",color:TYPE_COLORS[r.procedureType]||"#94a3b8"}}>{r.procedureType}</span></td>
+                                    <td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:"#059669"}}>₹{(r.amount||0).toLocaleString("en-IN")}</td>
+                                    <td style={{padding:"10px 14px",fontSize:12,color:"#64748b"}}>{r.performedBy}</td>
+                                    <td style={{padding:"10px 14px",fontSize:11,color:"#64748b",whiteSpace:"nowrap"}}>{r.performedAt?new Date(r.performedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):"—"}</td>
+                                  </tr>
+                                );
+                              })}
+                              {sorted.length===0 && <tr><td colSpan={7} style={{padding:30,textAlign:"center",color:"#94a3b8",fontSize:11}}>{recentSearch?"No matching records":"No records yet"}</td></tr>}
+                            </tbody>
+                          </table>
+                        </div>
+                        {sorted.length>0 && (
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderTop:"1px solid #f1f5f9"}}>
+                            <div style={{fontSize:11,color:"#94a3b8"}}>Showing {sorted.length} of {allRecent.length}</div>
+                            <div style={{fontSize:10,color:"#94a3b8"}}>Sorted by {recentSortField} · {recentSortDir==="desc"?"Newest":"Oldest"}</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </>);
               })()}
-            </>)}
+            </div>)}
 
             {/* ═══════════════════ PROCEDURES CRUD ═══════════════════ */}
             {tab==="procedures" && (<>
@@ -2255,11 +3283,37 @@ function SubDeptDashboardContent() {
                     </div>
                   </>)}
                 </div>
+                <button onClick={handleAiAutoAdd} disabled={aiAdding}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"9px 16px",borderRadius:10,border:`1px solid ${meta.borderColor}`,background:meta.lightBg,color:meta.accent,fontSize:12,fontWeight:700,cursor:aiAdding?"not-allowed":"pointer",opacity:aiAdding?.7:1,transition:"all .15s"}}>
+                  {aiAdding
+                    ? <Loader2 size={14} style={{animation:"spin .7s linear infinite"}}/>
+                    : <Wand2 size={14}/>}
+                  AI Auto-Add
+                </button>
                 <button onClick={openAddProc}
                   style={{display:"flex",alignItems:"center",gap:8,padding:"9px 20px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
                   <Plus size={15}/>Add Procedure
                 </button>
               </div>
+
+              {/* AI Auto-Add feedback banner */}
+              {aiMsg && (
+                <div style={{
+                  display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderRadius:10,marginBottom:14,fontSize:12,fontWeight:600,
+                  background: aiMsg.type === "success" ? "#f0fdf4" : aiMsg.type === "info" ? meta.lightBg : "#fff5f5",
+                  border: `1px solid ${aiMsg.type === "success" ? "#bbf7d0" : aiMsg.type === "info" ? meta.borderColor : "#fecaca"}`,
+                  color: aiMsg.type === "success" ? "#16a34a" : aiMsg.type === "info" ? meta.accent : "#ef4444",
+                }}>
+                  {aiMsg.type === "success" && <CheckCircle size={14}/>}
+                  {aiMsg.type === "info" && <Sparkles size={14}/>}
+                  {aiMsg.type === "error" && <AlertCircle size={14}/>}
+                  {aiMsg.text}
+                  <button onClick={()=>{ if(aiMsgTimerRef.current) clearTimeout(aiMsgTimerRef.current); setAiMsg(null); }}
+                    style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",display:"flex",padding:0}}>
+                    <X size={12} color="currentColor"/>
+                  </button>
+                </div>
+              )}
 
               {/* Procedures Table */}
               {filteredProcs.length===0 ? (
@@ -2418,14 +3472,78 @@ function SubDeptDashboardContent() {
 
               {/* Record Procedure Modal */}
               {showRecordForm && (
-                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}}>
+                <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>{ if(!recordSuccessData) closeRecordModal(); }}>
                   <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:580,border:"1px solid #e2e8f0",fontFamily:"'Inter',sans-serif",animation:"fadeUp .25s ease",maxHeight:"90vh",overflowY:"auto"}}>
+
+                    {/* ── SUCCESS VIEW ── */}
+                    {recordSuccessData ? (<>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <div style={{width:36,height:36,borderRadius:10,background:"#f0fdf4",border:"1px solid #bbf7d0",display:"flex",alignItems:"center",justifyContent:"center"}}><CheckCircle size={18} color="#16a34a"/></div>
+                          <div>
+                            <div style={{fontSize:15,fontWeight:800,color:"#166534"}}>Procedure Recorded!</div>
+                            <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>Record saved successfully</div>
+                          </div>
+                        </div>
+                        <button onClick={closeRecordModal} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
+                      </div>
+
+                      {/* Patient + Procedure summary */}
+                      <div style={{background:"#f8fafc",borderRadius:12,padding:"14px 16px",marginBottom:16,border:"1px solid #e2e8f0"}}>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                          <div><div style={{fontSize:10,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>Patient</div><div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginTop:2}}>{recordSuccessData.patient?.name}</div><div style={{fontSize:11,color:"#64748b"}}>{recordSuccessData.patient?.patientId}</div></div>
+                          <div><div style={{fontSize:10,color:"#94a3b8",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>Procedure</div><div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginTop:2}}>{recordSuccessData.procedure?.name}</div><div style={{fontSize:11,color:"#64748b"}}>₹{Number(recordSuccessData.amount||0).toLocaleString("en-IN",{minimumFractionDigits:2})}</div></div>
+                        </div>
+                      </div>
+
+                      {/* Bill section */}
+                      {recordSuccessBill ? (<>
+                        <div style={{fontSize:12,fontWeight:700,color:"#334155",marginBottom:10,display:"flex",alignItems:"center",gap:6}}><Receipt size={14} color={meta.accent}/>Generated Bill</div>
+                        <div style={{border:`1px solid ${meta.borderColor}`,borderRadius:12,overflow:"hidden",marginBottom:16}}>
+                          {/* Bill header */}
+                          <div style={{background:meta.lightBg,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${meta.borderColor}`}}>
+                            <div style={{fontSize:12,fontWeight:700,color:meta.accent}}>{recordSuccessBill.billNo || "—"}</div>
+                            <span style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:6,background: recordSuccessBill.status==="PAID" ? "#f0fdf4" : "#fef3c7",color: recordSuccessBill.status==="PAID" ? "#16a34a" : "#b45309",border:`1px solid ${recordSuccessBill.status==="PAID" ? "#bbf7d0" : "#fde68a"}`}}>{recordSuccessBill.status || "PENDING"}</span>
+                          </div>
+                          {/* Procedure items only */}
+                          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                            <thead><tr style={{background:"#f8fafc"}}><th style={{padding:"8px 14px",textAlign:"left",fontWeight:700,color:"#64748b",fontSize:10,textTransform:"uppercase"}}>Procedure</th><th style={{padding:"8px 14px",textAlign:"right",fontWeight:700,color:"#64748b",fontSize:10,textTransform:"uppercase"}}>Amount</th></tr></thead>
+                            <tbody>
+                              {(recordSuccessBill.billItems||[]).filter((bi:any)=>bi.type==="PROCEDURE").map((bi:any,i:number)=>(
+                                <tr key={bi.id||i} style={{borderTop:"1px solid #f1f5f9"}}>
+                                  <td style={{padding:"10px 14px",color:"#1e293b",fontWeight:600}}>{bi.name}</td>
+                                  <td style={{padding:"10px 14px",textAlign:"right",fontWeight:700,color:meta.accent}}>₹{Number(bi.amount||0).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr style={{borderTop:`2px solid ${meta.borderColor}`,background:meta.lightBg}}>
+                                <td style={{padding:"10px 14px",fontWeight:800,color:"#1e293b",fontSize:13}}>Total Procedure Charges</td>
+                                <td style={{padding:"10px 14px",textAlign:"right",fontWeight:800,color:meta.accent,fontSize:14}}>₹{(recordSuccessBill.billItems||[]).filter((bi:any)=>bi.type==="PROCEDURE").reduce((s:number,bi:any)=>s+Number(bi.amount||0),0).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                        <div style={{display:"flex",gap:10}}>
+                          <button onClick={()=>{ const billId = recordSuccessBill?.id; closeRecordModal(); if(billId){ setAutoCollectBillId(billId); setTab("billing"); } }} style={{flex:1,padding:"11px 18px",borderRadius:10,border:"none",background:meta.gradient,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><CreditCard size={13}/>Collect &amp; Generate Bill</button>
+                          <button onClick={()=>{closeRecordModal();setShowRecordForm(true);}} style={{padding:"11px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><Plus size={13}/>New Record</button>
+                          <button onClick={closeRecordModal} style={{padding:"11px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>Close</button>
+                        </div>
+                      </>) : (
+                        <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:12,color:"#92400e"}}>
+                          <b>Note:</b> Bill could not be generated automatically. This record may not be linked to an appointment. You can view it in the Billing section once transferred.
+                        </div>
+                      )}
+                      {!recordSuccessBill && <button onClick={closeRecordModal} style={{width:"100%",padding:"11px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>Close</button>}
+                    </>) : (<>
+
+                    {/* ── FORM VIEW ── */}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
                       <div>
                         <div style={{fontSize:17,fontWeight:800,color:"#1e293b"}}>Record Procedure Performed</div>
                         <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Log a procedure done on a patient</div>
                       </div>
-                      <button onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
+                      <button onClick={closeRecordModal} style={{width:32,height:32,borderRadius:9,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}><X size={14} color="#94a3b8"/></button>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                       {/* Patient search */}
@@ -2488,6 +3606,7 @@ function SubDeptDashboardContent() {
                       </button>
                       <button onClick={()=>{setShowRecordForm(false);setRecordForm(BLANK_REC);}} style={{padding:"10px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><Ban size={13}/>Cancel</button>
                     </div>
+                    </>)}
                   </div>
                 </div>
               )}
@@ -2703,161 +3822,21 @@ function SubDeptDashboardContent() {
             {/* ═══════════════════ APPOINTMENTS (Reception) ═══════════════════ */}
             {tab==="appointments" && <AppointmentPanelLazy />}
 
-            {/* ═══════════════════ BILLING (Reception) ═══════════════════ */}
-            {tab==="billing" && <BillingQueueLazy />}
+            {/* ═══════════════════ BILLING ═══════════════════ */}
+            {tab==="billing" && (
+              ["PROCEDURE","CLINICAL_PROCEDURE","OT","SURGERY","ACCOUNTS","OTHER","CUSTOM"].includes(deptType)
+                ? <BillingQueueLazy scope="procedure" subDeptId={profile?.id} deptName={deptName} defaultCollectBillId={autoCollectBillId} onDefaultCollectConsumed={()=>setAutoCollectBillId(undefined)} />
+                : <BillingQueueLazy deptName={deptName} defaultCollectBillId={autoCollectBillId} onDefaultCollectConsumed={()=>setAutoCollectBillId(undefined)} />
+            )}
 
             {/* ═══════════════════ PATIENTS (Reception) ═══════════════════ */}
             {tab==="patients" && <PatientsManagementPanelLazy/>}
 
             {/* ═══════════════════ DOCTORS (Reception) ═══════════════════ */}
-            {tab==="doctors" && (<>
-              <div className="sd2-card">
-                <div className="sd2-card-hd">
-                  <span className="sd2-card-title"><Stethoscope size={15} color={meta.accent}/>Doctors Management</span>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div className="sd2-search" style={{width:220}}>
-                      <input placeholder="Search doctor…" value={docSearch} onChange={e=>{setDocSearch(e.target.value);loadDoctors(e.target.value);}}/>
-                    </div>
-                    <button onClick={()=>loadDoctors(docSearch)} style={{width:34,height:34,borderRadius:8,background:"#f8fafc",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-                      <RefreshCw size={13} color={docLoading?"#94a3b8":meta.accent} style={docLoading?{animation:"spin .7s linear infinite"}:{}}/>
-                    </button>
-                  </div>
-                </div>
-                {docLoading ? (
-                  <div style={{padding:40,textAlign:"center"}}><Loader2 size={22} color={meta.accent} style={{animation:"spin .7s linear infinite"}}/></div>
-                ) : docList.length===0 ? (
-                  <div style={{padding:56,textAlign:"center",color:"#94a3b8",fontSize:12}}>No doctors found</div>
-                ) : (
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14,padding:18}}>
-                    {docList.map((d:any)=>(
-                      <div key={d.id} style={{background:"#fff",border:`1.5px solid ${meta.borderColor}`,borderRadius:14,padding:18,transition:"box-shadow .2s",cursor:"default"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-                          <div style={{width:48,height:48,borderRadius:13,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:15,color:"#fff",flexShrink:0}}>{(d.name||"D")[0].toUpperCase()}</div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:700,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.name}</div>
-                            <div style={{fontSize:11,color:"#64748b"}}>{d.specialization||d.qualification||"Doctor"}</div>
-                          </div>
-                          <span className="sd2-badge" style={{background:d.isActive!==false?"#f0fdf4":"#fef2f2",color:d.isActive!==false?"#16a34a":"#ef4444",border:`1px solid ${d.isActive!==false?"#bbf7d0":"#fecaca"}`}}>{d.isActive!==false?"Active":"Inactive"}</span>
-                        </div>
-                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                          {d.department?.name && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"#475569"}}><Building2 size={12} color="#94a3b8"/>{d.department.name}</div>}
-                          {d.phone && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"#475569"}}><Phone size={12} color="#94a3b8"/>{d.phone}</div>}
-                          {d.email && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"#475569"}}><Mail size={12} color="#94a3b8"/>{d.email}</div>}
-                          {d.consultationFee!=null && <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:700,color:"#10b981"}}><IndianRupee size={12}/>₹{d.consultationFee} / consultation</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>)}
+            {tab==="doctors" && <DoctorPanelLazy />}
 
             {/* ═══════════════════ INVENTORY (Department Stock) ═══════════════════ */}
-            {tab==="inventory" && (
-              <div>
-                {deptStockLoading ? (
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:300,gap:8,color:"#94a3b8",fontSize:12}}><Loader2 size={18} className="spin"/> Loading department stock...</div>
-                ) : !deptStock?.location ? (
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:360}}>
-                    <div style={{textAlign:"center",maxWidth:400}}>
-                      <div style={{width:72,height:72,borderRadius:20,background:meta.lightBg,border:`2px solid ${meta.borderColor}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:meta.accent}}><Package size={28}/></div>
-                      <div style={{fontSize:17,fontWeight:800,color:"#1e293b",marginBottom:8}}>No Stock Location Linked</div>
-                      <div style={{fontSize:12,color:"#64748b",lineHeight:1.6,marginBottom:20}}>Ask your Hospital Admin to create a Stock Location linked to this department, then transfer stock from the Central Store.</div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Location Banner + Stats */}
-                    <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,padding:"14px 18px",background:`linear-gradient(135deg,${meta.accent}11,${meta.accent}06)`,borderRadius:14,border:`1px solid ${meta.accent}22`}}>
-                      <div style={{width:42,height:42,borderRadius:12,background:meta.accent,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",flexShrink:0}}><Package size={20}/></div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:800,color:"#1e293b"}}>{deptStock.location.name}</div>
-                        <div style={{fontSize:10,color:"#64748b"}}>Stock received from Central Store · {deptStock.location.subDepartment?.name || "Department"}</div>
-                      </div>
-                      <div style={{display:"flex",gap:16,flexShrink:0}}>
-                        {[
-                          {label:"Items",val:deptStock.stats.totalItems,color:meta.accent},
-                          {label:"Total Qty",val:deptStock.stats.totalQty,color:"#10b981"},
-                          {label:"Value",val:`₹${(deptStock.stats.totalValue||0).toLocaleString("en-IN")}`,color:"#f59e0b"},
-                          {label:"Pending",val:deptStock.stats.pendingTransfers,color:"#3b82f6"},
-                        ].map((s,i)=>(
-                          <div key={i} style={{textAlign:"center"}}>
-                            <div style={{fontSize:9,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".06em"}}>{s.label}</div>
-                            <div style={{fontSize:15,fontWeight:800,color:s.color,marginTop:2}}>{s.val}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Stock Items Table */}
-                    {deptStock.items.length === 0 ? (
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:200,flexDirection:"column",gap:8,color:"#94a3b8"}}>
-                        <Package size={28} color="#cbd5e1"/>
-                        <div style={{fontSize:12}}>No stock received yet</div>
-                        <div style={{fontSize:10,color:"#b0b8c4"}}>Stock will appear here after the admin approves transfers to this location</div>
-                      </div>
-                    ) : (
-                      <div style={{overflowX:"auto",borderRadius:12,border:"1px solid #e2e8f0"}}>
-                        <table style={{width:"100%",borderCollapse:"collapse",minWidth:650}}>
-                          <thead>
-                            <tr style={{background:"#f8fafc"}}>
-                              {["Item","Category","Received","Returned","Available","MRP","Value","Last Transfer"].map(h=>(
-                                <th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:10,fontWeight:600,color:"#94a3b8",borderBottom:"2px solid #f1f5f9",whiteSpace:"nowrap"}}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {deptStock.items.map((item:any)=>{
-                              const isLow = item.availableQty <= item.minStock;
-                              return (
-                                <tr key={item.itemId} style={{borderBottom:"1px solid #f8fafc"}}>
-                                  <td style={{padding:"12px",fontSize:11}}>
-                                    <div style={{fontWeight:700,color:"#1e293b"}}>{item.name}</div>
-                                    {item.genericName && <div style={{fontSize:10,color:"#94a3b8"}}>{item.genericName}</div>}
-                                  </td>
-                                  <td style={{padding:"12px"}}><span style={{padding:"2px 8px",borderRadius:100,fontSize:9,fontWeight:700,background:"#eff6ff",color:"#3b82f6"}}>{item.category}</span></td>
-                                  <td style={{padding:"12px",fontWeight:600,color:"#64748b",fontSize:11}}>{item.receivedQty} {item.unit}</td>
-                                  <td style={{padding:"12px",color:item.returnedQty > 0 ? "#f59e0b" : "#cbd5e1",fontSize:11}}>{item.returnedQty}</td>
-                                  <td style={{padding:"12px",fontWeight:700,color:isLow?"#ef4444":"#10b981",fontSize:12}}>{item.availableQty} {item.unit}</td>
-                                  <td style={{padding:"12px",fontWeight:600,fontSize:11}}>₹{item.mrp}</td>
-                                  <td style={{padding:"12px",fontWeight:600,color:meta.accent,fontSize:11}}>₹{(item.totalValue||0).toLocaleString("en-IN")}</td>
-                                  <td style={{padding:"12px",fontSize:10,color:"#94a3b8"}}>{item.lastTransferDate ? new Date(item.lastTransferDate).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) : "—"}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                    {/* Recent Transfers */}
-                    {deptStock.transfers?.length > 0 && (
-                      <div style={{marginTop:20}}>
-                        <div style={{fontSize:11,fontWeight:700,color:"#1e293b",marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
-                          <ArrowRight size={14} color={meta.accent}/> Recent Transfers Received
-                        </div>
-                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                          {deptStock.transfers.slice(0,5).map((t:any)=>(
-                            <div key={t.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0"}}>
-                              <div style={{width:32,height:32,borderRadius:8,background:`${meta.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",color:meta.accent,flexShrink:0}}>
-                                <ArrowRight size={14}/>
-                              </div>
-                              <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:11,fontWeight:700,color:"#1e293b"}}>{t.transferNo}</div>
-                                <div style={{fontSize:10,color:"#94a3b8"}}>From: {t.fromLocation?.name} · {t.itemCount} items · {t.totalQty} units</div>
-                              </div>
-                              <div style={{fontSize:10,color:"#94a3b8",flexShrink:0}}>
-                                {t.transferredAt ? new Date(t.transferredAt).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"2-digit"}) : "—"}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+            {tab==="inventory" && <AdminInventoryPanelLazy />}
 
             {/* ═══════════════════ REVENUE / EXPENSE ═══════════════════ */}
             {tab === "revenue" && (
@@ -3036,108 +4015,8 @@ function SubDeptDashboardContent() {
               );
             })()}
 
-            {/* ═══════════════════ DEPARTMENT INFO ═══════════════════ */}
-            {tab==="dept" && (
-              <div style={{animation:"fadeUp .25s ease"}}>
-                {/* Dept hero banner */}
-                <div style={{background:meta.gradient,borderRadius:16,padding:"24px 28px",marginBottom:18,display:"flex",alignItems:"center",gap:20,color:"#fff",position:"relative",overflow:"hidden"}}>
-                  <div style={{width:64,height:64,borderRadius:16,background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <DeptIcon size={30} color="#fff"/>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:20,fontWeight:800,letterSpacing:"-.01em"}}>{deptName}</div>
-                    <div style={{fontSize:12,opacity:.85,marginTop:2}}>{profile?.type?.replace(/_/g," ")} Department{profile?.code ? ` · ${profile.code}` : ""}</div>
-                    {profile?.description && <div style={{fontSize:11,opacity:.75,marginTop:6,lineHeight:1.5}}>{profile.description}</div>}
-                  </div>
-                  <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:100,background:"rgba(255,255,255,.2)",fontSize:11,fontWeight:700}}>
-                      {profile?.isActive ? <><CheckCircle size={13}/> Active</> : <><X size={13}/> Inactive</>}
-                    </div>
-                  </div>
-                </div>
+            {/* ═══════════════════ DEPARTMENT INFO (Removed) ═══════════════════ */}
 
-                {/* 3-col info grid */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
-                  {/* HOD Card */}
-                  <div className="sd2-card" style={{gridColumn:"1/2"}}>
-                    <div className="sd2-card-hd"><span className="sd2-card-title"><User size={14} color={meta.accent}/>Head of Department</span></div>
-                    <div style={{padding:"16px 20px"}}>
-                      {profile?.hodName ? (
-                        <>
-                          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,padding:"12px 14px",background:meta.lightBg,borderRadius:10,border:`1px solid ${meta.borderColor}`}}>
-                            <div style={{width:44,height:44,borderRadius:11,background:meta.gradient,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:15,color:"#fff",flexShrink:0}}>{initials(profile.hodName)}</div>
-                            <div>
-                              <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{profile.hodName}</div>
-                              <div style={{fontSize:10,color:"#94a3b8"}}>Head of Department</div>
-                            </div>
-                          </div>
-                          {profile.hodEmail && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #f1f5f9",fontSize:11,color:"#475569"}}><Mail size={12} color={meta.accent}/>{profile.hodEmail}</div>}
-                          {profile.hodPhone && <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",fontSize:11,color:"#475569"}}><Phone size={12} color={meta.accent}/>{profile.hodPhone}</div>}
-                        </>
-                      ) : <div style={{padding:"24px",textAlign:"center",color:"#94a3b8",fontSize:11}}>No HOD assigned yet</div>}
-                    </div>
-                  </div>
-
-                  {/* Dept Details Card */}
-                  <div className="sd2-card" style={{gridColumn:"2/3"}}>
-                    <div className="sd2-card-hd"><span className="sd2-card-title"><Building2 size={14} color={meta.accent}/>Department Details</span></div>
-                    <div style={{padding:"16px 20px"}}>
-                      {[
-                        ["Name",        deptName],
-                        ["Type",        profile?.type?.replace(/_/g," ") || "—"],
-                        ["Short Code",  profile?.code || "—"],
-                        ["Parent Dept", profile?.department?.name || "Independent"],
-                        ["Login Email", profile?.loginEmail || user?.email || "—"],
-                        ["Status",      profile?.isActive ? "Active" : "Inactive"],
-                      ].map(([k,v])=>(
-                        <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #f8fafc"}}>
-                          <span style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>{k}</span>
-                          <span style={{fontSize:11,fontWeight:600,color:k==="Status"?(profile?.isActive?"#16a34a":"#ef4444"):"#1e293b",maxWidth:160,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v as string}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Services / Procedures Card */}
-                  <div className="sd2-card" style={{gridColumn:"3/4"}}>
-                    <div className="sd2-card-hd"><span className="sd2-card-title"><ClipboardList size={14} color={meta.accent}/>Services Offered</span></div>
-                    <div style={{padding:"16px 20px"}}>
-                      {displayProcs.length === 0 ? (
-                        <div style={{padding:"24px",textAlign:"center",color:"#94a3b8",fontSize:11}}>No procedures configured yet</div>
-                      ) : (
-                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                          {displayProcs.slice(0,8).map((p:any,i:number)=>(
-                            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #f8fafc"}}>
-                              <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-                                <span style={{width:6,height:6,borderRadius:"50%",background:p.isActive?meta.accent:"#cbd5e1",flexShrink:0,display:"inline-block"}}/>
-                                <span style={{fontSize:11,fontWeight:500,color:p.isActive?"#1e293b":"#94a3b8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
-                              </div>
-                              {p.fee>0 && <span style={{fontSize:10,fontWeight:700,color:meta.accent,flexShrink:0,marginLeft:8}}>₹{p.fee}</span>}
-                            </div>
-                          ))}
-                          {displayProcs.length > 8 && <div style={{fontSize:10,color:"#94a3b8",marginTop:4,textAlign:"center"}}>+{displayProcs.length-8} more services</div>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats bar */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
-                  {[
-                    {label:"Active Services",val:activeProcs.length,color:meta.accent,bg:meta.lightBg,border:meta.borderColor},
-                    {label:"Today's Queue",val:queue.length,color:"#2563eb",bg:"#eff6ff",border:"#bfdbfe"},
-                    {label:"Total Records",val:recordsMeta.total||0,color:"#16a34a",bg:"#f0fdf4",border:"#bbf7d0"},
-                    {label:"Today's Revenue",val:`₹${((records.filter((r:any)=>new Date(r.performedAt).toDateString()===new Date().toDateString()).reduce((s:number,r:any)=>s+(r.amount||0),0))).toLocaleString("en-IN")}`,color:"#7c3aed",bg:"#faf5ff",border:"#e9d5ff"},
-                  ].map((s,i)=>(
-                    <div key={i} style={{background:s.bg,border:`1px solid ${s.border}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}>
-                      <div style={{fontSize:19,fontWeight:800,color:s.color}}>{s.val}</div>
-                      <div style={{fontSize:10,fontWeight:600,color:s.color,opacity:.8,marginTop:2,textTransform:"uppercase",letterSpacing:".05em"}}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             </>)}
           </div>
@@ -3149,6 +4028,7 @@ function SubDeptDashboardContent() {
       {editingRecord && <EditRecordModal record={editingRecord} onClose={() => setEditingRecord(null)} onSave={handleEditRecord} meta={meta} />}
       {transferTarget && <TransferPatientModal record={transferTarget} subDepts={subDepts} onClose={() => setTransferTarget(null)} onTransfer={handleTransferPatient} meta={meta} />}
       {viewPrescription && <ViewPrescriptionModal appointment={viewPrescription} onClose={() => setViewPrescription(null)} meta={meta} />}
+      {showQuickBook && <BookingWizard onSuccess={() => { setShowQuickBook(false); loadReports(); }} onClose={() => setShowQuickBook(false)} />}
 
       {/* ── Stock Received Popup ── */}
       {stockNotifs.length > 0 && !stockNotifDismissed && (

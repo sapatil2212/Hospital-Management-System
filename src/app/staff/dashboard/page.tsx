@@ -608,7 +608,7 @@ export default function StaffDashboard() {
                         }}>{st.label}</button>
                     ))}
                   </div>
-                  {billingSubTab === "queue" ? <BillingQueue /> : <BillingModule />}
+                  {billingSubTab === "queue" ? <BillingQueue deptName={profile?.department?.name || "Billing Counter"} /> : <BillingModule />}
                 </div>
               )}
 

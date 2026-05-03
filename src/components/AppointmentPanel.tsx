@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, Plus, X, Loader2, Calendar, Clock, User, Stethoscope,
   Building2, CheckCircle, XCircle, AlertCircle, RefreshCw, Hash,
-  Phone, Mail, ChevronRight, Eye, ClipboardList, CalendarCheck,
+  Phone, Mail, MessageCircle, ChevronRight, Eye, ClipboardList, CalendarCheck,
   Edit, Trash2, FileText, AlertTriangle, Download, Bell,
   ArrowLeft, Zap, Sun, Sunset, Moon, FileSpreadsheet, FileType, Activity,
 } from "lucide-react";
@@ -1664,17 +1664,19 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showNewPatient, setShowNewPatient] = useState(false);
-  const [newForm, setNewForm] = useState({ name: "", phone: "", email: "", gender: "" });
+  const [newForm, setNewForm] = useState({ name: "", phone: "", whatsapp: "", email: "", gender: "" });
   const [registerSaving, setRegisterSaving] = useState(false);
   const [registerMsg, setRegisterMsg] = useState("");
-  const [dupPatient, setDupPatient] = useState<Patient | null>(null);
+  const [dupPatient, setDupPatient] = useState<{ id: string; patientId: string; name: string; phone: string; email?: string; matchedBy?: "phone" | "email" } | null>(null);
+  const [checkingDup, setCheckingDup] = useState(false);
+  const [forceNewPatient, setForceNewPatient] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     api("/api/patients?limit=6&sortBy=createdAt&sortOrder=desc").then(d => setRecentPatients(d.data?.data || d.data || []));
     api("/api/config/departments?simple=true").then(d => {
-      const EXCLUDE = ["ADMINISTRATIVE", "SUPPORT"];
-      setDepartments((d.data || []).filter((dp: Department) => !dp.type || !EXCLUDE.includes(dp.type)));
+      const BOOKING_TYPES = ["CLINICAL", "DIAGNOSTIC"];
+      setDepartments((d.data || []).filter((dp: Department) => BOOKING_TYPES.includes(dp.type || "")));
     });
   }, []);
 
@@ -1690,6 +1692,21 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
       .then(d => { setSlots(d.data?.slots || []); setBookedSlots(d.data?.bookedSlots || []); })
       .finally(() => setLoadingSlots(false));
   }, [doctor?.id, appointmentDate]);
+
+  const checkDup = async ({ phone, email }: { phone?: string; email?: string }) => {
+    if (!phone && !email) return;
+    if (phone && phone.trim().length < 7) return;
+    setCheckingDup(true);
+    try {
+      const params = new URLSearchParams();
+      if (phone) params.set("phone", phone.trim());
+      if (email) params.set("email", email.trim());
+      const r = await fetch(`/api/public/booking/check-patient?${params}`, { credentials: "include" });
+      const d = await r.json();
+      if (d.data?.id) { setDupPatient(d.data); setForceNewPatient(false); }
+    } catch {}
+    finally { setCheckingDup(false); }
+  };
 
   const searchPatients = useCallback((val: string) => {
     if (debounce.current) clearTimeout(debounce.current);
@@ -1734,16 +1751,23 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
   };
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault(); setRegisterSaving(true); setRegisterMsg(""); setDupPatient(null);
+    e.preventDefault(); setRegisterSaving(true); setRegisterMsg("");
     if (newForm.name.trim().length < 2) { setRegisterMsg("Name required (min 2 chars)"); setRegisterSaving(false); return; }
     if (newForm.phone.trim().length < 7) { setRegisterMsg("Valid phone required"); setRegisterSaving(false); return; }
-    const payload: any = { name: newForm.name.trim(), phone: newForm.phone.trim() };
+    const payload: any = { name: newForm.name.trim(), phone: newForm.phone.trim(), forceNew: forceNewPatient };
+    if (newForm.whatsapp.trim()) payload.whatsapp = newForm.whatsapp.trim();
     if (newForm.email.trim()) payload.email = newForm.email.trim();
     if (newForm.gender) payload.gender = newForm.gender;
     const d = await api("/api/patients", "POST", payload);
     if (d.success) {
-      if (d.data.isNew) { selectPatient(d.data.patient); setShowNewPatient(false); setNewForm({ name: "", phone: "", email: "", gender: "" }); }
-      else setDupPatient(d.data.patient);
+      if (d.data.isNew || forceNewPatient) {
+        selectPatient(d.data.patient);
+        setShowNewPatient(false);
+        setNewForm({ name: "", phone: "", whatsapp: "", email: "", gender: "" });
+        setForceNewPatient(false);
+      } else {
+        setDupPatient({ ...d.data.patient, matchedBy: "phone" });
+      }
     } else setRegisterMsg(d.message || "Error");
     setRegisterSaving(false);
   };
@@ -1768,7 +1792,8 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
     setAppointmentDate(""); setTimeSlot(""); setType("OPD");
     setNotes(""); setConsultationFee(""); setMsg("");
     setShowNewPatient(false); setSearchQ(""); setSearchResults([]);
-    setDupPatient(null); setRegisterMsg("");
+    setDupPatient(null); setRegisterMsg(""); setForceNewPatient(false);
+    setNewForm({ name: "", phone: "", whatsapp: "", email: "", gender: "" });
   };
 
   const grouped = groupSlots(slots);
@@ -1902,19 +1927,33 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
                   <button onClick={() => { setShowNewPatient(false); setDupPatient(null); setRegisterMsg(""); }}
                     style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={13} /></button>
                 </div>
-                {dupPatient && (
-                  <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10, padding: 14, marginBottom: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>Phone already registered</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 9, padding: "10px 14px", border: "1px solid #fde68a", marginBottom: 10 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12 }}>{dupPatient.name.charAt(0)}</div>
+                {dupPatient && !forceNewPatient && (
+                  <div style={{ background: "#fffbeb", border: "1.5px solid #f59e0b", borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>
+                      {dupPatient.matchedBy === "email" ? "Email already registered" : "Mobile already registered"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#78350f", marginBottom: 10 }}>
+                      This {dupPatient.matchedBy === "email" ? "email" : "mobile number"} is linked to{" "}
+                      <strong>{dupPatient.name}</strong> ({dupPatient.patientId}).
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff", borderRadius: 9, padding: "9px 12px", border: "1px solid #fde68a", marginBottom: 10 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12 }}>{dupPatient.name.charAt(0)}</div>
                       <div><div style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{dupPatient.name}</div><div style={{ fontSize: 11, color: "#94a3b8" }}>{dupPatient.patientId} · {dupPatient.phone}</div></div>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button type="button" onClick={() => { selectPatient(dupPatient); setShowNewPatient(false); setDupPatient(null); }}
-                        style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#f59e0b", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Book for {dupPatient.name}</button>
-                      <button type="button" onClick={() => { setDupPatient(null); setNewForm(p => ({ ...p, phone: "" })); }}
-                        style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Change Phone</button>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button type="button" onClick={() => { selectPatient(dupPatient as any); setShowNewPatient(false); setDupPatient(null); }}
+                        style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#0E898F", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Book for {dupPatient.name}</button>
+                      <button type="button" onClick={() => { setForceNewPatient(true); setDupPatient(null); }}
+                        style={{ padding: "7px 14px", borderRadius: 8, border: "1.5px solid #d97706", background: "transparent", color: "#92400e", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Register as new patient</button>
                     </div>
+                  </div>
+                )}
+                {forceNewPatient && (
+                  <div style={{ background: "#eff6ff", border: "1.5px solid #60a5fa", borderRadius: 10, padding: "9px 12px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                    <User size={13} color="#2563eb" />
+                    <span style={{ fontSize: 12, color: "#1d4ed8", fontWeight: 600 }}>Registering as a new patient profile</span>
+                    <button type="button" onClick={() => setForceNewPatient(false)}
+                      style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 11, color: "#6b7280", cursor: "pointer", textDecoration: "underline" }}>Change</button>
                   </div>
                 )}
                 <form onSubmit={handleRegister} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1925,13 +1964,26 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Phone *</label>
-                    <input required style={{ background: "#fff", border: `1.5px solid ${dupPatient ? "#fde68a" : "#e2e8f0"}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
-                      placeholder="e.g. 9876543210" value={newForm.phone} onChange={e => { setNewForm(p => ({ ...p, phone: e.target.value })); setDupPatient(null); }} />
+                    <input required style={{ background: "#fff", border: `1.5px solid ${(dupPatient && !forceNewPatient) ? "#fde68a" : "#e2e8f0"}`, borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
+                      placeholder="e.g. 9876543210" value={newForm.phone}
+                      onChange={e => { setNewForm(p => ({ ...p, phone: e.target.value })); setDupPatient(null); setForceNewPatient(false); }}
+                      onBlur={e => checkDup({ phone: e.target.value })} />
+                    {checkingDup && <span style={{ fontSize: 10, color: "#0E898F", marginTop: 2 }}>Checking...</span>}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Email</label>
                     <input type="email" style={{ background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", outline: "none" }}
-                      placeholder="Optional" value={newForm.email} onChange={e => setNewForm(p => ({ ...p, email: e.target.value }))} />
+                      placeholder="Optional" value={newForm.email}
+                      onChange={e => { setNewForm(p => ({ ...p, email: e.target.value })); setDupPatient(null); setForceNewPatient(false); }}
+                      onBlur={e => { if (!dupPatient && e.target.value.trim()) checkDup({ phone: newForm.phone, email: e.target.value }); }} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>WhatsApp <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span></label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "0 10px" }}>
+                      <MessageCircle size={13} color="#25D366" />
+                      <input type="tel" style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#1e293b", padding: "9px 0", flex: 1 }}
+                        placeholder="e.g. 9876543210" value={newForm.whatsapp} onChange={e => setNewForm(p => ({ ...p, whatsapp: e.target.value }))} />
+                    </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".05em" }}>Gender</label>
@@ -1942,8 +1994,8 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
                   </div>
                   {registerMsg && <div style={{ gridColumn: "1/-1", fontSize: 12, color: "#ef4444", fontWeight: 600, background: "#fff5f5", padding: "8px 12px", borderRadius: 8, border: "1px solid #fecaca" }}><AlertCircle size={12} style={{ display: "inline", marginRight: 5 }} />{registerMsg}</div>}
                   <div style={{ gridColumn: "1/-1", display: "flex", gap: 8, marginTop: 2 }}>
-                    <button type="submit" disabled={registerSaving || !!dupPatient}
-                      style={{ padding: "9px 20px", borderRadius: 9, border: "none", background: (registerSaving || dupPatient) ? "#e2e8f0" : "#0E898F", color: (registerSaving || dupPatient) ? "#94a3b8" : "#fff", fontSize: 13, fontWeight: 700, cursor: (registerSaving || dupPatient) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                    <button type="submit" disabled={registerSaving || (!!dupPatient && !forceNewPatient)}
+                      style={{ padding: "9px 20px", borderRadius: 9, border: "none", background: (registerSaving || (dupPatient && !forceNewPatient)) ? "#e2e8f0" : "#0E898F", color: (registerSaving || (dupPatient && !forceNewPatient)) ? "#94a3b8" : "#fff", fontSize: 13, fontWeight: 700, cursor: (registerSaving || (dupPatient && !forceNewPatient)) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                       {registerSaving && <Loader2 size={13} style={{ animation: "spin .7s linear infinite" }} />}Register & Continue
                     </button>
                   </div>
@@ -2173,14 +2225,17 @@ export function BookingWizard({ onSuccess, onClose, initialPatient }: { onSucces
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PANEL
 // ─────────────────────────────────────────────────────────────────────────────
-export default function AppointmentPanel({ onViewPatient, openTrigger }: { onViewPatient?: (id: string) => void; openTrigger?: number }) {
+export default function AppointmentPanel({ onViewPatient, openTrigger, onResetTrigger }: { onViewPatient?: (id: string) => void; openTrigger?: number; onResetTrigger?: () => void }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [successMsg, setSuccessMsg] = useState("");
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    if (openTrigger && openTrigger > 0) setShowModal(true);
-  }, [openTrigger]);
+    if (openTrigger && openTrigger > 0) {
+      setShowModal(true);
+      onResetTrigger?.();
+    }
+  }, [openTrigger, onResetTrigger]);
 
   const handleBookingSuccess = (name: string) => {
     setShowModal(false);

@@ -31,10 +31,14 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
   const key = getOpenRouterKey();
   const geminiKey = getGeminiKey();
 
-  console.log(`[Voice AI] Keys — OpenRouter: ${!!key}, Gemini: ${!!geminiKey}`);
+  if (!key && !geminiKey) {
+    console.error("[Voice AI] CRITICAL: No AI provider keys found. Please set OPENROUTER_API_KEY or GEMINI_API_KEY.");
+    throw new Error("AI provider API key is missing. Voice features are disabled.");
+  }
+
+  console.log(`[Voice AI] Keys found — OpenRouter: ${!!key}, Gemini: ${!!geminiKey}`);
 
   if (key) {
-    // Try first 3 models in parallel with a 7-second per-model timeout (fits Vercel 10s limit)
     const tryModel = async (model: string): Promise<string> => {
       const res = await fetchWithTimeout(
         OPENROUTER_URL,
@@ -58,7 +62,7 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
         },
         7000
       );
-      if (!res.ok) throw new Error(`${model} HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`${model} HTTP error ${res.status}: ${await res.text()}`);
       const data = await res.json();
       const text = data?.choices?.[0]?.message?.content || "";
       if (!text) throw new Error(`${model} returned empty content`);
@@ -67,18 +71,21 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
     };
 
     try {
-      // Promise.any resolves with the first model that succeeds
       const result = await Promise.any(VOICE_MODELS.slice(0, 3).map(tryModel));
       return result;
     } catch (err: any) {
-      console.error("[Voice AI] All OpenRouter parallel calls failed:", err.message || err);
+      if (err instanceof AggregateError) {
+        console.error("[Voice AI] All OpenRouter parallel calls failed. Errors:", err.errors.map((e: Error) => e.message).join('; '));
+      } else {
+        console.error("[Voice AI] An unexpected error occurred with OpenRouter:", err.message || err);
+      }
     }
   }
 
-  // Gemini fallback with 9-second timeout
   if (geminiKey) {
+    console.log("[Voice AI] OpenRouter failed, attempting Gemini fallback...");
     try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`;
       const res = await fetchWithTimeout(
         geminiUrl,
         {
@@ -94,14 +101,20 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
       if (res.ok) {
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        if (text) { console.log("[Voice AI] Success with Gemini fallback"); return text; }
+        if (text) {
+          console.log("[Voice AI] Success with Gemini fallback.");
+          return text;
+        }
+        throw new Error("Gemini returned empty content.");
+      } else {
+        throw new Error(`Gemini HTTP error ${res.status}: ${await res.text()}`);
       }
     } catch (err: any) {
       console.error("[Voice AI] Gemini fallback failed:", err.message);
     }
   }
 
-  throw new Error("All AI providers failed for voice prescription. Please check OPENROUTER_API_KEY / GEMINI_API_KEY environment variables.");
+  throw new Error("All AI providers failed for voice prescription. Please check API keys and provider status.");
 }
 
 export interface VoiceTranscriptionResult {

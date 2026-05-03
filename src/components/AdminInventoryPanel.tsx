@@ -84,6 +84,24 @@ export default function AdminInventoryPanel({ allowDeptTransfers = true }: { all
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  const hdStyles = `
+    .hd-modal-bg{position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+    .hd-modal{background:#fff;border-radius:18px;padding:32px 28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+    .hd-mf{margin-bottom:13px; box-sizing: border-box;}
+    .hd-ml{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:5px; box-sizing: border-box;}
+    .hd-mi{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:10px;color:#1e293b;outline:none;transition:border-color .2s; box-sizing: border-box; display: block; font-family: inherit;}
+    .hd-mi:focus{border-color:#80CCCC;box-shadow:0 0 0 3px rgba(147,197,253,0.25)}
+    .hd-mi::placeholder{color:#cbd5e1}
+    .hd-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700;white-space:nowrap}
+    .hd-ma{display:flex;gap:10px;margin-top:18px}
+    .hd-mcancel{flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:11px;font-weight:600;cursor:pointer}
+    .hd-mcancel:hover{background:#f8fafc}
+    .hd-msubmit{flex:2;padding:10px;border-radius:9px;border:none;background:#0E898F;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,0.25)}
+    .hd-msubmit:disabled{opacity:.55;cursor:not-allowed}
+    .hd-spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+    @keyframes sp{to{transform:rotate(360deg)}}
+  `;
+
   const [items, setItems] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [deptStock, setDeptStock] = useState<any[]>([]);
@@ -253,17 +271,16 @@ export default function AdminInventoryPanel({ allowDeptTransfers = true }: { all
 
   return (
     <div
-      style={allowDeptTransfers
-        ? { margin: "-32px -20px 0", height: "calc(100vh - 64px)", overflowY: "auto", display: "flex", flexDirection: "column" }
-        : { margin: 0, height: "auto", overflowY: "visible", display: "flex", flexDirection: "column" }}
+      style={{ margin: "-32px -20px 0", height: "calc(100vh - 64px)", overflowY: "auto", display: "flex", flexDirection: "column", background: "#f8fafc" }}
     >
+      <style>{hdStyles}</style>
       {/* Payment Reminder Popup */}
       {showReminderPopup && dueReminders.length > 0 && (
         <PaymentReminderPopup reminders={dueReminders} onClose={() => setShowReminderPopup(false)} onPay={(p: any) => { setShowReminderPopup(false); setShowPayModal(p); }} />
       )}
 
       {/* Sticky Tab Bar — pill-style like configure page */}
-      <div style={{ position: "sticky", top: 64, zIndex: 20, background: "#fff", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", gap: 0, padding: "6px 8px", flexShrink: 0 }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 20, background: "#fff", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", gap: 0, padding: "6px 8px", flexShrink: 0 }}>
         {TABS.map(t => {
           const active = tab === t.id;
           return (
@@ -294,13 +311,13 @@ export default function AdminInventoryPanel({ allowDeptTransfers = true }: { all
       {/* ═══════════ TAB 0: OVERVIEW ═══════════ */}
       {!loading && tab === "overview" && (<>
         {/* KPI Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: allowDeptTransfers ? "repeat(5, 1fr)" : "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
           {[
             { label: "Total Items", val: items.length, sub: `${items.filter(i => i.isActive).length} active` },
             { label: "Stock Value", val: fmtCur(totalValue), sub: `${items.filter(i => (i.totalStock ?? 0) > 0).length} in stock` },
             { label: "Low Stock", val: lowStockItems.length, sub: lowStockItems.length > 0 ? "Needs attention" : "All healthy", warn: lowStockItems.length > 0 },
             { label: "Purchases", val: purchases.length, sub: fmtCur(totalPurchaseValue) },
-            { label: "Dept Stock", val: deptStock.length + " depts", sub: `${totalDeptItems} items distributed` },
+            ...(allowDeptTransfers ? [{ label: "Dept Stock", val: deptStock.length + " depts", sub: `${totalDeptItems} items distributed` }] : []),
           ].map((c, i) => (
             <div key={i} style={{ background: "#fff", borderRadius: 10, padding: "16px 18px", border: `1px solid ${(c as any).warn ? "#fecaca" : "#e2e8f0"}` }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>{c.label}</div>
@@ -360,7 +377,7 @@ export default function AdminInventoryPanel({ allowDeptTransfers = true }: { all
         </div>
 
         {/* Charts Row 2 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: allowDeptTransfers ? "1fr 1fr" : "1fr", gap: 16, marginBottom: 16 }}>
           {/* Purchase Trends */}
           <div style={{ background: "#fff", borderRadius: 10, padding: "18px 22px", border: "1px solid #e2e8f0" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -382,23 +399,25 @@ export default function AdminInventoryPanel({ allowDeptTransfers = true }: { all
           </div>
 
           {/* Department Stock Distribution */}
-          <div style={{ background: "#fff", borderRadius: 10, padding: "18px 22px", border: "1px solid #e2e8f0" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div><div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Dept Stock Distribution</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Items distributed to departments</div></div>
-              <Boxes size={18} color="#94a3b8" />
+          {allowDeptTransfers && (
+            <div style={{ background: "#fff", borderRadius: 10, padding: "18px 22px", border: "1px solid #e2e8f0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div><div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Dept Stock Distribution</div><div style={{ fontSize: 11, color: "#94a3b8" }}>Items distributed to departments</div></div>
+                <Boxes size={18} color="#94a3b8" />
+              </div>
+              {deptStockSummary.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={deptStockSummary} barSize={28}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }} />
+                    <Bar dataKey="qty" name="Quantity" radius={[6, 6, 0, 0]} fill="#0E898F" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>No departments have stock yet</div>}
             </div>
-            {deptStockSummary.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={deptStockSummary} barSize={28}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }} />
-                  <Bar dataKey="qty" name="Quantity" radius={[6, 6, 0, 0]} fill="#0E898F" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 12 }}>No departments have stock yet</div>}
-          </div>
+          )}
         </div>
 
         {/* Bottom Row: Low Stock Alerts + Quick Actions + Payment Summary */}
@@ -1505,8 +1524,8 @@ function ItemModal({ mode, item, suppliers, onClose, onSuccess }: { mode: "add" 
   const modalIcon = isView ? <Eye size={18} color="#0E898F" /> : isEdit ? <Pencil size={18} color="#3b82f6" /> : <Plus size={18} color="#0E898F" />;
 
   return (
-    <div className="hd-modal-bg" onClick={onClose}>
-      <div className="hd-modal" onClick={(e: any) => e.stopPropagation()} style={{ maxWidth: 640, padding: 0, overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 640, padding: 0, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }} onClick={(e: any) => e.stopPropagation()}>
         <div style={{ padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {modalIcon}
@@ -1546,7 +1565,7 @@ function ItemModal({ mode, item, suppliers, onClose, onSuccess }: { mode: "add" 
             <div className="hd-mf"><label className="hd-ml">Selling Price</label><input className="hd-mi" type="number" name="sellingPrice" value={form.sellingPrice} onChange={h} min="0" step="0.01" readOnly={isView} style={isView ? { background: "#f8fafc", cursor: "default" } : {}} /></div>
             <div className="hd-mf"><label className="hd-ml">GST %</label><input className="hd-mi" type="number" name="gst" value={form.gst} onChange={h} min="0" readOnly={isView} style={isView ? { background: "#f8fafc", cursor: "default" } : {}} /></div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: isView ? "1fr 1fr 1fr" : "1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isView ? "repeat(4, 1fr)" : "1fr 1fr", gap: 12, marginBottom: 14 }}>
             {isView && <div className="hd-mf"><label className="hd-ml">Current Stock</label><input className="hd-mi" type="number" value={item?.totalStock ?? 0} readOnly style={{ background: "#f8fafc", cursor: "default", fontWeight: 700, color: (item?.totalStock ?? 0) <= (item?.minStock ?? 0) ? "#ef4444" : "#10b981" }} /></div>}
             <div className="hd-mf"><label className="hd-ml">Min Stock Alert</label><input className="hd-mi" type="number" name="minStock" value={form.minStock} onChange={h} min="0" readOnly={isView} style={isView ? { background: "#f8fafc", cursor: "default" } : {}} /></div>
             <div className="hd-mf"><label className="hd-ml">HSN Code</label><input className="hd-mi" name="hsnCode" value={form.hsnCode} onChange={h} readOnly={isView} style={isView ? { background: "#f8fafc", cursor: "default" } : {}} /></div>
@@ -3181,8 +3200,8 @@ function RecordPaymentModal({ purchase, onClose, onSuccess }: { purchase: any; o
 function PaymentReminderPopup({ reminders, onClose, onPay }: { reminders: any[]; onClose: () => void; onPay: (p: any) => void }) {
   const overdueCount = reminders.filter((r: any) => new Date(r.dueDate) < new Date()).length;
   return (
-    <div className="hd-modal-bg" style={{ zIndex: 9999 }} onClick={onClose}>
-      <div className="hd-modal" onClick={(e: any) => e.stopPropagation()} style={{ maxWidth: 520, padding: 0, overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 520, padding: 0, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }} onClick={(e: any) => e.stopPropagation()}>
         <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #ef444415, #fee2e2)", borderBottom: "1px solid #fecaca", display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}><Bell size={22} color="#fff" /></div>
           <div>

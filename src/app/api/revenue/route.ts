@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
   try {
     const body = await req.json();
-    const { sourceType, amount, description } = body;
+    const { sourceType, amount, description, addedBy, department } = body;
     const parsed = parseFloat(amount);
     if (amount == null || isNaN(parsed) || parsed <= 0) return errorResponse("A valid positive amount is required", 400);
 
@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
         sourceType:  sourceType || "OTHER",
         amount:      parsed,
         description: description || null,
+        addedBy:     addedBy    || (auth.user as any)?.name || null,
+        department:  department || "Hospital Administration",
       },
     });
     return successResponse(revenue, "Revenue added", 201);

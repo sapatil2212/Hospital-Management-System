@@ -8,11 +8,12 @@ import {
   getPatientStats,
   PatientServiceError,
 } from "../../../../backend/services/patient.service";
+import { createPatient as createPatientRepo, generatePatientId } from "../../../../backend/repositories/patient.repo";
 import { createPatientSchema, queryPatientSchema } from "../../../../backend/validations/patient.validation";
 import prisma from "../../../../backend/config/db";
 import { notifyPatientRegistered } from "../../../../backend/services/notification.service";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD", "DEPT_HEAD"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/patients — List patients or quick search
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest) {
       limit: searchParams.get("limit") || "20",
       sortBy: searchParams.get("sortBy") || "createdAt",
       sortOrder: searchParams.get("sortOrder") || "desc",
+      departmentId: searchParams.get("departmentId") || undefined,
     };
 
     const validated = queryPatientSchema.safeParse(queryParams);
@@ -77,7 +79,36 @@ export async function POST(req: NextRequest) {
     });
     const hospitalName = hospital?.name || "Hospital";
 
-    const { patient, isNew } = await registerPatient(auth.hospitalId, hospitalName, result.data);
+    let patient: any;
+    let isNew: boolean;
+
+    if (body.forceNew) {
+      // User explicitly chose "Register as new patient" — bypass phone dedup
+      const patientId = await generatePatientId(auth.hospitalId);
+      patient = await createPatientRepo({
+        hospitalId: auth.hospitalId,
+        patientId,
+        name: result.data.name,
+        phone: result.data.phone,
+        whatsapp: (result.data as any).whatsapp || null,
+        email: result.data.email || null,
+        gender: result.data.gender || null,
+        dateOfBirth: result.data.dateOfBirth || null,
+        bloodGroup: result.data.bloodGroup || null,
+        address: result.data.address || null,
+        profilePhoto: null,
+        documents: null,
+        patientType: null,
+        allergies: null,
+        emergencyName: null,
+        emergencyRelation: null,
+        emergencyPhone: null,
+      });
+      isNew = true;
+    } else {
+      ({ patient, isNew } = await registerPatient(auth.hospitalId, hospitalName, result.data));
+    }
+
     if (isNew) {
       notifyPatientRegistered(auth.hospitalId, {
         patientName: patient.name,

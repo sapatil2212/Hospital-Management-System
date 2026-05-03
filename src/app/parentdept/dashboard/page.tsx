@@ -7,7 +7,8 @@ import {
   ClipboardList, Receipt, AlertTriangle, Clock, ArrowLeft,
   ChevronRight, UserCheck, IndianRupee, Layers, Eye,
   Smile, Sparkles, Scissors, Heart, Microscope, Pill, Scan,
-  TestTube2, Stethoscope, FlaskConical, ExternalLink,
+  TestTube2, Stethoscope, FlaskConical, ExternalLink, CheckCircle2,
+  CalendarDays,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -165,88 +166,78 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
 
   const activeSubDepts = subDepts.filter((s: any) => s.isActive).length;
 
+  const statCards = [
+    { label: "Sub-Departments", value: loadingData ? "—" : activeSubDepts, Icon: Building2, color: "#0E898F", bg: "#E6F4F4", badge: { text: "ACTIVE", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Prescriptions Today", value: pharmStats?.todayRxCount ?? "—", Icon: ClipboardList, color: "#f59e0b", bg: "#fffbeb", badge: pharmStats?.pendingCount > 0 ? { text: `${pharmStats.pendingCount} PENDING`, bg: "#fff3e6", color: "#ea580c", border: "#fed7aa" } : { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Inventory Items", value: pharmStats?.totalItems ?? "—", Icon: Package, color: "#3b82f6", bg: "#eff6ff", badge: pharmStats?.lowStockCount > 0 ? { text: `${pharmStats.lowStockCount} LOW`, bg: "#fff5f5", color: "#ef4444", border: "#fecaca" } : undefined },
+    { label: "Revenue Today", value: pharmStats?.todayRevenue ? `₹${pharmStats.todayRevenue.toLocaleString("en-IN")}` : "₹0", Icon: IndianRupee, color: "#10b981", bg: "#f0fdf4", badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Total Records", value: pharmStats?.totalRecords ?? "—", Icon: CheckCircle2, color: "#059669", bg: "#f0fdf4" },
+  ];
+
   return (
     <>
-      <div className="hd-pg-title">{deptProfile?.name || "Pharmacy"} — Overview</div>
-
-      {/* Stats Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
-        <div
-          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(14,137,143,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
-        >
-          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#0E898F,#07595D)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Building2 size={20} color="#fff" />
+      {/* Header: title + live indicator + refresh */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-.02em" }}>
+            {deptProfile?.name || "Pharmacy"} Overview
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{loadingData ? "—" : activeSubDepts}</div>
-              <span style={{ fontSize: 8, fontWeight: 700, color: "#0E898F", background: "#E6F4F4", padding: "2px 6px", borderRadius: 10, border: "1px solid #B3E0E0" }}>ACTIVE</span>
-            </div>
-            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Sub-Departments</div>
+          <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 3px #dcfce7", flexShrink: 0 }} />
+            Live &middot; Updated {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
-
-        <div
-          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
+        <button
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}
+          onClick={() => window.location.reload()}
         >
-          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#f59e0b,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <ClipboardList size={20} color="#fff" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{pharmStats?.todayRxCount ?? "—"}</div>
-              {pharmStats?.pendingCount > 0 && (
-                <span style={{ fontSize: 8, fontWeight: 700, color: "#ea580c", background: "#fff3e6", padding: "2px 6px", borderRadius: 10, border: "1px solid #fed7aa", display: "flex", alignItems: "center", gap: 2 }}>
-                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#ea580c", display: "inline-block", animation: "ph-pulse 1.5s ease-in-out infinite" }} />
-                  {pharmStats.pendingCount}
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Prescriptions Today</div>
-          </div>
-        </div>
+          <RefreshCw size={13} className={loadingData ? "opd2-spin" : ""} /> Refresh
+        </button>
+      </div>
 
-        <div
-          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
-        >
-          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#3b82f6,#2563eb)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Package size={20} color="#fff" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{pharmStats?.totalItems ?? "—"}</div>
-              {pharmStats?.lowStockCount > 0 && (
-                <span style={{ fontSize: 8, fontWeight: 700, color: "#ef4444", background: "#fff5f5", padding: "2px 6px", borderRadius: 10, border: "1px solid #fecaca" }}>
-                  {pharmStats.lowStockCount} LOW
-                </span>
-              )}
+      {/* Stats Grid - 5 Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
+        {statCards.map((s, i) => {
+          const SI = s.Icon;
+          return (
+            <div key={i} style={{
+              cursor: "default",
+              padding: "10px 12px",
+              gap: 10,
+              background: "#fff",
+              borderRadius: 12,
+              border: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              boxShadow: "0 1px 4px rgba(0,0,0,.04)",
+              transition: "transform .18s, box-shadow .18s"
+            }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <SI size={18} color={s.color} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.value}</div>
+                  {s.badge && (
+                    <span style={{
+                      fontSize: 7,
+                      fontWeight: 700,
+                      color: s.badge.color,
+                      background: s.badge.bg,
+                      padding: "1px 4px",
+                      borderRadius: 8,
+                      border: `1px solid ${s.badge.border}`,
+                      flexShrink: 0
+                    }}>
+                      {s.badge.text}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 9, color: "#64748b", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</div>
+              </div>
             </div>
-            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Inventory Items</div>
-          </div>
-        </div>
-
-        <div
-          style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", cursor: "pointer", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(16,185,129,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
-        >
-          <div style={{ width: 44, height: 44, borderRadius: 11, background: "linear-gradient(135deg,#10b981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <IndianRupee size={20} color="#fff" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>₹{pharmStats?.todayRevenue?.toLocaleString() ?? "0"}</div>
-              <span style={{ fontSize: 8, fontWeight: 700, color: "#16a34a", background: "#f0fdf4", padding: "2px 6px", borderRadius: 10, border: "1px solid #bbf7d0" }}>TODAY</span>
-            </div>
-            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>Revenue</div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* Alerts Row */}
@@ -267,37 +258,84 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
         </div>
       )}
 
-      {/* Department Info */}
-      <div className="hd-card" style={{ marginBottom: 20 }}>
-        <div className="hd-card-head">
-          <div>
-            <div className="hd-card-title">Department Information</div>
-            <div className="hd-card-sub">{deptProfile?.name || "Department"} overview</div>
+      {/* Recent Activity Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 20 }}>
+        {/* Department Info Card */}
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
+              <Building2 size={15} color="#0E898F" />Department Information
+            </span>
+          </div>
+          <div style={{ padding: "14px 18px" }}>
+            <div style={{ display: "grid", gap: 12 }}>
+              <InfoRow label="Department Name" value={deptProfile?.name} />
+              <InfoRow label="Department Code" value={deptProfile?.code} />
+              <InfoRow label="Type" value={deptProfile?.type} />
+              <InfoRow label="Status" value={deptProfile?.isActive ? "Active" : "Inactive"} valueColor={deptProfile?.isActive ? "#10b981" : "#ef4444"} />
+            </div>
+            {deptProfile?.description && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Description</div>
+                <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.6 }}>{deptProfile.description}</div>
+              </div>
+            )}
           </div>
         </div>
-        <div className="hd-card-body">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
-            <InfoRow label="Department Name" value={deptProfile?.name} />
-            <InfoRow label="Department Code" value={deptProfile?.code} />
-            <InfoRow label="Type" value={deptProfile?.type} />
-            <InfoRow label="Status" value={deptProfile?.isActive ? "Active" : "Inactive"} valueColor={deptProfile?.isActive ? "#10b981" : "#ef4444"} />
+
+        {/* Alerts Card */}
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
+              <AlertTriangle size={15} color="#f59e0b" />Alerts & Notifications
+            </span>
           </div>
-          {deptProfile?.description && (
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize:10, fontWeight: 600, color: "#94a3b8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Description</div>
-              <div style={{ fontSize:11, color: "#64748b", lineHeight: 1.6 }}>{deptProfile.description}</div>
-            </div>
-          )}
+          <div style={{ padding: "10px 0" }}>
+            {pharmStats && (pharmStats.lowStockCount > 0 || pharmStats.expiringCount > 0) ? (
+              <>
+                {pharmStats.lowStockCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 18px", borderBottom: "1px solid #f8fafc" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <AlertTriangle size={14} color="#f59e0b" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>Low Stock Alert</div>
+                      <div style={{ fontSize: 10, color: "#64748b" }}>{pharmStats.lowStockCount} item{pharmStats.lowStockCount !== 1 ? "s" : ""} below minimum</div>
+                    </div>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#fffbeb", color: "#f59e0b", fontWeight: 700, border: "1px solid #fde68a" }}>
+                      {pharmStats.lowStockCount}
+                    </span>
+                  </div>
+                )}
+                {pharmStats.expiringCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 18px", borderBottom: "1px solid #f8fafc" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fff5f5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Clock size={14} color="#ef4444" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>Expiring Soon</div>
+                      <div style={{ fontSize: 10, color: "#64748b" }}>{pharmStats.expiringCount} item{pharmStats.expiringCount !== 1 ? "s" : ""} within 30 days</div>
+                    </div>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, background: "#fff5f5", color: "#ef4444", fontWeight: 700, border: "1px solid #fecaca" }}>
+                      {pharmStats.expiringCount}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>No alerts at this time</div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Sub-Dept Quick Cards */}
+      {/* Sub-Departments Section */}
       {subDepts.length > 0 && (
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b" }}>Sub-Departments</div>
-              <div style={{ fontSize:10, color: "#94a3b8", marginTop: 2 }}>{subDepts.length} unit{subDepts.length !== 1 ? "s" : ""} — click to view dashboard</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>Sub-Departments</div>
+              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{subDepts.length} unit{subDepts.length !== 1 ? "s" : ""} — click to view dashboard</div>
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
@@ -321,23 +359,23 @@ function OverviewTab({ deptProfile, onOpenSubDept }: { deptProfile: any; onOpenS
                       <DI size={18} color="#fff" />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize:13, fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
-                      <div style={{ fontSize:10, color: m.accent, fontWeight: 600 }}>{sd.type?.replace(/_/g, " ")}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sd.name}</div>
+                      <div style={{ fontSize: 10, color: m.accent, fontWeight: 600 }}>{sd.type?.replace(/_/g, " ")}</div>
                     </div>
                     <ChevronRight size={16} color="#94a3b8" />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <div style={{ background: m.lightBg, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ fontSize:15, fontWeight: 800, color: m.accent }}>{sd._count?.procedures || 0}</div>
-                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 500 }}>Procedures</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: m.accent }}>{sd._count?.procedures || 0}</div>
+                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 500 }}>Procedures</div>
                     </div>
                     <div style={{ background: m.lightBg, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ fontSize:15, fontWeight: 800, color: m.accent }}>{sd._count?.procedureRecords || 0}</div>
-                      <div style={{ fontSize:9, color: "#94a3b8", fontWeight: 500 }}>Records</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: m.accent }}>{sd._count?.procedureRecords || 0}</div>
+                      <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 500 }}>Records</div>
                     </div>
                   </div>
                   {sd.hodStaffName && (
-                    <div style={{ marginTop: 10, fontSize:10, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ marginTop: 10, fontSize: 10, color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
                       <Users size={12} color="#94a3b8" /> HOD: {sd.hodStaffName}
                     </div>
                   )}

@@ -41,7 +41,7 @@ const api = async (url: string, method = "GET", body?: any) => {
 const initials = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
 // ─── Patient Management Panel ───
-export function PatientsManagementPanel() {
+export function PatientsManagementPanel({ departmentId }: { departmentId?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlPatientId = searchParams.get("patientId");
@@ -104,7 +104,8 @@ export function PatientsManagementPanel() {
 
   const loadPatients = async () => {
     setLoading(true);
-    const res = await api(`/api/patients?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`);
+    const deptParam = departmentId ? `&departmentId=${departmentId}` : "";
+    const res = await api(`/api/patients?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}${deptParam}`);
     if (res.success) {
       setPatients(res.data.data || []);
       setTotalPages(Math.ceil((res.data.total || 0) / itemsPerPage));
@@ -630,19 +631,11 @@ export function PatientsManagementPanel() {
                                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                                     {/* View Rx */}
                                     <button
-                                      onClick={() => router.push(`/doctor/dashboard/prescription/${a.id}?mode=view`)}
+                                      onClick={() => setSelectedRxAppointment(a)}
                                       title="View Rx"
                                       style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 8px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#f0fdf4", color: "#16a34a", fontSize: 10, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
                                     >
                                       <Eye size={11} /> View Rx
-                                    </button>
-                                    {/* Edit Rx */}
-                                    <button
-                                      onClick={() => router.push(`/doctor/dashboard/prescription/${a.id}`)}
-                                      title="Edit Rx"
-                                      style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 8px", borderRadius: 6, border: "1px solid #e2e8f0", background: "#eff6ff", color: "#2563eb", fontSize: 10, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
-                                    >
-                                      <Pencil size={11} /> Edit Rx
                                     </button>
                                     {/* Complete */}
                                     {a.status !== "COMPLETED" && a.status !== "CANCELLED" && (

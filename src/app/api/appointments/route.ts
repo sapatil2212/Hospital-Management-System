@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       doctorId: searchParams.get("doctorId") || undefined,
       patientId: searchParams.get("patientId") || undefined,
       departmentId: searchParams.get("departmentId") || undefined,
+      subDepartmentId: searchParams.get("subDepartmentId") || undefined,
       status: searchParams.get("status") || undefined,
       type: searchParams.get("type") || undefined,
       date: searchParams.get("date") || undefined,

@@ -17,6 +17,72 @@
       "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
     ]
   },
+  "app\\doctor\\dashboard\\RxManagementPanel.tsx -> jspdf": {
+    "id": "app\\doctor\\dashboard\\RxManagementPanel.tsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\RxManagementPanel.tsx -> jspdf-autotable": {
+    "id": "app\\doctor\\dashboard\\RxManagementPanel.tsx -> jspdf-autotable",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf-autotable_dist_jspdf_plugin_autotable_mjs.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> ./RxManagementPanel": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> ./RxManagementPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_app_doctor_dashboard_RxManagementPanel_tsx.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> @/app/subdept/dashboard/PatientsManagementPanel": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> @/app/subdept/dashboard/PatientsManagementPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx-_aead0.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> docx": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> docx",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_docx_dist_index_mjs.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> file-saver": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> file-saver",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_file-saver_dist_FileSaver_min_js.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> jspdf": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> jspdf-autotable": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> jspdf-autotable",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf-autotable_dist_jspdf_plugin_autotable_mjs.js"
+    ]
+  },
+  "app\\doctor\\dashboard\\page.tsx -> xlsx": {
+    "id": "app\\doctor\\dashboard\\page.tsx -> xlsx",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_xlsx_xlsx_mjs.js"
+    ]
+  },
+  "app\\doctor\\prescription\\[appointmentId]\\page.tsx -> html2canvas": {
+    "id": "app\\doctor\\prescription\\[appointmentId]\\page.tsx -> html2canvas",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
+    ]
+  },
+  "app\\doctor\\prescription\\[appointmentId]\\page.tsx -> jspdf": {
+    "id": "app\\doctor\\prescription\\[appointmentId]\\page.tsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
   "app\\hospitaladmin\\dashboard\\page.tsx -> @/app/subdept/dashboard/PatientsManagementPanel": {
     "id": "app\\hospitaladmin\\dashboard\\page.tsx -> @/app/subdept/dashboard/PatientsManagementPanel",
     "files": [
@@ -29,28 +95,34 @@
       "static/chunks/_app-pages-browser_src_components_AdminDepartmentsPanel_tsx.js"
     ]
   },
-  "app\\parentdept\\dashboard\\page.tsx -> @/components/PharmacyDashboard": {
-    "id": "app\\parentdept\\dashboard\\page.tsx -> @/components/PharmacyDashboard",
+  "app\\subdept\\dashboard\\modals.tsx -> html2canvas": {
+    "id": "app\\subdept\\dashboard\\modals.tsx -> html2canvas",
     "files": [
-      "static/chunks/_app-pages-browser_src_components_PharmacyDashboard_tsx-_54dd0.js"
+      "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
     ]
   },
-  "app\\parentdept\\dashboard\\page.tsx -> @/components/ReportsPanel": {
-    "id": "app\\parentdept\\dashboard\\page.tsx -> @/components/ReportsPanel",
+  "app\\subdept\\dashboard\\modals.tsx -> jspdf": {
+    "id": "app\\subdept\\dashboard\\modals.tsx -> jspdf",
     "files": [
-      "static/chunks/_app-pages-browser_src_components_ReportsPanel_tsx.js"
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
     ]
   },
   "app\\subdept\\dashboard\\page.tsx -> ./PatientsManagementPanel": {
     "id": "app\\subdept\\dashboard\\page.tsx -> ./PatientsManagementPanel",
     "files": [
-      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx-_aead0.js"
+      "static/chunks/_app-pages-browser_src_app_subdept_dashboard_PatientsManagementPanel_tsx-_aead2.js"
     ]
   },
   "app\\subdept\\dashboard\\page.tsx -> @/components/AccountSettingsPanel": {
     "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AccountSettingsPanel",
     "files": [
       "static/chunks/_app-pages-browser_src_components_AccountSettingsPanel_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/AdminInventoryPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AdminInventoryPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_AdminInventoryPanel_tsx-_9aec0.js"
     ]
   },
   "app\\subdept\\dashboard\\page.tsx -> @/components/AmbulanceDashboard": {
@@ -61,9 +133,7 @@
   },
   "app\\subdept\\dashboard\\page.tsx -> @/components/AppointmentPanel": {
     "id": "app\\subdept\\dashboard\\page.tsx -> @/components/AppointmentPanel",
-    "files": [
-      "static/chunks/_app-pages-browser_src_components_AppointmentPanel_tsx.js"
-    ]
+    "files": []
   },
   "app\\subdept\\dashboard\\page.tsx -> @/components/BillingDepartmentDashboard": {
     "id": "app\\subdept\\dashboard\\page.tsx -> @/components/BillingDepartmentDashboard",
@@ -87,6 +157,18 @@
     "id": "app\\subdept\\dashboard\\page.tsx -> @/components/CriticalCareDashboard",
     "files": [
       "static/chunks/_app-pages-browser_src_components_CriticalCareDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/DentalOPDDashboard": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/DentalOPDDashboard",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_DentalOPDDashboard_tsx.js"
+    ]
+  },
+  "app\\subdept\\dashboard\\page.tsx -> @/components/DoctorPanel": {
+    "id": "app\\subdept\\dashboard\\page.tsx -> @/components/DoctorPanel",
+    "files": [
+      "static/chunks/_app-pages-browser_src_components_DoctorPanel_tsx.js"
     ]
   },
   "app\\subdept\\dashboard\\page.tsx -> @/components/HRDepartmentDashboard": {
@@ -128,7 +210,7 @@
   "app\\subdept\\dashboard\\page.tsx -> @/components/PharmacyDashboard": {
     "id": "app\\subdept\\dashboard\\page.tsx -> @/components/PharmacyDashboard",
     "files": [
-      "static/chunks/_app-pages-browser_src_components_PharmacyDashboard_tsx-_54dd1.js"
+      "static/chunks/_app-pages-browser_src_components_PharmacyDashboard_tsx.js"
     ]
   },
   "app\\subdept\\dashboard\\page.tsx -> @/components/SpecialtyClinicDashboard": {
@@ -139,15 +221,11 @@
   },
   "app\\subdept\\dashboard\\page.tsx -> docx": {
     "id": "app\\subdept\\dashboard\\page.tsx -> docx",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_docx_dist_index_mjs.js"
-    ]
+    "files": []
   },
   "app\\subdept\\dashboard\\page.tsx -> file-saver": {
     "id": "app\\subdept\\dashboard\\page.tsx -> file-saver",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_file-saver_dist_FileSaver_min_js.js"
-    ]
+    "files": []
   },
   "app\\subdept\\dashboard\\page.tsx -> jspdf": {
     "id": "app\\subdept\\dashboard\\page.tsx -> jspdf",
@@ -159,9 +237,7 @@
   },
   "app\\subdept\\dashboard\\page.tsx -> xlsx": {
     "id": "app\\subdept\\dashboard\\page.tsx -> xlsx",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_xlsx_xlsx_mjs.js"
-    ]
+    "files": []
   },
   "components\\AdminInventoryPanel.tsx -> jspdf": {
     "id": "components\\AdminInventoryPanel.tsx -> jspdf",
@@ -180,7 +256,7 @@
   "components\\BillingDepartmentDashboard.tsx -> @/components/AdminInventoryPanel": {
     "id": "components\\BillingDepartmentDashboard.tsx -> @/components/AdminInventoryPanel",
     "files": [
-      "static/chunks/_app-pages-browser_src_components_AdminInventoryPanel_tsx.js"
+      "static/chunks/_app-pages-browser_src_components_AdminInventoryPanel_tsx-_9aec1.js"
     ]
   },
   "components\\BillingDepartmentDashboard.tsx -> @/components/BillingQueue": {
@@ -189,6 +265,14 @@
       "static/chunks/_app-pages-browser_src_components_BillingQueue_tsx-_3b4a0.js"
     ]
   },
+  "components\\BillingQueue.tsx -> docx": {
+    "id": "components\\BillingQueue.tsx -> docx",
+    "files": []
+  },
+  "components\\BillingQueue.tsx -> file-saver": {
+    "id": "components\\BillingQueue.tsx -> file-saver",
+    "files": []
+  },
   "components\\BillingQueue.tsx -> jspdf": {
     "id": "components\\BillingQueue.tsx -> jspdf",
     "files": []
@@ -196,6 +280,40 @@
   "components\\BillingQueue.tsx -> jspdf-autotable": {
     "id": "components\\BillingQueue.tsx -> jspdf-autotable",
     "files": []
+  },
+  "components\\BillingQueue.tsx -> xlsx": {
+    "id": "components\\BillingQueue.tsx -> xlsx",
+    "files": []
+  },
+  "components\\DoctorAttendancePanel.tsx -> docx": {
+    "id": "components\\DoctorAttendancePanel.tsx -> docx",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_docx_dist_index_mjs.js"
+    ]
+  },
+  "components\\DoctorAttendancePanel.tsx -> file-saver": {
+    "id": "components\\DoctorAttendancePanel.tsx -> file-saver",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_file-saver_dist_FileSaver_min_js.js"
+    ]
+  },
+  "components\\DoctorAttendancePanel.tsx -> jspdf": {
+    "id": "components\\DoctorAttendancePanel.tsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
+  "components\\DoctorAttendancePanel.tsx -> jspdf-autotable": {
+    "id": "components\\DoctorAttendancePanel.tsx -> jspdf-autotable",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf-autotable_dist_jspdf_plugin_autotable_mjs.js"
+    ]
+  },
+  "components\\DoctorAttendancePanel.tsx -> xlsx": {
+    "id": "components\\DoctorAttendancePanel.tsx -> xlsx",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_xlsx_xlsx_mjs.js"
+    ]
   },
   "components\\HRDepartmentDashboard.tsx -> @/app/hospitaladmin/doctors/page": {
     "id": "components\\HRDepartmentDashboard.tsx -> @/app/hospitaladmin/doctors/page",
@@ -223,15 +341,11 @@
   },
   "components\\PathologyDashboard.tsx -> docx": {
     "id": "components\\PathologyDashboard.tsx -> docx",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_docx_dist_index_mjs.js"
-    ]
+    "files": []
   },
   "components\\PathologyDashboard.tsx -> file-saver": {
     "id": "components\\PathologyDashboard.tsx -> file-saver",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_file-saver_dist_FileSaver_min_js.js"
-    ]
+    "files": []
   },
   "components\\PathologyDashboard.tsx -> jspdf": {
     "id": "components\\PathologyDashboard.tsx -> jspdf",
@@ -243,21 +357,35 @@
   },
   "components\\PathologyDashboard.tsx -> xlsx": {
     "id": "components\\PathologyDashboard.tsx -> xlsx",
+    "files": []
+  },
+  "components\\PatientProfilePanel.tsx -> html2canvas": {
+    "id": "components\\PatientProfilePanel.tsx -> html2canvas",
     "files": [
-      "static/chunks/_app-pages-browser_node_modules_xlsx_xlsx_mjs.js"
+      "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
     ]
+  },
+  "components\\PatientProfilePanel.tsx -> jspdf": {
+    "id": "components\\PatientProfilePanel.tsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
+  "components\\PharmacyDashboard.tsx -> jspdf": {
+    "id": "components\\PharmacyDashboard.tsx -> jspdf",
+    "files": []
+  },
+  "components\\PharmacyDashboard.tsx -> jspdf-autotable": {
+    "id": "components\\PharmacyDashboard.tsx -> jspdf-autotable",
+    "files": []
   },
   "components\\SubDeptProceduresPanel.tsx -> docx": {
     "id": "components\\SubDeptProceduresPanel.tsx -> docx",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_docx_dist_index_mjs.js"
-    ]
+    "files": []
   },
   "components\\SubDeptProceduresPanel.tsx -> file-saver": {
     "id": "components\\SubDeptProceduresPanel.tsx -> file-saver",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_file-saver_dist_FileSaver_min_js.js"
-    ]
+    "files": []
   },
   "components\\SubDeptProceduresPanel.tsx -> jspdf": {
     "id": "components\\SubDeptProceduresPanel.tsx -> jspdf",
@@ -269,8 +397,6 @@
   },
   "components\\SubDeptProceduresPanel.tsx -> xlsx": {
     "id": "components\\SubDeptProceduresPanel.tsx -> xlsx",
-    "files": [
-      "static/chunks/_app-pages-browser_node_modules_xlsx_xlsx_mjs.js"
-    ]
+    "files": []
   }
 }

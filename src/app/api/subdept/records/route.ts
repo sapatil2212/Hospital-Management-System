@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const { user, error } = await authMiddleware(req);
   if (error) return error;
 
-  const allowed = ["SUB_DEPT_HEAD", "HOSPITAL_ADMIN", "RECEPTIONIST"];
+  const allowed = ["SUB_DEPT_HEAD", "HOSPITAL_ADMIN", "RECEPTIONIST", "DEPT_HEAD"];
   if (!allowed.includes(user!.role)) return errorResponse("Forbidden", 403);
 
   try {
@@ -30,12 +30,37 @@ export async function GET(req: NextRequest) {
     let hospitalId: string;
     const where: any = {};
 
-    if (user!.role === "SUB_DEPT_HEAD") {
-      const profile = await getSubDeptProfile(user!.userId);
-      const subDeptId = (profile as any).id;
-      hospitalId = (profile as any).hospitalId;
-      where.subDepartmentId = subDeptId;
-      where.hospitalId = hospitalId;
+    if (user!.role === "SUB_DEPT_HEAD" || user!.role === "DEPT_HEAD") {
+      let subDeptId: string | undefined;
+      let myDeptId: string | null = null;
+
+      if (user!.role === "SUB_DEPT_HEAD") {
+        const profile = await getSubDeptProfile(user!.userId);
+        subDeptId   = (profile as any).id;
+        myDeptId    = (profile as any).departmentId as string | null;
+        hospitalId  = (profile as any).hospitalId;
+      } else {
+        // DEPT_HEAD
+        const profile = await (prisma as any).parentDepartment.findFirst({ where: { userId: user!.userId } });
+        if (!profile) return errorResponse("Department profile not found", 404);
+        myDeptId    = profile.id;
+        hospitalId  = profile.hospitalId;
+      }
+
+      where.hospitalId  = hospitalId;
+
+      const requestedDeptId = url.searchParams.get("departmentId");
+      if ((requestedDeptId && myDeptId && requestedDeptId === myDeptId) || user!.role === "DEPT_HEAD") {
+        // Clinical Head sees all sub-departments under their department
+        const siblingSubDepts = await (prisma as any).subDepartment.findMany({
+          where: { hospitalId, departmentId: myDeptId },
+          select: { id: true },
+        });
+        const siblingIds = siblingSubDepts.map((s: any) => s.id);
+        where.subDepartmentId = { in: siblingIds };
+      } else {
+        where.subDepartmentId = subDeptId;
+      }
     } else {
       // HOSPITAL_ADMIN / RECEPTIONIST — use hospitalId from JWT
       hospitalId = (user as any).hospitalId;
@@ -148,16 +173,25 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Event: procedure completed → auto-add charge to bill + notify (fire and forget)
+    // Event: procedure completed → auto-add charge to bill + notify
+    let bill: any = null;
     if ((status || "COMPLETED") === "COMPLETED") {
-      addProcedureChargeToBill(record.id, hospitalId).catch(() => {});
+      try {
+        const generatedBill = await addProcedureChargeToBill(record.id, hospitalId);
+        if (generatedBill?.id) {
+          bill = await (prisma as any).bill.findUnique({
+            where: { id: generatedBill.id },
+            include: { billItems: true, payments: true },
+          });
+        }
+      } catch { /* ignore billing errors — bill may not exist without appointment */ }
       notifyProcedureCompleted(hospitalId, {
         patientName:   record.patient.name,
         procedureName: record.procedure.name,
       }).catch(() => {});
     }
 
-    return successResponse(record, "Procedure record saved", 201);
+    return successResponse({ ...record, bill }, "Procedure record saved", 201);
   } catch (err: any) {
     if (err instanceof SubDeptServiceError) return errorResponse(err.message, err.status);
     return errorResponse(err.message || "Failed", 500);

@@ -2,10 +2,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { 
   FileText, Loader2, Search, X, Eye, Pencil, Trash2, 
-  Download, Mail, CheckCircle2, ChevronDown 
+  Download, Mail, CheckCircle2, ChevronDown, AlertTriangle 
 } from "lucide-react";
 import { useDoctorDashboard } from "./DoctorDashboardContext";
 import { useRouter } from "next/navigation";
+import { ViewPrescriptionModal } from "@/app/subdept/dashboard/modals";
 
 export function RxManagementPanel() {
   const { doctor, accent } = useDoctorDashboard();
@@ -14,10 +15,12 @@ export function RxManagementPanel() {
   const [search, setSearch] = useState("");
   const [msg, setMsg] = useState({ t: "", c: "" });
 
-  const [modalType, setModalType] = useState<"view" | "edit" | null>(null);
+  const [viewRx, setViewRx] = useState<any | null>(null);
+  const [modalType, setModalType] = useState<"edit" | null>(null);
   const [activeApptId, setActiveApptId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; type: "single" | "bulk"; id?: string; count?: number }>({ show: false, type: "single" });
 
   const fetchRx = useCallback(async () => {
     if (!doctor?.id) return;
@@ -46,21 +49,39 @@ export function RxManagementPanel() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this prescription?")) return;
-    try {
-      const res = await fetch(`/api/prescriptions/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-      }).then(r => r.json());
-      if (res.success) {
-        flash("Prescription deleted", "s");
-        fetchRx();
-      } else {
-        flash(res.message || "Failed to delete", "e");
+    setDeleteModal({ show: true, type: "single", id });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteModal.type === "single" && deleteModal.id) {
+      try {
+        const res = await fetch(`/api/prescriptions/${deleteModal.id}`, {
+          method: "DELETE",
+          credentials: "include"
+        }).then(r => r.json());
+        if (res.success) {
+          flash("Prescription deleted", "s");
+          fetchRx();
+        } else {
+          flash(res.message || "Failed to delete", "e");
+        }
+      } catch (e) {
+        flash("Error deleting prescription", "e");
       }
-    } catch (e) {
-      flash("Error deleting prescription", "e");
+    } else if (deleteModal.type === "bulk") {
+      setLoading(true);
+      let successCount = 0;
+      for (const id of selectedIds) {
+        try {
+          const res = await fetch(`/api/prescriptions/${id}`, { method: "DELETE", credentials: "include" }).then(r => r.json());
+          if (res.success) successCount++;
+        } catch (e) { }
+      }
+      flash(`Successfully deleted ${successCount} prescription(s)`, "s");
+      setSelectedIds([]);
+      fetchRx();
     }
+    setDeleteModal({ show: false, type: "single" });
   };
 
   const filteredRx = prescriptions.filter(r => {
@@ -75,18 +96,7 @@ export function RxManagementPanel() {
   });
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedIds.length} prescription(s)?`)) return;
-    setLoading(true);
-    let successCount = 0;
-    for (const id of selectedIds) {
-      try {
-        const res = await fetch(`/api/prescriptions/${id}`, { method: "DELETE", credentials: "include" }).then(r => r.json());
-        if (res.success) successCount++;
-      } catch (e) { }
-    }
-    flash(`Successfully deleted ${successCount} prescription(s)`, "s");
-    setSelectedIds([]);
-    fetchRx();
+    setDeleteModal({ show: true, type: "bulk", count: selectedIds.length });
   };
 
   const generateExportTableHTML = () => {
@@ -341,7 +351,7 @@ export function RxManagementPanel() {
                     <td style={{ padding: "14px 18px", borderBottom: "1px solid #f1f5f9", textAlign: "right" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
                         <button 
-                          onClick={() => { setActiveApptId(rx.appointmentId); setModalType("view"); }}
+                          onClick={() => setViewRx(rx)}
                           style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#334155", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.color = "#334155"; }}
@@ -374,50 +384,82 @@ export function RxManagementPanel() {
         )}
       </div>
 
-      {/* Pop-up Modal for View/Edit */}
-      {modalType && activeApptId && (
+      {/* Prescription View Modal (clean layout + PDF download) */}
+      {viewRx && (
+        <ViewPrescriptionModal
+          appointment={{ id: viewRx.appointmentId, patientId: viewRx.patient?.id, patient: viewRx.patient, appointmentDate: viewRx.createdAt }}
+          onClose={() => { setViewRx(null); }}
+          meta={{}}
+        />
+      )}
+
+      {/* Edit Modal (iframe to full prescription builder) */}
+      {modalType === "edit" && activeApptId && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}>
           <div style={{ background: "#fff", borderRadius: 20, width: "95vw", maxWidth: 1400, height: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
             <div style={{ padding: "14px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: modalType === "view" ? "#e0f2fe" : "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", color: modalType === "view" ? "#0284c7" : "#d97706" }}>
-                  {modalType === "view" ? <Eye size={16} /> : <Pencil size={16} />}
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", color: "#d97706" }}>
+                  <Pencil size={16} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
-                    {modalType === "view" ? "View Prescription" : "Edit Prescription"}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>
-                    {modalType === "view" ? "Review, download, or email prescription" : "Modify prescription details"}
-                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Edit Prescription</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>Modify prescription details</div>
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button 
-                  onClick={() => {
-                    setModalType(null);
-                    setActiveApptId(null);
-                    fetchRx(); // Refresh table when closing modal just in case
-                  }}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "background 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
-                  onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-                >
-                  <X size={16} /> Close
-                </button>
+              <button 
+                onClick={() => { setModalType(null); setActiveApptId(null); fetchRx(); }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              >
+                <X size={16} /> Close
+              </button>
+            </div>
+            <iframe 
+              src={`/doctor/prescription/${activeApptId}?mode=edit&isModal=1`}
+              style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
+              title="Prescription Builder"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setDeleteModal({ show: false, type: "single" }); }}>
+          <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 440, padding: 24, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertTriangle size={24} color="#ef4444" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>Delete Prescription{deleteModal.type === "bulk" ? "s" : ""}?</div>
+                <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                  {deleteModal.type === "single" 
+                    ? "Are you sure you want to delete this prescription? This action cannot be undone."
+                    : `Are you sure you want to delete ${deleteModal.count} prescription(s)? This action cannot be undone.`
+                  }
+                </div>
               </div>
             </div>
-            
-            {/* 
-              By using an iframe pointing to the prescription page with a specific mode, 
-              we reuse the entire complex PrescriptionBuilder logic and UI natively,
-              embedded perfectly inside our modal as requested.
-            */}
-            <iframe 
-              src={`/doctor/prescription/${activeApptId}?mode=${modalType}&isModal=1`}
-              style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
-              title="Prescription Builder Modal"
-            />
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button 
+                onClick={() => setDeleteModal({ show: false, type: "single" })}
+                style={{ padding: "9px 18px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -6,6 +6,7 @@ import {
   Loader2, Download, Mail, ChevronDown, ChevronUp,
   Activity, Pill, FlaskConical, Building2, FileText,
   Heart, Thermometer, Weight, Eye, X, History, Brain, Stethoscope, Pencil,
+  Search, Check, Mic, MicOff
 } from "lucide-react";
 import PatientProfilePanel from "@/components/PatientProfilePanel";
 import VoicePrescriptionRecorder from "@/components/VoicePrescriptionRecorder";
@@ -29,16 +30,89 @@ const COMMON_COMPLAINTS = ["Fever and chills", "Headache", "Cough and cold", "Ch
 const COMMON_DIAGNOSES = ["Hypertension", "Type 2 Diabetes Mellitus", "Upper Respiratory Tract Infection", "Acute Gastroenteritis", "Urinary Tract Infection", "Acute Bronchitis", "Migraine", "Osteoarthritis", "Iron Deficiency Anemia", "Hypothyroidism", "Dengue Fever", "Typhoid Fever", "Viral Fever", "Acid Peptic Disease", "Allergic Rhinitis"];
 const COMMON_MEDS = ["Paracetamol", "Amoxicillin", "Metformin", "Atorvastatin", "Amlodipine", "Omeprazole", "Azithromycin", "Ciprofloxacin", "Ibuprofen", "Metronidazole", "Pantoprazole", "Cetirizine", "Doxycycline", "Salbutamol", "Cough Syrup", "ORS", "Multivitamin", "Vitamin D3", "Calcium Carbonate", "Aspirin"];
 
-function SectionCard({ title, icon, accent, children }: any) {
+function SectionCard({ title, icon, accent, children, extra }: any) {
   return (
-    <div style={{ background: "#fff", borderRadius: 14, marginBottom: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,.03)" }}>
+    <div style={{ background: "#fff", borderRadius: 14, marginBottom: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.03)" }}>
       <div style={{ width: "100%", padding: "12px 18px", background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: accent + "18", display: "flex", alignItems: "center", justifyContent: "center", color: accent }}>{icon}</div>
           <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{title}</span>
         </div>
+        {extra && <div>{extra}</div>}
       </div>
       <div style={{ padding: "0 18px 16px" }}>{children}</div>
+    </div>
+  );
+}
+
+function SearchableSelect({ options, value, onChange, placeholder, disabled }: {
+  options: { id: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find(o => o.id === value);
+  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative", flex: 2, zIndex: open ? 1000 : 1 }}>
+      <div onClick={() => !disabled && setOpen(!open)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 9px", borderRadius: 7, border: "1px solid #bae6fd", fontSize: 10, background: disabled ? "#f8fafc" : "#fff", cursor: disabled ? "default" : "pointer", minHeight: 31 }}>
+        <span style={{ color: selected ? "#1e293b" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected ? selected.label : placeholder}</span>
+        <ChevronDown size={12} color="#64748b" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+      </div>
+      {open && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, background: "#fff", border: "1px solid #bae6fd", borderRadius: 8, boxShadow: "0 10px 25px rgba(0,0,0,.15)", zIndex: 1001, maxHeight: 200, overflowY: "auto" }}>
+          <div style={{ padding: 6, borderBottom: "1px solid #f0f9ff", position: "sticky", top: 0, background: "#fff" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", background: "#f8fafc", borderRadius: 5 }}>
+              <Search size={10} color="#94a3b8" />
+              <input autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
+                style={{ border: "none", background: "none", outline: "none", fontSize: 10, width: "100%", color: "#334155" }} />
+            </div>
+          </div>
+          {filtered.length === 0 ? (
+            <div style={{ padding: "10px 12px", fontSize: 10, color: "#94a3b8", textAlign: "center" }}>No options found</div>
+          ) : (
+            filtered.map(o => (
+              <div key={o.id} onClick={() => { onChange(o.id); setOpen(false); setSearch(""); }}
+                style={{ padding: "8px 12px", fontSize: 10, cursor: "pointer", background: o.id === value ? "#f0f9ff" : "none", color: o.id === value ? "#0ea5e9" : "#334155", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
+                onMouseLeave={e => (e.currentTarget.style.background = o.id === value ? "#f0f9ff" : "none")}>
+                {o.label}
+                {o.id === value && <Check size={10} />}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VoiceWave({ color = "#ef4444" }: { color?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 2, height: 12 }}>
+      {[0.4, 0.7, 1, 0.7, 0.4].map((v, i) => (
+        <div key={i} style={{ 
+          width: 2, 
+          height: "100%", 
+          background: color, 
+          borderRadius: 2,
+          animation: `voiceWaveAnim 0.8s ease-in-out infinite`,
+          animationDelay: `${i * 0.15}s`,
+          transform: `scaleY(${v})`
+        }} />
+      ))}
     </div>
   );
 }
@@ -98,6 +172,57 @@ export default function PrescriptionPage() {
   const [myPlans, setMyPlans] = useState<any[]>([]);
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [activeVoiceTarget, setActiveVoiceTarget] = useState<string | null>(null);
+
+  const startVoiceTyping = (target: "complaint" | "diagnosis" | "advice") => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.interimResults = true;
+    recognition.continuous = target === "complaint" || target === "advice"; // Continuous for narratives
+    recognition.maxAlternatives = 1;
+
+    let finalTranscript = "";
+
+    recognition.onstart = () => setActiveVoiceTarget(target);
+    recognition.onend = () => {
+      setActiveVoiceTarget(null);
+      // For diagnosis, auto-trigger AI assist after speaking
+      if (target === "diagnosis" && finalTranscript.trim()) {
+        setTimeout(() => aiSmartAssist(true), 500);
+      }
+    };
+    recognition.onerror = () => setActiveVoiceTarget(null);
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + " ";
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      
+      const fullText = finalTranscript + interimTranscript;
+      if (fullText.trim()) {
+        if (target === "complaint") setComplaint(fullText.trim());
+        if (target === "diagnosis") setDiagnosis(fullText.trim());
+        if (target === "advice") setAdvice(fullText.trim());
+      }
+    };
+
+    recognition.start();
+    // For non-continuous (diagnosis), stop after a short silence or one result
+    if (!recognition.continuous) {
+      setTimeout(() => { try { recognition.stop(); } catch(e) {} }, 4000);
+    }
+  };
+
   const tog = (s: string) => setSections(p => ({ ...p, [s]: !p[s] }));
   const saveTimer = useRef<any>(null);
   const autoGenRef = useRef(false);
@@ -220,9 +345,8 @@ export default function PrescriptionPage() {
 
   useEffect(() => {
     if (locked) return;
-    if (!sections.refs) return;
     void ensureSubDeptsLoaded();
-  }, [locked, sections.refs, ensureSubDeptsLoaded]);
+  }, [locked, ensureSubDeptsLoaded]);
 
   // Auto-save
   useEffect(() => {
@@ -322,26 +446,88 @@ export default function PrescriptionPage() {
       await new Promise(r => setTimeout(r, 200));
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, logging: false });
-      el.style.display = prevDisplay;
-      el.style.position = "";
-      el.style.left = "";
-      el.style.top = "";
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const hs = doctor?.hospital?.settings;
-      const paperSize = (hs?.letterheadSize || "A4") as "a4" | "a5" | "letter";
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: paperSize });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = (canvas.height * pdfW) / canvas.width;
-      const pageH = pdf.internal.pageSize.getHeight();
-      let y = 0;
-      while (y < pdfH) {
-        if (y > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, -y, pdfW, pdfH);
-        y += pageH;
-      }
       const fname = `Rx_${(patient?.name || "Patient").replace(/\s+/g, "_")}_${new Date().toLocaleDateString("en-IN").replace(/\//g, "-")}.pdf`;
-      pdf.save(fname);
+      const _hs = doctor?.hospital?.settings as any;
+      const hasImgLh = !!(_hs?.letterhead && _hs?.letterheadType === "IMAGE");
+
+      if (hasImgLh) {
+        // Multi-page: letterhead on every page
+        const saved = { pt: el.style.paddingTop, pb: el.style.paddingBottom, bi: el.style.backgroundImage };
+        el.style.paddingTop = "0px";
+        el.style.paddingBottom = "0px";
+        el.style.backgroundImage = "none";
+        const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: "#ffffff" });
+        el.style.display = prevDisplay;
+        el.style.position = "";
+        el.style.left = "";
+        el.style.top = "";
+        el.style.paddingTop = saved.pt;
+        el.style.paddingBottom = saved.pb;
+        el.style.backgroundImage = saved.bi;
+
+        // Get letterhead dimensions
+        const lhImg = new Image();
+        lhImg.crossOrigin = "anonymous";
+        await new Promise<void>((res, rej) => { lhImg.onload = () => res(); lhImg.onerror = () => rej(); lhImg.src = _hs.letterhead; });
+        const pgW = 210;
+        const pgH = pgW * (lhImg.naturalHeight / lhImg.naturalWidth);
+        const topM = pgW * 0.16;
+        const botM = pgW * 0.13;
+        const cH = pgH - topM - botM;
+        const scaledH = (canvas.height * pgW) / canvas.width;
+
+        const lhCv = document.createElement("canvas");
+        lhCv.width = lhImg.naturalWidth; lhCv.height = lhImg.naturalHeight;
+        lhCv.getContext("2d")!.drawImage(lhImg, 0, 0);
+        const lhUrl = lhCv.toDataURL("image/jpeg", 0.95);
+
+        // Smart page-break: scan for white rows to avoid cutting content
+        const findSafeCut = (tgt: number): number => {
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return tgt;
+          const sL = Math.round(canvas.width * 0.1), sR = Math.round(canvas.width * 0.9);
+          const step = Math.max(1, Math.floor((sR - sL) / 40));
+          for (let y = Math.min(tgt, canvas.height - 1); y > Math.max(0, tgt - 250); y--) {
+            const row = ctx.getImageData(sL, y, sR - sL, 1).data;
+            let w = 0, t = 0;
+            for (let x = 0; x < (sR - sL) * 4; x += step * 4) { if (row[x] > 240 && row[x+1] > 240 && row[x+2] > 240) w++; t++; }
+            if (t > 0 && w / t > 0.95) return y;
+          }
+          return tgt;
+        };
+
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pgW, pgH] });
+        const pageHPx = Math.round((cH / scaledH) * canvas.height);
+        let cut = 0, pg = 0;
+        while (cut < canvas.height) {
+          if (pg > 0) pdf.addPage([pgW, pgH]);
+          pdf.addImage(lhUrl, "JPEG", 0, 0, pgW, pgH);
+          const rawEnd = Math.min(cut + pageHPx, canvas.height);
+          const safeCut = rawEnd >= canvas.height ? canvas.height : findSafeCut(rawEnd);
+          const srcHt = safeCut - cut;
+          if (srcHt <= 0) break;
+          const sc = document.createElement("canvas");
+          sc.width = canvas.width; sc.height = srcHt;
+          sc.getContext("2d")!.drawImage(canvas, 0, cut, canvas.width, srcHt, 0, 0, canvas.width, srcHt);
+          pdf.addImage(sc.toDataURL("image/jpeg", 0.95), "JPEG", 0, topM, pgW, (srcHt * pgW) / canvas.width);
+          cut = safeCut;
+          pg++;
+          if (pg > 20) break;
+        }
+        pdf.save(fname);
+      } else {
+        const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, logging: false });
+        el.style.display = prevDisplay;
+        el.style.position = "";
+        el.style.left = "";
+        el.style.top = "";
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const pdfW = 210;
+        const pdfH = (canvas.height * pdfW) / canvas.width;
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pdfW, pdfH] });
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
+        pdf.save(fname);
+      }
     } catch (err) {
       flash("PDF generation failed", "e");
     }
@@ -438,6 +624,10 @@ export default function PrescriptionPage() {
         body { font-family: 'Inter', sans-serif; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes voiceWaveAnim {
+          0%, 100% { transform: scaleY(0.4); }
+          50% { transform: scaleY(1); }
+        }
         @media print {
           .noprint { display: none !important; }
           .printonly { display: block !important; }
@@ -619,7 +809,36 @@ export default function PrescriptionPage() {
                 </SectionCard>
 
                 {/* Chief Complaint */}
-                <SectionCard title="Chief Complaint" icon={<Stethoscope size={14} />} accent="#0E898F" expanded={sections.complaint} onToggle={() => tog("complaint")}>
+                <SectionCard 
+                  title="Chief Complaint" 
+                  icon={<Stethoscope size={14} />} 
+                  accent="#0E898F" 
+                  expanded={sections.complaint} 
+                  onToggle={() => tog("complaint")}
+                  extra={!locked && (
+                    <button 
+                      onClick={() => startVoiceTyping("complaint")}
+                      disabled={activeVoiceTarget !== null && activeVoiceTarget !== "complaint"}
+                      style={{ 
+                        border: "none", 
+                        background: activeVoiceTarget === "complaint" ? "#fecaca" : "#f1f5f9", 
+                        color: activeVoiceTarget === "complaint" ? "#ef4444" : "#64748b", 
+                        padding: "4px 10px", 
+                        borderRadius: 6, 
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      {activeVoiceTarget === "complaint" ? <VoiceWave /> : <Mic size={12} />}
+                      {activeVoiceTarget === "complaint" ? "Listening..." : "Voice Type"}
+                    </button>
+                  )}
+                >
                   <textarea value={complaint}
                     onChange={e => {
                       setComplaint(e.target.value);
@@ -664,7 +883,37 @@ export default function PrescriptionPage() {
                 )}
 
                 {/* Diagnosis */}
-                <SectionCard title="Diagnosis" icon={<FileText size={14} />} accent="#10b981" expanded={sections.diag} onToggle={() => tog("diag")}>
+                <SectionCard 
+                  title="Diagnosis" 
+                  icon={<FileText size={14} />} 
+                  accent="#10b981" 
+                  expanded={sections.diag} 
+                  onToggle={() => tog("diag")}
+                  extra={!locked && (
+                    <button 
+                      onClick={() => startVoiceTyping("diagnosis")}
+                      disabled={activeVoiceTarget !== null && activeVoiceTarget !== "diagnosis"}
+                      style={{ 
+                        border: "none", 
+                        background: activeVoiceTarget === "diagnosis" ? "#fecaca" : "#ecfdf5", 
+                        color: activeVoiceTarget === "diagnosis" ? "#ef4444" : "#059669", 
+                        padding: "4px 10px", 
+                        borderRadius: 6, 
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        transition: "all 0.2s",
+                        boxShadow: "0 1px 2px rgba(5,150,105,0.1)"
+                      }}
+                    >
+                      {activeVoiceTarget === "diagnosis" ? <VoiceWave /> : <Sparkles size={12} />}
+                      {activeVoiceTarget === "diagnosis" ? "Listening..." : "Smart Voice"}
+                    </button>
+                  )}
+                >
                   <textarea value={diagnosis}
                     onChange={e => {
                       setDiagnosis(e.target.value);
@@ -752,11 +1001,18 @@ export default function PrescriptionPage() {
                     {refs.map((r, i) => (
                       <div key={i} style={{ background: "#f0f9ff", borderRadius: 9, padding: 10, marginBottom: 6, border: "1px solid #bae6fd" }}>
                         <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                          <select value={r.subDeptId} onChange={e => { const sd = subDepts.find((s: any) => s.id === e.target.value); const n = [...refs]; n[i] = { ...n[i], subDeptId: e.target.value, subDeptName: sd?.name || "" }; setRefs(n); }} disabled={locked}
-                            style={{ flex: 2, padding: "7px 9px", borderRadius: 7, border: "1px solid #bae6fd", fontSize: 10, outline: "none", background: "#fff" }}>
-                            <option value="">— Select Sub-Dept —</option>
-                            {subDepts.map((sd: any) => <option key={sd.id} value={sd.id}>{sd.name} ({sd.type})</option>)}
-                          </select>
+                          <SearchableSelect
+                            options={subDepts.map((sd: any) => ({ id: sd.id, label: sd.name }))}
+                            value={r.subDeptId}
+                            placeholder="— Select Sub-Dept —"
+                            disabled={locked}
+                            onChange={val => {
+                              const sd = subDepts.find((s: any) => s.id === val);
+                              const n = [...refs];
+                              n[i] = { ...n[i], subDeptId: val, subDeptName: sd?.name || "" };
+                              setRefs(n);
+                            }}
+                          />
                           <select value={r.priority} onChange={e => { const n = [...refs]; n[i] = { ...n[i], priority: e.target.value }; setRefs(n); }} disabled={locked}
                             style={{ padding: "7px 9px", borderRadius: 7, border: "1px solid #bae6fd", fontSize: 10, outline: "none", background: "#fff" }}><option>Normal</option><option>Urgent</option><option>STAT</option></select>
                           {!locked && <button onClick={() => setRefs(p => p.filter((_, j) => j !== i))} style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 size={12} /></button>}
@@ -772,7 +1028,36 @@ export default function PrescriptionPage() {
 
                 {/* Advice & Instructions + Follow-up — side by side */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
-                  <SectionCard title="Advice & Instructions" icon={<FileText size={14} />} accent="#10b981" expanded={sections.advice} onToggle={() => tog("advice")}>
+                  <SectionCard 
+                    title="Advice & Instructions" 
+                    icon={<FileText size={14} />} 
+                    accent="#10b981" 
+                    expanded={sections.advice} 
+                    onToggle={() => tog("advice")}
+                    extra={!locked && (
+                      <button 
+                        onClick={() => startVoiceTyping("advice")}
+                        disabled={activeVoiceTarget !== null && activeVoiceTarget !== "advice"}
+                        style={{ 
+                          border: "none", 
+                          background: activeVoiceTarget === "advice" ? "#fecaca" : "#f1f5f9", 
+                          color: activeVoiceTarget === "advice" ? "#ef4444" : "#64748b", 
+                          padding: "4px 10px", 
+                          borderRadius: 6, 
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        {activeVoiceTarget === "advice" ? <VoiceWave /> : <Mic size={12} />}
+                        {activeVoiceTarget === "advice" ? "Listening..." : "Voice Type"}
+                      </button>
+                    )}
+                  >
                     <textarea value={advice} onChange={e => setAdvice(e.target.value)} placeholder="Diet, lifestyle, precautions..." rows={3} disabled={locked}
                       style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 11, color: "#334155", outline: "none", resize: "vertical", background: locked ? "#f8fafc" : "#fff" }} />
                   </SectionCard>
@@ -1019,33 +1304,17 @@ function PrescriptionPrintView({ doctor, patient, appt, rx, settings }: { doctor
 
   return (
     <div className="printonly" style={{
-      paddingLeft: "40px",
-      paddingRight: "40px",
-      paddingTop: hs?.letterhead && hs.letterheadType === "IMAGE" ? 0 : margins.top,
-      paddingBottom: hs?.letterhead && hs.letterheadType === "IMAGE" ? 0 : margins.bottom,
       color: "#000",
       background: "#fff",
-      minHeight: dimensions.height,
-      width: dimensions.width,
+      width: "210mm",
       fontSize: "10pt",
       margin: "0 auto",
-      position: "relative",
       boxSizing: "border-box",
-      display: "flex",
-      flexDirection: "column"
+      paddingTop: hs?.letterhead && hs.letterheadType === "IMAGE" ? "16%" : margins.top,
+      paddingBottom: hs?.letterhead && hs.letterheadType === "IMAGE" ? "13%" : margins.bottom,
+      paddingLeft: hs?.letterhead && hs.letterheadType === "IMAGE" ? "5%" : 40,
+      paddingRight: hs?.letterhead && hs.letterheadType === "IMAGE" ? "5%" : 40
     }}>
-
-      {/* Letterhead Background (if IMAGE) — absolute fill, height 100% ensures footer is visible */}
-      {hs?.letterhead && hs.letterheadType === "IMAGE" && (
-        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: -1, pointerEvents: "none" }}>
-          <img
-            src={hs.letterhead}
-            alt="Letterhead"
-            crossOrigin="anonymous"
-            style={{ width: "100%", height: "100%", display: "block", objectFit: "fill" }}
-          />
-        </div>
-      )}
 
       {/* PDF Letterhead Warning/Link */}
       {hs?.letterhead && hs.letterheadType === "PDF" && (
@@ -1079,11 +1348,6 @@ function PrescriptionPrintView({ doctor, patient, appt, rx, settings }: { doctor
         </div>
       )}
 
-      {/* Spacer for letterhead header area */}
-      {hs?.letterhead && hs.letterheadType === "IMAGE" && (
-        <div style={{ height: "90px", flexShrink: 0 }} />
-      )}
-
       {/* Doctor & Patient Info */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20, padding: "10px 0", borderBottom: "1px solid #eee" }}>
         <div>
@@ -1101,62 +1365,67 @@ function PrescriptionPrintView({ doctor, patient, appt, rx, settings }: { doctor
 
       {/* Vitals */}
       {s.display.showVitals && Object.values(vitals).some(v => v) && (
-        <div style={{ marginBottom: 20, padding: "12px 15px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", gap: 20 }}>
+        <div style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 14 }}>
           {Object.entries(vitals).map(([k, v]) => v ? (
-            <div key={k} style={{ fontSize: "9pt" }}>
-              <span style={{ fontWeight: 800, textTransform: "uppercase", color: "#64748b", fontSize: "8pt" }}>{k}: </span>
-              <span style={{ fontWeight: 700 }}>{v as string}</span>
-            </div>
+            <div key={k}>
+            <span style={{ fontWeight: 700, textTransform: "uppercase", color: "#64748b", fontSize: "8pt" }}>{k}: </span>
+            <span style={{ fontWeight: 600, fontSize: "9pt" }}>{v as string}</span>
+          </div>
           ) : null)}
         </div>
       )}
 
       {/* Prescription Content */}
       <div>
-        {rx.chiefComplaint && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 800, fontSize: "9pt", marginBottom: 5, color: "#1e293b" }}>CHIEF COMPLAINT:</div>
-            <div style={{ whiteSpace: "pre-wrap", paddingLeft: 10, borderLeft: "3px solid #e2e8f0" }}>{rx.chiefComplaint}</div>
-          </div>
-        )}
-
-        {s.display.showDiagnosis && rx.diagnosis && (
-          <div style={{ marginBottom: 25 }}>
-            <div style={{ fontWeight: 800, fontSize: "9pt", marginBottom: 5, color: "#1e293b" }}>DIAGNOSIS:</div>
-            <div style={{ whiteSpace: "pre-wrap", paddingLeft: 10, borderLeft: "3px solid #e2e8f0" }}>
-              <span style={{ fontWeight: 700 }}>{rx.diagnosis}</span>
-              {s.display.showIcdCodes && icd.length > 0 && <span style={{ color: "#64748b", marginLeft: 8 }}>(ICD: {icd.join(", ")})</span>}
+        {(rx.chiefComplaint || rx.diagnosis) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
+            <div>
+              {rx.chiefComplaint && (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: "8pt", marginBottom: 2, color: "#475569", textTransform: "uppercase", letterSpacing: ".05em" }}>Chief Complaint</div>
+                  <div style={{ whiteSpace: "pre-wrap", fontSize: "9pt" }}>{rx.chiefComplaint}</div>
+                </>
+              )}
+            </div>
+            <div>
+              {s.display.showDiagnosis && rx.diagnosis && (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: "8pt", marginBottom: 2, color: "#475569", textTransform: "uppercase", letterSpacing: ".05em" }}>Diagnosis</div>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: "9pt" }}>{rx.diagnosis}</span>
+                    {s.display.showIcdCodes && icd.length > 0 && <div style={{ color: "#64748b", fontSize: "8pt", marginTop: 2 }}>(ICD: {icd.join(", ")})</div>}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
 
         {meds.length > 0 && (
           <div style={{ marginBottom: 30 }}>
-            <div style={{ fontWeight: 800, fontSize: "12pt", marginBottom: 10, borderBottom: "2px solid #000", paddingBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "15pt" }}>Rx</span>
-              <span style={{ fontSize: "9pt", fontWeight: 600, color: "#64748b" }}>(Medications)</span>
+            <div style={{ fontWeight: 800, fontSize: "13pt", marginBottom: 8, borderBottom: "1.5px solid #000", paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "15pt", fontStyle: "italic" }}>Rx</span>
+              <span style={{ fontSize: "9pt", fontWeight: 600, color: "#64748b" }}>Medications</span>
             </div>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #000" }}>
-                  <th style={{ textAlign: "left", padding: "6px 5px", fontSize: "8pt", textTransform: "uppercase" }}>Medication</th>
-                  <th style={{ textAlign: "left", padding: "6px 5px", fontSize: "8pt", textTransform: "uppercase" }}>Dosage</th>
-                  <th style={{ textAlign: "left", padding: "6px 5px", fontSize: "8pt", textTransform: "uppercase" }}>Frequency</th>
-                  <th style={{ textAlign: "left", padding: "6px 5px", fontSize: "8pt", textTransform: "uppercase" }}>Duration</th>
+                  <th style={{ textAlign: "left", padding: "4px 5px", fontSize: "8pt", textTransform: "uppercase", color: "#64748b", fontWeight: 700 }}>Medication</th>
+                  <th style={{ textAlign: "left", padding: "4px 5px", fontSize: "8pt", textTransform: "uppercase", color: "#64748b", fontWeight: 700 }}>Dosage</th>
+                  <th style={{ textAlign: "left", padding: "4px 5px", fontSize: "8pt", textTransform: "uppercase", color: "#64748b", fontWeight: 700 }}>Frequency</th>
+                  <th style={{ textAlign: "left", padding: "4px 5px", fontSize: "8pt", textTransform: "uppercase", color: "#64748b", fontWeight: 700 }}>Duration</th>
                 </tr>
               </thead>
               <tbody>
                 {meds.map((m: any, i: number) => (
                   <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: "7px 5px" }}>
-                      <div style={{ fontWeight: 800, fontSize: "10pt" }}>{m.name}</div>
-                      <div style={{ fontSize: "8pt", color: "#475569", marginTop: 1 }}>{m.route} · {m.instructions}</div>
+                    <td style={{ padding: "5px 5px" }}>
+                      <div style={{ fontWeight: 700, fontSize: "10pt" }}>{m.name}</div>
+                      {(m.route || m.instructions) && <div style={{ fontSize: "8pt", color: "#475569" }}>{[m.route, m.instructions].filter(Boolean).join(" · ")}</div>}
                     </td>
-                    <td style={{ padding: "7px 5px", fontWeight: 600, fontSize: "9pt" }}>{m.dosage}</td>
-                    <td style={{ padding: "7px 5px" }}>
-                      <span style={{ padding: "2px 5px", background: "#f1f5f9", borderRadius: 4, fontWeight: 700, fontSize: "8pt" }}>{m.frequency}</span>
-                    </td>
-                    <td style={{ padding: "7px 5px", fontWeight: 600, fontSize: "9pt" }}>{m.duration}</td>
+                    <td style={{ padding: "5px 5px", fontSize: "9pt" }}>{m.dosage}</td>
+                    <td style={{ padding: "5px 5px", fontSize: "9pt" }}>{m.frequency}</td>
+                    <td style={{ padding: "5px 5px", fontSize: "9pt" }}>{m.duration}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1164,89 +1433,55 @@ function PrescriptionPrintView({ doctor, patient, appt, rx, settings }: { doctor
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 30 }}>
-          <div>
-            {tests.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontWeight: 800, fontSize: "9pt", marginBottom: 6, color: "#1e293b" }}>INVESTIGATIONS:</div>
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: "9pt" }}>
-                  {tests.map((t: any, i: number) => (
-                    <li key={i} style={{ marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700 }}>{t.name}</span>
-                      <span style={{ marginLeft: 6, fontSize: "8pt", padding: "1px 4px", border: "1px solid #ccc", borderRadius: 3, textTransform: "uppercase" }}>{t.urgency}</span>
-                    </li>
-                  ))}
-                </ul>
+        {tests.length > 0 && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontWeight: 700, fontSize: "8pt", marginBottom: 4, color: "#475569", textTransform: "uppercase", letterSpacing: ".05em" }}>Investigations</div>
+            {tests.map((t: any, i: number) => (
+              <div key={i} style={{ fontSize: "9pt", marginBottom: 2 }}>
+                <span style={{ fontWeight: 600 }}>{t.name}</span>
+                {t.urgency && <span style={{ fontSize: "8pt", color: "#64748b", marginLeft: 5 }}>({t.urgency})</span>}
               </div>
-            )}
+            ))}
+          </div>
+        )}
 
-            {s.display.showReferrals && refs.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontWeight: 800, fontSize: "9pt", marginBottom: 6, color: "#1e293b" }}>REFERRALS:</div>
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: "9pt" }}>
-                  {refs.map((r: any, i: number) => (
-                    <li key={i} style={{ marginBottom: 4 }}>
-                      Refer to <span style={{ fontWeight: 700 }}>{r.subDeptName}</span>
-                      <div style={{ fontSize: "9pt", color: "#64748b" }}>Reason: {r.reason}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {rx.advice && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontWeight: 700, fontSize: "8pt", marginBottom: 2, color: "#475569", textTransform: "uppercase", letterSpacing: ".05em" }}>Advice</div>
+            <div style={{ fontSize: "9pt", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{rx.advice}</div>
+          </div>
+        )}
+
+        {rx.followUpDate && (
+          <div style={{ marginBottom: 10, fontSize: "9pt" }}>
+            <span style={{ fontWeight: 700, color: "#475569" }}>Next Follow-up: </span>
+            <span style={{ fontWeight: 600 }}>{new Date(rx.followUpDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
+            {rx.followUpNotes && <span style={{ color: "#64748b" }}> — {rx.followUpNotes}</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Signature */}
+      <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 16, marginTop: 10, paddingBottom: 8 }}>
+        <div style={{ textAlign: "center", minWidth: 160, maxWidth: 220 }}>
+          <div style={{ height: 90, display: "flex", alignItems: "flex-end", justifyContent: "center", marginBottom: 4 }}>
+            {doctor?.signature && (
+              <img src={doctor.signature} alt="Doctor Signature" style={{ maxHeight: 85, maxWidth: 200, objectFit: "contain", mixBlendMode: "multiply", display: "block" }} />
             )}
           </div>
-
-          <div>
-            {rx.advice && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontWeight: 800, fontSize: "9pt", marginBottom: 6, color: "#1e293b" }}>ADVICE / INSTRUCTIONS:</div>
-                <div style={{ fontSize: "9pt", whiteSpace: "pre-wrap", lineHeight: 1.5, padding: 8, background: "#f8fafc", borderRadius: 6 }}>{rx.advice}</div>
-              </div>
-            )}
-
-            {rx.followUpDate && (
-              <div style={{ marginTop: 10, padding: "12px 15px", background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: 8 }}>
-                <div style={{ fontWeight: 800, fontSize: "9pt", color: "#92400e", textTransform: "uppercase", marginBottom: 4 }}>Next Follow-up</div>
-                <div style={{ fontWeight: 700, fontSize: "11pt", color: "#b45309" }}>
-                  {new Date(rx.followUpDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-                </div>
-                {rx.followUpNotes && <div style={{ fontSize: "9pt", color: "#b45309", marginTop: 2 }}>{rx.followUpNotes}</div>}
-              </div>
-            )}
+          <div style={{ borderTop: "1.5px solid #000", paddingTop: 5 }}>
+            <div style={{ fontWeight: 700, fontSize: 11 }}>Dr. {doctor?.name}</div>
+            {doctor?.specialization && <div style={{ fontSize: 9, color: "#475569" }}>{doctor.specialization}</div>}
+            <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 2 }}>Digital Signature</div>
           </div>
         </div>
       </div>
 
-      {/* Spacer to protect letterhead footer band */}
-      {hs?.letterhead && hs.letterheadType === "IMAGE" && (
-        <div style={{ flex: 1 }} />
-      )}
-
-      {/* Footer & Signature */}
-      <div style={{ paddingTop: 30, paddingBottom: hs?.letterhead && hs.letterheadType === "IMAGE" ? 70 : 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 30 }}>
-          <div style={{ textAlign: "center", minWidth: 150 }}>
-            {doctor?.hospitalStamp && <img src={doctor.hospitalStamp} alt="Hospital Stamp" style={{ height: 80, objectFit: "contain", opacity: 0.8 }} />}
-            <div style={{ fontSize: "8pt", color: "#94a3b8", marginTop: 5 }}>Hospital Stamp</div>
-          </div>
-
-          <div style={{ textAlign: "center", minWidth: 200 }}>
-            {doctor?.signature ? (
-              <img src={doctor.signature} alt="Doctor Signature" style={{ height: 180, maxWidth: 220, objectFit: "contain", marginBottom: 5, mixBlendMode: "multiply" }} />
-            ) : (
-              <div style={{ height: 180 }}></div>
-            )}
-            <div style={{ borderTop: "2px solid #000", paddingTop: 5 }}>
-              <div style={{ fontWeight: 800, fontSize: "10pt" }}>Dr. {doctor?.name}</div>
-              <div style={{ fontSize: "8pt", fontWeight: 600 }}>{doctor?.specialization}</div>
-              <div style={{ fontSize: "7pt", color: "#64748b", marginTop: 2 }}>Digital Signature</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 15, fontSize: "9pt", color: "#64748b", textAlign: "center" }}>
+      {(!hs?.letterhead || hs.letterheadType !== "IMAGE") && (
+        <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 15, fontSize: "9pt", color: "#64748b", textAlign: "center", marginTop: 16 }}>
           {s.footer?.text || "This is a computer-generated prescription and does not require a physical signature."}
         </div>
-      </div>
+      )}
     </div>
   );
 }

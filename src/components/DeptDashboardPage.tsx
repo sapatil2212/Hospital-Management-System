@@ -7,7 +7,7 @@ import {
   RefreshCw, Loader2, ChevronRight, UserCheck, IndianRupee,
   Power, ClipboardList, CheckCircle2, Info,
   MapPin, Phone, Mail, Pencil, Trash2, Eye, Download,
-  ChevronUp, ChevronDown, X, ArrowLeft, Stethoscope,
+  ChevronUp, ChevronDown, X, ArrowLeft, Stethoscope, User,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
@@ -129,149 +129,248 @@ function OverviewTab({ deptProfile, cfg, onNavTo }: { deptProfile: any; cfg: Dep
   if (pieData.length === 0) pieData.push({ name: "No data", value: 1 });
 
   const STAT_CARDS = [
-    { label: "Active Sub-Depts",    value: loading ? "—" : activeSD,           sub: `${subDepts.length} total`,      Icon: Building2 },
-    { label: "Today's Appointments", value: loading ? "—" : todayAppts.length,  sub: `${todayComplete} completed`,    Icon: CalendarDays },
-    { label: "Today's Revenue",      value: loading ? "—" : `₹${todayRevenue.toLocaleString("en-IN")}`, sub: "collected today", Icon: IndianRupee },
-    { label: "Total Appointments",   value: loading ? "—" : appts.length,       sub: "last 50 loaded",                Icon: ClipboardList },
+    { label: "Sub-Departments", value: loading ? "—" : activeSD, Icon: Building2, color: cfg.accent, bg: cfg.accentLight, badge: { text: "ACTIVE", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Today's Appointments", value: loading ? "—" : todayAppts.length, Icon: CalendarDays, color: "#0891b2", bg: "#ecfeff", badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Completed Today", value: loading ? "—" : todayComplete, Icon: CheckCircle2, color: "#10b981", bg: "#f0fdf4", badge: { text: "DONE", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Revenue Today", value: loading ? "—" : `₹${todayRevenue.toLocaleString("en-IN")}`, Icon: IndianRupee, color: "#16a34a", bg: "#f0fdf4", badge: { text: "TODAY", bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" } },
+    { label: "Total Appointments", value: loading ? "—" : appts.length, Icon: ClipboardList, color: "#059669", bg: "#f0fdf4" },
   ];
 
   return (
     <>
-      {/* Banner */}
-      <div className="dd-banner" style={{ background: `linear-gradient(135deg,${cfg.accent} 0%,${cfg.accent2} 100%)`, marginBottom: 22 }}>
-        <div className="dd-banner-ic">
-          {cfg.icon ?? <Activity size={26} color="#fff" />}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="dd-banner-name">{deptProfile?.name || `${cfg.label} Department`}</div>
-          <div className="dd-banner-sub">{deptProfile?.description || `${cfg.label} Department Head Dashboard`}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-            <div className="dd-badge-pill">{cfg.label.toUpperCase()}</div>
-            {deptProfile?.code && <div className="dd-badge-pill">Code: {deptProfile.code}</div>}
-            <div className="dd-badge-pill" style={{ background: deptProfile?.isActive ? "rgba(16,185,129,.25)" : "rgba(239,68,68,.25)" }}>
-              {deptProfile?.isActive ? "● Active" : "● Inactive"}
-            </div>
+      {/* Header: title + live indicator + refresh */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-.02em" }}>
+            {deptProfile?.name || `${cfg.label} Department`} Overview
+          </div>
+          <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 3px #dcfce7", flexShrink: 0 }} />
+            Live &middot; Updated {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
-        <button className="dd-btn-ghost" style={{ background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.3)", color: "#fff", flexShrink: 0 }} onClick={() => deptId && load(deptId)}>
-          <RefreshCw size={13} style={loading ? { animation: "dd-spin .7s linear infinite" } : {}} />
-          {loading ? "Loading…" : "Refresh"}
+        <button
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}
+          onClick={() => deptId && load(deptId)}
+        >
+          <RefreshCw size={13} className={loading ? "opd2-spin" : ""} /> Refresh
         </button>
       </div>
 
-      {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
-        {STAT_CARDS.map((s, i) => (
-          <div
-            key={i}
-            style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 12, transition: "box-shadow .2s, transform .15s", cursor: "default" }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 16px ${cfg.accent}20`; e.currentTarget.style.transform = "translateY(-1px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}
-          >
-            <div style={{ width: 44, height: 44, borderRadius: 11, background: `linear-gradient(135deg,${cfg.accent},${cfg.accent2})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <s.Icon size={20} color="#fff" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{s.value}</div>
+      {/* Stats Grid - 5 Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
+        {STAT_CARDS.map((s, i) => {
+          const SI = s.Icon;
+          return (
+            <div key={i} style={{
+              cursor: "default",
+              padding: "10px 12px",
+              gap: 10,
+              background: "#fff",
+              borderRadius: 12,
+              border: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              boxShadow: "0 1px 4px rgba(0,0,0,.04)",
+              transition: "transform .18s, box-shadow .18s"
+            }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <SI size={18} color={s.color} />
               </div>
-              <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.3 }}>{s.label}</div>
-              {s.sub && <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>{s.sub}</div>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.value}</div>
+                  {s.badge && (
+                    <span style={{
+                      fontSize: 7,
+                      fontWeight: 700,
+                      color: s.badge.color,
+                      background: s.badge.bg,
+                      padding: "1px 4px",
+                      borderRadius: 8,
+                      border: `1px solid ${s.badge.border}`,
+                      flexShrink: 0
+                    }}>
+                      {s.badge.text}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 9, color: "#64748b", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16, marginBottom: 22 }}>
-        {/* Status breakdown */}
-        {Object.keys(statusCount).length > 0 && (
-          <div className="dd-card">
-            <div className="dd-card-head">
-              <div className="dd-card-title">Appointment Status Breakdown</div>
-              <button className="dd-btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }} onClick={() => onNavTo("appointments")}>
-                View All <ChevronRight size={11} />
-              </button>
-            </div>
-            <div className="dd-card-body">
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {Object.entries(statusCount).map(([st, count]) => {
-                  const m   = STATUS_META[st] || { label: st, cls: "dd-badge-gray" };
-                  const pct = Math.round((count / appts.length) * 100);
-                  return (
-                    <div key={st} style={{ flex: "1 1 110px", background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span className={`dd-badge ${m.cls}`}>{m.label}</span>
-                        <span style={{ fontSize: 10, color: "#94a3b8" }}>{pct}%</span>
-                      </div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{count}</div>
-                      <div style={{ height: 3, background: "#e2e8f0", borderRadius: 3, marginTop: 8 }}>
-                        <div style={{ height: "100%", width: `${pct}%`, background: cfg.accent, borderRadius: 3 }} />
-                      </div>
-                    </div>
-                  );
-                })}
+      {/* Charts Row */}
+      {loading ? (
+        <div style={{ height: 280, background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, color: "#94a3b8", fontSize: 12, gap: 8 }}>
+          <Loader2 size={16} className="opd2-spin" />Loading {cfg.label.toLowerCase()} analytics...
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18, marginBottom: 20 }}>
+          {/* Status Breakdown Chart */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "18px 20px 14px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{cfg.label} Department Activity</div>
+                <div style={{ fontSize: 10, color: "#94a3b8" }}>Appointment status distribution</div>
               </div>
             </div>
+            <div style={{ width: "100%", height: 220 }}>
+              {Object.keys(statusCount).length > 0 ? (
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {Object.entries(statusCount).map(([st, count]) => {
+                    const m = STATUS_META[st] || { label: st, cls: "dd-badge-gray" };
+                    const pct = Math.round((count / appts.length) * 100);
+                    return (
+                      <div key={st} style={{ flex: "1 1 110px", background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                          <span className={`dd-badge ${m.cls}`} style={{ fontSize: 10 }}>{m.label}</span>
+                          <span style={{ fontSize: 10, color: "#94a3b8" }}>{pct}%</span>
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>{count}</div>
+                        <div style={{ height: 3, background: "#e2e8f0", borderRadius: 3, marginTop: 8 }}>
+                          <div style={{ height: "100%", width: `${pct}%`, background: cfg.accent, borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#94a3b8", fontSize: 12 }}>No appointment data available</div>
+              )}
+            </div>
           </div>
-        )}
-        {/* Sub-dept pie */}
-        <div className="dd-card">
-          <div className="dd-card-head"><div className="dd-card-title">Sub-Dept Referrals</div></div>
-          <div className="dd-card-body" style={{ height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <ResponsiveContainer width="100%" height={140}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={38} outerRadius={60} paddingAngle={3} dataKey="value">
-                  {pieData.map((_: any, i: number) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0" }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 8px", justifyContent: "center" }}>
-              {pieData.filter(d => d.name !== "No data").map((d: any, i: number) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#64748b" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 2, background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
-                  {d.name}
+
+          {/* Sub-Dept Distribution */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,.04)" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 14 }}>Sub-Department Distribution</div>
+            <div style={{ width: "100%", height: 160 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie 
+                    data={pieData}
+                    dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={4} strokeWidth={0}
+                  >
+                    {pieData.map((_: any, idx: number) => (
+                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 10 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px", marginTop: 10 }}>
+              {pieData.filter(d => d.name !== "No data").slice(0, 6).map((d: any, i: number) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 9, color: "#64748b" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 1, background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                    {d.name}
+                  </span>
+                  <span style={{ fontWeight: 700, color: "#1e293b" }}>{d.value}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Recent appointments */}
-      <div className="dd-section-title">
-        <div className="dd-section-dot" />Recent Appointments
-        <button className="dd-btn-ghost" style={{ marginLeft: "auto", fontSize: 11, padding: "4px 10px" }} onClick={() => onNavTo("appointments")}>
-          View All <ChevronRight size={11} />
-        </button>
-      </div>
-      <div className="dd-card">
-        <div className="dd-tbl-wrap">
-          <table className="dd-tbl">
-            <thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th><th>Fee</th></tr></thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 28, color: "#94a3b8" }}>
-                  <Loader2 size={14} style={{ animation: "dd-spin .7s linear infinite", verticalAlign: "middle", marginRight: 6 }} />Loading…
-                </td></tr>
-              ) : appts.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 28, color: "#94a3b8" }}>No appointments found</td></tr>
-              ) : appts.slice(0, 8).map(a => {
+      {/* Recent Activity Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        {/* Recent Appointments */}
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
+              <CalendarDays size={15} color={cfg.accent} />Recent Appointments
+            </span>
+            <span style={{ fontSize: 10, color: "#94a3b8" }}>{todayAppts.length} today</span>
+          </div>
+          <div style={{ padding: "10px 0" }}>
+            {loading ? (
+              <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Loader2 size={16} className="opd2-spin" />Loading...
+              </div>
+            ) : appts.length > 0 ? (
+              appts.slice(0, 5).map((a: any) => {
                 const sm = STATUS_META[a.status] || { label: a.status, cls: "dd-badge-gray" };
                 return (
-                  <tr key={a.id}>
-                    <td><div className="dd-td-name">{a.patient?.name || "—"}</div><div style={{ fontSize: 10, color: "#94a3b8" }}>{a.patient?.patientId}</div></td>
-                    <td style={{ fontSize: 12, color: "#475569" }}>{a.doctor?.name || "—"}</td>
-                    <td style={{ fontSize: 12 }}>{a.appointmentDate ? fmt(a.appointmentDate) : "—"}</td>
-                    <td style={{ fontSize: 12 }}>{fmtTime(a.timeSlot)}</td>
-                    <td><span className={`dd-badge ${sm.cls}`}>{sm.label}</span></td>
-                    <td style={{ fontWeight: 600 }}>{a.consultationFee ? `₹${a.consultationFee}` : "—"}</td>
-                  </tr>
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 18px", borderBottom: "1px solid #f8fafc" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: cfg.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <User size={14} color={cfg.accent} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{a.patient?.name}</div>
+                      <div style={{ fontSize: 10, color: "#64748b" }}>{a.doctor?.name} · {fmtTime(a.timeSlot)}</div>
+                    </div>
+                    <span className={`dd-badge ${sm.cls}`} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 100, fontWeight: 700 }}>
+                      {sm.label}
+                    </span>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              })
+            ) : (
+              <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>No appointments found today</div>
+            )}
+            {appts.length > 0 && (
+              <div style={{ padding: "10px 18px", fontSize: 11, color: cfg.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => onNavTo("appointments")}>
+                View all appointments →
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sub-Departments */}
+        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,.04)", overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
+              <Building2 size={15} color={cfg.accent} />Sub-Departments
+            </span>
+            <span style={{ fontSize: 10, color: "#94a3b8" }}>{activeSD} active</span>
+          </div>
+          <div style={{ padding: "10px 0" }}>
+            {loading ? (
+              <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Loader2 size={16} className="opd2-spin" />Loading...
+              </div>
+            ) : subDepts.filter(s => s.isActive).length > 0 ? (
+              subDepts.filter(s => s.isActive).slice(0, 5).map((sd: any) => (
+                <div key={sd.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 18px", borderBottom: "1px solid #f8fafc", cursor: "pointer" }}
+                  onClick={() => onNavTo("subdepts")}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: cfg.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Stethoscope size={14} color={cfg.accent} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>{sd.name}</div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>{sd.type?.replace(/_/g, " ")} · {sd._count?.procedures || 0} procedures</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1e293b" }}>{sd._count?.appointments || 0}</div>
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: cfg.accent,
+                      background: cfg.accentLight,
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      marginTop: 2,
+                      display: "inline-block",
+                      border: `1px solid ${cfg.accentBorder}`
+                    }}>
+                      Referrals
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>No sub-departments found</div>
+            )}
+            {subDepts.filter(s => s.isActive).length > 0 && (
+              <div style={{ padding: "10px 18px", fontSize: 11, color: cfg.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => onNavTo("subdepts")}>
+                View all sub-departments →
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

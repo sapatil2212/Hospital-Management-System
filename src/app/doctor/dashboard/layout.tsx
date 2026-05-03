@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   CalendarDays, Stethoscope, LogOut, Search,
   Bell, HelpCircle, UserRound, FileText,
-  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock, BarChart2, Menu, X
+  ChevronDown, Settings, User, Activity, ClipboardCheck, Clock, BarChart2, Menu, X, ListTodo
 } from "lucide-react";
 import { DoctorDashboardProvider, useDoctorDashboard } from "./DoctorDashboardContext";
 import NotificationBell from "@/components/NotificationBell";
@@ -25,6 +25,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { id: "schedule", path: "/doctor/dashboard", label: "Today's Schedule", icon: <CalendarDays size={16} /> },
+    { id: "appointments", path: "/doctor/dashboard?tab=appointments", label: "Appointments", icon: <ListTodo size={16} /> },
     { id: "patients", path: "/doctor/dashboard?tab=patients", label: "My Patients", icon: <UserRound size={16} /> },
     { id: "rx", path: "/doctor/dashboard?tab=rx", label: "Rx", icon: <FileText size={16} /> },
     { id: "prescription-settings", path: "/doctor/dashboard?tab=prescription-settings", label: "Prescription Setting", icon: <FileText size={16} /> },

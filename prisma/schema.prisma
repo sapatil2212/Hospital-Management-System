@@ -63,6 +63,13 @@ model Hospital {
   labOrders             LabOrder[]
   labSamples            LabSample[]
   labReports            LabReport[]
+  ipdAdmissions         IPDAdmission[]
+  ipdVitals             IPDVitals[]
+  ipdClinicalNotes      IPDClinicalNote[]
+  ipdMedicationOrders   IPDMedicationOrder[]
+  ipdMedicationAdmins   IPDMedicationAdministration[]
+  ipdBedTransfers       IPDBedTransfer[]
+  ipdDischargeSummaries IPDDischargeSummary[]
 }
 
 model User {
@@ -380,17 +387,22 @@ model DoctorLeave {
 }
 
 model DoctorAttendance {
-  id         String           @id @default(uuid())
-  doctorId   String
-  hospitalId String
-  date       DateTime         @db.Date
-  status     AttendanceStatus @default(ABSENT)
-  loginTime  DateTime?
-  logoutTime DateTime?
-  notes      String?
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  doctor     Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid())
+  doctorId        String
+  hospitalId      String
+  date            DateTime         @db.Date
+  status          AttendanceStatus @default(ABSENT)
+  loginTime       DateTime?
+  logoutTime      DateTime?
+  loginLocation   String?          @db.Text
+  logoutLocation  String?          @db.Text
+  loginIp         String?
+  logoutIp        String?
+  totalWorkHours  Float?           @default(0)
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  doctor          Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
   @@unique([doctorId, date])
   @@index([doctorId])
@@ -512,6 +524,7 @@ model BedAllocation {
   bed                   Bed              @relation(fields: [bedId], references: [id], onDelete: Cascade)
   hospital              Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   department            Department?      @relation(fields: [departmentId], references: [id])
+  ipdAdmission          IPDAdmission?
 
   @@index([hospitalId])
   @@index([bedId])
@@ -761,6 +774,7 @@ model Patient {
   name             String
   email            String?
   phone            String
+  whatsapp         String?
   gender           String?
   dateOfBirth      DateTime?
   bloodGroup       String?
@@ -784,9 +798,9 @@ model Patient {
   visits           Visit[]
   treatmentPlans   TreatmentPlan[]
   labOrders        LabOrder[]
+  ipdAdmissions    IPDAdmission[]
 
   @@unique([hospitalId, patientId])
-  @@unique([hospitalId, phone])
   @@index([hospitalId])
   @@index([hospitalId, phone])
   @@index([hospitalId, name])
@@ -1091,6 +1105,8 @@ model Expense {
   description String?         @db.Text
   receipt     String?
   addedBy     String?
+  addedByName String?
+  department  String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   hospital    Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
@@ -1108,6 +1124,8 @@ model Revenue {
   referenceType String?
   amount        Float
   description   String?
+  addedBy       String?
+  department    String?
   createdAt     DateTime      @default(now())
   hospital      Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
@@ -2046,4 +2064,195 @@ enum LabReportStatus {
   DRAFT
   VERIFIED
   DELIVERED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IPD MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum IPDAdmissionType {
+  EMERGENCY
+  PLANNED
+  TRANSFER
+}
+
+enum IPDAdmissionStatus {
+  ADMITTED
+  DISCHARGED
+  TRANSFERRED
+}
+
+enum IPDClinicalNoteType {
+  DOCTOR_ROUND
+  PROGRESS_NOTE
+  NURSING_NOTE
+  TREATMENT_PLAN
+  DIAGNOSIS
+}
+
+enum IPDMedicationRoute {
+  ORAL
+  IV
+  IM
+  SC
+  TOPICAL
+  INHALATION
+  OTHER
+}
+
+enum IPDMedicationStatus {
+  ACTIVE
+  COMPLETED
+  DISCONTINUED
+}
+
+enum IPDMARStatus {
+  GIVEN
+  MISSED
+  HELD
+  REFUSED
+}
+
+model IPDAdmission {
+  id                   String              @id @default(uuid())
+  hospitalId           String
+  allocationId         String              @unique
+  patientId            String?
+  ipdNumber            String
+  admissionType        IPDAdmissionType    @default(PLANNED)
+  assignedDoctorId     String?
+  departmentId         String?
+  insuranceProvider    String?
+  insuranceId          String?
+  corporateName        String?
+  admissionNotes       String?             @db.Text
+  status               IPDAdmissionStatus  @default(ADMITTED)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  allocation           BedAllocation       @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+  hospital             Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient              Patient?            @relation(fields: [patientId], references: [id])
+  vitals               IPDVitals[]
+  clinicalNotes        IPDClinicalNote[]
+  medicationOrders     IPDMedicationOrder[]
+  transfers            IPDBedTransfer[]
+  dischargeSummary     IPDDischargeSummary?
+
+  @@unique([hospitalId, ipdNumber])
+  @@index([hospitalId])
+  @@index([hospitalId, status])
+  @@index([patientId])
+}
+
+model IPDVitals {
+  id                      String       @id @default(uuid())
+  hospitalId              String
+  admissionId             String
+  recordedAt              DateTime     @default(now())
+  recordedBy              String?
+  bloodPressureSystolic   Int?
+  bloodPressureDiastolic  Int?
+  pulse                   Int?
+  temperature             Float?
+  respiratoryRate         Int?
+  oxygenSaturation        Float?
+  bloodSugar              Float?
+  weight                  Float?
+  notes                   String?      @db.Text
+  admission               IPDAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  hospital                Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([admissionId])
+  @@index([hospitalId])
+}
+
+model IPDClinicalNote {
+  id          String              @id @default(uuid())
+  hospitalId  String
+  admissionId String
+  type        IPDClinicalNoteType @default(PROGRESS_NOTE)
+  content     String              @db.Text
+  authorName  String
+  authorRole  String?
+  createdAt   DateTime            @default(now())
+  admission   IPDAdmission        @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  hospital    Hospital            @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([admissionId])
+  @@index([hospitalId])
+}
+
+model IPDMedicationOrder {
+  id             String               @id @default(uuid())
+  hospitalId     String
+  admissionId    String
+  medicationName String
+  dosage         String
+  frequency      String
+  route          IPDMedicationRoute   @default(ORAL)
+  startDate      DateTime             @default(now())
+  endDate        DateTime?
+  status         IPDMedicationStatus  @default(ACTIVE)
+  prescribedBy   String?
+  notes          String?              @db.Text
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  admission      IPDAdmission         @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  hospital       Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  administrations IPDMedicationAdministration[]
+
+  @@index([admissionId])
+  @@index([hospitalId])
+}
+
+model IPDMedicationAdministration {
+  id             String           @id @default(uuid())
+  hospitalId     String
+  orderId        String
+  scheduledTime  DateTime
+  administeredAt DateTime?
+  administeredBy String?
+  status         IPDMARStatus     @default(GIVEN)
+  notes          String?
+  order          IPDMedicationOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  hospital       Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([hospitalId])
+}
+
+model IPDBedTransfer {
+  id           String       @id @default(uuid())
+  hospitalId   String
+  admissionId  String
+  fromBedId    String?
+  toBedId      String?
+  fromWardId   String?
+  toWardId     String?
+  reason       String?      @db.Text
+  transferredBy String?
+  transferredAt DateTime    @default(now())
+  admission    IPDAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  hospital     Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([admissionId])
+  @@index([hospitalId])
+}
+
+model IPDDischargeSummary {
+  id                    String       @id @default(uuid())
+  hospitalId            String
+  admissionId           String       @unique
+  finalDiagnosis        String?      @db.Text
+  conditionAtDischarge  String?
+  dischargeMedications  String?      @db.LongText
+  followUpInstructions  String?      @db.Text
+  dietaryInstructions   String?      @db.Text
+  billingCleared        Boolean      @default(false)
+  dischargedBy          String?
+  dischargedAt          DateTime     @default(now())
+  admission             IPDAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  hospital              Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId])
 }

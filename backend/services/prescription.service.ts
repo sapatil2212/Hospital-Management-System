@@ -166,12 +166,14 @@ export async function completePrescription(id: string, hospitalId: string, input
     try { referrals = JSON.parse(referralsStr); } catch { referrals = []; }
   }
 
-  if (referrals.length > 0) {
+  const validReferrals = referrals.filter((ref: any) => ref.subDeptId && ref.subDeptId.trim());
+
+  if (validReferrals.length > 0) {
     data.status = "IN_WORKFLOW";
-    data.currentDeptId = referrals[0].subDeptId;
+    data.currentDeptId = validReferrals[0].subDeptId;
 
     // Create workflow steps for each referred sub-department
-    const steps = referrals.map((ref: any, idx: number) => ({
+    const steps = validReferrals.map((ref: any, idx: number) => ({
       hospitalId,
       prescriptionId: id,
       subDepartmentId: ref.subDeptId,
@@ -190,6 +192,43 @@ export async function completePrescription(id: string, hospitalId: string, input
     data.status = "COMPLETED";
   }
 
+  // Auto-route to pharmacy if medications are prescribed and no pharmacy referral exists
+  const medsPayload = input.medications ?? existing.medications;
+  if (medsPayload) {
+    try {
+      const parsedMeds = JSON.parse(medsPayload);
+      if (Array.isArray(parsedMeds) && parsedMeds.length > 0) {
+        const pharmacySubDept = await px.subDepartment.findFirst({
+          where: { hospitalId, type: "PHARMACY" },
+        });
+        if (pharmacySubDept) {
+          const alreadyInReferrals = validReferrals.some((r: any) => r.subDeptId === pharmacySubDept.id);
+          if (!alreadyInReferrals) {
+            const existingPharmWf = await px.prescriptionWorkflow.findFirst({
+              where: { prescriptionId: id, subDepartmentId: pharmacySubDept.id, hospitalId },
+            });
+            if (!existingPharmWf) {
+              await px.prescriptionWorkflow.create({
+                data: {
+                  hospitalId,
+                  prescriptionId: id,
+                  subDepartmentId: pharmacySubDept.id,
+                  sequence: validReferrals.length,
+                  status: "PENDING",
+                },
+              });
+              // If no other referrals, set prescription to IN_WORKFLOW for pharmacy
+              if (validReferrals.length === 0) {
+                data.status = "IN_WORKFLOW";
+                data.currentDeptId = pharmacySubDept.id;
+              }
+            }
+          }
+        }
+      }
+    } catch { /* non-blocking — pharmacy routing failure should not block prescription completion */ }
+  }
+
   // Resolve the final consultation fee: prescription input > existing prescription > appointment
   const finalFee = input.consultationFee ?? existing.consultationFee ?? undefined;
 
@@ -204,9 +243,9 @@ export async function completePrescription(id: string, hospitalId: string, input
       notes: existing.chiefComplaint || input.chiefComplaint || undefined,
       ...(finalFee !== undefined ? { consultationFee: finalFee } : {}),
       // Also set sub-department referral on appointment if referrals exist
-      ...(referrals.length > 0 ? {
-        subDepartmentId: referrals[0].subDeptId,
-        subDeptNote: referrals[0].notes || referrals[0].reason || null,
+      ...(validReferrals.length > 0 ? {
+        subDepartmentId: validReferrals[0].subDeptId,
+        subDeptNote: validReferrals[0].notes || validReferrals[0].reason || null,
       } : {}),
     },
   });

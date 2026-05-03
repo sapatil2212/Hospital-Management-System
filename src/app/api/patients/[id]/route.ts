@@ -4,12 +4,12 @@ import { successResponse, errorResponse } from "../../../../../backend/utils/res
 import {
   getPatientById,
   updatePatient,
-  deletePatient,
+  deletePatientForce,
   PatientServiceError,
 } from "../../../../../backend/services/patient.service";
 import { updatePatientSchema } from "../../../../../backend/validations/patient.validation";
 
-const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT"];
+const ALLOWED_ROLES = ["HOSPITAL_ADMIN", "RECEPTIONIST", "STAFF", "DOCTOR", "SUB_DEPT_HEAD", "DEPT_HEAD"];
 
 // GET /api/patients/[id]
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -45,12 +45,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 // DELETE /api/patients/[id]
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = await requireRole(req, ["HOSPITAL_ADMIN"]);
+  const auth = await requireRole(req, ["HOSPITAL_ADMIN", "DEPT_HEAD"]);
   if (auth.error) return auth.error;
 
   try {
-    const result = await deletePatient(params.id, auth.hospitalId);
-    return successResponse(result, "Patient deleted");
+    const result = await deletePatientForce(params.id, auth.hospitalId);
+    return successResponse(result, "Patient and all history deleted");
   } catch (e: any) {
     if (e instanceof PatientServiceError) return errorResponse(e.message, e.status);
     return errorResponse(e.message, 500);

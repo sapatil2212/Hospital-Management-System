@@ -176,8 +176,8 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         /* ─── Stat cards ─── */
         .cl-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
         @media(max-width:1200px){.cl-stats{grid-template-columns:repeat(2,1fr)}}
-        .cl-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #e8f4f4;display:flex;align-items:center;gap:14px;cursor:default;transition:border-color .2s}
-        .cl-sc:hover{border-color:#B3E0E0}
+        .cl-sc{background:#fff;border-radius:14px;padding:18px;border:1px solid #f0f4f4;display:flex;align-items:center;gap:14px;cursor:default;transition:border-color .2s}
+        .cl-sc:hover{border-color:#daeaea}
         .cl-sc-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
         .cl-sc-lbl{font-size:10px;color:#94a3b8;font-weight:500;margin-bottom:3px}
         .cl-sc-val{font-size:20px;font-weight:800;color:#1e293b;letter-spacing:-.02em;line-height:1}
@@ -187,7 +187,7 @@ function ClinicalLayoutContent({ children }: { children: React.ReactNode }) {
         /* ─── Chart cards ─── */
         .cl-charts{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-bottom:22px}
         @media(max-width:1100px){.cl-charts{grid-template-columns:1fr}}
-        .cl-card{background:#fff;border-radius:14px;border:1px solid #e8f4f4;overflow:hidden}
+        .cl-card{background:#fff;border-radius:14px;border:1px solid #f0f4f4;overflow:hidden}
         .cl-card-head{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
         .cl-card-title{font-size:12px;font-weight:700;color:#1e293b}
         .cl-card-sub{font-size:10px;color:#94a3b8;margin-top:2px}

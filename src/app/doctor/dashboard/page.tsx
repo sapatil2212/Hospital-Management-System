@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarDays, ChevronRight, ChevronLeft, ChevronUp, ChevronDown,
   UserRound, Loader2, PlayCircle, CheckCircle2, X, FileText, Clock, RefreshCw, Pencil, Activity, ClipboardCheck,
-  BarChart2, TrendingUp, IndianRupee, Users, ArrowRight, Search, Download, FileSpreadsheet, FileType, ArrowUpDown
+  BarChart2, TrendingUp, IndianRupee, Users, ArrowRight, Search, Download, FileSpreadsheet, FileType, ArrowUpDown, LogOut
 } from "lucide-react";
 import {
   ResponsiveContainer as RechartsResponsiveContainer,
@@ -25,6 +25,7 @@ import {
 import PatientProfilePanel from "@/components/PatientProfilePanel";
 import PrescriptionSettingsPanel from "@/components/PrescriptionSettingsPanel";
 import ScheduleBuilder from "@/components/ScheduleBuilder";
+import { DoctorAttendancePanel } from "@/components/DoctorAttendancePanel";
 import { useDoctorDashboard } from "./DoctorDashboardContext";
 import dynamic from "next/dynamic";
 
@@ -715,7 +716,7 @@ function ScheduleMgmtTab({ accent, localSchedule, setLocalSchedule, scheduleLoad
   );
 }
 
-type Tab = "schedule" | "patients" | "rx" | "prescription-settings" | "treatment-plans" | "attendance" | "schedule-mgmt" | "reports";
+type Tab = "schedule" | "appointments" | "patients" | "rx" | "prescription-settings" | "treatment-plans" | "attendance" | "schedule-mgmt" | "reports";
 
 const fmtDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const isSameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -746,6 +747,7 @@ function DoctorDashboardContent() {
   const [plansFilter, setPlansFilter] = useState("");
   const [attendance, setAttendance] = useState<any[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [attendanceMonth, setAttendanceMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -796,11 +798,22 @@ function DoctorDashboardContent() {
   const [attendSortField, setAttendSortField] = useState("date");
   const [attendSortDir, setAttendSortDir] = useState<"asc" | "desc">("desc");
   const [attendExportOpen, setAttendExportOpen] = useState(false);
+  const attendancePostedRef = useRef(false);
 
   const [recentSearch, setRecentSearch] = useState("");
   const [recentSortField, setRecentSortField] = useState("date");
   const [recentSortDir, setRecentSortDir] = useState<"asc" | "desc">("desc");
   const [recentExportOpen, setRecentExportOpen] = useState(false);
+
+  // All Appointments state
+  const [allAppts, setAllAppts] = useState<any[]>([]);
+  const [allApptsLoading, setAllApptsLoading] = useState(false);
+  const [allApptSearch, setAllApptSearch] = useState("");
+  const [allApptSortField, setAllApptSortField] = useState("appointmentDate");
+  const [allApptSortDir, setAllApptSortDir] = useState<"asc" | "desc">("desc");
+  const [allApptExportOpen, setAllApptExportOpen] = useState(false);
+  const [allApptDateFilter, setAllApptDateFilter] = useState<"all" | "today" | "tomorrow" | "custom">("all");
+  const [allApptCustomDate, setAllApptCustomDate] = useState(fmtDate(new Date()));
 
   // ── Slot Alert (auto-popup when appointment time arrives) ──
   const [slotAlertAppt, setSlotAlertAppt] = useState<any>(null);
@@ -817,6 +830,15 @@ function DoctorDashboardContent() {
     const d = await api(url);
     if (d.success) setAppointments(d.data?.data || []);
     setLoadingAppts(false);
+  }, []);
+
+  const fetchAllAppointments = useCallback(async (doctorId: string, departmentId?: string) => {
+    setAllApptsLoading(true);
+    let url = `/api/appointments?doctorId=${doctorId}&limit=500&sortBy=appointmentDate&sortOrder=desc`;
+    if (departmentId) url += `&departmentId=${departmentId}`;
+    const d = await api(url);
+    if (d.success) setAllAppts(d.data?.data || []);
+    setAllApptsLoading(false);
   }, []);
 
   const fetchAllPatients = useCallback(async (doctorId: string, departmentId?: string) => {
@@ -836,14 +858,40 @@ function DoctorDashboardContent() {
     }
   }, []);
 
+  const getLocation = async () => {
+    try {
+      const res = await fetch("https://ipapi.co/json/");
+      const data = await res.json();
+      return {
+        location: `${data.city}, ${data.region}, ${data.country_name}`,
+        ip: data.ip
+      };
+    } catch {
+      return { location: "Unknown Location", ip: "Unknown IP" };
+    }
+  };
+
   useEffect(() => {
     if (doctor) {
-      fetch("/api/doctor/attendance", { method: "POST", credentials: "include" }).catch(() => { });
+      if (!attendancePostedRef.current) {
+        attendancePostedRef.current = true;
+        getLocation().then(info => {
+          fetch("/api/doctor/attendance", { 
+            method: "POST", 
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(info)
+          }).catch(() => { });
+        });
+      }
       if (tab === "schedule") {
         fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
       }
       if (tab === "schedule" || tab === "patients") {
         fetchAllPatients(doctor.id, doctor.department?.id);
+      }
+      if (tab === "appointments") {
+        fetchAllAppointments(doctor.id, doctor.department?.id);
       }
       if (tab === "schedule" || tab === "treatment-plans") {
         api(`/api/treatment-plans?doctorId=${doctor.id}&status=ACTIVE&limit=1`).then(r => {
@@ -873,6 +921,28 @@ function DoctorDashboardContent() {
     if (d.success) setAttendance(d.data || []);
     setAttendanceLoading(false);
   }, []);
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const info = await getLocation();
+      const res = await fetch("/api/doctor/attendance", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(info)
+      }).then(r => r.json());
+      if (res.success) {
+        fetchAttendance(attendanceMonth);
+      } else {
+        alert(res.message || "Failed to check out");
+      }
+    } catch (e) {
+      alert("Error recording check-out");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (doctor && tab === "attendance") {
@@ -956,6 +1026,7 @@ function DoctorDashboardContent() {
   const mkSort = (setField: (f: string) => void, setDir: (d: "asc" | "desc") => void, curField: string, curDir: "asc" | "desc") =>
     (field: string) => { if (curField === field) setDir(curDir === "asc" ? "desc" : "asc"); else { setField(field); setDir("desc"); } };
   const handleApptSort = mkSort(setApptSortField, setApptSortDir, apptSortField, apptSortDir);
+  const handleAllApptSort = mkSort(setAllApptSortField, setAllApptSortDir, allApptSortField, allApptSortDir);
   const handlePatientSort = mkSort(setPatientSortField, setPatientSortDir, patientSortField, patientSortDir);
   const handlePlanSort = mkSort(setPlanSortField, setPlanSortDir, planSortField, planSortDir);
   const handleAttendSort = mkSort(setAttendSortField, setAttendSortDir, attendSortField, attendSortDir);
@@ -978,6 +1049,35 @@ function DoctorDashboardContent() {
     if (apptSortField === "patient") return d * ((a.patient?.name || "").localeCompare(b.patient?.name || ""));
     if (apptSortField === "type") return d * ((a.type || "").localeCompare(b.type || ""));
     if (apptSortField === "status") return d * ((a.status || "").localeCompare(b.status || ""));
+    return 0;
+  });
+
+  const filteredAllAppts = allAppts.filter((a: any) => {
+    // Date Filtering
+    if (allApptDateFilter !== "all") {
+      const apptDateStr = fmtDate(new Date(a.appointmentDate));
+      if (allApptDateFilter === "today") {
+        if (apptDateStr !== fmtDate(new Date())) return false;
+      } else if (allApptDateFilter === "tomorrow") {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        if (apptDateStr !== fmtDate(tomorrow)) return false;
+      } else if (allApptDateFilter === "custom") {
+        if (apptDateStr !== allApptCustomDate) return false;
+      }
+    }
+
+    if (!allApptSearch) return true;
+    const q = allApptSearch.toLowerCase();
+    return (a.patient?.name || "").toLowerCase().includes(q) || (a.patient?.patientId || "").toLowerCase().includes(q) || (a.type || "").toLowerCase().includes(q) || (STATUS_CFG[a.status]?.label || "").toLowerCase().includes(q);
+  });
+  const sortedAllAppts = [...filteredAllAppts].sort((a: any, b: any) => {
+    const d = allApptSortDir === "asc" ? 1 : -1;
+    if (allApptSortField === "appointmentDate") return d * (new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime());
+    if (allApptSortField === "timeSlot") return d * ((a.timeSlot || "").localeCompare(b.timeSlot || ""));
+    if (allApptSortField === "patient") return d * ((a.patient?.name || "").localeCompare(b.patient?.name || ""));
+    if (allApptSortField === "type") return d * ((a.type || "").localeCompare(b.type || ""));
+    if (allApptSortField === "status") return d * ((a.status || "").localeCompare(b.status || ""));
     return 0;
   });
 
@@ -1080,6 +1180,17 @@ function DoctorDashboardContent() {
     else doExportWord(t, h, r, r.length, fn + ".docx");
     setApptExportOpen(false);
   };
+
+  const exportAllAppts = (fmt: "pdf" | "excel" | "word") => {
+    const h = ["Date", "Time", "Patient", "Patient ID", "Type", "Status", "Fee"];
+    const r = sortedAllAppts.map((a: any) => [new Date(a.appointmentDate).toLocaleDateString("en-IN"), a.timeSlot || "", a.patient?.name || "", a.patient?.patientId || "", TYPE_LABEL[a.type] || a.type, STATUS_CFG[a.status]?.label || a.status, a.consultationFee || 0]);
+    const t = `Dr. ${doctorName} — Complete Appointment List`;
+    const fn = `all-appointments-${new Date().toISOString().slice(0, 10)}`;
+    if (fmt === "pdf") doExportPDF(t, h, r, r.length, fn + ".pdf");
+    else if (fmt === "excel") doExportExcel(h, r, fn + ".xlsx");
+    else doExportWord(t, h, r, r.length, fn + ".docx");
+    setAllApptExportOpen(false);
+  };
   const exportPatients = (fmt: "pdf" | "excel" | "word") => {
     const h = ["Patient ID", "Name", "Phone", "Gender", "Last Visit", "Last Type"];
     const r = sortedPatients.map((p: any) => [p.patientId || "", p.name || "", p.phone || "", p.gender || "", p.lastVisit ? new Date(p.lastVisit).toLocaleDateString("en-IN") : "", TYPE_LABEL[p.lastType] || p.lastType || ""]);
@@ -1164,6 +1275,7 @@ function DoctorDashboardContent() {
     if (r?.success) {
       await fetchAppointments(doctor.id, doctor.department?.id, fmtDate(selectedDate));
       await fetchAllPatients(doctor.id, doctor.department?.id);
+      if (tab === "appointments") await fetchAllAppointments(doctor.id, doctor.department?.id);
     }
     setUpdatingStatusId(null);
   };
@@ -1458,6 +1570,166 @@ function DoctorDashboardContent() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
                       <div style={{ fontSize:11, color: "#94a3b8" }}>Showing {sortedAppts.length} of {appointments.length}</div>
                       <div style={{ fontSize:10, color: "#94a3b8" }}>Sorted by {apptSortField === "tokenNumber" ? "Token" : apptSortField === "timeSlot" ? "Time" : apptSortField.charAt(0).toUpperCase() + apptSortField.slice(1)} · {apptSortDir === "asc" ? "Ascending" : "Descending"}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === "appointments" && (
+                <div className="doc-card">
+                  <div className="doc-card-head">
+                    <div>
+                      <div className="doc-card-title">All Related Appointments</div>
+                      <div className="doc-card-sub">Complete list of your past and future appointments</div>
+                    </div>
+                    <button onClick={() => doctor && fetchAllAppointments(doctor.id, doctor.department?.id)}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize:11, fontWeight: 600, cursor: "pointer" }}>
+                      <RefreshCw size={12} />Refresh
+                    </button>
+                  </div>
+                  {/* Search / Export toolbar */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 6, marginRight: 10 }}>
+                      {[
+                        { id: "all", label: "All" },
+                        { id: "today", label: "Today" },
+                        { id: "tomorrow", label: "Tomorrow" },
+                        { id: "custom", label: "Custom" }
+                      ].map(f => (
+                        <button
+                          key={f.id}
+                          onClick={() => setAllApptDateFilter(f.id as any)}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 8,
+                            border: "1px solid",
+                            borderColor: allApptDateFilter === f.id ? accent : "#e2e8f0",
+                            background: allApptDateFilter === f.id ? accent + "15" : "#fff",
+                            color: allApptDateFilter === f.id ? accent : "#64748b",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "all .15s"
+                          }}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {allApptDateFilter === "custom" && (
+                      <input
+                        type="date"
+                        value={allApptCustomDate}
+                        onChange={e => setAllApptCustomDate(e.target.value)}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 8,
+                          border: "1px solid #e2e8f0",
+                          background: "#fff",
+                          fontSize: 11,
+                          color: "#334155",
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          marginRight: 10
+                        }}
+                      />
+                    )}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
+                      <input style={{ background: "none", border: "none", outline: "none", fontSize:12, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search patient, ID, type, status..." value={allApptSearch} onChange={e => setAllApptSearch(e.target.value)} />
+                      {allApptSearch && <button onClick={() => setAllApptSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
+                    </div>
+                    {allApptsLoading && <Loader2 size={14} color={accent} style={{ animation: "spin .7s linear infinite" }} />}
+                    <div style={{ fontSize:11, color: "#94a3b8", fontWeight: 600 }}>{sortedAllAppts.length} of {allAppts.length}</div>
+                    <div style={{ position: "relative", marginLeft: "auto" }}>
+                      <button onClick={() => setAllApptExportOpen(!allApptExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
+                      <ExportDropdown open={allApptExportOpen} onClose={() => setAllApptExportOpen(false)} onExport={exportAllAppts} />
+                    </div>
+                  </div>
+                  {allApptsLoading ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "40px 0", color: "#94a3b8" }}>
+                      <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} />Loading all appointments...
+                    </div>
+                  ) : sortedAllAppts.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
+                      <CalendarDays size={32} style={{ marginBottom: 10, opacity: .4 }} />
+                      <div style={{ fontSize:13, fontWeight: 600, color: "#64748b" }}>{allApptSearch ? "No matching appointments" : "No appointments found"}</div>
+                    </div>
+                  ) : (
+                    <table className="doc-tbl">
+                      <thead><tr>
+                        {[{ k: "appointmentDate", l: "Date" }, { k: "timeSlot", l: "Time" }, { k: "patient", l: "Patient" }, { k: "type", l: "Type" }, { k: "status", l: "Status" }].map(c => (
+                          <th key={c.k} onClick={() => handleAllApptSort(c.k)} style={{ cursor: "pointer", userSelect: "none" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{c.l} {sortIcon(c.k, allApptSortField, allApptSortDir)}</span></th>
+                        ))}
+                        <th>Action</th>
+                      </tr></thead>
+                      <tbody>
+                        {sortedAllAppts.map((a: any) => {
+                          const sc = STATUS_CFG[a.status] || STATUS_CFG.SCHEDULED;
+                          return (
+                            <tr key={a.id}>
+                              <td style={{ fontWeight: 600, color: "#334155" }}>{new Date(a.appointmentDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
+                              <td style={{ fontWeight: 600, color: "#334155" }}>{a.timeSlot}</td>
+                              <td>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={() => a.patient?.id && setSelectedPatientId(a.patient.id)}>
+                                  <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${accent},#0ea5e9)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize:10, flexShrink: 0 }}>
+                                    {(a.patient?.name || "?").charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div style={{ fontWeight: 600, color: "#1e293b", fontSize:12 }}>{a.patient?.name || "—"}</div>
+                                    <div style={{ fontSize:10, color: "#94a3b8" }}>{a.patient?.patientId}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td><span style={{ fontSize:10, background: "#f1f5f9", color: "#475569", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>{TYPE_LABEL[a.type] || a.type}</span></td>
+                              <td><span className="doc-badge" style={{ background: sc.badge[0], color: sc.badge[1], border: `1px solid ${sc.badge[2]}` }}>{sc.label}</span></td>
+                              <td>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                  {["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status) && (
+                                    <button onClick={() => handleStartPrescription(a.id)}
+                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: a.status === "IN_PROGRESS" ? "linear-gradient(135deg,#0E898F,#0A6B70)" : "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize:10, fontWeight: 700, cursor: "pointer", boxShadow: a.status === "IN_PROGRESS" ? "0 3px 10px rgba(59,130,246,.3)" : "0 3px 10px rgba(16,185,129,.3)" }}>
+                                      <PlayCircle size={12} />{a.status === "IN_PROGRESS" ? "Continue" : "Consult"}
+                                    </button>
+                                  )}
+                                  {a.status === "COMPLETED" && (
+                                    <>
+                                      <button onClick={() => handleViewPrescription(a.id)}
+                                        style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#334155", fontSize:10, fontWeight: 700, cursor: "pointer" }}>
+                                        <FileText size={12} />Rx
+                                      </button>
+                                      <button onClick={() => handleEditPrescription(a.id)}
+                                        style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: "1px solid #B3E0E0", background: "#E6F4F4", color: "#0A6B70", fontSize:10, fontWeight: 700, cursor: "pointer" }}>
+                                        <Pencil size={12} />Edit Rx
+                                      </button>
+                                    </>
+                                  )}
+                                  <button onClick={() => a.patient?.id && setSelectedPatientId(a.patient.id)}
+                                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize:10, fontWeight: 700, cursor: "pointer" }}>
+                                    <UserRound size={12} />Profile
+                                  </button>
+                                  <select
+                                    value={a.status}
+                                    disabled={updatingStatusId === a.id}
+                                    onChange={(e) => handleStatusChange(a, e.target.value)}
+                                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize:10, color: "#334155", cursor: updatingStatusId === a.id ? "not-allowed" : "pointer" }}
+                                  >
+                                    {["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "NO_SHOW", "CANCELLED", "RESCHEDULED"].map(s => (
+                                      <option key={s} value={s}>{STATUS_CFG[s]?.label || s}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                  {sortedAllAppts.length > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
+                      <div style={{ fontSize:11, color: "#94a3b8" }}>Showing {sortedAllAppts.length} of {allAppts.length}</div>
+                      <div style={{ fontSize:10, color: "#94a3b8" }}>Sorted by {allApptSortField === "appointmentDate" ? "Date" : allApptSortField.charAt(0).toUpperCase() + allApptSortField.slice(1)} · {allApptSortDir === "asc" ? "Oldest" : "Newest"}</div>
                     </div>
                   )}
                 </div>
@@ -1772,116 +2044,12 @@ function DoctorDashboardContent() {
 
           {tab === "attendance" && (
             <div className="doc-card">
-              <div className="doc-card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div className="doc-card-title">My Attendance</div>
-                  <div className="doc-card-sub">Monthly login &amp; punctuality records</div>
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    type="month"
-                    value={attendanceMonth}
-                    onChange={e => setAttendanceMonth(e.target.value)}
-                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #d1fae5", fontSize:11, color: "#334155", outline: "none", background: "#f0fdf4", fontFamily: "inherit" }}
-                  />
-                  <button onClick={() => fetchAttendance(attendanceMonth)}
-                    style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #d1fae5", background: "#f0fdf4", color: "#059669", fontSize:10, fontWeight: 600, cursor: "pointer" }}>
-                    <RefreshCw size={11} />Refresh
-                  </button>
-                </div>
+              <div className="doc-card-head">
+                <div className="doc-card-title">My Attendance</div>
+                <div className="doc-card-sub">Auto-tracked login · logout · location · work hours</div>
               </div>
 
-              {(() => {
-                const statusCfg: Record<string, { bg: string; c: string; label: string }> = {
-                  PRESENT: { bg: "#f0fdf4", c: "#16a34a", label: "Present" },
-                  LATE: { bg: "#fefce8", c: "#ca8a04", label: "Late" },
-                  HALF_DAY: { bg: "#fff7ed", c: "#ea580c", label: "Half Day" },
-                  ABSENT: { bg: "#fff5f5", c: "#dc2626", label: "Absent" },
-                };
-                const presentCount = attendance.filter(a => a.status === "PRESENT").length;
-                const lateCount = attendance.filter(a => a.status === "LATE").length;
-                const halfCount = attendance.filter(a => a.status === "HALF_DAY").length;
-                return (
-                  <>
-                    {/* Summary chips */}
-                    <div style={{ display: "flex", gap: 10, padding: "14px 18px", borderBottom: "1px solid #f0fdf4" }}>
-                      {[{ label: "Present", val: presentCount, bg: "#f0fdf4", c: "#16a34a" }, { label: "Late", val: lateCount, bg: "#fefce8", c: "#ca8a04" }, { label: "Half Day", val: halfCount, bg: "#fff7ed", c: "#ea580c" }, { label: "Total", val: attendance.length, bg: "#f8fafc", c: "#475569" }].map((s, i) => (
-                        <div key={i} style={{ flex: 1, background: s.bg, borderRadius: 10, padding: "10px 14px", textAlign: "center", border: `1px solid ${s.c}22` }}>
-                          <div style={{ fontSize:10, fontWeight: 600, color: s.c, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{s.label}</div>
-                          <div style={{ fontSize:20, fontWeight: 800, color: s.c }}>{s.val}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Search / Export toolbar */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
-                        <input style={{ background: "none", border: "none", outline: "none", fontSize:12, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search date, status..." value={attendSearch} onChange={e => setAttendSearch(e.target.value)} />
-                        {attendSearch && <button onClick={() => setAttendSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
-                      </div>
-                      {attendanceLoading && <Loader2 size={14} color={accent} style={{ animation: "spin .7s linear infinite" }} />}
-                      <div style={{ fontSize:11, color: "#94a3b8", fontWeight: 600 }}>{sortedAttendance.length} of {attendance.length}</div>
-                      <div style={{ position: "relative", marginLeft: "auto" }}>
-                        <button onClick={() => setAttendExportOpen(!attendExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
-                        <ExportDropdown open={attendExportOpen} onClose={() => setAttendExportOpen(false)} onExport={exportAttendance} />
-                      </div>
-                    </div>
-
-                    {attendanceLoading ? (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "40px 0", color: "#94a3b8" }}>
-                        <Loader2 size={18} style={{ animation: "spin .7s linear infinite" }} />Loading attendance...
-                      </div>
-                    ) : sortedAttendance.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "48px 20px", color: "#94a3b8" }}>
-                        <ClipboardCheck size={32} style={{ marginBottom: 10, opacity: .3, display: "block", margin: "0 auto 10px" }} />
-                        <div style={{ fontSize:13, fontWeight: 600, color: "#64748b" }}>{attendSearch ? "No matching records" : "No attendance records for this month"}</div>
-                        <div style={{ fontSize:11, marginTop: 4 }}>{attendSearch ? "Try a different search" : "Records appear automatically on login"}</div>
-                      </div>
-                    ) : (
-                      <div style={{ overflowX: "auto" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                          <thead>
-                            <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                              {[{ k: "date", l: "Date" }, { k: "date", l: "Day" }, { k: "status", l: "Status" }, { k: "loginTime", l: "Login Time" }].map((col, ci) => (
-                                <th key={ci} onClick={() => handleAttendSort(col.k)} style={{ padding: "10px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" }}>
-                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{col.l} {sortIcon(col.k, attendSortField, attendSortDir)}</span>
-                                </th>
-                              ))}
-                              <th style={{ padding: "10px 14px", textAlign: "left", fontSize:10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".05em" }}>Notes</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sortedAttendance.map((rec: any) => {
-                              const sc = statusCfg[rec.status] || statusCfg.PRESENT;
-                              const d = new Date(rec.date);
-                              const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
-                              const dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-                              const loginTime = rec.loginTime ? new Date(rec.loginTime).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—";
-                              return (
-                                <tr key={rec.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                  <td style={{ padding: "12px 14px", fontSize:12, fontWeight: 600, color: "#1e293b" }}>{dateStr}</td>
-                                  <td style={{ padding: "12px 14px", fontSize:11, color: "#64748b" }}>{dayName}</td>
-                                  <td style={{ padding: "12px 14px" }}>
-                                    <span style={{ padding: "3px 10px", borderRadius: 100, fontSize:10, fontWeight: 700, background: sc.bg, color: sc.c, border: `1px solid ${sc.c}33` }}>{sc.label}</span>
-                                  </td>
-                                  <td style={{ padding: "12px 14px", fontSize:11, color: "#64748b" }}>{loginTime}</td>
-                                  <td style={{ padding: "12px 14px", fontSize:10, color: "#94a3b8" }}>{rec.notes || "—"}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {sortedAttendance.length > 0 && (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderTop: "1px solid #ecfdf5" }}>
-                        <div style={{ fontSize:11, color: "#94a3b8" }}>Showing {sortedAttendance.length} of {attendance.length}</div>
-                        <div style={{ fontSize:10, color: "#94a3b8" }}>Sorted by {attendSortField === "loginTime" ? "Login Time" : attendSortField.charAt(0).toUpperCase() + attendSortField.slice(1)} · {attendSortDir === "desc" ? "Newest first" : "Oldest first"}</div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+              {doctor && <DoctorAttendancePanel doctor={doctor} accent={accent} />}
             </div>
           )}
 

@@ -429,3 +429,5 @@ input, textarea {
   to { transform: rotate(360deg); }
 }
 .spin-anim { animation: spin .7s linear infinite; }
+.opd2-spin { animation: spin .7s linear infinite; }
+.cl-spin { animation: spin .7s linear infinite; }

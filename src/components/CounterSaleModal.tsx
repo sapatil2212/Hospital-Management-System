@@ -6,11 +6,11 @@ import {
   ChevronRight, Package, CheckCircle2, Clock, UserCheck,
 } from "lucide-react";
 
-// ── Accent (orange for counter sale) ──
-const ACC   = "#ea580c";
-const ACC_G = "linear-gradient(135deg,#ea580c,#c2410c)";
-const LIGHT = "#fff7ed";
-const BDR   = "#fed7aa";
+// ── Accent (teal) ──
+const ACC   = "#0E898F";
+const ACC_G = "linear-gradient(135deg,#0E898F,#07595D)";
+const LIGHT = "#E6F4F4";
+const BDR   = "#B3E0E0";
 
 const PAYMENT_OPTS = [
   { v: "CASH",   label: "Cash",   Icon: Banknote },
@@ -190,36 +190,36 @@ export default function CounterSaleModal({ onClose, user, onSuccess }: Props) {
       <style>{`
         .csm-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
         .csm-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
-        .csm-modal{position:relative;z-index:1;background:#fff;border-radius:20px;width:95%;max-width:760px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.18);animation:csmSlide .25s ease}
+        .csm-modal{position:relative;z-index:1;background:#fff;border-radius:16px;width:95%;max-width:720px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.18);animation:csmSlide .25s ease}
         @keyframes csmSlide{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-        .csm-hd{background:${ACC_G};padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
-        .csm-body{flex:1;overflow-y:auto;padding:20px 24px}
-        .csm-ft{padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:#fff}
-        .csm-divider{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px;display:flex;align-items:center;gap:8px}
+        .csm-hd{background:${ACC_G};padding:14px 20px;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+        .csm-body{flex:1;overflow-y:auto;padding:16px 20px}
+        .csm-ft{padding:12px 20px;border-top:1px solid #f1f5f9;display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:#fff}
+        .csm-divider{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;display:flex;align-items:center;gap:8px}
         .csm-divider::after{content:'';flex:1;height:1px;background:#f1f5f9}
-        .csm-lbl{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block}
-        .csm-input{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px;color:#1e293b;outline:none;font-family:inherit;background:#fff;transition:border .15s}
-        .csm-input:focus{border-color:${BDR};box-shadow:0 0 0 3px rgba(234,88,12,.08)}
-        .csm-select{width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:12px;color:#1e293b;outline:none;background:#fff;font-family:inherit;cursor:pointer}
-        .csm-search{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 14px;transition:border .15s}
+        .csm-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:block}
+        .csm-input{width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:11px;color:#1e293b;outline:none;font-family:inherit;background:#fff;transition:border .15s}
+        .csm-input:focus{border-color:${BDR};box-shadow:0 0 0 3px rgba(14,137,143,.08)}
+        .csm-select{width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-size:11px;color:#1e293b;outline:none;background:#fff;font-family:inherit;cursor:pointer}
+        .csm-search{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;transition:border .15s}
         .csm-search:focus-within{border-color:${BDR}}
-        .csm-search input{background:none;border:none;outline:none;font-size:12px;color:#334155;width:100%;font-family:inherit}
-        .csm-sugg{position:absolute;z-index:50;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;margin-top:4px}
-        .csm-sugg-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f8fafc;transition:background .1s}
+        .csm-search input{background:none;border:none;outline:none;font-size:11px;color:#334155;width:100%;font-family:inherit}
+        .csm-sugg{position:absolute;z-index:200;bottom:calc(100% + 4px);top:auto;left:0;right:0;min-width:220px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;box-shadow:0 -4px 20px rgba(0,0,0,.12);max-height:200px;overflow-y:auto}
+        .csm-sugg-item{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid #f8fafc;transition:background .1s}
         .csm-sugg-item:hover{background:${LIGHT}}
         .csm-items-tbl{width:100%;border-collapse:collapse}
-        .csm-items-tbl th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;text-align:left;background:#f8fafc;border-bottom:1px solid #f1f5f9}
-        .csm-items-tbl td{padding:7px 8px;border-bottom:1px solid #f8fafc;vertical-align:middle}
-        .csm-inv-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700}
-        .csm-pay-opt{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 14px;border-radius:12px;border:2px solid #e2e8f0;cursor:pointer;transition:all .15s;background:#fff;min-width:80px;font-size:11px;font-weight:600;color:#64748b}
+        .csm-items-tbl th{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;text-align:left;background:#f8fafc;border-bottom:1px solid #f1f5f9}
+        .csm-items-tbl td{padding:5px 6px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+        .csm-inv-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:5px;font-size:9px;font-weight:700}
+        .csm-pay-opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border-radius:10px;border:2px solid #e2e8f0;cursor:pointer;transition:all .15s;background:#fff;min-width:70px;font-size:10px;font-weight:600;color:#64748b}
         .csm-pay-opt.on{border-color:${ACC};background:${LIGHT};color:${ACC}}
         .csm-pay-opt:hover{border-color:${BDR}}
-        .csm-summary{background:#f8fafc;border-radius:12px;padding:14px 16px;margin-top:14px}
-        .csm-sum-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:#475569}
-        .csm-sum-total{font-weight:900;color:#0f172a;font-size:15px;padding-top:8px;border-top:1.5px solid #e2e8f0;margin-top:4px}
-        .csm-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
-        .csm-btn.primary{background:${ACC_G};color:#fff;box-shadow:0 2px 8px rgba(234,88,12,.3)}
-        .csm-btn.primary:hover{box-shadow:0 4px 16px rgba(234,88,12,.4)}
+        .csm-summary{background:#f8fafc;border-radius:10px;padding:10px 14px;margin-top:12px}
+        .csm-sum-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px;color:#475569}
+        .csm-sum-total{font-weight:900;color:#0f172a;font-size:13px;padding-top:6px;border-top:1.5px solid #e2e8f0;margin-top:4px}
+        .csm-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+        .csm-btn.primary{background:${ACC_G};color:#fff;box-shadow:0 2px 8px rgba(14,137,143,.25)}
+        .csm-btn.primary:hover{box-shadow:0 4px 16px rgba(14,137,143,.35)}
         .csm-btn.primary:disabled{opacity:.6;cursor:not-allowed}
         .csm-btn.ghost{background:#fff;border:1.5px solid #e2e8f0;color:#475569}
         .csm-btn.ghost:hover{background:#f8fafc;border-color:${BDR};color:${ACC}}
@@ -233,9 +233,9 @@ export default function CounterSaleModal({ onClose, user, onSuccess }: Props) {
           {/* Header */}
           <div className="csm-hd">
             <div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2 }}>New Transaction</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: 8 }}>
-                <ShoppingCart size={20} /> Counter Sale
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,.7)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 2 }}>Counter Sell</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: 8 }}>
+                <ShoppingCart size={18} /> New Transaction
               </div>
             </div>
             <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -250,7 +250,7 @@ export default function CounterSaleModal({ onClose, user, onSuccess }: Props) {
                 <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <CheckCircle2 size={32} color="#16a34a" />
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>Sale Completed!</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>Transaction Complete!</div>
                 <div style={{ fontSize: 13, color: "#64748b" }}>{successMsg}</div>
               </div>
             ) : (
@@ -273,7 +273,7 @@ export default function CounterSaleModal({ onClose, user, onSuccess }: Props) {
 
                 {!manualPat ? (
                   patId ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: LIGHT, borderRadius: 10, border: `1.5px solid ${BDR}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: LIGHT, borderRadius: 8, border: `1.5px solid ${BDR}` }}>
                       <UserCheck size={16} color={ACC} />
                       <span style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{patName}</span>
                       <button onClick={() => { setPatId(""); setPatName(""); }} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer" }}><X size={14} color="#94a3b8" /></button>
@@ -441,7 +441,7 @@ export default function CounterSaleModal({ onClose, user, onSuccess }: Props) {
                 {/* ── Summary ── */}
                 <div className="csm-summary">
                   <div className="csm-sum-row"><span>Subtotal</span><span>{fmtINR(subtotal)}</span></div>
-                  {discAmt > 0 && <div className="csm-sum-row" style={{ color: "#ea580c" }}><span>Discount</span><span>-{fmtINR(discAmt)}</span></div>}
+                  {discAmt > 0 && <div className="csm-sum-row" style={{ color: ACC }}><span>Discount</span><span>-{fmtINR(discAmt)}</span></div>}
                   {taxAmt > 0 && <div className="csm-sum-row" style={{ color: "#6366f1" }}><span>Tax ({taxPct}%)</span><span>+{fmtINR(taxAmt)}</span></div>}
                   <div className="csm-sum-row csm-sum-total"><span>Total Payable</span><span style={{ color: "#16a34a" }}>{fmtINR(total)}</span></div>
                 </div>
@@ -491,7 +491,7 @@ export default function CounterSaleModal({ onClose, user, onSuccess }: Props) {
               <button className="csm-btn ghost" onClick={onClose}>Cancel</button>
               <button className="csm-btn primary" onClick={handleSubmit} disabled={saving}>
                 {saving ? <Loader2 size={14} className="csm-spin" /> : <Check size={14} />}
-                {saving ? "Processing..." : `Complete Sale · ${fmtINR(total)}`}
+                {saving ? "Processing..." : `Complete Sell · ${fmtINR(total)}`}
               </button>
             </div>
           )}

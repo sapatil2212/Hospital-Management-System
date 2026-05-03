@@ -3,7 +3,7 @@ import { requireRole } from "../../../../backend/middlewares/role.middleware";
 import { successResponse, errorResponse } from "../../../../backend/utils/response";
 import { getBills, createBill, BillingServiceError } from "../../../../backend/services/billing.service";
 
-const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "SUB_DEPT_HEAD"];
+const ALLOWED = ["HOSPITAL_ADMIN", "FINANCE_HEAD", "RECEPTIONIST", "SUB_DEPT_HEAD", "DEPT_HEAD"];
 export const dynamic = "force-dynamic";
 
 // GET /api/billing
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       prescriptionId: url.searchParams.get("prescriptionId") || undefined,
       pharmacyOnly:   url.searchParams.get("pharmacyOnly") === "true",
       labOnly:        url.searchParams.get("labOnly") === "true",
+      departmentId:   url.searchParams.get("departmentId")   || undefined,
     });
     return successResponse(result, "Bills fetched");
   } catch (e: any) {

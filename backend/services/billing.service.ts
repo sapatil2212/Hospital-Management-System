@@ -82,14 +82,66 @@ export async function addWorkflowChargesToBill(
     }
   }
 
-  // 2. Add Workflow Charges
+  // 2. Add Workflow Charges — only COMPLETED steps with charges
   const workflows = await (prisma as any).prescriptionWorkflow.findMany({
-    where: { prescriptionId: prescriptionId, totalCharge: { gt: 0 } },
+    where: { prescriptionId: prescriptionId, status: "COMPLETED", totalCharge: { gt: 0 } },
     include: { subDepartment: { select: { name: true, type: true } } },
   });
 
   for (const wf of workflows) {
-    // Avoid adding duplicate charges, but update if amount changed
+    const isPharmacy = wf.subDepartment?.type === "PHARMACY";
+
+    // ── PHARMACY: expand charges into individual per-medicine BillItems ──────
+    if (isPharmacy && wf.charges) {
+      try {
+        const items: any[] = typeof wf.charges === "string" ? JSON.parse(wf.charges) : wf.charges;
+        if (Array.isArray(items) && items.length > 0) {
+          // Remove any stale aggregate BillItem (old single-row approach) for this workflow
+          const staleAggregate = await (prisma as any).billItem.findFirst({
+            where: { billId, referenceId: wf.id, name: { startsWith: "Service:" } },
+          });
+          if (staleAggregate) {
+            await (prisma as any).billItem.delete({ where: { id: staleAggregate.id } });
+          }
+
+          for (const med of items) {
+            const medName = med.name || "Medicine";
+            const qty     = Number(med.quantity || 1);
+            const unitPrice = Number(med.unitPrice ?? med.price ?? 0);
+            const amount  = Number(med.amount ?? qty * unitPrice);
+
+            const existingMed = await (prisma as any).billItem.findFirst({
+              where: { billId, referenceId: wf.id, name: medName },
+            });
+
+            if (existingMed) {
+              if (existingMed.quantity !== qty || existingMed.unitPrice !== unitPrice) {
+                await (prisma as any).billItem.update({
+                  where: { id: existingMed.id },
+                  data: { quantity: qty, unitPrice, amount },
+                });
+              }
+            } else {
+              await (prisma as any).billItem.create({
+                data: {
+                  hospitalId,
+                  billId,
+                  type: "PHARMACY",
+                  referenceId: wf.id,
+                  name: medName,
+                  quantity: qty,
+                  unitPrice,
+                  amount,
+                },
+              });
+            }
+          }
+          continue; // skip aggregate creation below
+        }
+      } catch { /* fall through to aggregate */ }
+    }
+
+    // ── Non-pharmacy (or pharmacy with no charges breakdown): single aggregate row ──
     const existing = await (prisma as any).billItem.findFirst({
       where: { billId, referenceId: wf.id },
     });
@@ -98,10 +150,7 @@ export async function addWorkflowChargesToBill(
       if (existing.unitPrice !== wf.totalCharge) {
         await (prisma as any).billItem.update({
           where: { id: existing.id },
-          data: {
-            unitPrice: wf.totalCharge,
-            amount: wf.totalCharge,
-          },
+          data: { unitPrice: wf.totalCharge, amount: wf.totalCharge },
         });
       }
       continue;
@@ -136,7 +185,7 @@ export class BillingServiceError extends Error {
 // ── Sequential bill number ──────────────────────────────────────────────────
 async function generateBillNo(hospitalId: string): Promise<string> {
   const last = await (prisma as any).bill.findFirst({
-    where: { hospitalId },
+    where: { hospitalId, billNo: { startsWith: "BILL-" } },
     orderBy: { billNo: "desc" },
     select: { billNo: true },
   });
@@ -178,11 +227,12 @@ export async function generateBillFromAppointment(
   });
   if (!appt) throw new BillingServiceError("Appointment not found", 404);
 
-  // Check if bill already exists for this appointment
-  const existing = await (prisma as any).bill.findFirst({
+  // Check if bill already exists for this appointment (by visitId)
+  const existingByVisit = await (prisma as any).bill.findFirst({
     where: { visitId: appointmentId, hospitalId },
+    include: { billItems: true },
   });
-  if (existing) return existing;
+  if (existingByVisit) return existingByVisit;
 
   // Look up prescription's consultationFee (doctor may have modified it)
   const prescription = await (prisma as any).prescription.findFirst({
@@ -190,38 +240,81 @@ export async function generateBillFromAppointment(
     select: { id: true, consultationFee: true },
   });
 
+  // Also check if a bill already exists for this prescription (different path, no visitId set yet)
+  // prescriptionId has @unique — creating a duplicate would throw P2002
+  if (prescription?.id) {
+    const existingByRx = await (prisma as any).bill.findFirst({
+      where: { prescriptionId: prescription.id, hospitalId },
+      include: { billItems: true },
+    });
+    if (existingByRx) {
+      // Link the visitId if not already set
+      if (!existingByRx.visitId) {
+        return (prisma as any).bill.update({
+          where: { id: existingByRx.id },
+          data: { visitId: appointmentId },
+          include: { billItems: true },
+        });
+      }
+      return existingByRx;
+    }
+  }
+
   // Priority: prescription fee > appointment fee > doctor default fee
   const fee = prescription?.consultationFee ?? appt.consultationFee ?? appt.doctor?.consultationFee ?? 0;
-  const billNo = await generateBillNo(hospitalId);
 
-  const bill = await (prisma as any).bill.create({
-    data: {
-      hospitalId,
-      billNo,
-      patientId: appt.patientId,
-      visitId: appointmentId,
-      prescriptionId: prescription?.id || null,
-      items: JSON.stringify([]),
-      subtotal: fee,
-      discount: 0,
-      tax: 0,
-      total: fee,
-      paidAmount: 0,
-      status: "PENDING",
-      billItems: {
-        create: fee > 0 ? [{
+  // Retry loop: handles two concurrent-request race conditions:
+  // 1) billNo collision → retry with fresh number
+  // 2) prescriptionId collision → another request already created the bill
+  let bill: any = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const billNo = await generateBillNo(hospitalId);
+    try {
+      bill = await (prisma as any).bill.create({
+        data: {
           hospitalId,
-          type: "CONSULTATION",
-          referenceId: appt.doctorId,
-          name: `Consultation — Dr. ${appt.doctor?.name || "Doctor"}`,
-          quantity: 1,
-          unitPrice: fee,
-          amount: fee,
-        }] : [],
-      },
-    },
-    include: { billItems: true },
-  });
+          billNo,
+          patientId: appt.patientId,
+          visitId: appointmentId,
+          prescriptionId: prescription?.id || null,
+          items: JSON.stringify([]),
+          subtotal: fee,
+          discount: 0,
+          tax: 0,
+          total: fee,
+          paidAmount: 0,
+          status: "PENDING",
+          billItems: {
+            create: fee > 0 ? [{
+              hospitalId,
+              type: "CONSULTATION",
+              referenceId: appt.doctorId,
+              name: `Consultation — Dr. ${appt.doctor?.name || "Doctor"}`,
+              quantity: 1,
+              unitPrice: fee,
+              amount: fee,
+            }] : [],
+          },
+        },
+        include: { billItems: true, payments: true },
+      });
+      break; // success
+    } catch (e: any) {
+      if (e?.code === "P2002") {
+        // A concurrent request may have created the bill — re-check before retrying
+        const existing = await (prisma as any).bill.findFirst({
+          where: { visitId: appointmentId, hospitalId },
+          include: { billItems: true, payments: true },
+        }) || (prescription?.id ? await (prisma as any).bill.findFirst({
+          where: { prescriptionId: prescription.id, hospitalId },
+          include: { billItems: true, payments: true },
+        }) : null);
+        if (existing) return existing; // bill was created by the other request
+        if (attempt < 4) continue; // pure billNo collision — retry
+      }
+      throw e;
+    }
+  }
 
   // Mark appointment as billing-transferred so it shows in billing queue
   await (prisma as any).appointment.update({
@@ -392,39 +485,48 @@ export async function createBill(
   const discount = data.discount ?? 0;
   const tax = data.tax ?? 0;
   const total = Math.max(0, subtotal + tax - discount);
-  const billNo = await generateBillNo(hospitalId);
 
-  const bill = await (prisma as any).bill.create({
-    data: {
-      hospitalId,
-      billNo,
-      patientId: data.patientId,
-      visitId: data.visitId || null,
-      items: JSON.stringify(data.items),
-      subtotal,
-      discount,
-      tax,
-      total,
-      paidAmount: 0,
-      status: "PENDING",
-      notes: data.notes || null,
-      billItems: {
-        create: data.items.map(i => ({
+  let bill: any = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const billNo = await generateBillNo(hospitalId);
+    try {
+      bill = await (prisma as any).bill.create({
+        data: {
           hospitalId,
-          type: i.type || "OTHER",
-          referenceId: i.referenceId || null,
-          name: i.name,
-          quantity: i.quantity,
-          unitPrice: i.unitPrice,
-          amount: i.quantity * i.unitPrice,
-        })),
-      },
-    },
-    include: {
-      billItems: true,
-      patient: { select: { id: true, name: true, patientId: true, phone: true } },
-    },
-  });
+          billNo,
+          patientId: data.patientId,
+          visitId: data.visitId || null,
+          items: JSON.stringify(data.items),
+          subtotal,
+          discount,
+          tax,
+          total,
+          paidAmount: 0,
+          status: "PENDING",
+          notes: data.notes || null,
+          billItems: {
+            create: data.items.map(i => ({
+              hospitalId,
+              type: i.type || "OTHER",
+              referenceId: i.referenceId || null,
+              name: i.name,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              amount: i.quantity * i.unitPrice,
+            })),
+          },
+        },
+        include: {
+          billItems: true,
+          patient: { select: { id: true, name: true, patientId: true, phone: true } },
+        },
+      });
+      break;
+    } catch (e: any) {
+      if (e?.code === "P2002" && attempt < 4) continue;
+      throw e;
+    }
+  }
 
   // Sync with workflow charges (consultation fee + procedures)
   await addWorkflowChargesToBill(bill.id, hospitalId).catch(() => {});
@@ -436,7 +538,7 @@ export async function createBill(
 export async function recordPayment(
   billId: string,
   hospitalId: string,
-  data: { amount: number; method: string; transactionId?: string; notes?: string }
+  data: { amount: number; method: string; transactionId?: string; notes?: string; collectedBy?: string }
 ): Promise<any> {
   const bill = await (prisma as any).bill.findFirst({ where: { id: billId, hospitalId } });
   if (!bill) throw new BillingServiceError("Bill not found", 404);
@@ -450,6 +552,10 @@ export async function recordPayment(
     throw new BillingServiceError(`Payment (₹${paymentAmount}) exceeds remaining balance (₹${remaining.toFixed(2)})`, 400);
   }
 
+  // Build payment notes: "Collected by [DeptName]" + optional extra notes
+  const collectionRemark = data.collectedBy ? `Collected by ${data.collectedBy}` : null;
+  const paymentNotes = [collectionRemark, data.notes].filter(Boolean).join(" — ") || null;
+
   const payment = await (prisma as any).payment.create({
     data: {
       hospitalId,
@@ -458,12 +564,20 @@ export async function recordPayment(
       method: data.method || "CASH",
       transactionId: data.transactionId || null,
       status: "SUCCESS",
-      notes: data.notes || null,
+      notes: paymentNotes,
     },
   });
 
   const newPaid = bill.paidAmount + paymentAmount;
   const newStatus = newPaid >= bill.total - 0.01 ? "PAID" : "PARTIALLY_PAID";
+
+  // Persist collection remark on the bill for display everywhere
+  const existingNotes: string = bill.notes || "";
+  const billNotesWithoutOldCollection = existingNotes.replace(/\s*\|\s*Collected by [^|]+/g, "").replace(/^Collected by [^|]+\s*\|?\s*/g, "").trim();
+  const newBillNotes = collectionRemark
+    ? [billNotesWithoutOldCollection, collectionRemark].filter(Boolean).join(" | ")
+    : (existingNotes || null);
+
   await (prisma as any).bill.update({
     where: { id: billId },
     data: {
@@ -471,11 +585,17 @@ export async function recordPayment(
       status: newStatus,
       paidAt: newStatus === "PAID" ? new Date() : bill.paidAt,
       paymentMethod: data.method,
+      notes: newBillNotes || null,
     },
   });
 
-  // Log revenue
-  logRevenue(hospitalId, "OTHER", paymentAmount, billId, "Bill", `Payment received — ${data.method}`);
+  // Log revenue — detect pharmacy bills so they appear in pharmacy stats
+  const pharmAgg = await (prisma as any).billItem.aggregate({
+    where: { billId, type: "PHARMACY" },
+    _sum: { amount: true },
+  }).catch(() => ({ _sum: { amount: 0 } }));
+  const sourceType = (pharmAgg._sum.amount || 0) > 0 ? "PHARMACY" : "OTHER";
+  logRevenue(hospitalId, sourceType, paymentAmount, billId, "Bill", `Payment received — ${data.method}`);
 
   return payment;
 }
@@ -483,7 +603,7 @@ export async function recordPayment(
 // ── Get bills list ─────────────────────────────────────────────────────────
 export async function getBills(
   hospitalId: string,
-  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string; prescriptionId?: string; pharmacyOnly?: boolean; labOnly?: boolean }
+  opts: { page?: number; limit?: number; search?: string; status?: string; dateFrom?: string; dateTo?: string; patientId?: string; prescriptionId?: string; pharmacyOnly?: boolean; labOnly?: boolean; departmentId?: string }
 ) {
   const page  = Math.max(1, opts.page  || 1);
   const limit = Math.min(opts.pharmacyOnly ? 200 : 50, opts.limit || 20);
@@ -499,6 +619,13 @@ export async function getBills(
 
   if (opts.patientId) where.patientId = opts.patientId;
   if (opts.prescriptionId) where.prescriptionId = opts.prescriptionId;
+  if (opts.departmentId) {
+    const deptAppts = await (prisma as any).appointment.findMany({
+      where: { hospitalId, departmentId: opts.departmentId },
+      select: { id: true },
+    });
+    where.visitId = { in: deptAppts.map((a: any) => a.id) };
+  }
   if (opts.status) where.status = opts.status;
   if (opts.dateFrom || opts.dateTo) {
     where.createdAt = {};
@@ -535,25 +662,63 @@ export async function getBills(
 
   // Stats — scope to lab-only or pharmacy-only when requested
   const today = new Date(); today.setHours(0, 0, 0, 0);
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const scopeFilter: any = opts.labOnly ? { billItems: { some: { type: "LAB_TEST" } } } : opts.pharmacyOnly ? { billItems: { some: { type: "PHARMACY" } } } : {};
-  const [todayRevenue, monthRevenue, pendingCount] = await Promise.all([
-    (prisma as any).bill.aggregate({
-      where: { hospitalId, status: "PAID", paidAt: { gte: today }, ...scopeFilter },
-      _sum: { total: true },
-    }),
-    (prisma as any).bill.aggregate({
-      where: { hospitalId, status: "PAID", paidAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }, ...scopeFilter },
-      _sum: { total: true },
-    }),
-    (prisma as any).bill.count({ where: { hospitalId, status: "PENDING", ...scopeFilter } }),
-  ]);
+
+  let todayRevenueVal = 0, monthRevenueVal = 0, pendingCount = 0;
+
+  if (opts.pharmacyOnly) {
+    // Sum PHARMACY BillItem amounts via bill.findMany (more reliable than billItem.aggregate with nested relation filter)
+    const itemType = "PHARMACY";
+    const [todayBills, monthBills, pc] = await Promise.all([
+      (prisma as any).bill.findMany({
+        where: { hospitalId, status: "PAID", paidAt: { gte: today }, billItems: { some: { type: itemType } } },
+        select: { billItems: { where: { type: itemType }, select: { amount: true } } },
+      }),
+      (prisma as any).bill.findMany({
+        where: { hospitalId, status: "PAID", paidAt: { gte: monthStart }, billItems: { some: { type: itemType } } },
+        select: { billItems: { where: { type: itemType }, select: { amount: true } } },
+      }),
+      (prisma as any).bill.count({ where: { hospitalId, status: "PENDING", ...scopeFilter } }),
+    ]);
+    const sumItems = (bills: any[]) => bills.reduce((s: number, b: any) => s + (b.billItems || []).reduce((bs: number, i: any) => bs + (i.amount || 0), 0), 0);
+    todayRevenueVal = sumItems(todayBills);
+    monthRevenueVal = sumItems(monthBills);
+    pendingCount = pc;
+  } else if (opts.labOnly) {
+    const itemType = "LAB_TEST";
+    const [todayBills, monthBills, pc] = await Promise.all([
+      (prisma as any).bill.findMany({
+        where: { hospitalId, status: "PAID", paidAt: { gte: today }, billItems: { some: { type: itemType } } },
+        select: { billItems: { where: { type: itemType }, select: { amount: true } } },
+      }),
+      (prisma as any).bill.findMany({
+        where: { hospitalId, status: "PAID", paidAt: { gte: monthStart }, billItems: { some: { type: itemType } } },
+        select: { billItems: { where: { type: itemType }, select: { amount: true } } },
+      }),
+      (prisma as any).bill.count({ where: { hospitalId, status: "PENDING", ...scopeFilter } }),
+    ]);
+    const sumItems = (bills: any[]) => bills.reduce((s: number, b: any) => s + (b.billItems || []).reduce((bs: number, i: any) => bs + (i.amount || 0), 0), 0);
+    todayRevenueVal = sumItems(todayBills);
+    monthRevenueVal = sumItems(monthBills);
+    pendingCount = pc;
+  } else {
+    const [todayAgg, monthAgg, pc] = await Promise.all([
+      (prisma as any).bill.aggregate({ where: { hospitalId, status: "PAID", paidAt: { gte: today } }, _sum: { total: true } }),
+      (prisma as any).bill.aggregate({ where: { hospitalId, status: "PAID", paidAt: { gte: monthStart } }, _sum: { total: true } }),
+      (prisma as any).bill.count({ where: { hospitalId, status: "PENDING" } }),
+    ]);
+    todayRevenueVal = todayAgg._sum.total || 0;
+    monthRevenueVal = monthAgg._sum.total || 0;
+    pendingCount = pc;
+  }
 
   return {
     bills,
     pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     stats: {
-      todayRevenue:  todayRevenue._sum.total  || 0,
-      monthRevenue:  monthRevenue._sum.total  || 0,
+      todayRevenue: todayRevenueVal,
+      monthRevenue: monthRevenueVal,
       pendingCount,
     },
   };
@@ -688,6 +853,7 @@ export async function transferToBilling(
   // Create bill if it doesn't exist yet
   let bill = await (prisma as any).bill.findFirst({
     where: { visitId: appointmentId, hospitalId },
+    include: { billItems: true, payments: true },
   });
 
   if (!bill) {
@@ -695,6 +861,11 @@ export async function transferToBilling(
   } else {
     // Sync charges (consultation + workflow) on the existing bill
     await addWorkflowChargesToBill(bill.id, hospitalId).catch(() => {});
+    // Re-fetch with updated items
+    bill = await (prisma as any).bill.findFirst({
+      where: { id: bill.id },
+      include: { billItems: true, payments: true },
+    });
   }
 
   return bill;
@@ -703,13 +874,18 @@ export async function transferToBilling(
 // ── Get billing queue (transferred appointments + pharmacy walk-in bills) ──
 export async function getBillingQueue(
   hospitalId: string,
-  opts: { search?: string; date?: string }
+  opts: { search?: string; date?: string; procedureOnly?: boolean; subDeptId?: string }
 ): Promise<any[]> {
   // ── 1. Appointment-based queue (billingTransferred = true) ──
   const apptWhere: any = {
     hospitalId,
     billingTransferred: true,
   };
+
+  // ── Sub-department filter: scope to this sub-dept's referred appointments ──
+  if (opts.procedureOnly && opts.subDeptId) {
+    apptWhere.subDepartmentId = opts.subDeptId;
+  }
 
   if (opts.date) {
     const d = new Date(opts.date);
@@ -744,7 +920,16 @@ export async function getBillingQueue(
   const apptBills = apptIds.length > 0
     ? await (prisma as any).bill.findMany({
         where: { visitId: { in: apptIds }, hospitalId },
-        include: { billItems: true, payments: true },
+        include: {
+          billItems: true,
+          payments: true,
+          prescription: {
+            select: {
+              id: true, prescriptionNo: true, diagnosis: true, medications: true,
+              doctor: { select: { id: true, name: true, specialization: true } },
+            },
+          },
+        },
       })
     : [];
 
@@ -755,6 +940,25 @@ export async function getBillingQueue(
     bill: billMap.get(a.id) || null,
     source: "appointment",
   }));
+
+  // Auto-generate bills for appointments that are transferred but have no bill yet.
+  // Sequential (not parallel) to avoid @@unique([hospitalId, billNo]) race conditions.
+  const missingBill = apptQueue.filter((a: any) => !a.bill);
+  for (const a of missingBill) {
+    try {
+      a.bill = await generateBillFromAppointment(a.id, hospitalId);
+    } catch (err: any) {
+      console.error(`[getBillingQueue] Auto-generate bill failed for appt ${a.id}:`, err?.message);
+    }
+  }
+
+  // ── Procedure-only filter: return only bills that have at least one PROCEDURE item ──
+  // (sub-dept scoping is already applied at DB level via apptWhere.subDepartmentId above)
+  if (opts.procedureOnly) {
+    return apptQueue.filter((a: any) =>
+      (a.bill?.billItems || []).some((bi: any) => bi.type === "PROCEDURE")
+    );
+  }
 
   // ── 2. Pharmacy walk-in bills (no appointment, created from pharmacy queue) ──
   const rxBillWhere: any = {
@@ -915,7 +1119,10 @@ export async function getBillingQueue(
     timeSlot: null,
   }));
 
-  return [...apptQueue, ...rxQueue, ...csQueue, ...labQueue];
+  // Only return appointment items that have a bill — ensures frontend never sees DRAFT rows
+  const billedApptQueue = apptQueue.filter((a: any) => a.bill);
+
+  return [...billedApptQueue, ...rxQueue, ...csQueue, ...labQueue];
 }
 
 // ── Revert bill to PENDING (for regeneration) ───────────────────────────

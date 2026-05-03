@@ -6,7 +6,7 @@ import {
   X, Check, ChevronDown, Search, Loader2, User, Phone, Mail,
   AlertCircle, Building2, Stethoscope, CalendarDays, Clock,
   FileText, IndianRupee, Sparkles, ArrowRight, ArrowLeft,
-  CalendarCheck, Heart, CalendarPlus,
+  CalendarCheck, Heart, CalendarPlus, MessageCircle,
 } from "lucide-react";
 import styles from "./AppointmentModal.module.css";
 
@@ -29,6 +29,30 @@ const fmtDate = (v: string) => {
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 };
 
+/* ─── Validation helpers ─── */
+const INVALID_PHONES = new Set(["1234567890", "9876543210", "0123456789", "1234554321", "0000000000"]);
+
+const validatePhone = (val: string, required = true): string => {
+  const digits = val.replace(/\D/g, "");
+  if (!digits) return required ? "Phone number is required" : "";
+  if (digits.length !== 10) return "Phone number must be exactly 10 digits";
+  if (!/^[6-9]/.test(digits)) return "Must start with 6, 7, 8 or 9 (Indian mobile)";
+  if (/^(\d)\1{9}$/.test(digits)) return "Enter a valid phone number";
+  if (INVALID_PHONES.has(digits)) return "Enter a valid phone number";
+  return "";
+};
+
+const validateWhatsApp = (val: string): string => {
+  if (!val.trim()) return ""; // optional
+  return validatePhone(val, false) || validatePhone(val, true).replace("is required", "is invalid");
+};
+
+const validateEmail = (val: string): string => {
+  if (!val.trim()) return "Email address is required";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim())) return "Enter a valid email (e.g. john@example.com)";
+  return "";
+};
+
 const isSlotPassed = (dateStr: string, timeStr: string) => {
   if (!dateStr || !timeStr) return false;
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -37,10 +61,10 @@ const isSlotPassed = (dateStr: string, timeStr: string) => {
 };
 
 /* ─── Searchable Dropdown ─── */
-function SearchableSelect({ options, value, onChange, placeholder, icon: Icon, error, renderOption }: {
+function SearchableSelect({ options, value, onChange, placeholder, icon: Icon, error, renderOption, isLoading }: {
   options: { id: string; label: string; sub?: string }[];
   value: string; onChange: (v: string) => void; placeholder: string;
-  icon: React.ElementType; error?: string;
+  icon: React.ElementType; error?: string; isLoading?: boolean;
   renderOption?: (o: { id: string; label: string; sub?: string }, selected: boolean) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -77,9 +101,9 @@ function SearchableSelect({ options, value, onChange, placeholder, icon: Icon, e
         style={{ cursor: "pointer", borderColor: open ? "var(--primary)" : error ? "var(--error)" : undefined, boxShadow: open ? "0 0 0 3px var(--primary-100)" : undefined }}>
         <span className={styles.fieldIconWrap}><Icon size={15} /></span>
         <span className={styles.selectValue} style={{ color: selected ? "var(--gray-800)" : "var(--gray-400)" }}>
-          {selected ? selected.label : placeholder}
+          {selected ? selected.label : isLoading ? "Loading..." : placeholder}
         </span>
-        <ChevronDown size={15} className={`${styles.selectChevron} ${open ? styles.selectChevronOpen : ""}`} />
+        {isLoading ? <Loader2 size={14} style={{ color: "var(--primary)", animation: "spin 1s linear infinite", flexShrink: 0 }} /> : <ChevronDown size={15} className={`${styles.selectChevron} ${open ? styles.selectChevronOpen : ""}`} />}
       </div>
       <AnimatePresence>
         {open && (
@@ -93,7 +117,8 @@ function SearchableSelect({ options, value, onChange, placeholder, icon: Icon, e
               </div>
             </div>
             <div style={{ maxHeight: 220, overflowY: "auto", padding: 4 }}>
-              {filtered.length === 0 && <div style={{ padding: "12px 8px", fontSize: 12, color: "var(--gray-400)", textAlign: "center" }}>No results found</div>}
+              {isLoading && <div style={{ padding: "12px 8px", fontSize: 12, color: "var(--primary)", textAlign: "center" }}>Loading...</div>}
+              {!isLoading && filtered.length === 0 && <div style={{ padding: "12px 8px", fontSize: 12, color: "var(--gray-400)", textAlign: "center" }}>No results found</div>}
               {filtered.map(o => {
                 const isSel = o.id === value;
                 return (
@@ -160,9 +185,13 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const [slots, setSlots] = useState<string[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingDepts, setLoadingDepts] = useState(false);
+  const [dupPatient, setDupPatient] = useState<{ id: string; name: string; phone: string; patientId: string; matchedBy?: "phone" | "email" } | null>(null);
+  const [bookMode, setBookMode] = useState<"ask" | "existing" | "new" | null>(null);
+  const [checkingDup, setCheckingDup] = useState(false);
 
   const [form, setForm] = useState({
-    name: "", phone: "", email: "",
+    name: "", phone: "", whatsapp: "", email: "",
     departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "",
     notes: "", consultationFee: "", type: "OPD",
   });
@@ -185,18 +214,24 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
     if (!isOpen) {
       setTimeout(() => {
         setStep(1);
-        setForm({ name: "", phone: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
+        setForm({ name: "", phone: "", whatsapp: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
         setErrors({}); setIsSuccess(false); setBookedInfo(null);
+        setDupPatient(null); setBookMode(null);
       }, 300);
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
-      fetch("/api/public/booking", { credentials: "include" }).then(r => r.json()).then(d => {
-        if (d.data?.hospital?.id) setHospitalId(d.data.hospital.id);
-        setDepartments(d.data?.departments || []);
-      });
+      setLoadingDepts(true);
+      fetch("/api/public/booking", { credentials: "include" })
+        .then(r => r.json())
+        .then(d => {
+          if (d.data?.hospital?.id) setHospitalId(d.data.hospital.id);
+          setDepartments(d.data?.departments || []);
+        })
+        .catch(() => setDepartments([]))
+        .finally(() => setLoadingDepts(false));
     }
   }, [isOpen]);
 
@@ -217,14 +252,37 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const set = (field: string, value: string) => {
     setForm(f => ({ ...f, [field]: value }));
     setErrors(e => { const n = { ...e }; delete n[field]; delete n.submit; return n; });
+    if (field === "phone" || field === "email") { setDupPatient(null); setBookMode(null); }
+  };
+
+  const checkDuplicatePatient = async ({ phone, email }: { phone?: string; email?: string }) => {
+    if (phone) { const err = validatePhone(phone); if (err) return; }
+    if (!phone && !email) return;
+    setCheckingDup(true);
+    try {
+      const params = new URLSearchParams();
+      if (phone) params.set("phone", phone.trim());
+      if (email) params.set("email", email.trim());
+      const r = await fetch(`/api/public/booking/check-patient?${params}`, { credentials: "include" });
+      const d = await r.json();
+      if (d.data?.id) {
+        setDupPatient(d.data);
+        setBookMode("ask");
+      }
+    } catch {}
+    finally { setCheckingDup(false); }
   };
 
   const goToStep2 = () => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = "Name is required";
-    if (!form.phone.trim()) errs.phone = "Phone is required";
-    if (!form.email.trim()) errs.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Invalid email";
+    if (!form.name.trim()) errs.name = "Full name is required";
+    else if (form.name.trim().length < 2) errs.name = "Name must be at least 2 characters";
+    const phoneErr = validatePhone(form.phone);
+    if (phoneErr) errs.phone = phoneErr;
+    const waErr = validateWhatsApp(form.whatsapp);
+    if (waErr) errs.whatsapp = waErr;
+    const emailErr = validateEmail(form.email);
+    if (emailErr) errs.email = emailErr;
     setErrors(errs);
     if (Object.keys(errs).length === 0) setStep(2);
   };
@@ -250,6 +308,8 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
           appointmentDate: form.appointmentDate, timeSlot: form.timeSlot,
           type: form.type, consultationFee: form.consultationFee ? Number(form.consultationFee) : null,
           notes: form.notes || null,
+          ...(bookMode === "existing" && dupPatient ? { existingPatientId: dupPatient.id } : {}),
+          ...(bookMode === "new" ? { forceNew: true } : {}),
         }),
       });
       const d = await res.json();
@@ -407,7 +467,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                   </button>
                   <button type="button" onClick={() => {
                     setIsSuccess(false); setBookedInfo(null); setStep(1);
-                    setForm({ name: "", phone: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
+                    setForm({ name: "", phone: "", whatsapp: "", email: "", departmentId: "", doctorId: "", appointmentDate: "", timeSlot: "", notes: "", consultationFee: "", type: "OPD" });
                   }}
                     style={{ padding: "8px 16px", borderRadius: 8, border: "1.5px solid var(--gray-200)",
                       background: "#fff", color: "var(--gray-600)", fontSize: 12, fontWeight: 600,
@@ -436,19 +496,95 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                     <label className={styles.label}>Phone Number *</label>
                     <div className={styles.inputWrap}>
                       <span className={styles.fieldIconWrap}><Phone size={15} /></span>
-                      <input className={styles.input} type="tel" placeholder="e.g. 9876543210" value={form.phone} onChange={e => set("phone", e.target.value)} />
+                      <input className={styles.input} type="tel" placeholder="e.g. 9876543210" value={form.phone}
+                        onChange={e => set("phone", e.target.value)}
+                        onBlur={e => checkDuplicatePatient({ phone: e.target.value })} />
                     </div>
                     {errors.phone && <span className={styles.errorMsg}>{errors.phone}</span>}
+                    {checkingDup && <span style={{ fontSize: 11, color: "var(--primary)", marginTop: 4, display: "block" }}>Checking...</span>}
                   </div>
                 </div>
+
+                {/* ── Duplicate patient alert ── */}
+                {dupPatient && bookMode === "ask" && (
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
+                    style={{ background: "#fffbeb", border: "1.5px solid #f59e0b", borderRadius: 12, padding: "14px 16px", marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <AlertCircle size={16} style={{ color: "#d97706" }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 3 }}>
+                          {dupPatient.matchedBy === "email" ? "Email already registered" : "Mobile already registered"}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.5 }}>
+                          This {dupPatient.matchedBy === "email" ? "email" : "mobile number"} is already linked to{" "}
+                          <strong>{dupPatient.name}</strong> ({dupPatient.patientId}).
+                          Book the appointment for the same patient or register as a new patient?
+                        </div>
+                        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                          <button type="button"
+                            onClick={() => { set("name", dupPatient.name); setBookMode("existing"); }}
+                            style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#0E898F",
+                              color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                            Book for {dupPatient.name}
+                          </button>
+                          <button type="button"
+                            onClick={() => setBookMode("new")}
+                            style={{ padding: "6px 14px", borderRadius: 8, border: "1.5px solid #d97706",
+                              background: "transparent", color: "#92400e", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                            Register as new patient
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── Existing patient chosen banner ── */}
+                {dupPatient && bookMode === "existing" && (
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
+                    style={{ background: "#f0fdf4", border: "1.5px solid #22c55e", borderRadius: 12, padding: "10px 14px",
+                      marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <Check size={15} style={{ color: "#16a34a", flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: "#15803d", fontWeight: 600 }}>
+                      Booking for existing patient: <strong>{dupPatient.name}</strong> ({dupPatient.patientId})
+                    </span>
+                    <button type="button" onClick={() => setBookMode("ask")}
+                      style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 11, color: "#6b7280", cursor: "pointer", textDecoration: "underline" }}>Change</button>
+                  </motion.div>
+                )}
+
+                {/* ── New patient chosen banner ── */}
+                {dupPatient && bookMode === "new" && (
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
+                    style={{ background: "#eff6ff", border: "1.5px solid #60a5fa", borderRadius: 12, padding: "10px 14px",
+                      marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <User size={15} style={{ color: "#2563eb", flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: "#1d4ed8", fontWeight: 600 }}>Registering as a new patient profile</span>
+                    <button type="button" onClick={() => setBookMode("ask")}
+                      style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 11, color: "#6b7280", cursor: "pointer", textDecoration: "underline" }}>Change</button>
+                  </motion.div>
+                )}
+
                 <div className={styles.formRow}>
-                  <div className={`${styles.field} ${errors.email ? styles.fieldError : ""}`} style={{ gridColumn: "1 / -1" }}>
+                  <div className={`${styles.field} ${errors.email ? styles.fieldError : ""}`}>
                     <label className={styles.label}>Email Address *</label>
                     <div className={styles.inputWrap}>
                       <span className={styles.fieldIconWrap}><Mail size={15} /></span>
-                      <input className={styles.input} type="email" placeholder="e.g. john@example.com" value={form.email} onChange={e => set("email", e.target.value)} />
+                      <input className={styles.input} type="email" placeholder="e.g. john@example.com" value={form.email}
+                        onChange={e => set("email", e.target.value)}
+                        onBlur={e => { if (!dupPatient) checkDuplicatePatient({ phone: form.phone, email: e.target.value }); }} />
                     </div>
                     {errors.email && <span className={styles.errorMsg}>{errors.email}</span>}
+                  </div>
+                  <div className={`${styles.field} ${errors.whatsapp ? styles.fieldError : ""}`}>
+                    <label className={styles.label}>WhatsApp Number <span style={{ fontWeight: 400, color: "var(--gray-400)", fontSize: 11 }}>(optional)</span></label>
+                    <div className={styles.inputWrap}>
+                      <span className={styles.fieldIconWrap}><MessageCircle size={15} /></span>
+                      <input className={styles.input} type="tel" placeholder="e.g. 9876543210" value={form.whatsapp} onChange={e => set("whatsapp", e.target.value)} />
+                    </div>
+                    {errors.whatsapp && <span className={styles.errorMsg}>{errors.whatsapp}</span>}
                   </div>
                 </div>
                 <div className={styles.footer} style={{ borderTop: "none", padding: "12px 0 0" }}>
@@ -487,7 +623,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                       <label className={styles.label}>Department *</label>
                       <SearchableSelect icon={Building2} placeholder="Select Department..." value={form.departmentId} error={errors.departmentId}
                         options={departments.map(d => ({ id: d.id, label: d.name }))}
-                        onChange={v => { set("departmentId", v); set("doctorId", ""); set("timeSlot", ""); }} />
+                  isLoading={loadingDepts} onChange={v => { set("departmentId", v); set("doctorId", ""); set("timeSlot", ""); }} />
                       {errors.departmentId && <span className={styles.errorMsg}>{errors.departmentId}</span>}
                     </div>
                     <div className={styles.field}>

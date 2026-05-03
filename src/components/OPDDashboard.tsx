@@ -229,17 +229,7 @@ export default function OPDDashboard({ profile, user, activeTab, onTabChange, me
       <style>{css}</style>
 
       {/* ── BookingWizard Modal ── */}
-      {showBooking && (
-        <div className="opd2-modal-overlay" onClick={()=>setShowBooking(false)}>
-          <div className="opd2-modal" onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <div style={{fontSize:16,fontWeight:700,color:"#0f172a"}}>Book New Appointment</div>
-              <button onClick={()=>setShowBooking(false)} style={{background:"none",border:"none",cursor:"pointer",color:"#64748b"}}><X size={18}/></button>
-            </div>
-            <BookingWizard onSuccess={(_name:string)=>{setShowBooking(false);loadAppts(apptDate,apptStatus);}} onClose={()=>setShowBooking(false)}/>
-          </div>
-        </div>
-      )}
+      {showBooking && <BookingWizard onSuccess={(_name:string)=>{setShowBooking(false);loadAppts(apptDate,apptStatus);}} onClose={()=>setShowBooking(false)}/>}
 
       {/* ── Banner ── */}
       <div style={{ background:m.gradient, borderRadius:20, padding:"22px 28px", marginBottom:22, display:"flex", alignItems:"center", gap:18, color:"#fff", position:"relative", overflow:"hidden" }}>

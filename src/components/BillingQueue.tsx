@@ -4,7 +4,8 @@ import {
   Search, RefreshCw, Loader2, CreditCard,
   Receipt, CheckCircle2, Clock, Building2, Eye, X, Plus, Trash2,
   Printer, Phone, Mail, MapPin, IndianRupee, ChevronRight, ChevronDown, ArrowUpDown,
-  Stethoscope, CheckCircle, Tag, PercentIcon, Download,
+  Stethoscope, CheckCircle, Tag, PercentIcon, Download, CalendarDays,
+  FileText, Table2, FileEdit, FileSpreadsheet,
   Banknote, Smartphone, ShieldCheck, Settings2, Send, XCircle, AlertTriangle
 } from "lucide-react";
 
@@ -25,13 +26,18 @@ interface QueueItem {
     tax: number;
     discount: number;
     total: number;
+    paidAmount: number;
+    paidAt?: string | null;
+    paymentMethod?: string | null;
     status: string;
     isGst: boolean;
     cgst: number;
     sgst: number;
     igst: number;
-    billItems: Array<{ id: string; name: string; quantity: number; unitPrice: number; amount: number; type: string }>;
+    billItems: Array<{ id: string; name: string; quantity: number; unitPrice: number; amount: number; type: string; referenceId?: string }>;
     prescription?: { prescriptionNo?: string; diagnosis?: string; medications?: string; doctor?: { name: string } };
+    notes?: string | null;
+    payments?: Array<{ id: string; amount: number; method: string; notes?: string | null; paidAt: string }>;
   };
   billingNote?: string;
 }
@@ -51,7 +57,7 @@ interface HospitalInfo {
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   PENDING: { bg: "#E6F4F4", color: "#0E898F", label: "Pending" },
-  PARTIALLY_PAID: { bg: "#E6F4F4", color: "#0b7075", label: "Partial" },
+  PARTIALLY_PAID: { bg: "#fffbeb", color: "#b45309", label: "Partially Paid" },
   PAID: { bg: "#f0fdf4", color: "#166534", label: "Paid" },
   CANCELLED: { bg: "#fef2f2", color: "#dc2626", label: "Cancelled" },
   DRAFT: { bg: "#f1f5f9", color: "#475569", label: "Draft" },
@@ -83,6 +89,31 @@ function splitBillItems(bill: any) {
   return { nonPharmacyItems, enrichedPharmacy, pharmacyTotal, rxNo: rx?.prescriptionNo, diagnosis: rx?.diagnosis, rxDoctor: rx?.doctor?.name };
 }
 const fmtDate = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); } catch { return "—"; } };
+function getPharmacyItemsTotal(bill: any): number {
+  return (bill?.billItems || []).filter((it: any) => it.type === "PHARMACY").reduce((s: number, it: any) => s + (it.amount || 0), 0);
+}
+function getProcedureItemsTotal(bill: any): number {
+  return (bill?.billItems || []).filter((it: any) => it.type === "PROCEDURE").reduce((s: number, it: any) => s + (it.amount || 0), 0);
+}
+function getProcedureScopedBill(bill: any, scope?: string): any {
+  if (scope !== "procedure" || !bill) return bill;
+  const procedureItems = (bill.billItems || []).filter((it: any) => it.type === "PROCEDURE");
+  const subtotal = procedureItems.reduce((s: number, it: any) => s + (it.amount || 0), 0);
+  return { ...bill, billItems: procedureItems, subtotal, total: subtotal };
+}
+// Returns bill scoped to items still needing collection (non-procedure, when sub-dept already collected procedure charges)
+function getRemainingChargesBill(bill: any, scope?: string): any {
+  if (!bill || scope === "procedure") return bill;
+  const paid = bill.paidAmount || 0;
+  // Only filter procedure items if a sub-dept has already collected them (indicated by notes)
+  const subDeptAlreadyCollected = paid > 0
+    && (bill.billItems || []).some((bi: any) => bi.type === "PROCEDURE")
+    && (bill.notes || "").includes("Collected by");
+  if (!subDeptAlreadyCollected) return bill;
+  const remainingItems = (bill.billItems || []).filter((bi: any) => bi.type !== "PROCEDURE");
+  const subtotal = remainingItems.reduce((s: number, bi: any) => s + (bi.amount || 0), 0);
+  return { ...bill, billItems: remainingItems, subtotal, total: subtotal };
+}
 const fmtTime = (t: string) => {
   try {
     const [h, m] = t.split(":");
@@ -115,7 +146,7 @@ const EMPTY_COLLECT = {
   method: "CASH", amount: "", transactionId: "", notes: ""
 };
 
-export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } = {}) {
+export default function BillingQueue({ scope, subDeptId, deptName, defaultCollectBillId, onDefaultCollectConsumed }: { scope?: "lab" | "pharmacy" | "procedure"; subDeptId?: string; deptName?: string; defaultCollectBillId?: string; onDefaultCollectConsumed?: () => void } = {}) {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -151,10 +182,43 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
 
+  // Global all-time stats (independent of date filter)
+  const [globalStats, setGlobalStats] = useState({ queueCount: 0, pendingCount: 0, pendingAmount: 0, totalCollected: 0, todayCollected: 0, totalDiscount: 0 });
+
+  useEffect(() => {
+    (async () => {
+      const params = new URLSearchParams();
+      if (scope === "pharmacy") params.set("pharmacyOnly", "true");
+      if (scope === "lab") params.set("labOnly", "true");
+      if (scope === "procedure") { params.set("procedureOnly", "true"); if (subDeptId) params.set("subDeptId", subDeptId); }
+      const d = await api(`/api/billing/queue?${params}`);
+      const items: QueueItem[] = d.data || [];
+      const todayStr = new Date().toISOString().split("T")[0];
+      const getAmt = (q: QueueItem) => scope === "pharmacy" ? getPharmacyItemsTotal(q.bill) : scope === "procedure" ? getProcedureItemsTotal(q.bill) : (q.bill?.total || 0);
+      const getRemainingAmt = (q: QueueItem) => {
+        if (scope !== "procedure" && q.bill?.status === "PARTIALLY_PAID") return Math.max(0, (q.bill?.total || 0) - (q.bill?.paidAmount || 0));
+        return getAmt(q);
+      };
+      setGlobalStats({
+        queueCount: items.length,
+        pendingCount: items.filter(q => q.bill?.status === "PENDING" || q.bill?.status === "PARTIALLY_PAID").length,
+        pendingAmount: items.reduce((s, q) => s + (q.bill?.status !== "PAID" && q.bill?.status !== "CANCELLED" ? getRemainingAmt(q) : 0), 0),
+        totalCollected: items.reduce((s, q) => s + (q.bill?.status === "PAID" ? getAmt(q) : 0), 0),
+        todayCollected: items.filter(q => q.bill?.paidAt && new Date(q.bill.paidAt).toISOString().slice(0, 10) === todayStr && q.bill?.status === "PAID").reduce((s, q) => s + getAmt(q), 0),
+        totalDiscount: items.reduce((s, q) => s + (q.bill?.discount || 0), 0),
+      });
+    })();
+  }, [scope, subDeptId]);
+
+  // Status filter
+  const [statusFilter, setStatusFilter] = useState<"all" | "PAID" | "PENDING">("all");
+
   // Sort state
-  const [sortBy, setSortBy] = useState<string>("status_pending");
+  const [sortBy, setSortBy] = useState<string>("newest");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const selectableItems = useMemo(() => queue.filter(q => q.bill), [queue]);
   const emailableItems = useMemo(() => queue.filter(q => q.bill && q.patient.email), [queue]);
@@ -164,9 +228,12 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     setSelectedIds(prev => allIds.every(id => prev.has(id)) ? new Set() : new Set(allIds));
   };
 
-  // Close sort dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => { if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false); };
+    const handler = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
+    };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
@@ -178,15 +245,28 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     if (dateFilter) params.set("date", dateFilter);
     if (scope === "lab") params.set("labOnly", "true");
     if (scope === "pharmacy") params.set("pharmacyOnly", "true");
+    if (scope === "procedure") { params.set("procedureOnly", "true"); if (subDeptId) params.set("subDeptId", subDeptId); }
     const d = await api(`/api/billing/queue?${params}`);
     let items = d.data || [];
     if (scope === "lab") items = items.filter((q: any) => q.source === "lab_order" || q.bill?.billItems?.some((bi: any) => bi.type === "LAB_TEST") || q.bill?.notes?.includes("Lab Order") || q.bill?.billNo?.startsWith("LAB-"));
     if (scope === "pharmacy") items = items.filter((q: any) => q.source === "pharmacy" || q.source === "pharmacy_counter" || q.bill?.billItems?.some((bi: any) => bi.type === "PHARMACY"));
+    if (scope === "procedure") items = items.filter((q: any) => q.bill?.billItems?.some((bi: any) => bi.type === "PROCEDURE"));
     if (d.success) setQueue(items);
     setLoading(false);
-  }, [search, dateFilter, scope]);
+  }, [search, dateFilter, scope, subDeptId]);
 
   useEffect(() => { loadQueue(); }, [loadQueue]);
+
+  // Auto-open collect modal when defaultCollectBillId is provided and queue has loaded
+  useEffect(() => {
+    if (!defaultCollectBillId || loading || queue.length === 0) return;
+    const item = queue.find(q => q.bill?.id === defaultCollectBillId);
+    if (item) {
+      handleCollect(item);
+      onDefaultCollectConsumed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCollectBillId, loading, queue]);
 
   useEffect(() => {
     // Load hospital info from settings (has logo + all configured details)
@@ -301,12 +381,15 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
   };
 
   const handleAddCharge = () => {
-    if (!collectForm.newChargeName.trim() || collectForm.newChargeRate <= 0) return;
-    const qty = collectForm.newChargeQty || 1;
-    const amount = qty * collectForm.newChargeRate;
+    const name = (collectForm.newChargeName || "").trim();
+    const qty = Math.max(1, Number(collectForm.newChargeQty) || 1);
+    const rate = Number(collectForm.newChargeRate) || 0;
+    if (!name || rate <= 0) return;
+    const amount = qty * rate;
+    const newCharge = { name, quantity: qty, unitPrice: rate, amount };
     setCollectForm(f => ({
       ...f,
-      addedCharges: [...f.addedCharges, { name: f.newChargeName.trim(), quantity: qty, unitPrice: f.newChargeRate, amount }],
+      addedCharges: [...(f.addedCharges || []), newCharge],
       newChargeName: "", newChargeQty: 1, newChargeRate: 0
     }));
   };
@@ -394,7 +477,8 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     y += 30;
 
     // Items table (split pharmacy items out)
-    const { nonPharmacyItems: npPdf1, enrichedPharmacy: epPdf1, pharmacyTotal: ptPdf1, rxNo: rnPdf1, diagnosis: dgPdf1 } = splitBillItems(item.bill);
+    const pdf1Bill = getProcedureScopedBill(item.bill, scope);
+    const { nonPharmacyItems: npPdf1, enrichedPharmacy: epPdf1, pharmacyTotal: ptPdf1, rxNo: rnPdf1, diagnosis: dgPdf1 } = splitBillItems(pdf1Bill);
     const items = npPdf1.map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
     if (items.length > 0) {
       autoTable(doc, {
@@ -438,11 +522,11 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     // Summary
     const sW = 78; const sX = pw - mx - sW;
     const summaryLines: Array<{ label: string; value: string; color?: number[] }> = [];
-    summaryLines.push({ label: 'Subtotal', value: rs(item.bill.subtotal || 0) });
-    if (item.bill.isGst && item.bill.cgst > 0) summaryLines.push({ label: `CGST (${item.bill.cgst}%)`, value: rs((item.bill.subtotal * item.bill.cgst) / 100) });
-    if (item.bill.isGst && item.bill.sgst > 0) summaryLines.push({ label: `SGST (${item.bill.sgst}%)`, value: rs((item.bill.subtotal * item.bill.sgst) / 100) });
-    if (item.bill.isGst && item.bill.igst > 0) summaryLines.push({ label: `IGST (${item.bill.igst}%)`, value: rs((item.bill.subtotal * item.bill.igst) / 100) });
-    if (item.bill.discount > 0) summaryLines.push({ label: 'Discount', value: '- ' + rs(item.bill.discount), color: [5, 150, 105] });
+    summaryLines.push({ label: 'Subtotal', value: rs(pdf1Bill.subtotal || 0) });
+    if (pdf1Bill.isGst && pdf1Bill.cgst > 0) summaryLines.push({ label: `CGST (${pdf1Bill.cgst}%)`, value: rs((pdf1Bill.subtotal * pdf1Bill.cgst) / 100) });
+    if (pdf1Bill.isGst && pdf1Bill.sgst > 0) summaryLines.push({ label: `SGST (${pdf1Bill.sgst}%)`, value: rs((pdf1Bill.subtotal * pdf1Bill.sgst) / 100) });
+    if (pdf1Bill.isGst && pdf1Bill.igst > 0) summaryLines.push({ label: `IGST (${pdf1Bill.igst}%)`, value: rs((pdf1Bill.subtotal * pdf1Bill.igst) / 100) });
+    if (pdf1Bill.discount > 0) summaryLines.push({ label: 'Discount', value: '- ' + rs(pdf1Bill.discount), color: [5, 150, 105] });
     const lineH = 6; const boxH = (summaryLines.length * lineH) + lineH + 14;
     doc.setFillColor(248, 250, 252); doc.roundedRect(sX, y, sW, boxH, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2); doc.roundedRect(sX, y, sW, boxH, 2, 2, 'S');
@@ -456,19 +540,58 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
     doc.text('Total Amount', sX + 4, sY);
     doc.setTextColor(14, 137, 143); doc.setFontSize(11);
-    doc.text(rs(item.bill.total || 0), sX + sW - 4, sY, { align: 'right' });
+    doc.text(rs(pdf1Bill.total || 0), sX + sW - 4, sY, { align: 'right' });
     y += boxH + 8;
 
-    // Payment info
-    if (item.bill.status === 'PAID') {
-      doc.setFillColor(240, 253, 244); doc.setDrawColor(187, 247, 208); doc.setLineWidth(0.3);
-      doc.roundedRect(mx, y, cw, 14, 2, 2, 'FD');
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(148, 163, 184);
-      doc.text('STATUS', mx + 4, y + 5);
-      doc.setFontSize(8.5); doc.setTextColor(22, 101, 52); doc.text('PAID', mx + 4, y + 10);
-      doc.setFontSize(6.5); doc.setTextColor(148, 163, 184); doc.text('AMOUNT PAID', mx + 40, y + 5);
-      doc.setFontSize(8.5); doc.setTextColor(22, 101, 52); doc.text(rs(item.bill.total || 0), mx + 40, y + 10);
-      y += 20;
+    // Payment History section
+    if (item.bill.status === 'PAID' || item.bill.status === 'PARTIALLY_PAID') {
+      const isPaid = item.bill.status === 'PAID';
+      const remaining = Math.max(0, (item.bill.total || 0) - (item.bill.paidAmount || 0));
+      const payments: any[] = item.bill.payments || [];
+      // Section heading
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+      doc.text('PAYMENT HISTORY', mx, y + 4);
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2);
+      doc.line(mx + 40, y + 2, pw - mx, y + 2);
+      y += 8;
+      // Build table rows from payments array; fallback to bill.notes remark
+      const payRows: string[][] = payments.length > 0
+        ? payments.map(p => {
+            const label = (p.notes || '').match(/Collected by [^—\n]+/)?.[0]?.trim() || 'Payment Received';
+            const dateStr = p.paidAt ? new Date(p.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            return [label, p.method || '', dateStr, rs(p.amount || 0)];
+          })
+        : [[
+            (item.bill.notes || '').match(/Collected by [^|]+/)?.[0]?.trim() || 'Payment Received',
+            item.bill.paymentMethod || '',
+            item.bill.paidAt ? new Date(item.bill.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+            rs(item.bill.paidAmount || item.bill.total || 0),
+          ]];
+      // Remaining row for partial
+      if (!isPaid && remaining > 0) payRows.push(['Remaining Balance', '', '', rs(remaining)]);
+      autoTable(doc, {
+        startY: y,
+        head: [['Collected By / Remark', 'Method', 'Date', 'Amount']],
+        body: payRows,
+        theme: 'grid',
+        headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7.5, fontStyle: 'bold', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        bodyStyles: { fontSize: 8.5, textColor: [30, 41, 59], cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 } },
+        columnStyles: { 0: { cellWidth: 'auto', fontStyle: 'bold' }, 1: { cellWidth: 28 }, 2: { cellWidth: 32 }, 3: { cellWidth: 30, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+        didParseCell: (data: any) => {
+          if (data.section === 'body') {
+            const isRemaining = !isPaid && data.row.index === payRows.length - 1;
+            if (isRemaining) {
+              data.cell.styles.fillColor = [255, 251, 235];
+              data.cell.styles.textColor = [180, 83, 9];
+            } else {
+              data.cell.styles.fillColor = data.row.index % 2 === 0 ? [240, 253, 244] : [255, 255, 255];
+              data.cell.styles.textColor = [22, 101, 52];
+            }
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // Signature
@@ -557,15 +680,24 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
   };
 
   const liveTotals = useMemo(() => {
-    const base = selectedItem?.bill?.subtotal || 0;
-    const added = collectForm.addedCharges.reduce((s, c) => s + c.amount, 0);
+    const paidAmount = selectedItem?.bill?.paidAmount || 0;
+    const hasPaidProcedures = paidAmount > 0
+      && (selectedItem?.bill?.billItems || []).some((bi: any) => bi.type === "PROCEDURE")
+      && (selectedItem?.bill?.notes || "").includes("Collected by");
+    const base = scope === "procedure"
+      ? getProcedureItemsTotal(selectedItem?.bill)
+      : hasPaidProcedures
+        ? (selectedItem?.bill?.billItems || []).filter((bi: any) => bi.type !== "PROCEDURE").reduce((s: number, bi: any) => s + (bi.amount || 0), 0)
+        : (selectedItem?.bill?.subtotal || 0);
+    const added = (collectForm.addedCharges || []).reduce((s, c) => s + (c.amount || 0), 0);
     const gross = base + added;
     const gstTotal = collectForm.isGst ? (gross * (collectForm.cgst + collectForm.sgst + collectForm.igst)) / 100 : 0;
     const cgstAmt = collectForm.isGst ? (gross * collectForm.cgst) / 100 : 0;
     const sgstAmt = collectForm.isGst ? (gross * collectForm.sgst) / 100 : 0;
     const igstAmt = collectForm.isGst ? (gross * collectForm.igst) / 100 : 0;
     const total = Math.max(0, gross + gstTotal - (collectForm.discount || 0));
-    return { base, added, gross, gstTotal, cgstAmt, sgstAmt, igstAmt, total };
+    const remaining = scope === "procedure" ? total : Math.max(0, total);
+    return { base, added, gross, gstTotal, cgstAmt, sgstAmt, igstAmt, total, remaining, paidAmount, hasPaidProcedures };
   }, [selectedItem, collectForm]);
 
   const handleCollectAndGenerate = async () => {
@@ -600,7 +732,12 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
       
       // Fetch final total from server
       const updatedBill = await api(`/api/billing/${billId}`);
-      const payableTotal = updatedBill?.data?.total ?? updatedBill?.total ?? liveTotals.total;
+      const fullBillTotal = updatedBill?.data?.total ?? updatedBill?.total ?? liveTotals.total;
+      const alreadyPaid = updatedBill?.data?.paidAmount ?? updatedBill?.paidAmount ?? (selectedItem?.bill?.paidAmount || 0);
+      // Procedure scope: collect only procedure portion; others: collect only remaining unpaid balance
+      const payableTotal = scope === "procedure"
+        ? liveTotals.total
+        : Math.max(0, fullBillTotal - alreadyPaid);
       
       // Record payment
       const payRes = await api(`/api/billing/${billId}`, {
@@ -610,7 +747,8 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
           paymentMethod: collectForm.method,
           amount: payableTotal,
           transactionId: collectForm.transactionId || undefined,
-          notes: collectForm.notes || undefined
+          notes: collectForm.notes || undefined,
+          collectedBy: deptName || undefined
         })
       });
       
@@ -833,7 +971,8 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     y += 30;
 
     // ── Items table (split pharmacy items out) ──
-    const { nonPharmacyItems: npPdf2, enrichedPharmacy: epPdf2, pharmacyTotal: ptPdf2, rxNo: rnPdf2, diagnosis: dgPdf2 } = splitBillItems(item.bill);
+    const pdf2Bill = getProcedureScopedBill(item.bill, scope);
+    const { nonPharmacyItems: npPdf2, enrichedPharmacy: epPdf2, pharmacyTotal: ptPdf2, rxNo: rnPdf2, diagnosis: dgPdf2 } = splitBillItems(pdf2Bill);
     const items = npPdf2.map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
     if (items.length > 0) {
       autoTable(doc, {
@@ -871,11 +1010,11 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     const sW = 78;
     const sX = pw - mx - sW;
     const summaryLines: Array<{ label: string; value: string; color?: number[] }> = [];
-    summaryLines.push({ label: 'Subtotal', value: rs(item.bill.subtotal || 0) });
-    if (item.bill.isGst && item.bill.cgst > 0) summaryLines.push({ label: `CGST (${item.bill.cgst}%)`, value: rs((item.bill.subtotal * item.bill.cgst) / 100) });
-    if (item.bill.isGst && item.bill.sgst > 0) summaryLines.push({ label: `SGST (${item.bill.sgst}%)`, value: rs((item.bill.subtotal * item.bill.sgst) / 100) });
-    if (item.bill.isGst && item.bill.igst > 0) summaryLines.push({ label: `IGST (${item.bill.igst}%)`, value: rs((item.bill.subtotal * item.bill.igst) / 100) });
-    if (item.bill.discount > 0) summaryLines.push({ label: 'Discount', value: '- ' + rs(item.bill.discount), color: [5, 150, 105] });
+    summaryLines.push({ label: 'Subtotal', value: rs(pdf2Bill.subtotal || 0) });
+    if (pdf2Bill.isGst && pdf2Bill.cgst > 0) summaryLines.push({ label: `CGST (${pdf2Bill.cgst}%)`, value: rs((pdf2Bill.subtotal * pdf2Bill.cgst) / 100) });
+    if (pdf2Bill.isGst && pdf2Bill.sgst > 0) summaryLines.push({ label: `SGST (${pdf2Bill.sgst}%)`, value: rs((pdf2Bill.subtotal * pdf2Bill.sgst) / 100) });
+    if (pdf2Bill.isGst && pdf2Bill.igst > 0) summaryLines.push({ label: `IGST (${pdf2Bill.igst}%)`, value: rs((pdf2Bill.subtotal * pdf2Bill.igst) / 100) });
+    if (pdf2Bill.discount > 0) summaryLines.push({ label: 'Discount', value: '- ' + rs(pdf2Bill.discount), color: [5, 150, 105] });
 
     const lineH = 6;
     const boxH = (summaryLines.length * lineH) + lineH + 14;
@@ -906,30 +1045,56 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     doc.text('Total Amount', sX + 4, sY);
     doc.setTextColor(14, 137, 143);
     doc.setFontSize(11);
-    doc.text(rs(item.bill.total || 0), sX + sW - 4, sY, { align: 'right' });
+    doc.text(rs(pdf2Bill.total || 0), sX + sW - 4, sY, { align: 'right' });
 
     y += boxH + 8;
 
-    // ── Payment info (if paid) ──
-    if (item.bill.status === 'PAID') {
-      doc.setFillColor(240, 253, 244);
-      doc.setDrawColor(187, 247, 208);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(mx, y, cw, 14, 2, 2, 'FD');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(148, 163, 184);
-      doc.text('STATUS', mx + 4, y + 5);
-      doc.setFontSize(8.5);
-      doc.setTextColor(22, 101, 52);
-      doc.text('PAID', mx + 4, y + 10);
-      doc.setFontSize(6.5);
-      doc.setTextColor(148, 163, 184);
-      doc.text('AMOUNT PAID', mx + 40, y + 5);
-      doc.setFontSize(8.5);
-      doc.setTextColor(22, 101, 52);
-      doc.text(rs(item.bill.total || 0), mx + 40, y + 10);
-      y += 20;
+    // ── Payment History section ──
+    if (item.bill.status === 'PAID' || item.bill.status === 'PARTIALLY_PAID') {
+      const isPaid2 = item.bill.status === 'PAID';
+      const remaining2 = Math.max(0, (item.bill.total || 0) - (item.bill.paidAmount || 0));
+      const payments2: any[] = item.bill.payments || [];
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+      doc.text('PAYMENT HISTORY', mx, y + 4);
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2);
+      doc.line(mx + 40, y + 2, pw - mx, y + 2);
+      y += 8;
+      const payRows2: string[][] = payments2.length > 0
+        ? payments2.map((p: any) => {
+            const label2 = (p.notes || '').match(/Collected by [^—\n]+/)?.[0]?.trim() || 'Payment Received';
+            const dateStr2 = p.paidAt ? new Date(p.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            return [label2, p.method || '', dateStr2, rs(p.amount || 0)];
+          })
+        : [[
+            (item.bill.notes || '').match(/Collected by [^|]+/)?.[0]?.trim() || 'Payment Received',
+            item.bill.paymentMethod || '',
+            item.bill.paidAt ? new Date(item.bill.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+            rs(item.bill.paidAmount || item.bill.total || 0),
+          ]];
+      if (!isPaid2 && remaining2 > 0) payRows2.push(['Remaining Balance', '', '', rs(remaining2)]);
+      autoTable(doc, {
+        startY: y,
+        head: [['Collected By / Remark', 'Method', 'Date', 'Amount']],
+        body: payRows2,
+        theme: 'grid',
+        headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7.5, fontStyle: 'bold', cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        bodyStyles: { fontSize: 8.5, textColor: [30, 41, 59], cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 } },
+        columnStyles: { 0: { cellWidth: 'auto', fontStyle: 'bold' }, 1: { cellWidth: 28 }, 2: { cellWidth: 32 }, 3: { cellWidth: 30, halign: 'right', fontStyle: 'bold' } },
+        margin: { left: mx, right: mx },
+        didParseCell: (data: any) => {
+          if (data.section === 'body') {
+            const isRem2 = !isPaid2 && data.row.index === payRows2.length - 1;
+            if (isRem2) {
+              data.cell.styles.fillColor = [255, 251, 235];
+              data.cell.styles.textColor = [180, 83, 9];
+            } else {
+              data.cell.styles.fillColor = data.row.index % 2 === 0 ? [240, 253, 244] : [255, 255, 255];
+              data.cell.styles.textColor = [22, 101, 52];
+            }
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
     }
 
     // ── Signature section ──
@@ -1088,7 +1253,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
 
     // ── Itemised Table (split pharmacy items out) ──
     const billForSplit3 = paidBill ? { ...selectedItem.bill, billItems: paidBill.billItems || selectedItem.bill?.billItems } : selectedItem.bill;
-    const { nonPharmacyItems: npPdf3, enrichedPharmacy: epPdf3, pharmacyTotal: ptPdf3, rxNo: rnPdf3, diagnosis: dgPdf3 } = splitBillItems(billForSplit3);
+    const { nonPharmacyItems: npPdf3, enrichedPharmacy: epPdf3, pharmacyTotal: ptPdf3, rxNo: rnPdf3, diagnosis: dgPdf3 } = splitBillItems(getProcedureScopedBill(billForSplit3, scope));
     const items = npPdf3.map((it: any, i: number) => [String(i + 1), it.name, String(it.quantity), rs(it.unitPrice), rs(it.amount)]);
     if (items.length > 0) {
       autoTable(doc, {
@@ -1179,6 +1344,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
       { label: 'STATUS', value: 'PAID' },
     ];
     if (collectForm.transactionId) payItems.push({ label: 'TXN ID', value: collectForm.transactionId });
+    if (deptName) payItems.push({ label: 'COLLECTED BY', value: deptName });
     const pColW = cw / payItems.length;
     payItems.forEach((p, i) => {
       const pX = mx + 4 + i * pColW;
@@ -1229,10 +1395,11 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     doc.save(fileName);
   };
 
+  const getAmt = (q: QueueItem) => scope === "pharmacy" ? getPharmacyItemsTotal(q.bill) : scope === "procedure" ? getProcedureItemsTotal(q.bill) : (q.bill?.total || 0);
   const stats = {
     queueCount: queue.length,
-    totalPending: queue.reduce((sum, q) => sum + (q.bill?.status === "PENDING" ? (q.bill?.total || 0) : 0), 0),
-    totalCollected: queue.reduce((sum, q) => sum + (q.bill?.status === "PAID" ? (q.bill?.total || 0) : 0), 0),
+    totalPending: queue.reduce((sum, q) => sum + (q.bill?.status === "PENDING" ? getAmt(q) : 0), 0),
+    totalCollected: queue.reduce((sum, q) => sum + (q.bill?.status === "PAID" ? getAmt(q) : 0), 0),
     totalDiscount: queue.reduce((sum, q) => sum + (q.bill?.status === "PAID" ? (q.bill?.discount || 0) : 0), 0),
   };
 
@@ -1247,8 +1414,15 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     { value: "status_pending", label: "Status: Pending First", icon: "○" },
   ];
 
+  const statusFilteredQueue = useMemo(() => {
+    if (statusFilter === "all") return queue;
+    if (statusFilter === "PAID") return queue.filter(q => q.bill?.status === "PAID");
+    if (statusFilter === "PENDING") return queue.filter(q => q.bill?.status === "PENDING" || q.bill?.status === "PARTIALLY_PAID");
+    return queue;
+  }, [queue, statusFilter]);
+
   const sortedQueue = useMemo(() => {
-    const sorted = [...queue];
+    const sorted = [...statusFilteredQueue];
     switch (sortBy) {
       case "oldest": sorted.sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime()); break;
       case "newest": sorted.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()); break;
@@ -1260,7 +1434,102 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
       case "status_pending": sorted.sort((a, b) => (a.bill?.status === "PENDING" ? -1 : 1) - (b.bill?.status === "PENDING" ? -1 : 1)); break;
     }
     return sorted;
-  }, [queue, sortBy]);
+  }, [statusFilteredQueue, sortBy]);
+
+  const exportPDF = async () => {
+    const { jsPDF, autoTable } = await getJsPdf();
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(14, 137, 143);
+    doc.text("Billing Queue Report", 14, 14);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")} | ${sortedQueue.length} bill${sortedQueue.length !== 1 ? "s" : ""}${dateFilter ? ` on ${fmtDate(dateFilter)}` : " (all time)"}`, 14, 21);
+    const rows = sortedQueue.map(item => [
+      item.bill?.billNo || "—", item.patient.name, item.patient.patientId,
+      item.doctor?.name || "Walk-in", fmtDate(item.appointmentDate),
+      item.timeSlot ? fmtTime(item.timeSlot) : "Walk-in",
+      item.subDepartment?.name || (item as any).source || "—",
+      fmtCur(item.bill?.total || 0), item.bill?.status || "—",
+    ]);
+    autoTable(doc, {
+      startY: 26, head: [["Bill No","Patient","Patient ID","Doctor","Date","Time","Sub-Dept","Total","Status"]],
+      body: rows, theme: "striped",
+      headStyles: { fillColor: [14, 137, 143], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 7.5, textColor: [51, 65, 85] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+    });
+    doc.save(`billing_queue_${dateFilter || "all"}.pdf`);
+    setExportOpen(false);
+  };
+
+  const exportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const headers = ["Bill No","Patient","Patient ID","Doctor","Date","Time","Sub-Dept","Fee","Bill Total","Status"];
+    const rows = sortedQueue.map(item => [
+      item.bill?.billNo || "", item.patient.name, item.patient.patientId,
+      item.doctor?.name || "Walk-in", fmtDate(item.appointmentDate),
+      item.timeSlot ? fmtTime(item.timeSlot) : "Walk-in",
+      item.subDepartment?.name || (item as any).source || "",
+      item.consultationFee, item.bill?.total || 0, item.bill?.status || "",
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [10,20,12,18,12,10,14,10,12,10].map(w => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Billing Queue");
+    XLSX.writeFile(wb, `billing_queue_${dateFilter || "all"}.xlsx`);
+    setExportOpen(false);
+  };
+
+  const exportWord = async () => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle } = await import("docx");
+    const { saveAs } = await import("file-saver");
+    const headers = ["Bill No","Patient","Patient ID","Doctor","Date","Sub-Dept","Total","Status"];
+    const dataRows = sortedQueue.map(item => [
+      item.bill?.billNo || "—", item.patient.name, item.patient.patientId,
+      item.doctor?.name || "Walk-in", fmtDate(item.appointmentDate),
+      item.subDepartment?.name || (item as any).source || "—",
+      fmtCur(item.bill?.total || 0), item.bill?.status || "—",
+    ]);
+    const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: "e2e8f0" };
+    const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+    const mkCell = (text: string, bold = false) => new TableCell({ borders, children: [new Paragraph({ children: [new TextRun({ text, bold, size: 18, font: "Calibri" })] })] });
+    const doc = new Document({ sections: [{ children: [
+      new Paragraph({ children: [new TextRun({ text: "Billing Queue Report", bold: true, size: 28, color: "0E898F", font: "Calibri" })], alignment: AlignmentType.CENTER }),
+      new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-IN")} | ${sortedQueue.length} bills${dateFilter ? ` on ${fmtDate(dateFilter)}` : " (all time)"}`, size: 18, color: "64748b", font: "Calibri" })], alignment: AlignmentType.CENTER }),
+      new Paragraph({ children: [] }),
+      new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [
+        new TableRow({ children: headers.map(h => mkCell(h, true)), tableHeader: true }),
+        ...dataRows.map(row => new TableRow({ children: row.map(c => mkCell(String(c))) })),
+      ]}),
+    ]}] });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `billing_queue_${dateFilter || "all"}.docx`);
+    setExportOpen(false);
+  };
+
+  const exportCSV = () => {
+    const headers = ["Bill No","Patient","Patient ID","Doctor","Date","Time","Sub-Dept","Fee","Bill Total","Status"];
+    const rows = sortedQueue.map(item => [
+      item.bill?.billNo || "—",
+      item.patient.name,
+      item.patient.patientId,
+      item.doctor?.name || "Walk-in",
+      fmtDate(item.appointmentDate),
+      item.timeSlot ? fmtTime(item.timeSlot) : "Walk-in",
+      item.subDepartment?.name || (item as any).source || "—",
+      item.consultationFee,
+      item.bill?.total || 0,
+      item.bill?.status || "—",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `billing_queue_${dateFilter || "all"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleBulkDelete = async () => {
     const billIds = queue.filter(q => selectedIds.has(q.id) && q.bill).map(q => q.bill!.id);
@@ -1284,24 +1553,86 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
     <>
       <style>{BQ_CSS}</style>
       <div className="bq-wrap">
-        {/* Stats Bar */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-.02em" }}>Billing Queue</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 3px #dcfce7", flexShrink: 0 }} />
+              Live &middot; {sortedQueue.length} bill{sortedQueue.length !== 1 ? "s" : ""}{dateFilter ? ` on ${fmtDate(dateFilter)}` : " (all time)"}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { setDateFilter(new Date().toISOString().split("T")[0]); setSortBy("newest"); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}>
+              <CalendarDays size={13} /> Today
+            </button>
+            <button onClick={loadQueue} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 12, fontWeight: 600, color: "#475569", cursor: "pointer" }}>
+              <RefreshCw size={13} style={loading ? { animation: "spin 1s linear infinite" } : {}} /> Refresh
+            </button>
+            <div ref={exportRef} style={{ position: "relative" }}>
+              <button onClick={() => setExportOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 10, border: "none", background: "#0E898F", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <Download size={13} /> Export <ChevronDown size={12} style={{ marginLeft: 2, transition: "transform .2s", transform: exportOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+              </button>
+              {exportOpen && (
+                <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 200, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 12px 36px rgba(0,0,0,.1)", minWidth: 160, padding: 6, animation: "bq-fade .15s ease" }}>
+                  {[
+                    { label: "PDF",          icon: <FileText   size={15} color="#ef4444" />, iconBg: "#fef2f2", action: exportPDF },
+                    { label: "Excel (.xlsx)", icon: <Table2     size={15} color="#16a34a" />, iconBg: "#f0fdf4", action: exportExcel },
+                    { label: "Word (.docx)",  icon: <FileEdit   size={15} color="#2563eb" />, iconBg: "#eff6ff", action: exportWord },
+                    { label: "CSV",           icon: <FileSpreadsheet size={15} color="#d97706" />, iconBg: "#fffbeb", action: () => { exportCSV(); setExportOpen(false); } },
+                  ].map(opt => (
+                    <button key={opt.label} onClick={opt.action}
+                      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 10px", border: "none", background: "none", fontSize: 13, color: "#334155", cursor: "pointer", borderRadius: 8, textAlign: "left", fontFamily: "inherit", fontWeight: 500, transition: "background .12s" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#f8fafc")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                      <span style={{ width: 28, height: 28, borderRadius: 7, background: opt.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{opt.icon}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards — 5 all-time cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
           {[
-            { label: "In Queue", value: stats.queueCount, icon: Receipt, color: "#0E898F", bg: "#E6F4F4" },
-            { label: "Pending Collection", value: fmtCur(stats.totalPending), icon: Clock, color: "#f59e0b", bg: "#fffbeb" },
-            { label: "Collected Today", value: fmtCur(stats.totalCollected), icon: CheckCircle2, color: "#10b981", bg: "#f0fdf4" },
-            { label: "Discount Given", value: fmtCur(stats.totalDiscount), icon: Tag, color: "#8b5cf6", bg: "#f5f3ff" },
-          ].map(i => (
-            <div key={i.label} style={{ background: "linear-gradient(135deg, #ffffff, #f8fafc)", borderRadius: 14, padding: "16px 18px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 46, height: 46, borderRadius: 12, background: i.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <i.icon size={20} color={i.color} strokeWidth={2} />
-              </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5 }}>{i.label}</div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: i.color, lineHeight: 1 }}>{i.value}</div>
+            { icon: <Receipt size={20} color="#0E898F" />, bg: "#E6F4F4", value: String(globalStats.queueCount), label: "Total In Queue", badge: null as string | null, badgeBg: "", badgeColor: "", badgeBorder: "" },
+            { icon: <Clock size={20} color={globalStats.pendingCount > 0 ? "#ea580c" : "#94a3b8"} />, bg: globalStats.pendingCount > 0 ? "#fff3e6" : "#f8fafc", value: String(globalStats.pendingCount), label: "Pending Bills", badge: globalStats.pendingCount > 0 ? "PENDING" : null as string | null, badgeBg: "#fff3e6", badgeColor: "#ea580c", badgeBorder: "#fed7aa" },
+            { icon: <IndianRupee size={20} color="#ea580c" />, bg: "#fff3e6", value: fmtCur(globalStats.pendingAmount), label: "Pending Amount", badge: null as string | null, badgeBg: "", badgeColor: "", badgeBorder: "" },
+            { icon: <CheckCircle2 size={20} color="#16a34a" />, bg: "#f0fdf4", value: fmtCur(globalStats.totalCollected), label: "Total Collected", badge: null as string | null, badgeBg: "", badgeColor: "", badgeBorder: "" },
+            scope === "pharmacy" 
+              ? { icon: <IndianRupee size={20} color="#16a34a" />, bg: "#f0fdf4", value: fmtCur(globalStats.todayCollected), label: "Today's Collection", badge: "TODAY" as string | null, badgeBg: "#f0fdf4", badgeColor: "#16a34a", badgeBorder: "#bbf7d0" }
+              : { icon: <Tag size={20} color="#8b5cf6" />, bg: "#f5f3ff", value: fmtCur(globalStats.totalDiscount), label: "Discount Given", badge: null as string | null, badgeBg: "", badgeColor: "", badgeBorder: "" },
+          ].map((c, i) => (
+            <div key={i}
+              style={{ background: "#fff", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", transition: "box-shadow .2s, transform .15s", display: "flex", alignItems: "center", gap: 12 }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = ""; }}>
+              <div style={{ width: 44, height: 44, borderRadius: 11, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{c.value}</div>
+                  {c.badge && <span style={{ fontSize: 8, fontWeight: 700, color: c.badgeColor, background: c.badgeBg, padding: "2px 6px", borderRadius: 10, border: `1px solid ${c.badgeBorder}` }}>{c.badge}</span>}
+                </div>
+                <div style={{ fontSize: 10, color: "#64748b" }}>{c.label}</div>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Status filter pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          {(["all", "PENDING", "PAID"] as const).map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              style={{ padding: "6px 16px", borderRadius: 100, border: `1px solid ${statusFilter === s ? (s === "PAID" ? "#bbf7d0" : s === "PENDING" ? "#fed7aa" : "#cbd5e1") : "#e2e8f0"}`, background: statusFilter === s ? (s === "PAID" ? "#f0fdf4" : s === "PENDING" ? "#fff3e6" : "#f1f5f9") : "#fff", color: statusFilter === s ? (s === "PAID" ? "#16a34a" : s === "PENDING" ? "#ea580c" : "#1e293b") : "#64748b", fontSize: 12, fontWeight: statusFilter === s ? 700 : 500, cursor: "pointer", transition: "all .15s" }}>
+              {s === "all" ? "All Bills" : s === "PAID" ? "Paid" : "Pending"}
+            </button>
+          ))}
+          {statusFilter !== "all" && (
+            <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 4 }}>{sortedQueue.length} result{sortedQueue.length !== 1 ? "s" : ""}</span>
+          )}
         </div>
 
         {/* Filters */}
@@ -1401,13 +1732,11 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
               </thead>
               <tbody>
                 {sortedQueue.map(item => {
-                  const sc = item.bill ? STATUS_COLORS[item.bill.status] || STATUS_COLORS.PENDING : STATUS_COLORS.DRAFT;
+                  const sc = STATUS_COLORS[item.bill?.status || "PENDING"] || STATUS_COLORS.PENDING;
                   return (
                     <tr key={item.id} className={selectedIds.has(item.id) ? "bq-row-selected" : ""}>
                       <td style={{textAlign: "center"}}>
-                        {item.bill ? (
-                          <input type="checkbox" className="bq-checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} />
-                        ) : <span style={{color: "#cbd5e1"}}>—</span>}
+                        <input type="checkbox" className="bq-checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} />
                       </td>
                       <td>
                         <div className="bq-patient">
@@ -1425,7 +1754,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                         <div className="bq-date">{fmtDate(item.appointmentDate)}</div>
                         <div className="bq-time">{item.timeSlot ? fmtTime(item.timeSlot) : ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter") ? "Counter Sale" : (item as any).source === "lab_order" ? "Lab Test" : "—"}</div>
                       </td>
-                      <td className="bq-fee">{(item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" || (item as any).source === "lab_order" ? fmtCur(item.bill?.total || 0) : fmtCur(item.consultationFee)}</td>
+                      <td className="bq-fee">{scope === "pharmacy" ? fmtCur(getPharmacyItemsTotal(item.bill)) : scope === "procedure" ? fmtCur(getProcedureItemsTotal(item.bill)) : ((item as any).source === "pharmacy" || (item as any).source === "pharmacy_counter" || (item as any).source === "lab_order" ? fmtCur(item.bill?.total || 0) : fmtCur(item.consultationFee))}</td>
                       <td>
                         {(item as any).source === "lab_order" ? (
                           <span className="bq-badge" style={{ background: "#f0fdf4", color: "#047857", border: "1px solid #a7f3d0" }}>
@@ -1449,69 +1778,80 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                         <span className="bq-badge" style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.color}30` }}>
                           {sc.label}
                         </span>
+                        {item.bill?.status === "PARTIALLY_PAID" && item.bill?.notes?.includes("Collected by") && (
+                          <div style={{fontSize:10,color:"#b45309",marginTop:3,fontWeight:600}}>
+                            {item.bill.notes.match(/Collected by [^|]+/)?.[0]?.trim()}
+                          </div>
+                        )}
                       </td>
-                      <td className="bq-total">{item.bill ? fmtCur(item.bill.total) : "—"}</td>
+                      <td className="bq-total">
+                        {item.bill?.status === "PARTIALLY_PAID" && scope !== "procedure" ? (
+                          <div>
+                            <div style={{fontWeight:700,color:"#b45309"}}>{fmtCur((item.bill?.total || 0) - (item.bill?.paidAmount || 0))}</div>
+                            <div style={{fontSize:10,color:"#94a3b8",textDecoration:"line-through"}}>{fmtCur(item.bill?.total || 0)}</div>
+                          </div>
+                        ) : fmtCur(scope === "pharmacy" ? getPharmacyItemsTotal(item.bill) : scope === "procedure" ? getProcedureItemsTotal(item.bill) : (item.bill?.total || 0))}
+                      </td>
                       <td>
                         <div className="bq-actions">
-                          {item.bill && (
-                            <>
-                              <button className="bq-action-btn bq-action-view" onClick={() => handleView(item)} title="View Bill">
-                                <Eye size={14} />
-                              </button>
-                              <button className="bq-action-btn bq-action-download" onClick={() => handleDownloadBillPDF(item)} title="Download PDF">
-                                <Download size={14} />
-                              </button>
-                              <button 
-                                className="bq-action-btn bq-action-email" 
-                                onClick={() => item.patient.email ? handleSendEmail(item) : showToast("warning", "No Email", "Patient does not have an email address on file.")} 
-                                disabled={sendingEmail === item.bill.id}
-                                title={item.patient.email ? `Send Invoice to ${item.patient.email}` : "No patient email on file"}
-                                style={{background: item.patient.email ? "#f0f9ff" : "#f8fafc", color: item.patient.email ? "#0369a1" : "#94a3b8", border: `1px solid ${item.patient.email ? "#bae6fd" : "#e2e8f0"}`}}
-                              >
-                                {sendingEmail === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Send size={14} />}
-                              </button>
-                              {item.bill.status !== "PAID" ? (
-                                <button 
-                                  className="bq-action-btn bq-action-collect" 
-                                  onClick={() => {
-                                    if (scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
-                                      showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be collected at the main billing desk.");
-                                      return;
-                                    }
-                                    handleCollect(item);
-                                  }} 
-                                  title={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? "Contains non-pharmacy charges. Collect at main desk." : "Collect & Generate Bill"}
-                                  style={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? { opacity: 0.5, cursor: "not-allowed", filter: "grayscale(100%)" } : {}}
-                                >
-                                  <CreditCard size={14} />
-                                </button>
-                              ) : (
-                                <button
-                                  className="bq-action-btn bq-action-regenerate"
-                                  onClick={() => {
-                                    if (scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
-                                      showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be modified at the main billing desk.");
-                                      return;
-                                    }
-                                    handleRegenerate(item);
-                                  }}
-                                  disabled={reverting === item.bill.id}
-                                  title={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? "Contains non-pharmacy charges. Modify at main desk." : "Regenerate Bill"}
-                                  style={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? { opacity: 0.5, cursor: "not-allowed", filter: "grayscale(100%)" } : {}}
-                                >
-                                  {reverting === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <RefreshCw size={14} />}
-                                </button>
-                              )}
-                              <button 
-                                className="bq-action-btn bq-action-delete" 
-                                onClick={() => handleDelete(item.bill!.id)} 
-                                disabled={deleting === item.bill.id}
-                                title="Delete Bill"
-                              >
-                                {deleting === item.bill.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Trash2 size={14} />}
-                              </button>
-                            </>
+                          <button className="bq-action-btn bq-action-view" onClick={() => handleView(item)} title="View Bill">
+                            <Eye size={14} />
+                          </button>
+                          <button className="bq-action-btn bq-action-download" onClick={() => handleDownloadBillPDF(item)} title="Download PDF">
+                            <Download size={14} />
+                          </button>
+                          <button 
+                            className="bq-action-btn bq-action-email" 
+                            onClick={() => item.patient.email ? handleSendEmail(item) : showToast("warning", "No Email", "Patient does not have an email address on file.")} 
+                            disabled={sendingEmail === item.bill?.id}
+                            title={item.patient.email ? `Send Invoice to ${item.patient.email}` : "No patient email on file"}
+                            style={{background: item.patient.email ? "#f0f9ff" : "#f8fafc", color: item.patient.email ? "#0369a1" : "#94a3b8", border: `1px solid ${item.patient.email ? "#bae6fd" : "#e2e8f0"}`}}
+                          >
+                            {sendingEmail === item.bill?.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Send size={14} />}
+                          </button>
+                          {item.bill?.status !== "PAID" ? (
+                            <button 
+                              className="bq-action-btn bq-action-collect" 
+                              onClick={() => {
+                                if (scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
+                                  showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be collected at the main billing desk.");
+                                  return;
+                                }
+                                handleCollect(item);
+                              }} 
+                              title={item.bill?.status === "PARTIALLY_PAID" ? `Collect Remaining ${fmtCur((item.bill?.total || 0) - (item.bill?.paidAmount || 0))}` : "Collect & Generate Bill"}
+                              style={{
+                                ...(scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? { opacity: 0.5, cursor: "not-allowed", filter: "grayscale(100%)" } : {}),
+                                ...(item.bill?.status === "PARTIALLY_PAID" ? { background: "#fffbeb", color: "#b45309", borderColor: "#fde68a" } : {}),
+                              }}
+                            >
+                              <CreditCard size={14} />
+                            </button>
+                          ) : (
+                            <button
+                              className="bq-action-btn bq-action-regenerate"
+                              onClick={() => {
+                                if (scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY")) {
+                                  showToast("warning", "Restricted Action", "This bill contains non-pharmacy charges. It must be modified at the main billing desk.");
+                                  return;
+                                }
+                                handleRegenerate(item);
+                              }}
+                              disabled={reverting === item.bill?.id}
+                              title={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? "Contains non-pharmacy charges. Modify at main desk." : "Regenerate Bill"}
+                              style={scope === "pharmacy" && item.bill?.billItems?.some((bi: any) => bi.type !== "PHARMACY") ? { opacity: 0.5, cursor: "not-allowed", filter: "grayscale(100%)" } : {}}
+                            >
+                              {reverting === item.bill?.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <RefreshCw size={14} />}
+                            </button>
                           )}
+                          <button 
+                            className="bq-action-btn bq-action-delete" 
+                            onClick={() => handleDelete(item.bill!.id)} 
+                            disabled={deleting === item.bill?.id}
+                            title="Delete Bill"
+                          >
+                            {deleting === item.bill?.id ? <Loader2 size={14} style={{animation: "spin .7s linear infinite"}} /> : <Trash2 size={14} />}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1618,7 +1958,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
 
                   {/* Bill Items + Pharmacy Detail */}
                   {(() => {
-                    const { nonPharmacyItems, enrichedPharmacy, pharmacyTotal, rxNo, diagnosis, rxDoctor } = splitBillItems(selectedItem.bill);
+                    const { nonPharmacyItems, enrichedPharmacy, pharmacyTotal, rxNo, diagnosis, rxDoctor } = splitBillItems(getProcedureScopedBill(selectedItem.bill, scope));
                     return (<>
                       {/* Non-pharmacy charges */}
                       {nonPharmacyItems.length > 0 && (
@@ -1678,51 +2018,97 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                   })()}
 
                   {/* Bill Summary */}
+                  {(() => {
+                    const vBill = getProcedureScopedBill(selectedItem.bill, scope);
+                    return (
                   <div className="bill-summary">
                     <div className="bill-summary-row">
                       <span>Subtotal:</span>
-                      <span>{fmtCur(selectedItem.bill?.subtotal)}</span>
+                      <span>{fmtCur(vBill?.subtotal)}</span>
                     </div>
-                    {selectedItem.bill?.isGst && (
+                    {vBill?.isGst && (
                       <>
-                        {selectedItem.bill?.cgst > 0 && (
+                        {vBill?.cgst > 0 && (
                           <div className="bill-summary-row">
-                            <span>CGST ({selectedItem.bill?.cgst}%):</span>
-                            <span>{fmtCur((selectedItem.bill?.subtotal * selectedItem.bill?.cgst) / 100)}</span>
+                            <span>CGST ({vBill?.cgst}%):</span>
+                            <span>{fmtCur((vBill?.subtotal * vBill?.cgst) / 100)}</span>
                           </div>
                         )}
-                        {selectedItem.bill?.sgst > 0 && (
+                        {vBill?.sgst > 0 && (
                           <div className="bill-summary-row">
-                            <span>SGST ({selectedItem.bill?.sgst}%):</span>
-                            <span>{fmtCur((selectedItem.bill?.subtotal * selectedItem.bill?.sgst) / 100)}</span>
+                            <span>SGST ({vBill?.sgst}%):</span>
+                            <span>{fmtCur((vBill?.subtotal * vBill?.sgst) / 100)}</span>
                           </div>
                         )}
-                        {selectedItem.bill?.igst > 0 && (
+                        {vBill?.igst > 0 && (
                           <div className="bill-summary-row">
-                            <span>IGST ({selectedItem.bill?.igst}%):</span>
-                            <span>{fmtCur((selectedItem.bill?.subtotal * selectedItem.bill?.igst) / 100)}</span>
+                            <span>IGST ({vBill?.igst}%):</span>
+                            <span>{fmtCur((vBill?.subtotal * vBill?.igst) / 100)}</span>
                           </div>
                         )}
                       </>
                     )}
-                    {selectedItem.bill?.tax > 0 && !selectedItem.bill?.isGst && (
+                    {vBill?.tax > 0 && !vBill?.isGst && (
                       <div className="bill-summary-row">
                         <span>Tax:</span>
-                        <span>{fmtCur(selectedItem.bill?.tax)}</span>
+                        <span>{fmtCur(vBill?.tax)}</span>
                       </div>
                     )}
-                    {selectedItem.bill?.discount > 0 && (
+                    {vBill?.discount > 0 && (
                       <div className="bill-summary-row">
                         <span>Discount:</span>
-                        <span className="text-success">-{fmtCur(selectedItem.bill?.discount)}</span>
+                        <span className="text-success">-{fmtCur(vBill?.discount)}</span>
                       </div>
                     )}
                     <div className="bill-summary-row bill-total">
                       <span>Total Amount:</span>
-                      <strong>{fmtCur(selectedItem.bill?.total)}</strong>
+                      <strong>{fmtCur(vBill?.total)}</strong>
                     </div>
                   </div>
+                    );
+                  })()}
 
+                  {/* Payment History Section */}
+                  {(selectedItem.bill?.status === "PAID" || selectedItem.bill?.status === "PARTIALLY_PAID") && (
+                    <div style={{marginTop:14,border:"1px solid #e2e8f0",borderRadius:10,overflow:"hidden"}}>
+                      <div style={{padding:"8px 14px",background:"#f8fafc",borderBottom:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:700,color:"#475569"}}>
+                        <IndianRupee size={12}/> Payment History
+                      </div>
+                      {(selectedItem.bill?.payments || []).length > 0 ? (
+                        (selectedItem.bill.payments || []).map((p: any, i: number) => {
+                          const collectedByLabel = (p.notes || "").match(/Collected by [^—]+/)?.[0]?.trim();
+                          return (
+                            <div key={i} style={{padding:"8px 14px",borderBottom:i < (selectedItem.bill!.payments!.length - 1) ? "1px solid #f1f5f9" : "none",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,fontSize:11}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <CheckCircle size={12} color="#16a34a"/>
+                                <div>
+                                  <div style={{fontWeight:600,color:"#166534"}}>{collectedByLabel || "Payment Received"}</div>
+                                  <div style={{color:"#64748b",marginTop:1}}>{p.method}{p.transactionId ? ` · Ref: ${p.transactionId}` : ""} · {p.paidAt ? new Date(p.paidAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : ""}</div>
+                                </div>
+                              </div>
+                              <strong style={{color:"#166534",fontSize:12,whiteSpace:"nowrap"}}>{fmtCur(p.amount)}</strong>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        selectedItem.bill?.notes?.includes("Collected by") && (
+                          <div style={{padding:"8px 14px",display:"flex",alignItems:"center",gap:6,fontSize:11}}>
+                            <CheckCircle size={12} color="#16a34a"/>
+                            <span style={{fontWeight:600,color:"#166534"}}>{selectedItem.bill.notes.match(/Collected by [^|]+/)?.[0]?.trim()}</span>
+                            <span style={{color:"#64748b",marginLeft:"auto"}}>{fmtCur(selectedItem.bill.paidAmount || 0)}</span>
+                          </div>
+                        )
+                      )}
+                      {selectedItem.bill?.status === "PARTIALLY_PAID" && (
+                        <div style={{padding:"8px 14px",background:"#fffbeb",borderTop:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11}}>
+                          <span style={{fontWeight:600,color:"#92400e",display:"flex",alignItems:"center",gap:5}}>
+                            <IndianRupee size={11}/>Remaining Balance
+                          </span>
+                          <strong style={{color:"#b45309",fontSize:12}}>{fmtCur(Math.max(0,(selectedItem.bill.total||0)-(selectedItem.bill.paidAmount||0)))}</strong>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="bill-footer">
                     <p>Thank you for choosing {hospitalInfo.name}</p>
                     <p style={{fontSize: 11, color: "#94a3b8", marginTop: 8}}>This is a computer-generated bill</p>
@@ -1800,9 +2186,23 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                   <div className="cm-layout">
                     {/* ── Left Column: Charges ── */}
                     <div className="cm-left">
+                      {/* Previously Collected Banner — shown when sub-dept already collected procedure charges */}
+                      {scope !== "procedure" && liveTotals.hasPaidProcedures && (
+                        <div style={{marginBottom:12,padding:"10px 14px",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:9,display:"flex",alignItems:"flex-start",gap:8,fontSize:11}}>
+                          <IndianRupee size={13} color="#b45309" style={{marginTop:1,flexShrink:0}}/>
+                          <div>
+                            <div style={{fontWeight:700,color:"#92400e",marginBottom:2}}>Partial Collection Already Done</div>
+                            <div style={{color:"#78350f"}}>
+                              {selectedItem.bill?.notes?.match(/Collected by [^|]+/)?.[0]?.trim() || "Procedure charges"}: <strong>{fmtCur(liveTotals.paidAmount)}</strong>
+                            </div>
+                            <div style={{color:"#b45309",marginTop:3}}>Remaining balance to collect: <strong>{fmtCur(liveTotals.remaining)}</strong></div>
+                          </div>
+                        </div>
+                      )}
                       {/* Charges + Pharmacy Detail (Collect modal) */}
                       {(() => {
-                        const { nonPharmacyItems: npItems, enrichedPharmacy: epItems, pharmacyTotal: pTotal, rxNo: rNo, diagnosis: diag } = splitBillItems(selectedItem.bill);
+                        const billForCollect = getRemainingChargesBill(selectedItem.bill, scope);
+                        const { nonPharmacyItems: npItems, enrichedPharmacy: epItems, pharmacyTotal: pTotal, rxNo: rNo, diagnosis: diag } = splitBillItems(scope === "procedure" ? getProcedureScopedBill(selectedItem.bill, scope) : billForCollect);
                         return (<>
                           <div className="cm-section-title"><Receipt size={14}/>Charges Summary</div>
                           <table className="cm-charges-table">
@@ -1901,12 +2301,12 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                             <input
                               className="cm-input cm-input-rate"
                               type="number" step="0.01" placeholder="Rate"
-                              value={collectForm.newChargeRate || ""}
-                              onChange={e => setCollectForm(f => ({...f, newChargeRate: parseFloat(e.target.value)||0}))}
+                              value={collectForm.newChargeRate > 0 ? collectForm.newChargeRate : ""}
+                              onChange={e => { const v = parseFloat(e.target.value); setCollectForm(f => ({...f, newChargeRate: isNaN(v) ? 0 : v})); }}
                               onKeyDown={e => e.key === "Enter" && handleAddCharge()}
                             />
                           </div>
-                          <button className="cm-add-btn" onClick={handleAddCharge} disabled={!collectForm.newChargeName.trim() || collectForm.newChargeRate <= 0}>
+                          <button type="button" className="cm-add-btn" onClick={handleAddCharge} disabled={!(collectForm.newChargeName || "").trim() || (Number(collectForm.newChargeRate) || 0) <= 0}>
                             <Plus size={14}/>Add
                           </button>
                         </div>
@@ -1964,14 +2364,20 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                     <div className="cm-right">
                       {/* Live Total Box */}
                       <div className="cm-total-box">
-                        <div className="cm-total-row"><span>Base Charges</span><span>{fmtCur(liveTotals.base)}</span></div>
+                        <div className="cm-total-row"><span>{liveTotals.hasPaidProcedures && scope !== "procedure" ? "Remaining Charges" : "Base Charges"}</span><span>{fmtCur(liveTotals.base)}</span></div>
                         {liveTotals.added > 0 && <div className="cm-total-row"><span>Extra Charges</span><span style={{color:"#0369a1"}}>+{fmtCur(liveTotals.added)}</span></div>}
                         {collectForm.isGst && liveTotals.cgstAmt > 0 && <div className="cm-total-row"><span>CGST ({collectForm.cgst}%)</span><span>{fmtCur(liveTotals.cgstAmt)}</span></div>}
                         {collectForm.isGst && liveTotals.sgstAmt > 0 && <div className="cm-total-row"><span>SGST ({collectForm.sgst}%)</span><span>{fmtCur(liveTotals.sgstAmt)}</span></div>}
                         {collectForm.isGst && liveTotals.igstAmt > 0 && <div className="cm-total-row"><span>IGST ({collectForm.igst}%)</span><span>{fmtCur(liveTotals.igstAmt)}</span></div>}
                         {(collectForm.discount||0) > 0 && <div className="cm-total-row"><span>Discount</span><span style={{color:"#059669"}}>-{fmtCur(collectForm.discount)}</span></div>}
+                        {liveTotals.hasPaidProcedures && scope !== "procedure" && (
+                          <div className="cm-total-row" style={{color:"#b45309",borderTop:"1px dashed #fde68a",paddingTop:6,marginTop:6}}>
+                            <span>Already Collected (Procedure)</span>
+                            <span style={{fontWeight:700}}>- {fmtCur(liveTotals.paidAmount)}</span>
+                          </div>
+                        )}
                         <div className="cm-total-final">
-                          <span>Total Payable</span>
+                          <span>{liveTotals.hasPaidProcedures && scope !== "procedure" ? "Remaining Balance" : "Total Payable"}</span>
                           <strong>{fmtCur(liveTotals.total)}</strong>
                         </div>
                       </div>
@@ -2010,7 +2416,7 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                 <div className="bq-modal-body">
                   <div className="cm-success-banner">
                     <CheckCircle size={22} color="#059669"/>
-                    <span>Payment of <strong>{fmtCur(liveTotals.total)}</strong> collected via {collectForm.method}</span>
+                    <span>Payment of <strong>{fmtCur(liveTotals.total)}</strong> collected via {collectForm.method}{deptName ? ` · Collected by ${deptName}` : ""}</span>
                   </div>
                   {/* ── Professional Bill ── */}
                   <div ref={printRef} className="bill-print-wrap" style={hospitalInfo.letterhead ? {
@@ -2077,7 +2483,8 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                     {/* Items + Pharmacy Detail (Receipt HTML) */}
                     {(() => {
                       const rcptBill = paidBill ? { ...selectedItem.bill, billItems: paidBill.billItems || selectedItem.bill?.billItems } : selectedItem.bill;
-                      const { nonPharmacyItems: npR, enrichedPharmacy: epR, pharmacyTotal: ptR, rxNo: rnR, diagnosis: dgR } = splitBillItems(rcptBill);
+                      const scopedRcptBill = scope === "procedure" ? getProcedureScopedBill(rcptBill, scope) : getRemainingChargesBill(rcptBill, scope);
+                      const { nonPharmacyItems: npR, enrichedPharmacy: epR, pharmacyTotal: ptR, rxNo: rnR, diagnosis: dgR } = splitBillItems(scopedRcptBill);
                       return (<>
                         {npR.length > 0 && (
                           <table className="bill-items-table">
@@ -2138,19 +2545,24 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                     {/* Summary */}
                     <div className="bill-summary-wrap">
                       <div className="bill-summary-inner">
-                        <div className="bill-sum-row"><span>Subtotal</span><span>{fmtCur(paidBill?.subtotal ?? liveTotals.gross)}</span></div>
+                        <div className="bill-sum-row"><span>Subtotal</span><span>{fmtCur(liveTotals.gross)}</span></div>
                         {collectForm.isGst && liveTotals.cgstAmt > 0 && <div className="bill-sum-row"><span>CGST ({collectForm.cgst}%)</span><span>{fmtCur(liveTotals.cgstAmt)}</span></div>}
                         {collectForm.isGst && liveTotals.sgstAmt > 0 && <div className="bill-sum-row"><span>SGST ({collectForm.sgst}%)</span><span>{fmtCur(liveTotals.sgstAmt)}</span></div>}
                         {collectForm.isGst && liveTotals.igstAmt > 0 && <div className="bill-sum-row"><span>IGST ({collectForm.igst}%)</span><span>{fmtCur(liveTotals.igstAmt)}</span></div>}
-                        {(paidBill?.tax > 0 && !collectForm.isGst) && <div className="bill-sum-row"><span>Tax</span><span>{fmtCur(paidBill.tax)}</span></div>}
-                        {(paidBill?.discount > 0 || (collectForm.discount||0) > 0) && (
+                        {((collectForm.discount||0) > 0) && (
                           <div className="bill-sum-row" style={{color:"#059669"}}>
-                            <span>Discount</span><span>−{fmtCur(paidBill?.discount ?? collectForm.discount)}</span>
+                            <span>Discount</span><span>−{fmtCur(collectForm.discount)}</span>
+                          </div>
+                        )}
+                        {liveTotals.hasPaidProcedures && scope !== "procedure" && (
+                          <div className="bill-sum-row" style={{color:"#b45309",borderTop:"1px dashed #fde68a",paddingTop:6,marginTop:4}}>
+                            <span style={{fontSize:11}}>{selectedItem.bill?.notes?.match(/Collected by [^|]+/)?.[0]?.trim() || "Procedure charges collected"}</span>
+                            <span>✓ {fmtCur(liveTotals.paidAmount)}</span>
                           </div>
                         )}
                         <div className="bill-sum-total">
-                          <span>Total Amount</span>
-                          <strong>{fmtCur(paidBill?.total ?? liveTotals.total)}</strong>
+                          <span>{liveTotals.hasPaidProcedures && scope !== "procedure" ? "Now Collecting" : "Total Amount"}</span>
+                          <strong>{fmtCur(liveTotals.total)}</strong>
                         </div>
                       </div>
                     </div>
@@ -2158,9 +2570,10 @@ export default function BillingQueue({ scope }: { scope?: "lab" | "pharmacy" } =
                     {/* Payment strip */}
                     <div className="bill-pay-strip">
                       <div className="bill-pay-item"><span>Payment Method</span><strong>{collectForm.method}</strong></div>
-                      <div className="bill-pay-item"><span>Amount Paid</span><strong>{fmtCur(paidBill?.total ?? liveTotals.total)}</strong></div>
-                      <div className="bill-pay-item"><span>Status</span><span className="bill-paid-badge">PAID</span></div>
+                      <div className="bill-pay-item"><span>Amount Collected</span><strong>{fmtCur(liveTotals.total)}</strong></div>
+                      <div className="bill-pay-item"><span>Status</span><span className="bill-paid-badge">{liveTotals.hasPaidProcedures && scope !== "procedure" ? "FULLY PAID" : scope === "procedure" ? "PARTIAL" : "PAID"}</span></div>
                       {collectForm.transactionId && <div className="bill-pay-item"><span>Txn ID</span><strong>{collectForm.transactionId}</strong></div>}
+                      {deptName && <div className="bill-pay-item"><span>Collected By</span><strong>{deptName}</strong></div>}
                     </div>
 
                     <div className="bill-footer-note">
@@ -2244,7 +2657,7 @@ const BQ_CSS = `
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── Layout ── */
-.bq-wrap{font-family:'Inter',system-ui,sans-serif;padding:20px;background:transparent;min-height:100vh}
+.bq-wrap{font-family:'Inter',system-ui,sans-serif;padding:24px;background:#fff;min-height:100%;box-sizing:border-box}
 .bq-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px}
 .bq-stat-card{padding:18px 20px;border-radius:12px;display:flex;align-items:center;gap:14px;border:1px solid;transition:all .2s}
 .bq-stat-card:hover{transform:translateY(-1px)}

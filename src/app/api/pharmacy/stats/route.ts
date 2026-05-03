@@ -85,70 +85,55 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Today's pharmacy revenue (dispense + counter-sale)
-    const todayMovements = await px.stockMovement.findMany({
-      where: {
-        hospitalId: auth.hospitalId,
-        type: "OUT",
-        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
-        createdAt: { gte: today, lt: tomorrow },
-      },
-      include: {
-        item: { select: { sellingPrice: true, name: true } },
-      },
-    });
+    // Today's & all-time pharmacy revenue — via bill.findMany (avoids billItem.aggregate nested-relation issues)
+    const sumPharmacyItems = (bills: any[]) =>
+      bills.reduce((s: number, b: any) => s + (b.billItems || []).reduce((bs: number, i: any) => bs + (i.amount || 0), 0), 0);
 
-    const todayRevenue = todayMovements.reduce((sum: number, m: any) => {
-      return sum + (m.quantity * (m.item?.sellingPrice || 0));
-    }, 0);
-
-    // Total revenue (all time — dispense + counter-sale)
-    const allMovements = await px.stockMovement.findMany({
-      where: {
-        hospitalId: auth.hospitalId,
-        type: "OUT",
-        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
-      },
-      include: {
-        item: { select: { sellingPrice: true } },
-      },
-    });
-
-    const totalRevenue = allMovements.reduce((sum: number, m: any) => {
-      return sum + (m.quantity * (m.item?.sellingPrice || 0));
-    }, 0);
+    const [todayBillsRev, totalBillsRev] = await Promise.all([
+      px.bill.findMany({
+        where: { hospitalId: auth.hospitalId, status: "PAID", paidAt: { gte: today, lt: tomorrow }, billItems: { some: { type: "PHARMACY" } } },
+        select: { billItems: { where: { type: "PHARMACY" }, select: { amount: true } } },
+      }),
+      px.bill.findMany({
+        where: { hospitalId: auth.hospitalId, status: "PAID", billItems: { some: { type: "PHARMACY" } } },
+        select: { billItems: { where: { type: "PHARMACY" }, select: { amount: true } } },
+      }),
+    ]);
+    const todayRevenue = sumPharmacyItems(todayBillsRev);
+    const totalRevenue = sumPharmacyItems(totalBillsRev);
 
     // Stock health percentage
     const stockHealthPct = totalItems > 0 ? Math.round(((totalItems - lowStockCount) / totalItems) * 100) : 100;
 
-    // Yesterday revenue
+    // Yesterday revenue — bill.findMany approach
     const yesterdayStart = new Date(today);
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-    const yesterdayMovements = await px.stockMovement.findMany({
-      where: {
-        hospitalId: auth.hospitalId,
-        type: "OUT",
-        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
-        createdAt: { gte: yesterdayStart, lt: today },
-      },
-      include: { item: { select: { sellingPrice: true } } },
+    const yesterdayBillsRev = await px.bill.findMany({
+      where: { hospitalId: auth.hospitalId, status: "PAID", paidAt: { gte: yesterdayStart, lt: today }, billItems: { some: { type: "PHARMACY" } } },
+      select: { billItems: { where: { type: "PHARMACY" }, select: { amount: true } } },
     });
-    const yesterdayRevenue = yesterdayMovements.reduce((sum: number, m: any) => sum + (m.quantity * (m.item?.sellingPrice || 0)), 0);
+    const yesterdayRevenue = sumPharmacyItems(yesterdayBillsRev);
 
-    // Recent sales (last 7 days for chart)
+    // Last 7 days — revenue from BillItems (PHARMACY type), dispensing count from PrescriptionWorkflow
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const weekMovements = await px.stockMovement.findMany({
-      where: {
-        hospitalId: auth.hospitalId,
-        type: "OUT",
-        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
-        createdAt: { gte: sevenDaysAgo },
-      },
-      include: { item: { select: { sellingPrice: true } } },
-    });
+    const [weekPharmaBills, weekDispenses] = await Promise.all([
+      px.bill.findMany({
+        where: { hospitalId: auth.hospitalId, status: "PAID", paidAt: { gte: sevenDaysAgo }, billItems: { some: { type: "PHARMACY" } } },
+        select: { paidAt: true, billItems: { where: { type: "PHARMACY" }, select: { amount: true } } },
+      }),
+      px.prescriptionWorkflow.findMany({
+        where: {
+          hospitalId: auth.hospitalId,
+          ...(pharmacySubDeptId ? { subDepartmentId: pharmacySubDeptId } : {}),
+          status: "COMPLETED",
+          completedAt: { gte: sevenDaysAgo },
+        },
+        select: { completedAt: true },
+      }),
+    ]);
 
     const dailySales: Record<string, { count: number; revenue: number }> = {};
     for (let i = 0; i < 7; i++) {
@@ -157,17 +142,20 @@ export async function GET(req: NextRequest) {
       const key = d.toISOString().slice(0, 10);
       dailySales[key] = { count: 0, revenue: 0 };
     }
-    for (const m of weekMovements) {
-      const key = new Date(m.createdAt).toISOString().slice(0, 10);
-      if (dailySales[key]) {
-        dailySales[key].count += m.quantity;
-        dailySales[key].revenue += m.quantity * (m.item?.sellingPrice || 0);
-      }
+    for (const b of weekPharmaBills) {
+      if (!b.paidAt) continue;
+      const key = new Date(b.paidAt).toISOString().slice(0, 10);
+      if (dailySales[key]) dailySales[key].revenue += (b.billItems || []).reduce((s: number, i: any) => s + (i.amount || 0), 0);
+    }
+    for (const w of weekDispenses) {
+      if (!w.completedAt) continue;
+      const key = new Date(w.completedAt).toISOString().slice(0, 10);
+      if (dailySales[key]) dailySales[key].count++;
     }
 
     const chartData = Object.entries(dailySales).map(([date, data]) => ({
       date,
-      label: new Date(date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
+      label: new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short" }),
       count: data.count,
       revenue: data.revenue,
     }));
@@ -201,20 +189,15 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 10);
 
-    // Previous week revenue (days -14 to -7)
+    // Previous week revenue (days -14 to -7) from Revenue table
     const prevWeekStart = new Date();
     prevWeekStart.setDate(prevWeekStart.getDate() - 14);
     prevWeekStart.setHours(0, 0, 0, 0);
-    const prevWeekMovements = await px.stockMovement.findMany({
-      where: {
-        hospitalId: auth.hospitalId,
-        type: "OUT",
-        source: { in: ["PHARMACY_DISPENSE", "PHARMACY_COUNTER_SALE"] },
-        createdAt: { gte: prevWeekStart, lt: sevenDaysAgo },
-      },
-      include: { item: { select: { sellingPrice: true } } },
+    const prevWeekBills = await px.bill.findMany({
+      where: { hospitalId: auth.hospitalId, status: "PAID", paidAt: { gte: prevWeekStart, lt: sevenDaysAgo }, billItems: { some: { type: "PHARMACY" } } },
+      select: { billItems: { where: { type: "PHARMACY" }, select: { amount: true } } },
     });
-    const prevWeekRevenue = prevWeekMovements.reduce((sum: number, m: any) => sum + (m.quantity * (m.item?.sellingPrice || 0)), 0);
+    const prevWeekRevenue = prevWeekBills.reduce((s: number, b: any) => s + (b.billItems || []).reduce((bs: number, i: any) => bs + (i.amount || 0), 0), 0);
     const weekRevenue = chartData.reduce((sum, d) => sum + d.revenue, 0);
     const revenueGrowth = prevWeekRevenue > 0
       ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100)

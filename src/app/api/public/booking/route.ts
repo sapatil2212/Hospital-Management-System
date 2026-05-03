@@ -4,13 +4,24 @@ import prisma from "../../../../../backend/config/db";
 import { bookAppointment, AppointmentServiceError } from "../../../../../backend/services/appointment.service";
 import { notify } from "../../../../../backend/services/notification.service";
 import { findPatientByPhone, generatePatientId, createPatient } from "../../../../../backend/repositories/patient.repo";
+import { verifyToken } from "../../../../../backend/utils/jwt";
 
 export const dynamic = "force-dynamic";
 
-const APPOINTMENT_DEPT_TYPES = ["CLINICAL", "DIAGNOSTIC"];
 
-async function resolveHospitalId(hid: string | null): Promise<string | null> {
+async function resolveHospitalId(hid: string | null, req?: NextRequest): Promise<string | null> {
   if (hid) return hid;
+  // If called from an authenticated context (admin, staff, etc.), use their hospitalId
+  if (req) {
+    const token = req.cookies.get("hms_session")?.value;
+    if (token) {
+      try {
+        const payload = verifyToken(token);
+        if (payload?.hospitalId) return payload.hospitalId;
+      } catch {}
+    }
+  }
+  // Fall back: use the most recently created hospital (single-hospital / public setups)
   const first = await prisma.hospital.findFirst({ select: { id: true }, orderBy: { createdAt: "desc" } });
   return first?.id || null;
 }
@@ -19,7 +30,7 @@ async function resolveHospitalId(hid: string | null): Promise<string | null> {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   try {
-    const hid = await resolveHospitalId(searchParams.get("hid"));
+    const hid = await resolveHospitalId(searchParams.get("hid"), req);
     if (!hid) return errorResponse("No hospital found", 404);
     const hospital = await prisma.hospital.findUnique({
       where: { id: hid },
@@ -38,6 +49,8 @@ export async function GET(req: NextRequest) {
       orderBy: { name: "asc" },
     });
 
+    const BOOKING_DEPT_TYPES = ["CLINICAL", "DIAGNOSTIC"];
+
     return successResponse({
       hospital: {
         id: hospital.id,
@@ -46,7 +59,7 @@ export async function GET(req: NextRequest) {
         phone: settings?.phone || null,
         address: settings?.address || null,
       },
-      departments: departments.filter(d => d.type && APPOINTMENT_DEPT_TYPES.includes(d.type)),
+      departments: departments.filter(d => BOOKING_DEPT_TYPES.includes(d.type as string)),
     }, "Public booking info");
   } catch (e: any) {
     return errorResponse(e.message, 500);
@@ -57,24 +70,25 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, email, doctorId, departmentId, appointmentDate, timeSlot, type, consultationFee, notes } = body;
-    const hospitalId = await resolveHospitalId(body.hospitalId || null);
+    const { name, phone, email, doctorId, departmentId, appointmentDate, timeSlot, type, consultationFee, notes, existingPatientId, forceNew } = body;
+    const hospitalId = await resolveHospitalId(body.hospitalId || null, req);
     if (!hospitalId) return errorResponse("No hospital found", 404);
 
     if (!name || !phone || !doctorId || !appointmentDate || !timeSlot) {
       return errorResponse("Missing required fields", 400);
     }
 
-    // Parallel: hospital + patient lookup
-    const [hospital, existingPatient] = await Promise.all([
-      prisma.hospital.findUnique({ where: { id: hospitalId }, select: { id: true, name: true } }),
-      findPatientByPhone(hospitalId, phone.trim()),
-    ]);
+    const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId }, select: { id: true, name: true } });
     if (!hospital) return errorResponse("Hospital not found", 404);
 
-    let patient: any = existingPatient;
+    let patient: any = null;
 
-    if (!patient) {
+    if (existingPatientId) {
+      // User chose "Book for existing patient" — use that patient directly
+      patient = await prisma.patient.findFirst({ where: { id: existingPatientId, hospitalId } });
+      if (!patient) return errorResponse("Patient not found", 404);
+    } else if (forceNew) {
+      // User chose "Register as new patient" — always create a fresh profile
       const patientId = await generatePatientId(hospitalId);
       patient = await createPatient({
         hospitalId,
@@ -84,16 +98,27 @@ export async function POST(req: NextRequest) {
         email: email?.trim() || null,
       });
     } else {
-      // Update name/email if changed since last booking
-      const trimmedName = name.trim();
-      const trimmedEmail = email?.trim() || null;
-      if (patient.name !== trimmedName || (trimmedEmail && patient.email !== trimmedEmail)) {
-        patient = await prisma.patient.update({
-          where: { id: patient.id },
-          data: {
-            name: trimmedName,
-            ...(trimmedEmail ? { email: trimmedEmail } : {}),
-          },
+      // Default: dedup by phone — return existing or create new
+      const byPhone = await findPatientByPhone(hospitalId, phone.trim());
+      if (byPhone) {
+        patient = byPhone;
+        // Update name/email if changed since last booking
+        const trimmedName = name.trim();
+        const trimmedEmail = email?.trim() || null;
+        if (patient.name !== trimmedName || (trimmedEmail && patient.email !== trimmedEmail)) {
+          patient = await prisma.patient.update({
+            where: { id: patient.id },
+            data: { name: trimmedName, ...(trimmedEmail ? { email: trimmedEmail } : {}) },
+          });
+        }
+      } else {
+        const patientId = await generatePatientId(hospitalId);
+        patient = await createPatient({
+          hospitalId,
+          patientId,
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email?.trim() || null,
         });
       }
     }

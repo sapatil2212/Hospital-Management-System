@@ -143,7 +143,7 @@ export default function HospitalSignupPage() {
 
         .sp { font-family: 'Inter', sans-serif; min-height:100vh; display:grid; grid-template-columns:1fr 1fr; overflow:hidden; background: var(--bg); transition: background 0.3s; }
 
-        @media (max-width:768px) { .sp { grid-template-columns:1fr !important; } .sp-brand { display:none !important; } .sp-form-side { min-height:100vh; padding:24px 16px; } .sp-toggle { top:14px; right:14px; } .sp-heading{ font-size:20px; margin-bottom:4px; } .sp-sub{ font-size:12px; } .sp-step-badge{ font-size:9px; padding:3px 10px; margin-bottom:8px; } .sp-progress{ margin:14px 0 18px; } .sp-label{ font-size:10px; margin-bottom:5px; } .sp-input{ font-size:13px; padding:10px 38px 10px 12px; border-radius:9px; } .sp-field{ margin-bottom:12px; } .sp-ferr{ font-size:11px; } .sp-grid2{ gap:10px; } .sp-btn{ padding:12px; font-size:14px; border-radius:10px; } .sp-err{ font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:14px; } .sp-str-label{ font-size:10px; } .sp-footer{ font-size:12px; margin-top:16px; } .sp-otp-in{ font-size:16px; padding:10px 0; border-radius:9px; } .sp-otp-grid{ gap:6px; } .sp-otp-hint{ font-size:11px; margin-bottom:14px; } .sp-resend{ font-size:12px; margin-top:12px; } .sp-back{ font-size:12px; margin-bottom:16px; } .sp-suc-title{ font-size:20px; } .sp-suc-sub{ font-size:13px; } }
+        @media (max-width:768px) { .sp { grid-template-columns:1fr !important; } .sp-brand { display:none !important; } .sp-form-side { min-height:100vh; padding:24px 16px; } .sp-form-box{ background:var(--card-bg); border-radius:20px; padding:24px 20px; box-shadow:0 2px 24px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.05); } .sp.dark .sp-form-box{ box-shadow:0 2px 24px rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.06); } .sp-toggle { top:14px; right:14px; } .sp-heading{ font-size:20px; margin-bottom:4px; } .sp-sub{ font-size:12px; } .sp-step-badge{ font-size:9px; padding:3px 10px; margin-bottom:8px; } .sp-progress{ margin:14px 0 18px; } .sp-label{ font-size:10px; margin-bottom:5px; } .sp-input{ font-size:13px; padding:10px 38px 10px 12px; border-radius:9px; } .sp-field{ margin-bottom:12px; } .sp-ferr{ font-size:11px; } .sp-grid2{ gap:10px; } .sp-btn{ padding:12px; font-size:14px; border-radius:10px; } .sp-err{ font-size:12px; padding:10px 12px; border-radius:10px; margin-bottom:14px; } .sp-str-label{ font-size:10px; } .sp-footer{ font-size:12px; margin-top:16px; } .sp-otp-in{ font-size:16px; padding:10px 0; border-radius:9px; } .sp-otp-grid{ gap:6px; } .sp-otp-hint{ font-size:11px; margin-bottom:14px; } .sp-resend{ font-size:12px; margin-top:12px; } .sp-back{ font-size:12px; margin-bottom:16px; } .sp-suc-title{ font-size:20px; } .sp-suc-sub{ font-size:13px; } }
 
         /* ── THEME TOGGLE ── */
         .sp-toggle {
@@ -186,7 +186,8 @@ export default function HospitalSignupPage() {
         .sp-features { display:flex; flex-direction:column; gap:14px; }
         .sp-feature { display:flex; align-items:center; gap:12px; font-size:14px; font-weight:500; color:#374151; }
         .sp.dark .sp-feature { color:rgba(255,255,255,0.75); }
-        .sp-feature-dot { width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+        .sp-feature-dot { width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#6366f1; }
+        .sp.dark .sp-feature-dot { color:#818cf8; }
 
         .sp-step-dots { position:absolute; bottom:40px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:8px; }
         .sp-step-dot { display:flex; align-items:center; gap:6px; padding:6px 14px; border-radius:100px; font-size:12px; font-weight:600; transition:all 0.3s; }
@@ -305,18 +306,32 @@ export default function HospitalSignupPage() {
           <div className="sp-brand-grid" />
           <div className="sp-brand-glow" />
           <div className="sp-brand-content">
-            <Link href="/" className="sp-logo">
-              <div className="sp-logo-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                </svg>
-              </div>
-              <span className="sp-logo-text">Medi<span className="sp-logo-accent">Care+</span></span>
-            </Link>
+
             <h1 className="sp-brand-title">Onboard Your<br /><span>Hospital Today</span></h1>
             <p className="sp-brand-sub">Join our secure multi-tenant hospital management platform. Set up your hospital profile and start managing patients, staff, and appointments in minutes.</p>
             <div className="sp-features">
-              {[{ icon:"🔐", text:"Secure OTP-verified onboarding" },{ icon:"🏥", text:"Full hospital admin control panel" },{ icon:"👥", text:"Manage doctors, staff & patients" },{ icon:"🔒", text:"Strict data isolation per hospital" },{ icon:"📊", text:"Real-time analytics & reporting" }].map(f => (
+              {[
+                {
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+                  text: "Secure OTP-verified onboarding"
+                },
+                {
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>,
+                  text: "Full hospital admin control panel"
+                },
+                {
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+                  text: "Manage doctors, staff & patients"
+                },
+                {
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                  text: "Strict data isolation per hospital"
+                },
+                {
+                  icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+                  text: "Real-time analytics & reporting"
+                },
+              ].map(f => (
                 <div className="sp-feature" key={f.text}><div className="sp-feature-dot">{f.icon}</div>{f.text}</div>
               ))}
             </div>

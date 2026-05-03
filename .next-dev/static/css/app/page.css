@@ -1572,8 +1572,9 @@
 .Hero_ctaPrimary__lJ5Mt,
 .Hero_ctaSecondary__DEHzS {
   position: relative;
-  flex: 1 1;
-  min-width: 160px;
+  flex: 0 1 auto;
+  min-width: 140px;
+  max-width: 180px;
   box-shadow: none !important;
   white-space: nowrap;
   display: flex;

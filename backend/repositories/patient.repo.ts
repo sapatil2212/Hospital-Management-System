@@ -12,10 +12,12 @@ export interface PatientQueryOptions {
   limit?: number;
   sortBy?: "name" | "phone" | "createdAt" | "patientId";
   sortOrder?: "asc" | "desc";
+  departmentId?: string;
 }
 
 export interface PaginatedResult<T> {
   data: T[];
+  stats?: any;
   pagination: {
     page: number;
     limit: number;
@@ -67,6 +69,7 @@ export const findAllPatients = async (
     limit = 20,
     sortBy = "createdAt",
     sortOrder = "desc",
+    departmentId,
   } = options;
 
   const skip = (page - 1) * limit;
@@ -81,6 +84,16 @@ export const findAllPatients = async (
             { email: { contains: search } },
             { patientId: { contains: search } },
           ],
+        }
+      : {}),
+    // Filter by department: only patients who have appointments in this department
+    ...(departmentId
+      ? {
+          appointments: {
+            some: {
+              departmentId: departmentId,
+            },
+          },
         }
       : {}),
   };
@@ -98,8 +111,64 @@ export const findAllPatients = async (
     }),
   ]);
 
+  // Calculate stats for patients with appointments in this department
+  let stats: any = null;
+  if (departmentId) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const [todayCount, monthCount, maleCount, femaleCount, otherCount] = await Promise.all([
+      prisma.patient.count({
+        where: {
+          hospitalId,
+          createdAt: { gte: today },
+          appointments: { some: { departmentId } },
+        },
+      }),
+      prisma.patient.count({
+        where: {
+          hospitalId,
+          createdAt: { gte: startOfMonth },
+          appointments: { some: { departmentId } },
+        },
+      }),
+      prisma.patient.count({
+        where: {
+          hospitalId,
+          gender: "MALE",
+          appointments: { some: { departmentId } },
+        },
+      }),
+      prisma.patient.count({
+        where: {
+          hospitalId,
+          gender: "FEMALE",
+          appointments: { some: { departmentId } },
+        },
+      }),
+      prisma.patient.count({
+        where: {
+          hospitalId,
+          gender: "OTHER",
+          appointments: { some: { departmentId } },
+        },
+      }),
+    ]);
+
+    stats = {
+      total,
+      today: todayCount,
+      thisMonth: monthCount,
+      maleCount,
+      femaleCount,
+      otherCount,
+    };
+  }
+
   return {
     data,
+    stats,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 };

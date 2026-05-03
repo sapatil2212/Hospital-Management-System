@@ -138,8 +138,9 @@
 .ctaPrimary,
 .ctaSecondary {
   position: relative;
-  flex: 1;
-  min-width: 160px;
+  flex: 0 1 auto;
+  min-width: 140px;
+  max-width: 180px;
   box-shadow: none !important;
   white-space: nowrap;
   display: flex;

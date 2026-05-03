@@ -18,6 +18,20 @@ import { getSettings } from "./config.service";
 // PATIENT SERVICE
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Delete a patient and all their history (Force delete)
+ */
+export const deletePatientForce = async (id: string, hospitalId: string) => {
+  const patient = await findPatientById(id, hospitalId);
+  if (!patient) {
+    throw new PatientServiceError("Patient not found", "NOT_FOUND", 404);
+  }
+
+  // Force delete will remove all related records due to Prisma cascade or manual cleanup
+  // Based on prisma schema, we might need manual cleanup if cascade is not set for all
+  return deletePatinetRepo(id, hospitalId);
+};
+
 export class PatientServiceError extends Error {
   constructor(
     public message: string,
@@ -54,6 +68,7 @@ export const registerPatient = async (
         patientId,
         name: input.name,
         phone: input.phone,
+        whatsapp: (input as any).whatsapp || null,
         email: input.email || null,
         gender: input.gender || null,
         dateOfBirth: input.dateOfBirth || null,

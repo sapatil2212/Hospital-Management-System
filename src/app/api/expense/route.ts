@@ -13,15 +13,17 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const page     = Math.max(1, parseInt(url.searchParams.get("page")     || "1"));
-    const limit    = Math.min(50, parseInt(url.searchParams.get("limit")   || "20"));
-    const search   = url.searchParams.get("search")   || "";
-    const category = url.searchParams.get("category") || "";
-    const dateFrom = url.searchParams.get("dateFrom") || "";
-    const dateTo   = url.searchParams.get("dateTo")   || "";
+    const limit    = Math.min(200, parseInt(url.searchParams.get("limit")  || "20"));
+    const search     = url.searchParams.get("search")     || "";
+    const category   = url.searchParams.get("category")   || "";
+    const department = url.searchParams.get("department") || "";
+    const dateFrom   = url.searchParams.get("dateFrom")   || "";
+    const dateTo     = url.searchParams.get("dateTo")     || "";
 
     const where: any = { hospitalId: auth.hospitalId };
-    if (search)   where.OR = [{ title: { contains: search } }, { description: { contains: search } }];
-    if (category) where.category = category;
+    if (search)     where.OR = [{ title: { contains: search } }, { description: { contains: search } }];
+    if (category)   where.category = category;
+    if (department) where.department = department;
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date.gte = new Date(dateFrom);
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
   try {
     const body = await req.json();
-    const { title, category, amount, date, description, receipt } = body;
+    const { title, category, amount, date, description, receipt, addedByName, department } = body;
     const parsedAmt = parseFloat(amount);
     if (!title || amount == null || isNaN(parsedAmt) || parsedAmt <= 0 || !date) return errorResponse("title, a valid positive amount, and date are required", 400);
 
@@ -84,6 +86,8 @@ export async function POST(req: NextRequest) {
         description: description || null,
         receipt:     receipt     || null,
         addedBy:     (auth.user as any)?.id || null,
+        addedByName: addedByName || (auth.user as any)?.name || null,
+        department:  department  || "Hospital Administration",
       },
     });
     return successResponse(expense, "Expense added", 201);
