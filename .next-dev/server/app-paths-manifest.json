@@ -1,7 +1,9 @@
 {
-  "/subdept/dashboard/page": "app/subdept/dashboard/page.js",
   "/page": "app/page.js",
-  "/hospitaladmin/staff/page": "app/hospitaladmin/staff/page.js",
-  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js",
-  "/doctor/dashboard/page": "app/doctor/dashboard/page.js"
+  "/api/inventory/stock-notifications/route": "app/api/inventory/stock-notifications/route.js",
+  "/api/blogs/route": "app/api/blogs/route.js",
+  "/api/public/booking/doctors/route": "app/api/public/booking/doctors/route.js",
+  "/api/public/booking/slots/route": "app/api/public/booking/slots/route.js",
+  "/api/public/booking/route": "app/api/public/booking/route.js",
+  "/api/public/booking/check-patient/route": "app/api/public/booking/check-patient/route.js"
 }

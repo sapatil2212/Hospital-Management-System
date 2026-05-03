@@ -48,7 +48,7 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 const tomorrowISO = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
 
 export default function DentalOPDDashboard({ profile, user, activeTab, onTabChange, meta }: {
-  profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void; meta?: any
+  profile: any; user: any; activeTab?: string; onTabChange?: (t: string) => void; meta: any
 }) {
   const [tab, setTab] = useState<string>((activeTab as any) || "overview");
   useEffect(() => { if (activeTab) setTab(activeTab); }, [activeTab]);

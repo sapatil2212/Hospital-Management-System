@@ -17,7 +17,6 @@ export interface PatientQueryOptions {
 
 export interface PaginatedResult<T> {
   data: T[];
-  stats?: any;
   pagination: {
     page: number;
     limit: number;

@@ -205,11 +205,12 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
   const tomorrowStr = toLocalDateStr(tmrw);
 
+  const selectedDept = departments.find(d => d.id === form.departmentId);
+  const isDiagnostic = selectedDept?.type === "DIAGNOSTIC";
   const filteredDoctors = form.departmentId
     ? allDoctors.filter(d => d.departmentId === form.departmentId)
     : allDoctors;
   const selectedDoctor = allDoctors.find(d => d.id === form.doctorId);
-  const selectedDept = departments.find(d => d.id === form.departmentId);
 
   useEffect(() => {
     if (!isOpen) {
@@ -311,9 +312,9 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
     e.preventDefault();
     const errs: Record<string, string> = {};
     if (!form.departmentId) errs.departmentId = "Select a department";
-    if (!form.doctorId) errs.doctorId = "Select a doctor";
+    if (!isDiagnostic && !form.doctorId) errs.doctorId = "Select a doctor";
     if (!form.appointmentDate) errs.appointmentDate = "Select a date";
-    if (!form.timeSlot) errs.timeSlot = "Select a time slot";
+    if (!isDiagnostic && !form.timeSlot) errs.timeSlot = "Select a time slot";
     if (Object.keys(errs).length) { setErrors(errs); return; }
     if (isSlotPassed(form.appointmentDate, form.timeSlot)) {
       setErrors({ submit: "The selected time slot has already passed." }); return;
@@ -655,9 +656,10 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                       <label className={styles.label}>Department *</label>
                       <SearchableSelect icon={Building2} placeholder="Select Department..." value={form.departmentId} error={errors.departmentId}
                         options={departments.map(d => ({ id: d.id, label: d.name }))}
-                  isLoading={loadingDepts} onChange={v => { set("departmentId", v); set("doctorId", ""); set("timeSlot", ""); }} />
+                  isLoading={loadingDepts} onChange={v => { set("departmentId", v); set("doctorId", ""); set("timeSlot", ""); set("consultationFee", ""); }} />
                       {errors.departmentId && <span className={styles.errorMsg}>{errors.departmentId}</span>}
                     </div>
+                    {!isDiagnostic && (
                     <div className={styles.field}>
                       <label className={styles.label}>Doctor *</label>
                       <SearchableSelect icon={Stethoscope} placeholder="Select Doctor..." value={form.doctorId} error={errors.doctorId}
@@ -670,6 +672,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                         }} />
                       {errors.doctorId && <span className={styles.errorMsg}>{errors.doctorId}</span>}
                     </div>
+                    )}
                   </div>
 
                   <div className={styles.formRow}>
@@ -705,7 +708,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                   </div>
 
                   {/* ── Time Slots ── */}
-                  {form.doctorId && form.appointmentDate && (
+                  {!isDiagnostic && form.doctorId && form.appointmentDate && (
                     <div className={styles.slotsSection}>
                       <label className={styles.label} style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                         <Clock size={13} /> Time Slot *
@@ -773,13 +776,13 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
                       <ArrowLeft size={14} /> Back
                     </button>
                     <div className={styles.footerSpacer} />
-                    <button type="submit" disabled={saving || !form.timeSlot} className={`${styles.footerBtn} ${styles.confirmBtn}`}
+                    <button type="submit" disabled={saving || (!isDiagnostic && !form.timeSlot)} className={`${styles.footerBtn} ${styles.confirmBtn}`}
                       style={{ padding: "10px 24px", borderRadius: 10, border: "none",
-                        background: !form.timeSlot ? "var(--gray-200)" : "linear-gradient(135deg,#0E898F,#0d7a7f)",
-                        color: !form.timeSlot ? "var(--gray-400)" : "#fff", fontSize: 13, fontWeight: 700,
-                        cursor: (saving || !form.timeSlot) ? "not-allowed" : "pointer",
+                        background: (!isDiagnostic && !form.timeSlot) ? "var(--gray-200)" : "linear-gradient(135deg,#0E898F,#0d7a7f)",
+                        color: (!isDiagnostic && !form.timeSlot) ? "var(--gray-400)" : "#fff", fontSize: 13, fontWeight: 700,
+                        cursor: (saving || (!isDiagnostic && !form.timeSlot)) ? "not-allowed" : "pointer",
                         display: "flex", alignItems: "center", gap: 8,
-                        boxShadow: form.timeSlot ? "0 4px 14px rgba(14,137,143,.3)" : "none" }}>
+                        boxShadow: (!isDiagnostic && !form.timeSlot) ? "none" : "0 4px 14px rgba(14,137,143,.3)" }}>
                       {saving ? <><Loader2 size={14} className={styles.spinner} /> Booking...</> : <>Book Appointment <Check size={14} /></>}
                     </button>
                   </div>

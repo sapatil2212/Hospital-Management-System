@@ -195,6 +195,7 @@ model SubDepartment {
   hodPhone              String?
   hodStaffId            String?
   loginEmail            String?                @unique
+  loginPasswordPlain    String?
   userId                String?                @unique
   requiresPharmacy      Boolean                @default(false)
   requiresLab           Boolean                @default(false)
@@ -810,11 +811,11 @@ model Appointment {
   id                 String             @id @default(uuid())
   hospitalId         String
   patientId          String
-  doctorId           String
+  doctorId           String?
   departmentId       String?
   subDepartmentId    String?
   appointmentDate    DateTime           @db.Date
-  timeSlot           String
+  timeSlot           String?
   type               AppointmentType    @default(OPD)
   status             AppointmentStatus  @default(SCHEDULED)
   consultationFee    Float?
@@ -827,7 +828,7 @@ model Appointment {
   updatedAt          DateTime           @updatedAt
   hospital           Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   patient            Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor             Doctor             @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  doctor             Doctor?            @relation(fields: [doctorId], references: [id], onDelete: SetNull)
   department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   subDepartment      SubDepartment?     @relation(fields: [subDepartmentId], references: [id], onDelete: SetNull)
   followUps          FollowUp[]

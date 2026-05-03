@@ -10,11 +10,8 @@ export async function GET(req: NextRequest) {
   let hid = searchParams.get("hid");
 
   try {
-    if (!hid) {
-      const first = await prisma.hospital.findFirst({ select: { id: true }, orderBy: { createdAt: "desc" } });
-      if (!first) return errorResponse("No hospital found", 404);
-      hid = first.id;
-    }
+    // Hardcoded for Celeb Aesthetica portal (TODO: make configurable for multi-hospital)
+    if (!hid) hid = "fd92c618-f6dc-42da-96ae-762a09d19f25";
 
     const where: any = { hospitalId: hid };
     const deptId = searchParams.get("departmentId");

@@ -252,6 +252,7 @@ export const createSubDeptCredentials = async (id: string, hospitalId: string) =
   });
 
   await repo.setSubDepartmentCredentials(id, user.id, true);
+  await (prisma as any).subDepartment.update({ where: { id }, data: { loginPasswordPlain: rawPassword } });
 
   return { email: loginEmail, password: rawPassword };
 };
@@ -285,6 +286,7 @@ export const resendSubDeptCredentials = async (id: string, hospitalId: string) =
     });
     await repo.setSubDepartmentCredentials(id, user.id, true);
   }
+  await (prisma as any).subDepartment.update({ where: { id }, data: { loginPasswordPlain: rawPassword } });
 
   return { email: loginEmail, password: rawPassword };
 };

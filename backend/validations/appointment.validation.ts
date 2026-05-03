@@ -6,12 +6,14 @@ import { z } from "zod";
 
 export const createAppointmentSchema = z.object({
   patientId: z.string().uuid("Invalid patient ID"),
-  doctorId: z.string().uuid("Invalid doctor ID"),
+  doctorId: z.string().uuid("Invalid doctor ID").optional().nullable(),
   departmentId: z.string().uuid("Invalid department ID").optional().nullable(),
   appointmentDate: z.coerce.date(),
   timeSlot: z
     .string()
-    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)"),
+    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)")
+    .optional()
+    .nullable(),
   type: z.enum(["OPD", "ONLINE", "FOLLOW_UP", "EMERGENCY"]).default("OPD"),
   consultationFee: z.number().min(0).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),

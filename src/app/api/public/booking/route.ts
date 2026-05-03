@@ -4,33 +4,21 @@ import prisma from "../../../../../backend/config/db";
 import { bookAppointment, AppointmentServiceError } from "../../../../../backend/services/appointment.service";
 import { notify } from "../../../../../backend/services/notification.service";
 import { findPatientByPhone, generatePatientId, createPatient } from "../../../../../backend/repositories/patient.repo";
-import { verifyToken } from "../../../../../backend/utils/jwt";
 
 export const dynamic = "force-dynamic";
 
 
-async function resolveHospitalId(hid: string | null, req?: NextRequest): Promise<string | null> {
+async function resolveHospitalId(hid: string | null): Promise<string> {
   if (hid) return hid;
-  // If called from an authenticated context (admin, staff, etc.), use their hospitalId
-  if (req) {
-    const token = req.cookies.get("hms_session")?.value;
-    if (token) {
-      try {
-        const payload = verifyToken(token);
-        if (payload?.hospitalId) return payload.hospitalId;
-      } catch {}
-    }
-  }
-  // Fall back: use the most recently created hospital (single-hospital / public setups)
-  const first = await prisma.hospital.findFirst({ select: { id: true }, orderBy: { createdAt: "desc" } });
-  return first?.id || null;
+  // Hardcoded for Celeb Aesthetica portal (TODO: make configurable for multi-hospital)
+  return "fd92c618-f6dc-42da-96ae-762a09d19f25";
 }
 
 /* ── GET /api/public/booking?hid=HOSPITAL_ID ── */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   try {
-    const hid = await resolveHospitalId(searchParams.get("hid"), req);
+    const hid = await resolveHospitalId(searchParams.get("hid"));
     if (!hid) return errorResponse("No hospital found", 404);
     const hospital = await prisma.hospital.findUnique({
       where: { id: hid },
@@ -43,14 +31,11 @@ export async function GET(req: NextRequest) {
       select: { hospitalName: true, logo: true, phone: true, address: true },
     }).catch(() => null);
 
-    const departments = await prisma.department.findMany({
-      where: { hospitalId: hid },
-      select: { id: true, name: true, code: true, type: true, isActive: true },
+    const departments = await (prisma as any).department.findMany({
+      where: { hospitalId: hid, isActive: true, allowAppointments: true, type: { in: ["CLINICAL", "DIAGNOSTIC"] } },
+      select: { id: true, name: true, code: true, type: true },
       orderBy: { name: "asc" },
     });
-
-    // Exclude purely non-clinical/admin departments from public booking
-    const NON_BOOKING_TYPES = ["SUPPORT", "ADMINISTRATIVE"];
 
     return successResponse({
       hospital: {
@@ -60,7 +45,7 @@ export async function GET(req: NextRequest) {
         phone: settings?.phone || null,
         address: settings?.address || null,
       },
-      departments: departments.filter(d => !NON_BOOKING_TYPES.includes(d.type as string)),
+      departments,
     }, "Public booking info");
   } catch (e: any) {
     return errorResponse(e.message, 500);
@@ -72,11 +57,21 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, phone, email, doctorId, departmentId, appointmentDate, timeSlot, type, consultationFee, notes, existingPatientId, forceNew } = body;
-    const hospitalId = await resolveHospitalId(body.hospitalId || null, req);
+    const hospitalId = await resolveHospitalId(body.hospitalId || null);
     if (!hospitalId) return errorResponse("No hospital found", 404);
 
-    if (!name || !phone || !doctorId || !appointmentDate || !timeSlot) {
+    if (!name || !phone || !appointmentDate) {
       return errorResponse("Missing required fields", 400);
+    }
+
+    // For DIAGNOSTIC departments, doctorId and timeSlot are optional
+    if (departmentId) {
+      const dept = await prisma.department.findUnique({ where: { id: departmentId }, select: { type: true } });
+      if (dept?.type !== "DIAGNOSTIC" && !doctorId) {
+        return errorResponse("Doctor is required for this department", 400);
+      }
+    } else if (!doctorId) {
+      return errorResponse("Doctor is required", 400);
     }
 
     const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId }, select: { id: true, name: true } });

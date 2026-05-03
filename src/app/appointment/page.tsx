@@ -74,6 +74,8 @@ function AppointmentForm() {
   const tomorrowStr = toLocalDateStr(tmrw);
 
   /* ── Derived ── */
+  const selectedDept = departments.find(d => d.id === form.departmentId);
+  const isDiagnostic = selectedDept?.type === "DIAGNOSTIC";
   const filteredDoctors = form.departmentId
     ? allDoctors.filter(d => d.departmentId === form.departmentId)
     : allDoctors;
@@ -135,13 +137,13 @@ function AppointmentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!form.doctorId) errs.doctorId = "Select a doctor";
+    if (!isDiagnostic && !form.doctorId) errs.doctorId = "Select a doctor";
     if (!form.appointmentDate) errs.appointmentDate = "Select a date";
-    if (!form.timeSlot) errs.timeSlot = "Select a time slot";
+    if (!isDiagnostic && !form.timeSlot) errs.timeSlot = "Select a time slot";
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    // Check if selected slot has passed
-    if (isSlotPassed(form.appointmentDate, form.timeSlot)) {
+    // Check if selected slot has passed (only for clinical)
+    if (!isDiagnostic && isSlotPassed(form.appointmentDate, form.timeSlot)) {
       setErrors({ submit: "The selected time slot has already passed. Please choose a future time." });
       return;
     }
@@ -382,15 +384,16 @@ function AppointmentForm() {
               <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 {/* Department */}
                 <div style={fieldStyle}>
-                  <label style={labelStyle}>Department</label>
+                  <label style={labelStyle}>Department *</label>
                   <select style={inputStyle} value={form.departmentId}
-                    onChange={e => { set("departmentId", e.target.value); set("doctorId", ""); set("timeSlot", ""); }}>
-                    <option value="">All Departments</option>
+                    onChange={e => { set("departmentId", e.target.value); set("doctorId", ""); set("timeSlot", ""); set("consultationFee", ""); }}>
+                    <option value="">Select Department...</option>
                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
 
-                {/* Doctor */}
+                {/* Doctor — hidden for DIAGNOSTIC */}
+                {!isDiagnostic && (
                 <div style={fieldStyle}>
                   <label style={labelStyle}>Doctor *</label>
                   <select required style={inputStyle} value={form.doctorId}
@@ -408,6 +411,7 @@ function AppointmentForm() {
                   </select>
                   {errors.doctorId && <span style={errStyle}>{errors.doctorId}</span>}
                 </div>
+                )}
 
                 {/* Date */}
                 <div style={fieldStyle}>
@@ -439,8 +443,15 @@ function AppointmentForm() {
                   </select>
                 </div>
 
-                {/* Time Slots */}
-                {form.doctorId && form.appointmentDate && (
+                {/* Diagnostic info banner */}
+                {isDiagnostic && form.appointmentDate && (
+                  <div style={{ gridColumn: "1/-1", padding: "12px 16px", background: "#eff6ff", border: "1.5px solid #93c5fd", borderRadius: 9, fontSize: 12, color: "#1e40af", fontWeight: 600 }}>
+                    ℹ️ Our team will confirm your appointment time. Please arrive at the selected date and we will schedule your diagnostic visit.
+                  </div>
+                )}
+
+                {/* Time Slots — clinical only */}
+                {!isDiagnostic && form.doctorId && form.appointmentDate && (
                   <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 8 }}>
                     <label style={labelStyle}>
                       Time Slot * {loadingSlots && <Loader2 size={11} style={{ marginLeft: 6, animation: "spin .7s linear infinite" }} />}
@@ -503,15 +514,15 @@ function AppointmentForm() {
                     style={{ padding: "10px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                     ← Back
                   </button>
-                  <button type="submit" disabled={saving || !form.timeSlot}
+                  <button type="submit" disabled={saving || (!isDiagnostic && !form.timeSlot)}
                     style={{
                       padding: "10px 24px", borderRadius: 9, border: "none",
-                      background: !form.timeSlot ? "#e2e8f0" : "linear-gradient(135deg,#0E898F,#0d7a7f)",
-                      color: !form.timeSlot ? "#94a3b8" : "#fff",
+                      background: (!isDiagnostic && !form.timeSlot) ? "#e2e8f0" : "linear-gradient(135deg,#0E898F,#0d7a7f)",
+                      color: (!isDiagnostic && !form.timeSlot) ? "#94a3b8" : "#fff",
                       fontSize: 13, fontWeight: 700,
-                      cursor: (saving || !form.timeSlot) ? "not-allowed" : "pointer",
+                      cursor: (saving || (!isDiagnostic && !form.timeSlot)) ? "not-allowed" : "pointer",
                       display: "flex", alignItems: "center", gap: 6,
-                      boxShadow: form.timeSlot ? "0 4px 12px rgba(14,137,143,.3)" : "none",
+                      boxShadow: (!isDiagnostic && !form.timeSlot) ? "none" : "0 4px 12px rgba(14,137,143,.3)",
                     }}>
                     {saving ? <><Loader2 size={14} style={{ animation: "spin .7s linear infinite" }} /> Booking...</> : <><CheckCircle2 size={14} /> Book Appointment</>}
                   </button>

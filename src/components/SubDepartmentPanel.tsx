@@ -41,6 +41,7 @@ interface SubDept {
   hodEmail?: string | null;
   hodPhone?: string | null;
   loginEmail?: string | null;
+  loginPasswordPlain?: string | null;
   credentialsSent: boolean;
   isActive: boolean;
   procedures?: Procedure[];
@@ -91,7 +92,6 @@ const DEPT_SUBDEPT_MAP: Record<string, Array<{value: string; label: string; colo
   ADMINISTRATIVE: [
     { value: "RECEPTION", label: "Reception",  color: "#3b82f6" },
     { value: "BILLING",   label: "Billing",    color: "#f59e0b" },
-    { value: "HR",        label: "HR",         color: "#8b5cf6" },
   ],
   SUPPORT: [
     { value: "PHARMACY",     label: "Pharmacy",     color: "#0E898F" },
@@ -508,7 +508,7 @@ export default function SubDepartmentPanel() {
 
   const openEdit = (item: SubDept) => {
     setEditItem(item);
-    const pw = generatePassword(item.hodName || item.name);
+    const pw = item.loginPasswordPlain || generatePassword(item.hodName || item.name);
     let parsedFeatures: string[] = [];
     try {
       parsedFeatures = item.accessFeatures ? JSON.parse(item.accessFeatures) : [];
@@ -529,6 +529,7 @@ export default function SubDepartmentPanel() {
       hodStaffId: "",
       loginEmail: item.loginEmail || "",
       loginPassword: pw,
+      // loginPasswordPlain is read-only — shown from DB, not editable
       isActive: item.isActive,
       accessFeatures: parsedFeatures,
       customName: item.customName || "",

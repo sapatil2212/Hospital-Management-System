@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import {
   FileText, IndianRupee, Clock, CheckCircle2, TrendingUp,
   CreditCard, Loader2, RefreshCw, AlertCircle, ArrowUpRight,
-  Wallet, BarChart2, Activity
+  Wallet, BarChart2, Activity, AlertTriangle, X, Package
 } from "lucide-react";
 
 const BillingQueue = dynamic(() => import("@/components/BillingQueue"), { ssr: false, loading: () => <LoadingPlaceholder label="Billing Queue" /> });
@@ -45,6 +45,10 @@ export default function BillingDepartmentDashboard({ profile, user, activeTab, o
   const LIGHT_BG  = meta.lightBg;
   const BORDER    = meta.borderColor;
 
+  const [showPaymentReminder, setShowPaymentReminder] = useState(false);
+  const [overduePOs, setOverduePOs] = useState<any[]>([]);
+  const [reminderLoaded, setReminderLoaded] = useState(false);
+
   const [stats, setStats]               = useState({ todayRevenue: 0, monthRevenue: 0, pendingCount: 0, totalBills: 0, paidCount: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
   const [queueCount, setQueueCount]     = useState(0);
@@ -81,6 +85,30 @@ export default function BillingDepartmentDashboard({ profile, user, activeTab, o
     setLastRefresh(new Date());
   }, []);
 
+  // Payment Reminder — show once on first inventory tab visit
+  useEffect(() => {
+    if (tab !== "inventory" || reminderLoaded) return;
+    setReminderLoaded(true);
+    const key = `billing_po_reminder_seen_${profile?.id || "billing"}`;
+    if (typeof window !== "undefined" && localStorage.getItem(key)) return;
+    apiFetch("/api/pharmacy/purchases?limit=100")
+      .then((res: any) => {
+        if (!res.success) return;
+        const now = new Date();
+        const overdue = (res.data?.purchases || res.data || []).filter((p: any) =>
+          p.paymentStatus !== "PAID" &&
+          p.dueDate &&
+          new Date(p.dueDate) < now
+        );
+        if (overdue.length > 0) {
+          setOverduePOs(overdue);
+          setShowPaymentReminder(true);
+        }
+        if (typeof window !== "undefined") localStorage.setItem(key, "1");
+      })
+      .catch(() => {});
+  }, [tab, reminderLoaded, profile?.id]);
+
   // Auto-refresh every 30 s on overview
   useEffect(() => {
     if (tab !== "overview") return;
@@ -102,7 +130,89 @@ export default function BillingDepartmentDashboard({ profile, user, activeTab, o
   // ── Passthrough tabs ──
   if (tab === "billing-queue") return <BillingQueue />;
   if (tab === "finance")    return <div style={{ padding: 24 }}><FinancePanel /></div>;
-  if (tab === "inventory")  return <div style={{ padding: "32px 20px", overflowY: "auto" }}><AdminInventoryPanel /></div>;
+  if (tab === "inventory")  return (
+    <div style={{ padding: "32px 20px", overflowY: "auto" }}>
+      {/* ── Payment Reminder Modal ── */}
+      {showPaymentReminder && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,.18)", width: "100%", maxWidth: 480, overflow: "hidden", animation: "fadeInUp .22s ease" }}>
+
+            {/* Header */}
+            <div style={{ background: "linear-gradient(135deg,#fef3c7,#fde68a)", padding: "18px 20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", borderBottom: "1px solid #fcd34d" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(217,119,6,.2)" }}>
+                  <AlertTriangle size={20} color="#d97706" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#92400e" }}>Payment Reminder</div>
+                  <div style={{ fontSize: 12, color: "#b45309", marginTop: 2 }}>
+                    {overduePOs.length} payment{overduePOs.length > 1 ? "s" : ""} due
+                    <span style={{ marginLeft: 6, background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 100 }}>
+                      {overduePOs.length} overdue!
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentReminder(false)}
+                style={{ background: "rgba(217,119,6,.12)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+              >
+                <X size={15} color="#92400e" />
+              </button>
+            </div>
+
+            {/* PO List */}
+            <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10, maxHeight: 320, overflowY: "auto" }}>
+              {overduePOs.map((po: any, i: number) => {
+                const daysOverdue = po.dueDate ? Math.floor((Date.now() - new Date(po.dueDate).getTime()) / 86400000) : 0;
+                const dueDateStr = po.dueDate ? new Date(po.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+                const supplierName = po.supplier?.name || po.supplierName || "Unknown";
+                const itemCount = po.items?.length ?? 0;
+                const amount = po.grandTotal ?? po.totalAmount ?? 0;
+                return (
+                  <div key={i} style={{ background: "#fafafa", border: "1px solid #fee2e2", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <Package size={13} color="#94a3b8" />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{po.purchaseNo || po.invoiceNumber || `PO-${po.id?.slice(-6).toUpperCase()}`}</span>
+                        <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 100, border: "1px solid #fecaca" }}>OVERDUE</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#475569" }}>{supplierName} · {itemCount} item{itemCount !== 1 ? "s" : ""}</div>
+                      <div style={{ fontSize: 11, color: "#ef4444", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+                        <Clock size={10} />
+                        Overdue since {dueDateStr}
+                        {daysOverdue > 0 && <span style={{ fontWeight: 700 }}>({daysOverdue}d ago)</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>{fmtCur(amount)}</div>
+                      <button
+                        onClick={() => setShowPaymentReminder(false)}
+                        style={{ background: "linear-gradient(135deg,#0E898F,#0a6b70)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowPaymentReminder(false)}
+                style={{ background: "#f1f5f9", color: "#475569", border: "none", borderRadius: 9, padding: "8px 20px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <AdminInventoryPanel />
+    </div>
+  );
 
   // ── Overview ──
   return (

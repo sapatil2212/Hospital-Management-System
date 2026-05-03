@@ -1133,7 +1133,7 @@ function SubDeptDashboardContent() {
     { id: "revenue",       label: "Revenue",            icon: <IndianRupee size={16}/> },
     { id: "expenses",      label: "Expenses",           icon: <TrendingDown size={16}/> },
     { id: "expense",       label: "Expense",            icon: <TrendingDown size={16}/> },
-    { id: "finance",       label: "Finance",            icon: <TrendingUp size={16}/> },
+    { id: "finance",       label: "Revenue/Expense",    icon: <TrendingUp size={16}/> },
     // Pathology LIS tabs
     { id: "orders",        label: "Lab Orders",        icon: <ClipboardList size={16}/> },
     { id: "samples",       label: "Sample Collections", icon: <FlaskConical size={16}/> },

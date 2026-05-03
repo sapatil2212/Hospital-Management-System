@@ -16,12 +16,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    if (!hid) {
-      const { default: prisma } = await import("../../../../../../backend/config/db");
-      const first = await prisma.hospital.findFirst({ select: { id: true } });
-      if (!first) return errorResponse("No hospital found", 404);
-      hid = first.id;
-    }
+    // Hardcoded for Celeb Aesthetica portal (TODO: make configurable for multi-hospital)
+    if (!hid) hid = "fd92c618-f6dc-42da-96ae-762a09d19f25";
 
     const result = await getAvailableSlots(hid, doctorId, date);
     return successResponse(result, "Available slots fetched");

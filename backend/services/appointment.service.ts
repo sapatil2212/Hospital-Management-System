@@ -55,49 +55,67 @@ export const bookAppointment = async (
     );
   }
 
-  // Parallel: patient + doctor + slot conflict + token (all independent reads)
-  const [patient, doctor, hasConflict, tokenNumber] = await Promise.all([
-    findPatientById(input.patientId, hospitalId),
-    findDoctorById(input.doctorId, hospitalId),
-    checkSlotConflict(hospitalId, input.doctorId, appointmentDate, input.timeSlot),
-    getNextToken(hospitalId, input.doctorId, appointmentDate),
-  ]);
+  const isDiagnosticBooking = !input.doctorId;
+
+  // For diagnostic bookings (no doctor), only fetch patient
+  // For clinical bookings, fetch patient + doctor + slot info in parallel
+  let patient: any, doctor: any = null, hasConflict = false, tokenNumber: number | null = null;
+
+  if (isDiagnosticBooking) {
+    patient = await findPatientById(input.patientId, hospitalId);
+  } else {
+    [patient, doctor, hasConflict, tokenNumber] = await Promise.all([
+      findPatientById(input.patientId, hospitalId),
+      findDoctorById(input.doctorId!, hospitalId),
+      checkSlotConflict(hospitalId, input.doctorId!, appointmentDate, input.timeSlot!),
+      getNextToken(hospitalId, input.doctorId!, appointmentDate),
+    ]);
+  }
 
   if (!patient) {
     throw new AppointmentServiceError("Patient not found", "PATIENT_NOT_FOUND", 404);
   }
-  if (!doctor) {
-    throw new AppointmentServiceError("Doctor not found", "DOCTOR_NOT_FOUND", 404);
-  }
-  if (!doctor.isActive) {
-    throw new AppointmentServiceError("Doctor is not currently active", "DOCTOR_INACTIVE", 400);
-  }
-  if (hasConflict) {
-    throw new AppointmentServiceError(
-      "This time slot is already booked for the selected doctor",
-      "SLOT_CONFLICT",
-      409
-    );
+  if (!isDiagnosticBooking) {
+    if (!doctor) {
+      throw new AppointmentServiceError("Doctor not found", "DOCTOR_NOT_FOUND", 404);
+    }
+    if (!doctor.isActive) {
+      throw new AppointmentServiceError("Doctor is not currently active", "DOCTOR_INACTIVE", 400);
+    }
+    if (hasConflict) {
+      throw new AppointmentServiceError(
+        "This time slot is already booked for the selected doctor",
+        "SLOT_CONFLICT",
+        409
+      );
+    }
   }
 
   // Use consultation fee from input, then doctor, then department
   const consultationFee =
     input.consultationFee ??
-    doctor.consultationFee ??
-    (doctor as any).department?.consultationFee;
+    doctor?.consultationFee ??
+    (doctor as any)?.department?.consultationFee;
 
-  const appointment = await createAppointmentRepo({
-    hospitalId,
-    patientId: input.patientId,
-    doctorId: input.doctorId,
-    departmentId: input.departmentId || doctor.departmentId || null,
-    appointmentDate,
-    timeSlot: input.timeSlot,
-    type: input.type || "OPD",
-    status: "SCHEDULED",
-    consultationFee,
-    tokenNumber,
-    notes: input.notes || null,
+  const appointment = await px.appointment.create({
+    data: {
+      hospitalId,
+      patientId: input.patientId,
+      doctorId: input.doctorId || null,
+      departmentId: input.departmentId || doctor?.departmentId || null,
+      appointmentDate,
+      timeSlot: input.timeSlot || null,
+      type: input.type || "OPD",
+      status: "SCHEDULED",
+      consultationFee,
+      tokenNumber,
+      notes: input.notes || null,
+    },
+    include: {
+      patient: { select: { id: true, name: true, patientId: true, phone: true, email: true } },
+      doctor: { select: { id: true, name: true, specialization: true } },
+      department: { select: { id: true, name: true } },
+    },
   });
 
   // Send confirmation email — fully fire-and-forget (no await)
@@ -110,7 +128,7 @@ export const bookAppointment = async (
           to: patient.email!,
           patientName: patient.name,
           patientId: patient.patientId,
-          doctorName: doctor.name,
+          doctorName: doctor?.name || "Our Team",
           departmentName: deptName,
           appointmentDate: appointmentDate.toLocaleDateString("en-IN", {
             weekday: "long",
@@ -118,7 +136,7 @@ export const bookAppointment = async (
             month: "long",
             day: "numeric",
           }),
-          timeSlot: input.timeSlot,
+          timeSlot: input.timeSlot || "To be confirmed",
           tokenNumber,
           type: input.type || "OPD",
           hospitalName,

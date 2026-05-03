@@ -54,6 +54,18 @@ export async function POST(req: NextRequest) {
       data: { password: hashedPassword },
     });
 
+    // Sync plaintext password to SubDepartment record so admin can see the updated password
+    const subDept = await (prisma as any).subDepartment.findFirst({
+      where: { userId: user!.userId },
+      select: { id: true },
+    });
+    if (subDept) {
+      await (prisma as any).subDepartment.update({
+        where: { id: subDept.id },
+        data: { loginPasswordPlain: newPassword },
+      });
+    }
+
     return successResponse(null, "Password changed successfully");
   } catch (error: any) {
     return errorResponse(error.message || "Failed to change password", 500);
