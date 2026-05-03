@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       hid = first.id;
     }
 
-    const where: any = { hospitalId: hid, isActive: true };
+    const where: any = { hospitalId: hid };
     const deptId = searchParams.get("departmentId");
     if (deptId) where.departmentId = deptId;
 

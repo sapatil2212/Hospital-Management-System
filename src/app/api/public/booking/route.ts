@@ -44,12 +44,12 @@ export async function GET(req: NextRequest) {
     }).catch(() => null);
 
     const departments = await prisma.department.findMany({
-      where: { hospitalId: hid, isActive: true },
-      select: { id: true, name: true, code: true, type: true },
+      where: { hospitalId: hid },
+      select: { id: true, name: true, code: true, type: true, isActive: true },
       orderBy: { name: "asc" },
     });
 
-    // Exclude purely non-clinical/admin departments that shouldn't appear in the booking form
+    // Exclude purely non-clinical/admin departments from public booking
     const NON_BOOKING_TYPES = ["SUPPORT", "ADMINISTRATIVE"];
 
     return successResponse({
