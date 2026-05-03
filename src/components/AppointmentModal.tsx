@@ -186,6 +186,7 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingDepts, setLoadingDepts] = useState(false);
+  const [apiError, setApiError] = useState("");
   const [dupPatient, setDupPatient] = useState<{ id: string; name: string; phone: string; patientId: string; matchedBy?: "phone" | "email" } | null>(null);
   const [bookMode, setBookMode] = useState<"ask" | "existing" | "new" | null>(null);
   const [checkingDup, setCheckingDup] = useState(false);
@@ -224,20 +225,39 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
   useEffect(() => {
     if (isOpen) {
       setLoadingDepts(true);
+      setApiError("");
       fetch("/api/public/booking", { credentials: "include" })
-        .then(r => r.json())
-        .then(d => {
+        .then(async r => {
+          const d = await r.json();
+          if (!r.ok) {
+            setApiError(d?.message || d?.error || `Server error ${r.status}: Could not load booking info`);
+            setDepartments([]);
+            return;
+          }
           if (d.data?.hospital?.id) setHospitalId(d.data.hospital.id);
           setDepartments(d.data?.departments || []);
+          if ((d.data?.departments || []).length === 0) {
+            setApiError("No active departments found. Please contact the hospital to configure departments.");
+          }
         })
-        .catch(() => setDepartments([]))
+        .catch(e => { setDepartments([]); setApiError("Network error: Could not reach server. " + (e?.message || "")); })
         .finally(() => setLoadingDepts(false));
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && hospitalId) {
-      fetch(`/api/public/booking/doctors?hid=${hospitalId}`, { credentials: "include" }).then(r => r.json()).then(d => setAllDoctors(d.data || []));
+      fetch(`/api/public/booking/doctors?hid=${hospitalId}`, { credentials: "include" })
+        .then(async r => {
+          const d = await r.json();
+          if (!r.ok) {
+            setApiError(prev => prev || d?.message || `Could not load doctors (${r.status})`);
+            setAllDoctors([]);
+            return;
+          }
+          setAllDoctors(d.data || []);
+        })
+        .catch(() => setAllDoctors([]));
     }
   }, [isOpen, hospitalId]);
 
@@ -602,6 +622,18 @@ export default function AppointmentModal({ isOpen, onClose }: AppointmentModalPr
             {/* ── Step 2: Appointment Details ── */}
             {!isSuccess && step === 2 && (
               <motion.div className={styles.stepBody} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                {/* API Error Banner */}
+                {apiError && (
+                  <div style={{ background: "#fef2f2", border: "1.5px solid #fca5a5", borderRadius: 10, padding: "10px 14px",
+                    marginBottom: 14, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <AlertCircle size={15} style={{ color: "#dc2626", flexShrink: 0, marginTop: 1 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#991b1b", marginBottom: 2 }}>Could not load booking data</div>
+                      <div style={{ fontSize: 11, color: "#b91c1c", lineHeight: 1.5 }}>{apiError}</div>
+                    </div>
+                    <button type="button" onClick={() => setApiError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", padding: 0 }}><X size={13} /></button>
+                  </div>
+                )}
                 {/* Patient banner */}
                 <div style={{ background: "linear-gradient(135deg,#0E898F,#0b7a80)", borderRadius: 12, padding: "12px 16px",
                   marginBottom: 18, display: "flex", alignItems: "center", gap: 12 }}>
