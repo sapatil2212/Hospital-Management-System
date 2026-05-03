@@ -180,8 +180,8 @@ export const updateAppointment = async (
     throw new AppointmentServiceError("Appointment not found", "NOT_FOUND", 404);
   }
 
-  // If rescheduling (date or time changes), validate no conflict
-  if (input.appointmentDate || input.timeSlot) {
+  // If rescheduling (date or time changes), validate no conflict (only for appointments with doctor)
+  if ((input.appointmentDate || input.timeSlot) && existing.doctorId) {
     const newDate = input.appointmentDate ? new Date(input.appointmentDate) : existing.appointmentDate;
     const newSlot = input.timeSlot || existing.timeSlot;
 
@@ -191,19 +191,21 @@ export const updateAppointment = async (
       throw new AppointmentServiceError("Cannot reschedule to a past date", "PAST_DATE", 400);
     }
 
-    const hasConflict = await checkSlotConflict(
-      hospitalId,
-      existing.doctorId,
-      newDate,
-      newSlot,
-      id
-    );
-    if (hasConflict) {
-      throw new AppointmentServiceError(
-        "This time slot is already booked for the selected doctor",
-        "SLOT_CONFLICT",
-        409
+    if (newSlot) {
+      const hasConflict = await checkSlotConflict(
+        hospitalId,
+        existing.doctorId,
+        newDate,
+        newSlot,
+        id
       );
+      if (hasConflict) {
+        throw new AppointmentServiceError(
+          "This time slot is already booked for the selected doctor",
+          "SLOT_CONFLICT",
+          409
+        );
+      }
     }
   }
 

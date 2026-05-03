@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   const rows = appointments.map(a => [
     String(a.tokenNumber ?? ""),
     new Date(a.appointmentDate).toLocaleDateString("en-IN"),
-    a.timeSlot,
+    a.timeSlot ?? "",
     a.patient?.patientId ?? "",
     a.patient?.name ?? "",
     a.patient?.phone ?? "",

@@ -17,6 +17,14 @@ export interface PatientQueryOptions {
 
 export interface PaginatedResult<T> {
   data: T[];
+  stats?: {
+    total: number;
+    today: number;
+    thisMonth: number;
+    maleCount: number;
+    femaleCount: number;
+    otherCount: number;
+  };
   pagination: {
     page: number;
     limit: number;

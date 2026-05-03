@@ -1,9 +1,12 @@
 {
-  "/page": "app/page.js",
   "/api/inventory/stock-notifications/route": "app/api/inventory/stock-notifications/route.js",
-  "/api/blogs/route": "app/api/blogs/route.js",
-  "/api/public/booking/doctors/route": "app/api/public/booking/doctors/route.js",
-  "/api/public/booking/slots/route": "app/api/public/booking/slots/route.js",
-  "/api/public/booking/route": "app/api/public/booking/route.js",
-  "/api/public/booking/check-patient/route": "app/api/public/booking/check-patient/route.js"
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/api/config/settings/route": "app/api/config/settings/route.js",
+  "/api/appointments/stream/route": "app/api/appointments/stream/route.js",
+  "/api/notifications/stream/route": "app/api/notifications/stream/route.js",
+  "/api/appointments/route": "app/api/appointments/route.js",
+  "/api/dashboard/overview/route": "app/api/dashboard/overview/route.js",
+  "/api/patients/route": "app/api/patients/route.js",
+  "/hospitaladmin/dashboard/page": "app/hospitaladmin/dashboard/page.js"
 }

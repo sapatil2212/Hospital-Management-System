@@ -231,7 +231,7 @@ export const getBookedSlots = async (
     select: { timeSlot: true },
   });
 
-  return appointments.map((a) => a.timeSlot);
+  return appointments.map((a) => a.timeSlot).filter((slot): slot is string => slot !== null);
 };
 
 // Get appointment stats

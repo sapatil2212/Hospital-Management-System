@@ -9786,7 +9786,7 @@ export default function PharmacyDashboard({ profile, user, activeTab, onReady }:
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
 
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#f0fdf4", display: "flex", alignItems: "center", justifyConten: "center" }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
 
                   <Bell size={18} color="#16a34a" />
 
