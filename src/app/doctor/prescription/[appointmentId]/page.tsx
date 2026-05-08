@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import PatientProfilePanel from "@/components/PatientProfilePanel";
 import VoicePrescriptionRecorder from "@/components/VoicePrescriptionRecorder";
+import { useDoctorDashboardOptional } from "../../dashboard/DoctorDashboardContext";
 
 const api = async (url: string, method = "GET", body?: any) => {
   const opts: any = { method, credentials: "include", headers: { "Content-Type": "application/json" } };
@@ -131,6 +132,7 @@ export default function PrescriptionPage() {
   const router = useRouter();
   const { appointmentId } = useParams() as { appointmentId: string };
   const searchParams = useSearchParams();
+  const dashCtx = useDoctorDashboardOptional();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -173,8 +175,36 @@ export default function PrescriptionPage() {
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [activeVoiceTarget, setActiveVoiceTarget] = useState<string | null>(null);
+  const voiceRecogRef = useRef<any>(null);
+  const voiceStoppingRef = useRef(false);
+  const voiceFinalRef = useRef("");
+
+  const stopVoiceTyping = (triggerAi = false) => {
+    voiceStoppingRef.current = true;
+    const target = activeVoiceTarget;
+    if (voiceRecogRef.current) {
+      try { voiceRecogRef.current.stop(); } catch {}
+      voiceRecogRef.current = null;
+    }
+    setActiveVoiceTarget(null);
+    if (triggerAi && target === "diagnosis" && voiceFinalRef.current.trim()) {
+      setTimeout(() => aiSmartAssist(true), 500);
+    }
+  };
 
   const startVoiceTyping = (target: "complaint" | "diagnosis" | "advice") => {
+    // Toggle: if already listening on this target, stop it
+    if (activeVoiceTarget === target) {
+      stopVoiceTyping(true);
+      return;
+    }
+    // Stop any existing recognition first
+    if (voiceRecogRef.current) {
+      voiceStoppingRef.current = true;
+      try { voiceRecogRef.current.stop(); } catch {}
+      voiceRecogRef.current = null;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Speech recognition is not supported in this browser.");
@@ -183,32 +213,43 @@ export default function PrescriptionPage() {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-IN";
     recognition.interimResults = true;
-    recognition.continuous = target === "complaint" || target === "advice"; // Continuous for narratives
+    recognition.continuous = true;
     recognition.maxAlternatives = 1;
 
-    let finalTranscript = "";
+    voiceFinalRef.current = "";
+    voiceStoppingRef.current = false;
 
     recognition.onstart = () => setActiveVoiceTarget(target);
+
     recognition.onend = () => {
-      setActiveVoiceTarget(null);
-      // For diagnosis, auto-trigger AI assist after speaking
-      if (target === "diagnosis" && finalTranscript.trim()) {
-        setTimeout(() => aiSmartAssist(true), 500);
+      if (voiceStoppingRef.current) {
+        voiceStoppingRef.current = false;
+        return;
       }
+      // Auto-restart (continuous listening until user clicks stop)
+      try { recognition.start(); } catch {}
     };
-    recognition.onerror = () => setActiveVoiceTarget(null);
+
+    recognition.onerror = (event: any) => {
+      const err = event.error;
+      if (err === "not-allowed") {
+        setActiveVoiceTarget(null);
+        voiceRecogRef.current = null;
+        return;
+      }
+      // no-speech / audio-capture / network: silently restart via onend
+    };
 
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + " ";
+          voiceFinalRef.current += event.results[i][0].transcript + " ";
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      
-      const fullText = finalTranscript + interimTranscript;
+      const fullText = voiceFinalRef.current + interimTranscript;
       if (fullText.trim()) {
         if (target === "complaint") setComplaint(fullText.trim());
         if (target === "diagnosis") setDiagnosis(fullText.trim());
@@ -216,11 +257,8 @@ export default function PrescriptionPage() {
       }
     };
 
+    voiceRecogRef.current = recognition;
     recognition.start();
-    // For non-continuous (diagnosis), stop after a short silence or one result
-    if (!recognition.continuous) {
-      setTimeout(() => { try { recognition.stop(); } catch(e) {} }, 4000);
-    }
   };
 
   const tog = (s: string) => setSections(p => ({ ...p, [s]: !p[s] }));
@@ -239,7 +277,7 @@ export default function PrescriptionPage() {
     if (viewOnly) setEditMode(false);
   }, [viewOnly]);
 
-  // Load data
+  // Load data — uses cached context doctor for instant load, fetches full data in background
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -249,23 +287,39 @@ export default function PrescriptionPage() {
       setHistLoaded(false);
       setSections(prev => ({ ...prev, hist: false }));
 
-      const fetches: [Promise<any>, Promise<any>, Promise<any>] = [
-        api("/api/doctor/me"),
-        api(`/api/appointments/${appointmentId}`),
-        api("/api/prescriptions", "POST", { appointmentId }),
-      ];
-      const [me, ar, rr] = await Promise.all(fetches);
+      // Use context doctor data if available (instant, no API call)
+      const cachedDoc = dashCtx?.doctor || null;
+      let docData: any = cachedDoc;
+      let ar: any, rr: any;
 
-      if (!me.success) { router.push("/login"); return; }
-      setDoctor(me.data);
-      if (me.data.prescriptionSettings) {
-        try { setPSettings(JSON.parse(me.data.prescriptionSettings)); } catch { }
+      if (cachedDoc) {
+        // Fast path: only 2 API calls (doctor already in context)
+        [ar, rr] = await Promise.all([
+          api(`/api/appointments/${appointmentId}`),
+          api("/api/prescriptions", "POST", { appointmentId }),
+        ]);
+      } else {
+        // Fallback: no context (standalone mode), need all 3 calls
+        const [me, _ar, _rr] = await Promise.all([
+          api("/api/doctor/me"),
+          api(`/api/appointments/${appointmentId}`),
+          api("/api/prescriptions", "POST", { appointmentId }),
+        ]);
+        if (!me.success) { router.push("/login"); return; }
+        docData = me.data;
+        ar = _ar;
+        rr = _rr;
+      }
+
+      setDoctor(docData);
+      if (docData?.prescriptionSettings) {
+        try { setPSettings(JSON.parse(docData.prescriptionSettings)); } catch { }
       }
 
       if (!ar.success) { setMsg({ t: "Appointment not found", c: "e" }); setLoading(false); return; }
       setAppt(ar.data);
       setPatient(ar.data.patient);
-      setFee(ar.data.consultationFee || me.data.consultationFee || 0);
+      setFee(ar.data.consultationFee || docData?.consultationFee || 0);
 
       if (rr.success && rr.data?.prescription) {
         const p = rr.data.prescription;
@@ -287,6 +341,18 @@ export default function PrescriptionPage() {
 
       setLoading(false);
 
+      // Background: fetch full doctor data for hospital settings (PDF/email)
+      if (cachedDoc) {
+        api("/api/doctor/me").then(me => {
+          if (me.success) {
+            setDoctor(me.data);
+            if (me.data.prescriptionSettings) {
+              try { setPSettings(JSON.parse(me.data.prescriptionSettings)); } catch { }
+            }
+          }
+        }).catch(() => {});
+      }
+
       if (ar.data.patient?.id) {
         const rxId = rr.data?.prescription?.id || "";
         const histUrl = `/api/prescriptions/patient-history/${ar.data.patient.id}${rxId ? `?excludeId=${rxId}` : ""}`;
@@ -301,8 +367,8 @@ export default function PrescriptionPage() {
       }
 
       // Load doctor's active treatment plans for assignment
-      if (!viewOnly && me.data?.id) {
-        api(`/api/treatment-plans?doctorId=${me.data.id}&status=ACTIVE&limit=50`).then(r => {
+      if (!viewOnly && docData?.id) {
+        api(`/api/treatment-plans?doctorId=${docData.id}&status=ACTIVE&limit=50`).then(r => {
           if (r.success) setMyPlans(r.data?.plans || []);
           setPlansLoaded(true);
         }).catch(() => { setPlansLoaded(true); });
@@ -835,7 +901,7 @@ export default function PrescriptionPage() {
                       }}
                     >
                       {activeVoiceTarget === "complaint" ? <VoiceWave /> : <Mic size={12} />}
-                      {activeVoiceTarget === "complaint" ? "Listening..." : "Voice Type"}
+                      {activeVoiceTarget === "complaint" ? "Stop" : "Voice Type"}
                     </button>
                   )}
                 >
@@ -910,7 +976,7 @@ export default function PrescriptionPage() {
                       }}
                     >
                       {activeVoiceTarget === "diagnosis" ? <VoiceWave /> : <Sparkles size={12} />}
-                      {activeVoiceTarget === "diagnosis" ? "Listening..." : "Smart Voice"}
+                      {activeVoiceTarget === "diagnosis" ? "Stop" : "Smart Voice"}
                     </button>
                   )}
                 >
@@ -1054,7 +1120,7 @@ export default function PrescriptionPage() {
                         }}
                       >
                         {activeVoiceTarget === "advice" ? <VoiceWave /> : <Mic size={12} />}
-                        {activeVoiceTarget === "advice" ? "Listening..." : "Voice Type"}
+                        {activeVoiceTarget === "advice" ? "Stop" : "Voice Type"}
                       </button>
                     )}
                   >

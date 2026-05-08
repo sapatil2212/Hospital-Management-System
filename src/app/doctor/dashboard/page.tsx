@@ -783,6 +783,9 @@ function DoctorDashboardContent() {
   const [apptSortField, setApptSortField] = useState("tokenNumber");
   const [apptSortDir, setApptSortDir] = useState<"asc" | "desc">("asc");
   const [apptExportOpen, setApptExportOpen] = useState(false);
+  const [showAllApptStatuses, setShowAllApptStatuses] = useState(false);
+  const [apptTypeFilter, setApptTypeFilter] = useState("");
+  const [apptStatusFilter, setApptStatusFilter] = useState("");
 
   const [patientSearch, setPatientSearch] = useState("");
   const [patientSortField, setPatientSortField] = useState("name");
@@ -834,10 +837,20 @@ function DoctorDashboardContent() {
 
   const fetchAllAppointments = useCallback(async (doctorId: string, departmentId?: string) => {
     setAllApptsLoading(true);
-    let url = `/api/appointments?doctorId=${doctorId}&limit=500&sortBy=appointmentDate&sortOrder=desc`;
-    if (departmentId) url += `&departmentId=${departmentId}`;
-    const d = await api(url);
-    if (d.success) setAllAppts(d.data?.data || []);
+    const base = `/api/appointments?doctorId=${doctorId}&limit=1000&sortBy=appointmentDate&sortOrder=desc${departmentId ? `&departmentId=${departmentId}` : ""}`;
+    let page = 1;
+    let collected: any[] = [];
+    let hasMore = true;
+    while (hasMore) {
+      const d = await api(`${base}&page=${page}`);
+      if (!d.success) break;
+      const batch: any[] = d.data?.data || [];
+      collected = [...collected, ...batch];
+      const total: number = d.data?.total ?? d.data?.pagination?.total ?? batch.length;
+      hasMore = collected.length < total && batch.length === 1000;
+      page++;
+    }
+    setAllAppts(collected);
     setAllApptsLoading(false);
   }, []);
 
@@ -994,6 +1007,18 @@ function DoctorDashboardContent() {
     }
   }, [selectedDate, doctor, tab, fetchAppointments]);
 
+  // ── Prefetch prescription routes for active appointments ──
+  useEffect(() => {
+    if (tab === "schedule" && appointments.length > 0) {
+      const active = appointments
+        .filter(a => ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status))
+        .slice(0, 5);
+      active.forEach(a => {
+        router.prefetch(`/doctor/dashboard/prescription/${a.id}`);
+      });
+    }
+  }, [tab, appointments, router]);
+
   // ── Slot Alert Timer ──
   // Every 30s, check if any SCHEDULED/CONFIRMED appointment's slot time has arrived (within ±2 min)
   useEffect(() => {
@@ -1038,6 +1063,9 @@ function DoctorDashboardContent() {
 
   // ── Filtered + sorted appointments ──
   const filteredAppts = appointments.filter((a: any) => {
+    if (!showAllApptStatuses && !["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status)) return false;
+    if (apptTypeFilter && a.type !== apptTypeFilter) return false;
+    if (apptStatusFilter && a.status !== apptStatusFilter) return false;
     if (!apptSearch) return true;
     const q = apptSearch.toLowerCase();
     return (a.patient?.name || "").toLowerCase().includes(q) || (a.patient?.patientId || "").toLowerCase().includes(q) || (a.timeSlot || "").includes(q) || (a.type || "").toLowerCase().includes(q) || (STATUS_CFG[a.status]?.label || "").toLowerCase().includes(q);
@@ -1475,15 +1503,38 @@ function DoctorDashboardContent() {
                       <RefreshCw size={12} />Refresh
                     </button>
                   </div>
-                  {/* Search / Export toolbar */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "7px 12px", flex: 1, minWidth: 180 }}>
-                      <input style={{ background: "none", border: "none", outline: "none", fontSize:12, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search patient, time, type..." value={apptSearch} onChange={e => setApptSearch(e.target.value)} />
+                  {/* Search / Filter / Export toolbar */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderBottom: "1px solid #ecfdf5", flexWrap: "wrap" }}>
+                    {/* Show All checkbox */}
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, color: showAllApptStatuses ? accent : "#64748b", background: showAllApptStatuses ? accent + "12" : "#f8fafc", border: `1px solid ${showAllApptStatuses ? accent : "#e2e8f0"}`, borderRadius: 8, padding: "6px 10px", flexShrink: 0, transition: "all .15s" }}>
+                      <input type="checkbox" checked={showAllApptStatuses} onChange={e => { setShowAllApptStatuses(e.target.checked); setApptStatusFilter(""); }} style={{ accentColor: accent, width: 13, height: 13 }} />
+                      Show All
+                    </label>
+                    {/* Filter by Type */}
+                    <select value={apptTypeFilter} onChange={e => setApptTypeFilter(e.target.value)}
+                      style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${apptTypeFilter ? accent : "#e2e8f0"}`, background: apptTypeFilter ? accent + "12" : "#f8fafc", fontSize: 11, color: apptTypeFilter ? accent : "#64748b", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", outline: "none" }}>
+                      <option value="">All Types</option>
+                      <option value="OPD">OPD</option>
+                      <option value="ONLINE">Online</option>
+                      <option value="FOLLOW_UP">Follow-up</option>
+                      <option value="EMERGENCY">Emergency</option>
+                    </select>
+                    {/* Filter by Status (only when Show All is checked) */}
+                    {showAllApptStatuses && (
+                      <select value={apptStatusFilter} onChange={e => setApptStatusFilter(e.target.value)}
+                        style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${apptStatusFilter ? accent : "#e2e8f0"}`, background: apptStatusFilter ? accent + "12" : "#f8fafc", fontSize: 11, color: apptStatusFilter ? accent : "#64748b", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", outline: "none" }}>
+                        <option value="">All Statuses</option>
+                        {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      </select>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "6px 12px", flex: 1, minWidth: 160 }}>
+                      <Search size={12} color="#94a3b8" />
+                      <input style={{ background: "none", border: "none", outline: "none", fontSize:12, color: "#334155", width: "100%", fontFamily: "inherit" }} placeholder="Search patient, time..." value={apptSearch} onChange={e => setApptSearch(e.target.value)} />
                       {apptSearch && <button onClick={() => setApptSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} color="#94a3b8" /></button>}
                     </div>
                     {loadingAppts && <Loader2 size={14} color={accent} style={{ animation: "spin .7s linear infinite" }} />}
                     <div style={{ fontSize:11, color: "#94a3b8", fontWeight: 600 }}>{sortedAppts.length} of {appointments.length}</div>
-                    <div style={{ position: "relative", marginLeft: "auto" }}>
+                    <div style={{ position: "relative" }}>
                       <button onClick={() => setApptExportOpen(!apptExportOpen)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize:12, fontWeight: 500, cursor: "pointer" }}><Download size={14} />Export</button>
                       <ExportDropdown open={apptExportOpen} onClose={() => setApptExportOpen(false)} onExport={exportAppts} />
                     </div>
@@ -1531,7 +1582,7 @@ function DoctorDashboardContent() {
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                   {canConsult && (
                                     <button onClick={() => handleStartPrescription(a.id)}
-                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: a.status === "IN_PROGRESS" ? "linear-gradient(135deg,#0E898F,#0A6B70)" : "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize:10, fontWeight: 700, cursor: "pointer", boxShadow: a.status === "IN_PROGRESS" ? "0 3px 10px rgba(59,130,246,.3)" : "0 3px 10px rgba(16,185,129,.3)" }}>
+                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize:10, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 10px rgba(14,137,143,.3)" }}>
                                       <PlayCircle size={12} />{a.status === "IN_PROGRESS" ? "Continue" : "Consult"}
                                     </button>
                                   )}
@@ -1688,7 +1739,7 @@ function DoctorDashboardContent() {
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                   {["SCHEDULED", "CONFIRMED", "IN_PROGRESS"].includes(a.status) && (
                                     <button onClick={() => handleStartPrescription(a.id)}
-                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: a.status === "IN_PROGRESS" ? "linear-gradient(135deg,#0E898F,#0A6B70)" : "linear-gradient(135deg,#10b981,#059669)", color: "#fff", fontSize:10, fontWeight: 700, cursor: "pointer", boxShadow: a.status === "IN_PROGRESS" ? "0 3px 10px rgba(59,130,246,.3)" : "0 3px 10px rgba(16,185,129,.3)" }}>
+                                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#0E898F,#0A6B70)", color: "#fff", fontSize:10, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 10px rgba(14,137,143,.3)" }}>
                                       <PlayCircle size={12} />{a.status === "IN_PROGRESS" ? "Continue" : "Consult"}
                                     </button>
                                   )}

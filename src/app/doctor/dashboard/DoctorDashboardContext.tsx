@@ -84,3 +84,7 @@ export function useDoctorDashboard() {
   }
   return context;
 }
+
+export function useDoctorDashboardOptional() {
+  return useContext(DoctorDashboardContext);
+}
