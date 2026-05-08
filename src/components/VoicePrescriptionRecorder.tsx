@@ -27,6 +27,7 @@ export default function VoicePrescriptionRecorder({
   const [audioLevel, setAudioLevel] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState("en-IN");
   const [manualText, setManualText] = useState("");
+  const [autoFallback, setAutoFallback] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,8 +35,10 @@ export default function VoicePrescriptionRecorder({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number | null>(null);
   const finalTranscriptRef = useRef<string>("");
+  const liveTranscriptRef = useRef<string>("");
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
+  const stoppingRef = useRef(false);
   const restartTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -110,7 +113,9 @@ export default function VoicePrescriptionRecorder({
           else interim += t;
         }
         if (final) finalTranscriptRef.current += final;
-        setTranscript(finalTranscriptRef.current + interim);
+        const live = finalTranscriptRef.current + interim;
+        liveTranscriptRef.current = live;
+        setTranscript(live);
       };
 
       recognition.onerror = (event: any) => {
@@ -130,6 +135,12 @@ export default function VoicePrescriptionRecorder({
       };
 
       recognition.onend = () => {
+        if (stoppingRef.current) {
+          stoppingRef.current = false;
+          recognitionRef.current = null;
+          processTranscript(liveTranscriptRef.current.trim());
+          return;
+        }
         scheduleRestart(recognition);
       };
 
@@ -167,18 +178,29 @@ export default function VoicePrescriptionRecorder({
     isRecordingRef.current = false;
     isPausedRef.current = false;
     if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
     setIsPaused(false);
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (animationRef.current) { cancelAnimationFrame(animationRef.current); animationRef.current = null; }
-    processTranscript(finalTranscriptRef.current.trim());
+    if (recognitionRef.current) {
+      stoppingRef.current = true;
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        stoppingRef.current = false;
+        recognitionRef.current = null;
+        processTranscript(liveTranscriptRef.current.trim());
+      }
+    } else {
+      processTranscript(liveTranscriptRef.current.trim());
+    }
   };
 
   const processTranscript = async (text: string) => {
     if (!text) {
-      setErrorMsg("No speech captured. You can type the conversation manually below.");
-      setStatus("error");
+      setAutoFallback(true);
+      setManualText("");
+      setStatus("manual");
       return;
     }
     setStatus("processing");
@@ -292,7 +314,7 @@ export default function VoicePrescriptionRecorder({
                 <Mic size={16} /> Start Recording
               </button>
               <button
-                onClick={() => { setStatus("manual"); setManualText(""); }}
+                onClick={() => { setAutoFallback(false); setStatus("manual"); setManualText(""); }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "12px 16px", borderRadius: 12, border: "1.5px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 <FileText size={14} /> Type
@@ -387,6 +409,11 @@ export default function VoicePrescriptionRecorder({
         {/* ── MANUAL state ── */}
         {status === "manual" && (
           <div style={{ padding: "20px 24px 24px" }}>
+            {autoFallback && (
+              <div style={{ padding: "9px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, marginBottom: 12, fontSize: 11, color: "#92400e", lineHeight: 1.5 }}>
+                🎤 <b>Speech not captured</b> — microphone may need a moment or your browser may not support auto-transcription. Type the consultation below and AI will process it.
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={14} color={accent} /></div>
               <div>
