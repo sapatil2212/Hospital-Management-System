@@ -29,6 +29,27 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function fixJsonControlChars(json: string): string {
+  let result = "";
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i];
+    if (escaped) { result += ch; escaped = false; continue; }
+    if (ch === "\\" && inString) { result += ch; escaped = true; continue; }
+    if (ch === '"') { inString = !inString; result += ch; continue; }
+    if (inString) {
+      const code = ch.charCodeAt(0);
+      if (ch === "\n") { result += "\\n"; continue; }
+      if (ch === "\r") { result += "\\r"; continue; }
+      if (ch === "\t") { result += "\\t"; continue; }
+      if (code < 0x20) continue;
+    }
+    result += ch;
+  }
+  return result;
+}
+
 async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string): Promise<string> {
   const key = getOpenRouterKey();
   const geminiKey = getGeminiKey();
@@ -303,13 +324,8 @@ IMPORTANT:
     if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
       text = text.slice(jsonStart, jsonEnd + 1);
     }
-    // Remove control characters that break JSON.parse
-    text = text.replace(/[\u0000-\u001F\u007F]/g, (c) => {
-      if (c === "\n") return "\\n";
-      if (c === "\r") return "\\r";
-      if (c === "\t") return "\\t";
-      return "";
-    });
+    // Escape unescaped control chars ONLY inside JSON string values
+    text = fixJsonControlChars(text);
 
     let parsed: any;
     try {
