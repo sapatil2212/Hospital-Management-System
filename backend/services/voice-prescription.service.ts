@@ -7,11 +7,11 @@ const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || "";
 const getGeminiKey = () => process.env.GEMINI_API_KEY || "";
 
 const VOICE_MODELS = [
-  "google/gemma-3-27b-it:free",
-  "meta-llama/llama-4-maverick:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen-2.5-72b-instruct:free",
-  "microsoft/phi-4:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "tencent/hy3-preview:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "openrouter/owl-alpha",
 ];
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {

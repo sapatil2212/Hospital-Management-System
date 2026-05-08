@@ -5,11 +5,11 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 // OpenRouter free models (fallback provider)
 const OPENROUTER_MODELS = [
-  "google/gemma-3-27b-it:free",
-  "meta-llama/llama-4-maverick:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen-2.5-72b-instruct:free",
-  "microsoft/phi-4:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "tencent/hy3-preview:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "openrouter/owl-alpha",
 ];
 
 interface AiPrescriptionInput {
