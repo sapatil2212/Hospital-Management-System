@@ -64,7 +64,7 @@ export async function getAiPrescriptionSuggestions(input: AiPrescriptionInput): 
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<AiSuggestion | null> {
-  const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+  const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
   for (const gModel of GEMINI_MODELS) {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -262,7 +262,7 @@ async function callAIRaw(prompt: string): Promise<any | null> {
   // Try Gemini first (primary, stable)
   const geminiKey = getGeminiKey();
   if (geminiKey) {
-    const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+    const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
     for (const gModel of GEMINI_MODELS) {
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -275,7 +275,7 @@ async function callAIRaw(prompt: string): Promise<any | null> {
               generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
             }),
           });
-          if (res.status === 429 && attempt < 2) { await sleep(2000 * (attempt + 1)); continue; }
+          if (res.status === 429 && attempt < 2) { await sleep(3000 * (attempt + 1)); continue; }
           if (res.status === 404) break;
           if (!res.ok) break;
           const data = await res.json();

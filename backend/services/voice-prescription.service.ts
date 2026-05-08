@@ -44,7 +44,7 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
 
   // --- Gemini: PRIMARY provider (stable model names, reliable) ---
   if (geminiKey) {
-    const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+    const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
     for (const gModel of GEMINI_MODELS) {
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -63,7 +63,7 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
             25000
           );
           if (res.status === 429 && attempt < 2) {
-            const wait = 1500 * (attempt + 1);
+            const wait = 3000 * (attempt + 1);
             console.log(`[Voice AI] Gemini ${gModel} rate-limited, retrying in ${wait}ms...`);
             await sleep(wait);
             continue;
@@ -93,6 +93,8 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
       }
     }
     console.error("[Voice AI] All Gemini models failed:", errors.join("; "));
+  } else {
+    console.warn("[Voice AI] No Gemini API key configured, skipping Gemini.");
   }
 
   // --- OpenRouter: FALLBACK provider ---
