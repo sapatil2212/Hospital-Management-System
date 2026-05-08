@@ -3,13 +3,13 @@ const getGeminiKey = () => process.env.GEMINI_API_KEY || "";
 const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Primary model: NVIDIA Nemotron 3 Super (free) via OpenRouter; others are fallbacks
+// OpenRouter free models (fallback provider)
 const OPENROUTER_MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b:free",
-  "deepseek/deepseek-chat-v3-0324:free",
-  "deepseek/deepseek-r1:free",
-  "google/gemma-3-12b-it:free",
-  "microsoft/phi-3-mini-128k-instruct:free",
+  "google/gemma-3-27b-it:free",
+  "meta-llama/llama-4-maverick:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen-2.5-72b-instruct:free",
+  "microsoft/phi-4:free",
 ];
 
 interface AiPrescriptionInput {
@@ -39,25 +39,23 @@ export async function getAiPrescriptionSuggestions(input: AiPrescriptionInput): 
   const openRouterKey = getOpenRouterKey();
   console.log("AI keys present — Gemini:", !!geminiKey, "OpenRouter:", !!openRouterKey);
 
-  // Try OpenRouter (Nemotron) first — primary provider
-  if (openRouterKey) {
-    try {
-      const result = await callOpenRouter(prompt, openRouterKey);
-      if (result) return result;
-    } catch (err: any) {
-      console.error("OpenRouter failed, trying Gemini fallback:", err.message);
-    }
-  } else {
-    console.error("OpenRouter key not found in environment");
-  }
-
-  // Fallback to Gemini
+  // Try Gemini first — primary provider (stable model names)
   if (geminiKey) {
     try {
       const result = await callGemini(prompt, geminiKey);
       if (result) return result;
     } catch (err: any) {
-      console.error("Gemini fallback also failed:", err.message);
+      console.error("Gemini failed, trying OpenRouter fallback:", err.message);
+    }
+  }
+
+  // Fallback to OpenRouter
+  if (openRouterKey) {
+    try {
+      const result = await callOpenRouter(prompt, openRouterKey);
+      if (result) return result;
+    } catch (err: any) {
+      console.error("OpenRouter fallback also failed:", err.message);
     }
   }
 
@@ -66,88 +64,117 @@ export async function getAiPrescriptionSuggestions(input: AiPrescriptionInput): 
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<AiSuggestion | null> {
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const res = await fetch(geminiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 2048,
-        responseMimeType: "application/json",
-      },
-    }),
-  });
+  const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+  for (const gModel of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${apiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 2048,
+              responseMimeType: "application/json",
+            },
+          }),
+        });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("Gemini API error:", errText);
-    throw new Error(`Gemini API returned ${res.status}`);
+        if (res.status === 429 && attempt < 2) {
+          const wait = 2000 * (attempt + 1);
+          console.log(`[AI] Gemini ${gModel} rate-limited, retrying in ${wait}ms...`);
+          await sleep(wait);
+          continue;
+        }
+        if (res.status === 404) { break; }
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Gemini API error:", errText.slice(0, 300));
+          throw new Error(`Gemini API returned ${res.status}`);
+        }
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const parsed = JSON.parse(cleaned);
+        console.log(`[AI] Success with Gemini ${gModel}`);
+        return parseAiResponse(parsed);
+      } catch (err: any) {
+        if (attempt === 2 || !err.message?.includes("429")) throw err;
+      }
+    }
   }
-
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  const parsed = JSON.parse(cleaned);
-
-  return parseAiResponse(parsed);
+  throw new Error("All Gemini models failed");
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function callOpenRouter(prompt: string, apiKey: string): Promise<AiSuggestion | null> {
-  // Try each free model in order until one succeeds
+  // Try each free model sequentially with retry on 429
   for (const model of OPENROUTER_MODELS) {
-    console.log(`Trying OpenRouter model: ${model}`);
-    try {
-      const res = await fetch(OPENROUTER_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://hospital-management-system.com",
-          "X-Title": "Hospital Management System",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "user",
-              content: "You are a medical AI assistant. Always respond with valid JSON only, no markdown, no extra text.\n\n" + prompt,
-            },
-          ],
-          temperature: 0.3,
-          max_tokens: 2048,
-        }),
-      });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      console.log(`Trying OpenRouter model: ${model}${attempt > 0 ? ` (retry ${attempt})` : ""}`);
+      try {
+        const res = await fetch(OPENROUTER_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://hospital-management-system.com",
+            "X-Title": "Hospital Management System",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "user",
+                content: "You are a medical AI assistant. Always respond with valid JSON only, no markdown, no extra text.\n\n" + prompt,
+              },
+            ],
+            temperature: 0.3,
+            max_tokens: 2048,
+          }),
+        });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error(`OpenRouter ${model} error (${res.status}):`, errText.slice(0, 200));
-        continue; // try next model
+        if (res.status === 429 && attempt === 0) {
+          console.log(`[AI] ${model} rate-limited, retrying in 3s...`);
+          await sleep(3000);
+          continue;
+        }
+        if (res.status === 404) {
+          console.error(`[AI] ${model} not found (404), skipping`);
+          break;
+        }
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`OpenRouter ${model} error (${res.status}):`, errText.slice(0, 200));
+          break;
+        }
+
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content || "";
+
+        if (!text) {
+          console.error(`OpenRouter ${model} returned empty content`);
+          break;
+        }
+
+        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.error(`No JSON found in ${model} response:`, cleaned.slice(0, 200));
+          break;
+        }
+
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log(`Successfully got response from OpenRouter model: ${model}`);
+        return parseAiResponse(parsed);
+      } catch (err: any) {
+        console.error(`OpenRouter ${model} threw:`, err.message);
+        break;
       }
-
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content || "";
-
-      if (!text) {
-        console.error(`OpenRouter ${model} returned empty content`);
-        continue;
-      }
-
-      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      // Extract JSON object if surrounded by extra text
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error(`No JSON found in ${model} response:`, cleaned.slice(0, 200));
-        continue;
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]);
-      console.log(`Successfully got response from OpenRouter model: ${model}`);
-      return parseAiResponse(parsed);
-    } catch (err: any) {
-      console.error(`OpenRouter ${model} threw:`, err.message);
-      // continue to next model
     }
   }
 
@@ -232,54 +259,67 @@ Keep medications practical and commonly prescribed. Include dosages appropriate 
 
 // ── Generic AI caller (returns raw parsed JSON) ──────────────────────────────
 async function callAIRaw(prompt: string): Promise<any | null> {
+  // Try Gemini first (primary, stable)
+  const geminiKey = getGeminiKey();
+  if (geminiKey) {
+    const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+    for (const gModel of GEMINI_MODELS) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`;
+          const res = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
+            }),
+          });
+          if (res.status === 429 && attempt < 2) { await sleep(2000 * (attempt + 1)); continue; }
+          if (res.status === 404) break;
+          if (!res.ok) break;
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+          const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          return JSON.parse(cleaned);
+        } catch { break; }
+      }
+    }
+  }
+  // Fallback to OpenRouter
   const openRouterKey = getOpenRouterKey();
   if (openRouterKey) {
     for (const model of OPENROUTER_MODELS) {
-      try {
-        const res = await fetch(OPENROUTER_URL, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${openRouterKey}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://hospital-management-system.com",
-            "X-Title": "Hospital Management System",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: "You are a medical AI assistant. Always respond with valid JSON only, no markdown, no extra text.\n\n" + prompt }],
-            temperature: 0.3,
-            max_tokens: 2048,
-          }),
-        });
-        if (!res.ok) continue;
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content || "";
-        if (!text) continue;
-        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) continue;
-        return JSON.parse(jsonMatch[0]);
-      } catch { continue; }
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch(OPENROUTER_URL, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${openRouterKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://hospital-management-system.com",
+              "X-Title": "Hospital Management System",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: "user", content: "You are a medical AI assistant. Always respond with valid JSON only, no markdown, no extra text.\n\n" + prompt }],
+              temperature: 0.3,
+              max_tokens: 2048,
+            }),
+          });
+          if (res.status === 429 && attempt === 0) { await sleep(3000); continue; }
+          if (res.status === 404) break;
+          if (!res.ok) break;
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content || "";
+          if (!text) break;
+          const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) break;
+          return JSON.parse(jsonMatch[0]);
+        } catch { break; }
+      }
     }
-  }
-  const geminiKey = getGeminiKey();
-  if (geminiKey) {
-    try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
-      const res = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
-        }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      return JSON.parse(cleaned);
-    } catch { return null; }
   }
   return null;
 }
@@ -382,52 +422,59 @@ Return ONLY a JSON array (no markdown, no extra text) of objects with fields: na
 Use generic drug names. Keep suggestions practical and evidence-based.`;
 
   const openRouterKey = getOpenRouterKey();
-  // Try OpenRouter (Nemotron) first
   if (openRouterKey) {
-    try {
-      const res = await fetch(OPENROUTER_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${openRouterKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://hospital-management-system.com",
-          "X-Title": "Hospital Management System",
-        },
-        body: JSON.stringify({
-          model: OPENROUTER_MODELS[0],
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.3,
-          max_tokens: 1024,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content || "";
-        const jsonMatch = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim().match(/\[[\s\S]*\]/);
-        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    for (const model of OPENROUTER_MODELS) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch(OPENROUTER_URL, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${openRouterKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://hospital-management-system.com",
+              "X-Title": "Hospital Management System",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: "user", content: prompt }],
+              temperature: 0.3,
+              max_tokens: 1024,
+            }),
+          });
+          if (res.status === 429 && attempt === 0) { await sleep(3000); continue; }
+          if (res.status === 404) break;
+          if (!res.ok) break;
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content || "";
+          const jsonMatch = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim().match(/\[[\s\S]*\]/);
+          if (jsonMatch) return JSON.parse(jsonMatch[0]);
+          break;
+        } catch { break; }
       }
-    } catch { /* fall through to Gemini */ }
+    }
   }
 
-  // Fallback: Gemini
+  // Fallback: Gemini with retry
   const geminiKey = getGeminiKey();
   if (!geminiKey) return [];
-  try {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
-    const res = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 1024, responseMimeType: "application/json" },
-      }),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    return JSON.parse(cleaned);
-  } catch {
-    return [];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+      const res = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 1024, responseMimeType: "application/json" },
+        }),
+      });
+      if (res.status === 429 && attempt < 2) { await sleep(2000 * (attempt + 1)); continue; }
+      if (!res.ok) return [];
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(cleaned);
+    } catch { return []; }
   }
+  return [];
 }

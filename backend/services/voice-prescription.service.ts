@@ -7,11 +7,11 @@ const getOpenRouterKey = () => process.env.OPENROUTER_API_KEY || "";
 const getGeminiKey = () => process.env.GEMINI_API_KEY || "";
 
 const VOICE_MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b:free",
-  "deepseek/deepseek-chat-v3-0324:free",
-  "deepseek/deepseek-r1:free",
-  "google/gemma-3-12b-it:free",
-  "microsoft/phi-3-mini-128k-instruct:free",
+  "google/gemma-3-27b-it:free",
+  "meta-llama/llama-4-maverick:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen-2.5-72b-instruct:free",
+  "microsoft/phi-4:free",
 ];
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
@@ -27,6 +27,8 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string): Promise<string> {
   const key = getOpenRouterKey();
   const geminiKey = getGeminiKey();
@@ -38,80 +40,115 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
 
   console.log(`[Voice AI] Keys found — OpenRouter: ${!!key}, Gemini: ${!!geminiKey}`);
 
-  if (key) {
-    const tryModel = async (model: string): Promise<string> => {
-      const res = await fetchWithTimeout(
-        OPENROUTER_URL,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${key}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://hospital-management-system.com",
-            "X-Title": "Hospital Management System",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            temperature: 0.3,
-            max_tokens: 3000,
-          }),
-        },
-        7000
-      );
-      if (!res.ok) throw new Error(`${model} HTTP error ${res.status}: ${await res.text()}`);
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content || "";
-      if (!text) throw new Error(`${model} returned empty content`);
-      console.log(`[Voice AI] Success with model: ${model}`);
-      return text;
-    };
+  const errors: string[] = [];
 
-    try {
-      const result = await Promise.any(VOICE_MODELS.slice(0, 3).map(tryModel));
-      return result;
-    } catch (err: any) {
-      if (err instanceof AggregateError) {
-        console.error("[Voice AI] All OpenRouter parallel calls failed. Errors:", err.errors.map((e: Error) => e.message).join('; '));
-      } else {
-        console.error("[Voice AI] An unexpected error occurred with OpenRouter:", err.message || err);
+  // --- Gemini: PRIMARY provider (stable model names, reliable) ---
+  if (geminiKey) {
+    const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+    for (const gModel of GEMINI_MODELS) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          console.log(`[Voice AI] Trying Gemini ${gModel} (attempt ${attempt + 1})...`);
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`;
+          const res = await fetchWithTimeout(
+            geminiUrl,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
+              }),
+            },
+            25000
+          );
+          if (res.status === 429 && attempt < 2) {
+            const wait = 1500 * (attempt + 1);
+            console.log(`[Voice AI] Gemini ${gModel} rate-limited, retrying in ${wait}ms...`);
+            await sleep(wait);
+            continue;
+          }
+          if (res.status === 404) {
+            errors.push(`Gemini ${gModel} not found`);
+            break;
+          }
+          if (!res.ok) {
+            const errBody = await res.text();
+            errors.push(`Gemini ${gModel} HTTP ${res.status}`);
+            console.error(`[Voice AI] Gemini ${gModel} error: ${errBody.slice(0, 200)}`);
+            break;
+          }
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          if (text) {
+            console.log(`[Voice AI] Success with Gemini ${gModel}.`);
+            return text;
+          }
+          errors.push(`Gemini ${gModel} empty response`);
+          break;
+        } catch (err: any) {
+          errors.push(`Gemini ${gModel}: ${err.message?.slice(0, 80)}`);
+          break;
+        }
       }
     }
+    console.error("[Voice AI] All Gemini models failed:", errors.join("; "));
   }
 
-  if (geminiKey) {
-    console.log("[Voice AI] OpenRouter failed, attempting Gemini fallback...");
-    try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`;
-      const res = await fetchWithTimeout(
-        geminiUrl,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-            generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
-          }),
-        },
-        9000
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        if (text) {
-          console.log("[Voice AI] Success with Gemini fallback.");
+  // --- OpenRouter: FALLBACK provider ---
+  if (key) {
+    for (const model of VOICE_MODELS) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetchWithTimeout(
+            OPENROUTER_URL,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${key}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://hospital-management-system.com",
+                "X-Title": "Hospital Management System",
+              },
+              body: JSON.stringify({
+                model,
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: userPrompt },
+                ],
+                temperature: 0.3,
+                max_tokens: 3000,
+              }),
+            },
+            25000
+          );
+          if (res.status === 429 && attempt === 0) {
+            console.log(`[Voice AI] ${model} rate-limited, retrying in 2s...`);
+            await sleep(2000);
+            continue;
+          }
+          if (res.status === 404) {
+            errors.push(`${model} not found (404)`);
+            break;
+          }
+          if (!res.ok) {
+            const body = await res.text();
+            errors.push(`${model} HTTP ${res.status}`);
+            console.error(`[Voice AI] ${model} error: ${body.slice(0, 200)}`);
+            break;
+          }
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content || "";
+          if (!text) { errors.push(`${model} empty response`); break; }
+          console.log(`[Voice AI] Success with model: ${model}`);
           return text;
+        } catch (err: any) {
+          errors.push(`${model}: ${err.message?.slice(0, 80)}`);
+          break;
         }
-        throw new Error("Gemini returned empty content.");
-      } else {
-        throw new Error(`Gemini HTTP error ${res.status}: ${await res.text()}`);
       }
-    } catch (err: any) {
-      console.error("[Voice AI] Gemini fallback failed:", err.message);
     }
+    console.error("[Voice AI] All OpenRouter models also failed:", errors.join("; "));
   }
 
   throw new Error("All AI providers failed for voice prescription. Please check API keys and provider status.");
