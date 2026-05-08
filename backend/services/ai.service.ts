@@ -65,48 +65,39 @@ export async function getAiPrescriptionSuggestions(input: AiPrescriptionInput): 
 
 async function callGemini(prompt: string, apiKey: string): Promise<AiSuggestion | null> {
   const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+  const errors: string[] = [];
   for (const gModel of GEMINI_MODELS) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${apiKey}`;
-        const res = await fetch(geminiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 2048,
-              responseMimeType: "application/json",
-            },
-          }),
-        });
-
-        if (res.status === 429 && attempt < 2) {
-          const wait = 2000 * (attempt + 1);
-          console.log(`[AI] Gemini ${gModel} rate-limited, retrying in ${wait}ms...`);
-          await sleep(wait);
-          continue;
-        }
-        if (res.status === 404) { break; }
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error("Gemini API error:", errText.slice(0, 300));
-          throw new Error(`Gemini API returned ${res.status}`);
-        }
-
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleaned);
-        console.log(`[AI] Success with Gemini ${gModel}`);
-        return parseAiResponse(parsed);
-      } catch (err: any) {
-        if (attempt === 2 || !err.message?.includes("429")) throw err;
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${apiKey}`;
+      const res = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 2048,
+            responseMimeType: "application/json",
+          },
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`[AI] Gemini ${gModel} HTTP ${res.status}:`, errText.slice(0, 200));
+        errors.push(`${gModel} HTTP ${res.status}`);
+        continue; // skip to next model — no retries for quota/access errors
       }
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const parsed = JSON.parse(cleaned);
+      console.log(`[AI] Success with Gemini ${gModel}`);
+      return parseAiResponse(parsed);
+    } catch (err: any) {
+      errors.push(`${gModel}: ${err.message?.slice(0, 60)}`);
     }
   }
-  throw new Error("All Gemini models failed");
+  throw new Error(`All Gemini models failed: ${errors.join("; ")}`);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -264,26 +255,22 @@ async function callAIRaw(prompt: string): Promise<any | null> {
   if (geminiKey) {
     const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
     for (const gModel of GEMINI_MODELS) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`;
-          const res = await fetch(geminiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
-            }),
-          });
-          if (res.status === 429 && attempt < 2) { await sleep(3000 * (attempt + 1)); continue; }
-          if (res.status === 404) break;
-          if (!res.ok) break;
-          const data = await res.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-          const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-          return JSON.parse(cleaned);
-        } catch { break; }
-      }
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
+          }),
+        });
+        if (!res.ok) continue; // no retries — quota errors don't resolve in seconds
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        return JSON.parse(cleaned);
+      } catch { continue; }
     }
   }
   // Fallback to OpenRouter

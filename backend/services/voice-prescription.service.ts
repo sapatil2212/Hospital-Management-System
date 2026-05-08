@@ -67,50 +67,36 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
   if (geminiKey) {
     const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
     for (const gModel of GEMINI_MODELS) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          console.log(`[Voice AI] Trying Gemini ${gModel} (attempt ${attempt + 1})...`);
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`;
-          const res = await fetchWithTimeout(
-            geminiUrl,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-                generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
-              }),
-            },
-            25000
-          );
-          if (res.status === 429 && attempt < 2) {
-            const wait = 3000 * (attempt + 1);
-            console.log(`[Voice AI] Gemini ${gModel} rate-limited, retrying in ${wait}ms...`);
-            await sleep(wait);
-            continue;
-          }
-          if (res.status === 404) {
-            errors.push(`Gemini ${gModel} not found`);
-            break;
-          }
-          if (!res.ok) {
-            const errBody = await res.text();
-            errors.push(`Gemini ${gModel} HTTP ${res.status}`);
-            console.error(`[Voice AI] Gemini ${gModel} error: ${errBody.slice(0, 200)}`);
-            break;
-          }
-          const data = await res.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          if (text) {
-            console.log(`[Voice AI] Success with Gemini ${gModel}.`);
-            return text;
-          }
-          errors.push(`Gemini ${gModel} empty response`);
-          break;
-        } catch (err: any) {
-          errors.push(`Gemini ${gModel}: ${err.message?.slice(0, 80)}`);
-          break;
+      try {
+        console.log(`[Voice AI] Trying Gemini ${gModel}...`);
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`;
+        const res = await fetchWithTimeout(
+          geminiUrl,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+              generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
+            }),
+          },
+          20000
+        );
+        if (!res.ok) {
+          const errBody = await res.text();
+          errors.push(`Gemini ${gModel} HTTP ${res.status}`);
+          console.error(`[Voice AI] Gemini ${gModel} error: ${errBody.slice(0, 200)}`);
+          continue; // skip to next model immediately — no retries for quota/access errors
         }
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        if (text) {
+          console.log(`[Voice AI] Success with Gemini ${gModel}.`);
+          return text;
+        }
+        errors.push(`Gemini ${gModel} empty response`);
+      } catch (err: any) {
+        errors.push(`Gemini ${gModel}: ${err.message?.slice(0, 80)}`);
       }
     }
     console.error("[Voice AI] All Gemini models failed:", errors.join("; "));
@@ -146,8 +132,8 @@ async function callOpenRouterForVoice(systemPrompt: string, userPrompt: string):
             25000
           );
           if (res.status === 429 && attempt === 0) {
-            console.log(`[Voice AI] ${model} rate-limited, retrying in 2s...`);
-            await sleep(2000);
+            console.log(`[Voice AI] ${model} rate-limited, retrying in 1s...`);
+            await sleep(1000);
             continue;
           }
           if (res.status === 404) {
@@ -331,16 +317,31 @@ IMPORTANT:
     try {
       parsed = JSON.parse(text);
     } catch {
-      // Last resort: try to extract individual fields with regex
+      // Last resort: extract individual fields with regex
       console.warn("[Voice AI] JSON.parse failed, falling back to regex extraction");
+      const extractString = (key: string) => text.match(new RegExp(`"${key}"\\s*:\\s*"([^"\\\\]*(\\\\.[^"\\\\]*)*)"`  ))?.[1] || "";
+      const extractArray = (key: string): any[] => {
+        try {
+          const m = text.match(new RegExp(`"${key}"\\s*:\\s*(\\[[\\s\\S]*?\\])`));
+          if (m) return JSON.parse(fixJsonControlChars(m[1]));
+        } catch { }
+        return [];
+      };
+      const extractObject = (key: string): any => {
+        try {
+          const m = text.match(new RegExp(`"${key}"\\s*:\\s*(\\{[^}]*\\})`));
+          if (m) return JSON.parse(fixJsonControlChars(m[1]));
+        } catch { }
+        return {};
+      };
       parsed = {
-        chiefComplaint: text.match(/"chiefComplaint"\s*:\s*"([^"]*)"/)?.[1] || "",
-        diagnosis: text.match(/"diagnosis"\s*:\s*"([^"]*)"/)?.[1] || "",
-        medications: [],
-        labTests: [],
-        vitals: {},
-        advice: text.match(/"advice"\s*:\s*"([^"]*)"/)?.[1] || "",
-        icdCodes: [],
+        chiefComplaint: extractString("chiefComplaint"),
+        diagnosis: extractString("diagnosis"),
+        medications: extractArray("medications"),
+        labTests: extractArray("labTests"),
+        vitals: extractObject("vitals"),
+        advice: extractString("advice"),
+        icdCodes: extractArray("icdCodes"),
       };
     }
     const processingTime = Date.now() - startTime;
