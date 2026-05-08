@@ -251,7 +251,6 @@ INSTRUCTIONS:
 
 OUTPUT FORMAT (JSON):
 {
-  "transcription": "Full verbatim conversation transcript",
   "chiefComplaint": "Patient's main symptoms and concerns",
   "diagnosis": "Primary diagnosis with clinical reasoning",
   "medications": [
@@ -298,11 +297,36 @@ IMPORTANT:
     let raw = await callOpenRouterForVoice(systemPrompt, userPrompt);
     // Strip markdown fences if model wraps the JSON
     let text = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    // Extract JSON object in case there's surrounding prose
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    text = jsonMatch ? jsonMatch[0] : text;
+    // Extract outermost JSON object in case there's surrounding prose
+    const jsonStart = text.indexOf("{");
+    const jsonEnd = text.lastIndexOf("}");
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      text = text.slice(jsonStart, jsonEnd + 1);
+    }
+    // Remove control characters that break JSON.parse
+    text = text.replace(/[\u0000-\u001F\u007F]/g, (c) => {
+      if (c === "\n") return "\\n";
+      if (c === "\r") return "\\r";
+      if (c === "\t") return "\\t";
+      return "";
+    });
 
-    const parsed = JSON.parse(text);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // Last resort: try to extract individual fields with regex
+      console.warn("[Voice AI] JSON.parse failed, falling back to regex extraction");
+      parsed = {
+        chiefComplaint: text.match(/"chiefComplaint"\s*:\s*"([^"]*)"/)?.[1] || "",
+        diagnosis: text.match(/"diagnosis"\s*:\s*"([^"]*)"/)?.[1] || "",
+        medications: [],
+        labTests: [],
+        vitals: {},
+        advice: text.match(/"advice"\s*:\s*"([^"]*)"/)?.[1] || "",
+        icdCodes: [],
+      };
+    }
     const processingTime = Date.now() - startTime;
 
     return {
